@@ -245,6 +245,10 @@ void CSCDigiTree::Loop(string sName)
     TH1D *rhmHSb_h = new TH1D("rhmHSb_h","Chamber Number of Bad Matches",600,0.5,600.5);
     TH1D *misslctid_h = new TH1D("misslctid_h","Chambers missing LCTs",600,0.5,600.5);
     TH1D *misstflctid_h = new TH1D("misstflctid_h","Chambers missing LCTs",600,0.5,600.5);
+    TH1D *miss1lct_phi_h = new TH1D("miss1lct_phi_h","Missing LCT muon #phi",128,-3.2,3.2);
+    TH1D *miss1lct_eta_h = new TH1D("miss1lct_eta_h","Missing LCT muon #eta",128,-3.2,3.2);
+    TH1D *miss1tflct_phi_h = new TH1D("miss1tflct_phi_h","Missing tfLCT muon #phi",128,-3.2,3.2);
+    TH1D *miss1tflct_eta_h = new TH1D("miss1tflct_eta_h","Missing tfLCT muon #eta",128,-3.2,3.2);
 
     //Format histos to look nice when I draw them
     pid_h->SetStats(0);
@@ -1178,8 +1182,8 @@ void CSCDigiTree::Loop(string sName)
                 if(pid==2) pt_pid2_h->Fill(Pt);
             }//iseg
             nLCT_ntfLCT_h->Fill(Nlct,Ntflct);
-            if(Nlct != 0 && Nlct - Ntflct == 1) misstflctid_h->Fill(missID);
-            if(Nlct != 0 && Nlct - Ntflct == -1) misslctid_h->Fill(missID);
+            if(Nlct != 0 && Nlct - Ntflct == 1) { misstflctid_h->Fill(missID); miss1tflct_phi_h->Fill(phi); miss1tflct_eta_h->Fill(eta); }
+            if(Nlct != 0 && Nlct - Ntflct == -1) { misslctid_h->Fill(missID); miss1lct_phi_h->Fill(phi); miss1lct_eta_h->Fill(eta); }
             if(Nlct == 0 && Ntflct > 0) { misslcts_phi_h->Fill(phi); misslcts_eta_h->Fill(eta); }
             nSeg_nLCT_h->Fill(Nseg,Nlct);
             nSegMinusNLCT_h->Fill(Nseg-Nlct);
@@ -1386,6 +1390,10 @@ void CSCDigiTree::Loop(string sName)
         misslcts_phi_h->Write();
         misslcts_eta_h->Write();
         misstflctid_h->Write();
+        miss1tflct_phi_h->Write();
+        miss1tflct_eta_h->Write();
+        miss1lct_phi_h->Write();
+        miss1lct_eta_h->Write();
         nSegMinusNLCT_h->Write();
         //nLCTMinusNtfLCT_h->Write();
         nRHpSeg_h->Write();
