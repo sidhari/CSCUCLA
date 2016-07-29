@@ -45,141 +45,39 @@ void CSCDigiTree::Loop(string sName)
     //TCanvas *c2 = new TCanvas("c2","c2",850,700);
 
     plotter.book1D("RHmean_seg_h","RecHit position of layer 3 in Segments;Position [strips]",220,-10,100);
-    TH1D *seg_clctDis_h = new TH1D("seg_clctDis_h","Distance between Layer 3 RecHit and closest CLCT;Distance [strips]",100,0.0,10.0);
+    plotter.book1D("seg_clctDis_h","Distance between Layer 3 RecHit and closest CLCT;Distance [strips]",100,0.0,10.0);
 
-    TH2D *nSeg_nLCT_h = new TH2D("nSeg_nLCT_h",";Number of Segments;Number of LCTs",10,-0.5,9.5,10,-0.5,9.5);
-    TH2D *nLCT_ntfLCT_h = new TH2D("nLCT_ntfLCT_h",";Number of LCTs;Number of tfLCTs",10,-0.5,9.5,10,-0.5,9.5);
-    TH1D *nSegMinusNLCT_h = new TH1D("nSegMinusNLCT_h",";Number of Segments - Number of LCTs",21,-10.5,10.5);
-    TH1D *nLCTMinusNtfLCT_h = new TH1D("nLCTMinusNtfLCT_h",";Number of Segments;Number of LCTs",21,-10.5,10.5);
-    TH1D *nRHpSeg_h = new TH1D("nRHpSeg_h",";Number of Segments;Number of LCTs",7,-0.5,6.5);
-    TH1D *nLCTpSeg_h = new TH1D("nLCTpSeg_h",";Number of Segments;Number of LCTs",7,-0.5,6.5);
+    plotter.book2D("nSeg_nLCT_h",";Number of Segments;Number of LCTs",10,-0.5,9.5,10,-0.5,9.5);
+    plotter.book2D("nLCT_ntfLCT_h",";Number of LCTs;Number of tfLCTs",10,-0.5,9.5,10,-0.5,9.5);
+    plotter.book1D("nSegMinusNLCT_h",";Number of Segments - Number of LCTs",21,-10.5,10.5);
+    plotter.book1D("nLCTMinusNtfLCT_h",";Number of Segments;Number of LCTs",21,-10.5,10.5);
+    plotter.book1D("nRHpSeg_h",";Number of Segments;Number of LCTs",7,-0.5,6.5);
+    plotter.book1D("nLCTpSeg_h",";Number of Segments;Number of LCTs",7,-0.5,6.5);
+    plotter.book1D("pt_seg_h","p_{T} of Muons for all segments",100,0.0,100.0);
+    plotter.book1D("pt_0clct_h","p_{T} of Muons for all segments with 0 clcts",100,0.0,100.0);
 
-    TH1D *pt_h = new TH1D("pt_h","p_{T} of Muons for all LCTs",200,0.0,100.0);
-    TH1D *pt_pid10_h = new TH1D("pt_pid10_h","p_{T} of Muons for LCTs with pid = 10",200,0.0,100.0);
-    TH1D *pt_pid9_h = new TH1D("pt_pid9_h","p_{T} of Muons for LCTs with pid = 9",200,0.0,100.0);
-    TH1D *pt_pid8_h = new TH1D("pt_pid8_h","p_{T} of Muons for LCTs with pid = 8",200,0.0,100.0);
-    TH1D *pt_pid7_h = new TH1D("pt_pid7_h","p_{T} of Muons for LCTs with pid = 7",200,0.0,100.0);
-    TH1D *pt_pid6_h = new TH1D("pt_pid6_h","p_{T} of Muons for LCTs with pid = 6",200,0.0,100.0);
-    TH1D *pt_pid5_h = new TH1D("pt_pid5_h","p_{T} of Muons for LCTs with pid = 5",200,0.0,100.0);
-    TH1D *pt_pid4_h = new TH1D("pt_pid4_h","p_{T} of Muons for LCTs with pid = 4",200,0.0,100.0);
-    TH1D *pt_pid3_h = new TH1D("pt_pid3_h","p_{T} of Muons for LCTs with pid = 3",200,0.0,100.0);
-    TH1D *pt_pid2_h = new TH1D("pt_pid2_h","p_{T} of Muons for LCTs with pid = 2",200,0.0,100.0);
+    plotter.book1D("pt_h","p_{T} of Muons for all LCTs",200,0.0,100.0);
+    plotter.book1D("pt_pmu_h","p_{T} of #mu^{+} for all LCTs",200,0.0,100.0);
+    plotter.book1D("pt_mmu_h","p_{T} of #mu^{-} for all LCTs",200,0.0,100.0);
 
-    TH1D *pt_pmu_h = new TH1D("pt_pmu_h","p_{T} of pMuons for all LCTs",200,0.0,100.0);
-    TH1D *pt_pmu_pid10_h = new TH1D("pt_pmu_pid10_h","p_{T} of pMuons for LCTs with pid = 10",200,0.0,100.0);
-    TH1D *pt_pmu_pid9_h = new TH1D("pt_pmu_pid9_h","p_{T} of pMuons for LCTs with pid = 9,8",200,0.0,100.0);
-    TH1D *pt_pmu_pid8_h = new TH1D("pt_pmu_pid8_h","p_{T} of pMuons for LCTs with pid = 7,6",200,0.0,100.0);
-    TH1D *pt_pmu_pid7_h = new TH1D("pt_pmu_pid7_h","p_{T} of pMuons for LCTs with pid = 5,4",200,0.0,100.0);
-    TH1D *pt_pmu_pid6_h = new TH1D("pt_pmu_pid6_h","p_{T} of pMuons for LCTs with pid = 3,2,1",200,0.0,100.0);
-    TH1D *pt_pmu_pid5_h = new TH1D("pt_pmu_pid5_h","p_{T} of pMuons for LCTs with pid = 9,8",200,0.0,100.0);
-    TH1D *pt_pmu_pid4_h = new TH1D("pt_pmu_pid4_h","p_{T} of pMuons for LCTs with pid = 7,6",200,0.0,100.0);
-    TH1D *pt_pmu_pid3_h = new TH1D("pt_pmu_pid3_h","p_{T} of pMuons for LCTs with pid = 5,4",200,0.0,100.0);
-    TH1D *pt_pmu_pid2_h = new TH1D("pt_pmu_pid2_h","p_{T} of pMuons for LCTs with pid = 3,2,1",200,0.0,100.0);
+    for(int pat = 10; pat >= 2; pat--)
+    {
+        for(int station = 1; station <= 4; station++)
+        {
+            for(int ring = 1; ring <= 3; ring++)
+            {
+                if(station != 1 && ring > 2) continue;
+                if(pat == 10) plotter.book1D(Form("pt_me%i%i_h",station,((ring-1)%3)+1),
+                        Form("p_{T} of Muons for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
 
-    TH1D *pt_mmu_h = new TH1D("pt_mmu_h","p-_{T} of Muons for all LCTs",200,0.0,100.0);
-    TH1D *pt_mmu_pid10_h = new TH1D("pt_mmu_pid10_h","p_{T} of mMuons for LCTs with pid = 10",200,0.0,100.0);
-    TH1D *pt_mmu_pid9_h = new TH1D("pt_mmu_pid9_h","p_{T} of mMuons for LCTs with pid = 9",200,0.0,100.0);
-    TH1D *pt_mmu_pid8_h = new TH1D("pt_mmu_pid8_h","p_{T} of mMuons for LCTs with pid = 8",200,0.0,100.0);
-    TH1D *pt_mmu_pid7_h = new TH1D("pt_mmu_pid7_h","p_{T} of mMuons for LCTs with pid = 7",200,0.0,100.0);
-    TH1D *pt_mmu_pid6_h = new TH1D("pt_mmu_pid6_h","p_{T} of mMuons for LCTs with pid = 6",200,0.0,100.0);
-    TH1D *pt_mmu_pid5_h = new TH1D("pt_mmu_pid5_h","p_{T} of mMuons for LCTs with pid = 5",200,0.0,100.0);
-    TH1D *pt_mmu_pid4_h = new TH1D("pt_mmu_pid4_h","p_{T} of mMuons for LCTs with pid = 4",200,0.0,100.0);
-    TH1D *pt_mmu_pid3_h = new TH1D("pt_mmu_pid3_h","p_{T} of mMuons for LCTs with pid = 3",200,0.0,100.0);
-    TH1D *pt_mmu_pid2_h = new TH1D("pt_mmu_pid2_h","p_{T} of mMuons for LCTs with pid = 2",200,0.0,100.0);
-
-    TH1D *pt_seg_h = new TH1D("pt_seg_h","p_{T} of Muons for all segments",100,0.0,100.0);
-    TH1D *pt_0clct_h = new TH1D("pt_0clct_h","p_{T} of Muons for all segments with 0 clcts",100,0.0,100.0);
-
-    TH1D *pt_me11_h = new TH1D("pt_me11_h","p_{T} of Muons for all LCTs in ME1/1",200,0.0,100.0);
-    TH1D *pt_me11_pid10_h = new TH1D("pt_me11_pid10_h","p_{T} of Muons for LCTs with pid = 10_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid9_h = new TH1D("pt_me11_pid9_h","p_{T} of Muons for LCTs with pid = 9_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid8_h = new TH1D("pt_me11_pid8_h","p_{T} of Muons for LCTs with pid = 8_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid7_h = new TH1D("pt_me11_pid7_h","p_{T} of Muons for LCTs with pid = 7_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid6_h = new TH1D("pt_me11_pid6_h","p_{T} of Muons for LCTs with pid = 6_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid5_h = new TH1D("pt_me11_pid5_h","p_{T} of Muons for LCTs with pid = 5_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid4_h = new TH1D("pt_me11_pid4_h","p_{T} of Muons for LCTs with pid = 4_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid3_h = new TH1D("pt_me11_pid3_h","p_{T} of Muons for LCTs with pid = 3_me11",200,0.0,100.0);
-    TH1D *pt_me11_pid2_h = new TH1D("pt_me11_pid2_h","p_{T} of Muons for LCTs with pid = 2_me11",200,0.0,100.0);
-    TH1D *pt_me12_h = new TH1D("pt_me12_h","p_{T} of Muons for all LCTs in ME12",200,0.0,100.0);
-    TH1D *pt_me12_pid10_h = new TH1D("pt_me12_pid10_h","p_{T} of Muons for LCTs with pid = 10_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid9_h = new TH1D("pt_me12_pid9_h","p_{T} of Muons for LCTs with pid = 9_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid8_h = new TH1D("pt_me12_pid8_h","p_{T} of Muons for LCTs with pid = 8_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid7_h = new TH1D("pt_me12_pid7_h","p_{T} of Muons for LCTs with pid = 7_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid6_h = new TH1D("pt_me12_pid6_h","p_{T} of Muons for LCTs with pid = 6_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid5_h = new TH1D("pt_me12_pid5_h","p_{T} of Muons for LCTs with pid = 5_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid4_h = new TH1D("pt_me12_pid4_h","p_{T} of Muons for LCTs with pid = 4_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid3_h = new TH1D("pt_me12_pid3_h","p_{T} of Muons for LCTs with pid = 3_me12",200,0.0,100.0);
-    TH1D *pt_me12_pid2_h = new TH1D("pt_me12_pid2_h","p_{T} of Muons for LCTs with pid = 2_me12",200,0.0,100.0);
-    TH1D *pt_me13_h = new TH1D("pt_me13_h","p_{T} of Muons for all LCTs in ME13",200,0.0,100.0);
-    TH1D *pt_me13_pid10_h = new TH1D("pt_me13_pid10_h","p_{T} of Muons for LCTs with pid = 10_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid9_h = new TH1D("pt_me13_pid9_h","p_{T} of Muons for LCTs with pid = 9_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid8_h = new TH1D("pt_me13_pid8_h","p_{T} of Muons for LCTs with pid = 8_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid7_h = new TH1D("pt_me13_pid7_h","p_{T} of Muons for LCTs with pid = 7_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid6_h = new TH1D("pt_me13_pid6_h","p_{T} of Muons for LCTs with pid = 6_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid5_h = new TH1D("pt_me13_pid5_h","p_{T} of Muons for LCTs with pid = 5_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid4_h = new TH1D("pt_me13_pid4_h","p_{T} of Muons for LCTs with pid = 4_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid3_h = new TH1D("pt_me13_pid3_h","p_{T} of Muons for LCTs with pid = 3_me13",200,0.0,100.0);
-    TH1D *pt_me13_pid2_h = new TH1D("pt_me13_pid2_h","p_{T} of Muons for LCTs with pid = 2_me13",200,0.0,100.0);
-    TH1D *pt_me21_h = new TH1D("pt_me21_h","p_{T} of Muons for all LCTs in ME21",200,0.0,100.0);
-    TH1D *pt_me21_pid10_h = new TH1D("pt_me21_pid10_h","p_{T} of Muons for LCTs with pid = 10_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid9_h = new TH1D("pt_me21_pid9_h","p_{T} of Muons for LCTs with pid = 9_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid8_h = new TH1D("pt_me21_pid8_h","p_{T} of Muons for LCTs with pid = 8_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid7_h = new TH1D("pt_me21_pid7_h","p_{T} of Muons for LCTs with pid = 7_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid6_h = new TH1D("pt_me21_pid6_h","p_{T} of Muons for LCTs with pid = 6_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid5_h = new TH1D("pt_me21_pid5_h","p_{T} of Muons for LCTs with pid = 5_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid4_h = new TH1D("pt_me21_pid4_h","p_{T} of Muons for LCTs with pid = 4_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid3_h = new TH1D("pt_me21_pid3_h","p_{T} of Muons for LCTs with pid = 3_me21",200,0.0,100.0);
-    TH1D *pt_me21_pid2_h = new TH1D("pt_me21_pid2_h","p_{T} of Muons for LCTs with pid = 2_me21",200,0.0,100.0);
-    TH1D *pt_me22_h = new TH1D("pt_me22_h","p_{T} of Muons for all LCTs in ME22",200,0.0,100.0);
-    TH1D *pt_me22_pid10_h = new TH1D("pt_me22_pid10_h","p_{T} of Muons for LCTs with pid = 10_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid9_h = new TH1D("pt_me22_pid9_h","p_{T} of Muons for LCTs with pid = 9_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid8_h = new TH1D("pt_me22_pid8_h","p_{T} of Muons for LCTs with pid = 8_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid7_h = new TH1D("pt_me22_pid7_h","p_{T} of Muons for LCTs with pid = 7_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid6_h = new TH1D("pt_me22_pid6_h","p_{T} of Muons for LCTs with pid = 6_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid5_h = new TH1D("pt_me22_pid5_h","p_{T} of Muons for LCTs with pid = 5_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid4_h = new TH1D("pt_me22_pid4_h","p_{T} of Muons for LCTs with pid = 4_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid3_h = new TH1D("pt_me22_pid3_h","p_{T} of Muons for LCTs with pid = 3_me22",200,0.0,100.0);
-    TH1D *pt_me22_pid2_h = new TH1D("pt_me22_pid2_h","p_{T} of Muons for LCTs with pid = 2_me22",200,0.0,100.0);
-    TH1D *pt_me31_h = new TH1D("pt_me31_h","p_{T} of Muons for all LCTs in ME31",200,0.0,100.0);
-    TH1D *pt_me31_pid10_h = new TH1D("pt_me31_pid10_h","p_{T} of Muons for LCTs with pid = 10_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid9_h = new TH1D("pt_me31_pid9_h","p_{T} of Muons for LCTs with pid = 9_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid8_h = new TH1D("pt_me31_pid8_h","p_{T} of Muons for LCTs with pid = 8_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid7_h = new TH1D("pt_me31_pid7_h","p_{T} of Muons for LCTs with pid = 7_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid6_h = new TH1D("pt_me31_pid6_h","p_{T} of Muons for LCTs with pid = 6_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid5_h = new TH1D("pt_me31_pid5_h","p_{T} of Muons for LCTs with pid = 5_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid4_h = new TH1D("pt_me31_pid4_h","p_{T} of Muons for LCTs with pid = 4_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid3_h = new TH1D("pt_me31_pid3_h","p_{T} of Muons for LCTs with pid = 3_me31",200,0.0,100.0);
-    TH1D *pt_me31_pid2_h = new TH1D("pt_me31_pid2_h","p_{T} of Muons for LCTs with pid = 2_me31",200,0.0,100.0);
-    TH1D *pt_me32_h = new TH1D("pt_me32_h","p_{T} of Muons for all LCTs in ME32",200,0.0,100.0);
-    TH1D *pt_me32_pid10_h = new TH1D("pt_me32_pid10_h","p_{T} of Muons for LCTs with pid = 10_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid9_h = new TH1D("pt_me32_pid9_h","p_{T} of Muons for LCTs with pid = 9_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid8_h = new TH1D("pt_me32_pid8_h","p_{T} of Muons for LCTs with pid = 8_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid7_h = new TH1D("pt_me32_pid7_h","p_{T} of Muons for LCTs with pid = 7_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid6_h = new TH1D("pt_me32_pid6_h","p_{T} of Muons for LCTs with pid = 6_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid5_h = new TH1D("pt_me32_pid5_h","p_{T} of Muons for LCTs with pid = 5_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid4_h = new TH1D("pt_me32_pid4_h","p_{T} of Muons for LCTs with pid = 4_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid3_h = new TH1D("pt_me32_pid3_h","p_{T} of Muons for LCTs with pid = 3_me32",200,0.0,100.0);
-    TH1D *pt_me32_pid2_h = new TH1D("pt_me32_pid2_h","p_{T} of Muons for LCTs with pid = 2_me32",200,0.0,100.0);
-    TH1D *pt_me41_h = new TH1D("pt_me41_h","p_{T} of Muons for all LCTs in ME41",200,0.0,100.0);
-    TH1D *pt_me41_pid10_h = new TH1D("pt_me41_pid10_h","p_{T} of Muons for LCTs with pid = 10_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid9_h = new TH1D("pt_me41_pid9_h","p_{T} of Muons for LCTs with pid = 9_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid8_h = new TH1D("pt_me41_pid8_h","p_{T} of Muons for LCTs with pid = 8_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid7_h = new TH1D("pt_me41_pid7_h","p_{T} of Muons for LCTs with pid = 7_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid6_h = new TH1D("pt_me41_pid6_h","p_{T} of Muons for LCTs with pid = 6_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid5_h = new TH1D("pt_me41_pid5_h","p_{T} of Muons for LCTs with pid = 5_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid4_h = new TH1D("pt_me41_pid4_h","p_{T} of Muons for LCTs with pid = 4_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid3_h = new TH1D("pt_me41_pid3_h","p_{T} of Muons for LCTs with pid = 3_me41",200,0.0,100.0);
-    TH1D *pt_me41_pid2_h = new TH1D("pt_me41_pid2_h","p_{T} of Muons for LCTs with pid = 2_me41",200,0.0,100.0);
-    TH1D *pt_me42_h = new TH1D("pt_me42_h","p_{T} of Muons for all LCTs in ME42",200,0.0,100.0);
-    TH1D *pt_me42_pid10_h = new TH1D("pt_me42_pid10_h","p_{T} of Muons for LCTs with pid = 10_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid9_h = new TH1D("pt_me42_pid9_h","p_{T} of Muons for LCTs with pid = 9_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid8_h = new TH1D("pt_me42_pid8_h","p_{T} of Muons for LCTs with pid = 8_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid7_h = new TH1D("pt_me42_pid7_h","p_{T} of Muons for LCTs with pid = 7_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid6_h = new TH1D("pt_me42_pid6_h","p_{T} of Muons for LCTs with pid = 6_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid5_h = new TH1D("pt_me42_pid5_h","p_{T} of Muons for LCTs with pid = 5_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid4_h = new TH1D("pt_me42_pid4_h","p_{T} of Muons for LCTs with pid = 4_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid3_h = new TH1D("pt_me42_pid3_h","p_{T} of Muons for LCTs with pid = 3_me42",200,0.0,100.0);
-    TH1D *pt_me42_pid2_h = new TH1D("pt_me42_pid2_h","p_{T} of Muons for LCTs with pid = 2_me42",200,0.0,100.0);
+                plotter.book1D(Form("pt_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
+                        Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
+            }
+        }
+        plotter.book1D(Form("pt_pid%i_h",pat),Form("p_{T} of Muons for LCTs with pid = %i",pat),200,0.0,100.0);
+        plotter.book1D(Form("pt_pmu_pid%i_h",pat),Form("p_{T} of #mu^{+} for LCTs with pid = %i",pat),200,0.0,100.0);
+        plotter.book1D(Form("pt_mmu_pid%i_h",pat),Form("p_{T} of #mu^{-} for LCTs with pid = %i",pat),200,0.0,100.0);
+    }
 
     TH1D *pid_h = new TH1D("pid_h","CLCT Pattern ID Occupancy",9,1.5,10.5);
     TH1D *pid13_h = new TH1D("pid13_h","CLCT Pattern ID Occupancy",9,1.5,10.5);
@@ -827,7 +725,7 @@ void CSCDigiTree::Loop(string sName)
                 int pid = -9;
                 int Nlct_seg = 0;
                 float seg_clctDis = 999.9;
-                pt_seg_h->Fill(Pt);
+                plotter.get1D("pt_seg_h")->Fill(Pt);
 
                 //Count LCTs
                 for(int ilct = 0; ilct < (int) lctId->size(); ilct++)
@@ -1043,139 +941,37 @@ void CSCDigiTree::Loop(string sName)
                     }
                 }//iclct
                 //if(Nrh_seg == 4 && Nlct_seg == 0) cout << "Show event " << jentry << endl;
-                nRHpSeg_h->Fill(Nrh_seg);
-                nLCTpSeg_h->Fill(Nlct_seg);
+                plotter.get1D("nRHpSeg_h")->Fill(Nrh_seg);
+                plotter.get1D("nLCTpSeg_h")->Fill(Nlct_seg);
                 if(Nlct_seg == 0 || Ntflct_seg == 0) missID = chSid;
                 //if(Nrh_seg != 4) continue;
-                seg_clctDis_h->Fill(seg_clctDis);
+                plotter.get1D("seg_clctDis_h")->Fill(seg_clctDis);
 
-                pt_h->Fill(Pt);
-                if(q == 1) pt_pmu_h->Fill(Pt);
-                if(q == -1) pt_mmu_h->Fill(Pt);
-                if(ST==1 && (RI==1 || RI == 4)) pt_me11_h->Fill(Pt);
-                if(ST==1 && RI==2) pt_me12_h->Fill(Pt);
-                if(ST==1 && RI==3) pt_me13_h->Fill(Pt);
-                if(ST==2 && RI==1) pt_me21_h->Fill(Pt);
-                if(ST==2 && RI==2) pt_me22_h->Fill(Pt);
-                if(ST==3 && RI==1) pt_me31_h->Fill(Pt);
-                if(ST==3 && RI==2) pt_me32_h->Fill(Pt);
-                if(ST==4 && RI==1) pt_me41_h->Fill(Pt);
-                if(ST==4 && RI==2) pt_me42_h->Fill(Pt);
-                if(Nclct == 0) pt_0clct_h->Fill(Pt);
+                //Fill Numerators
+                plotter.get1D("pt_h")->Fill(Pt);
+                if(q == 1) plotter.get1D("pt_pmu_h")->Fill(Pt);
+                if(q == -1) plotter.get1D("pt_mmu_h")->Fill(Pt);
+                plotter.get1D(Form("pt_me%i%i_h",ST,((RI-1)%3)+1))->Fill(Pt);
+                if(Nclct == 0) plotter.get1D("pt_0clct_h")->Fill(Pt);
 
+                //Check to see if there was an LCT and Fill Denominators
                 if(pid == -9) continue;
 
-                if(pid == 10 && q==1) pt_pmu_pid10_h->Fill(Pt);
-                if(pid==9 && q==1) pt_pmu_pid9_h->Fill(Pt);
-                if(pid==8 && q==1) pt_pmu_pid8_h->Fill(Pt);
-                if(pid==7 && q==1) pt_pmu_pid7_h->Fill(Pt);
-                if(pid==6 && q==1) pt_pmu_pid6_h->Fill(Pt);
-                if(pid==5 && q==1) pt_pmu_pid5_h->Fill(Pt);
-                if(pid==4 && q==1) pt_pmu_pid4_h->Fill(Pt);
-                if(pid==3 && q==1) pt_pmu_pid3_h->Fill(Pt);
-                if(pid==2 && q==1) pt_pmu_pid2_h->Fill(Pt);
-                if(pid == 10 && q==-1) pt_mmu_pid10_h->Fill(Pt);
-                if(pid==9 && q==-1) pt_mmu_pid9_h->Fill(Pt);
-                if(pid==8 && q==-1) pt_mmu_pid8_h->Fill(Pt);
-                if(pid==7 && q==-1) pt_mmu_pid7_h->Fill(Pt);
-                if(pid==6 && q==-1) pt_mmu_pid6_h->Fill(Pt);
-                if(pid==5 && q==-1) pt_mmu_pid5_h->Fill(Pt);
-                if(pid==4 && q==-1) pt_mmu_pid4_h->Fill(Pt);
-                if(pid==3 && q==-1) pt_mmu_pid3_h->Fill(Pt);
-                if(pid==2 && q==-1) pt_mmu_pid2_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid ==10) pt_me11_pid10_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==9) pt_me11_pid9_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==8) pt_me11_pid8_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==7) pt_me11_pid7_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==6) pt_me11_pid6_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==5) pt_me11_pid5_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==4) pt_me11_pid4_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==3) pt_me11_pid3_h->Fill(Pt);
-                if((ST==1 && (RI==1 || RI == 4)) && pid==2) pt_me11_pid2_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid ==10) pt_me12_pid10_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==9) pt_me12_pid9_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==8) pt_me12_pid8_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==7) pt_me12_pid7_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==6) pt_me12_pid6_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==5) pt_me12_pid5_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==4) pt_me12_pid4_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==3) pt_me12_pid3_h->Fill(Pt);
-                if((ST==1 && RI==2) && pid==2) pt_me12_pid2_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid ==10) pt_me13_pid10_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==9) pt_me13_pid9_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==8) pt_me13_pid8_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==7) pt_me13_pid7_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==6) pt_me13_pid6_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==5) pt_me13_pid5_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==4) pt_me13_pid4_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==3) pt_me13_pid3_h->Fill(Pt);
-                if((ST==1 && RI==3) && pid==2) pt_me13_pid2_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid ==10) pt_me21_pid10_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==9) pt_me21_pid9_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==8) pt_me21_pid8_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==7) pt_me21_pid7_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==6) pt_me21_pid6_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==5) pt_me21_pid5_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==4) pt_me21_pid4_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==3) pt_me21_pid3_h->Fill(Pt);
-                if((ST==2 && RI==1) && pid==2) pt_me21_pid2_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid ==10) pt_me22_pid10_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==9) pt_me22_pid9_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==8) pt_me22_pid8_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==7) pt_me22_pid7_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==6) pt_me22_pid6_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==5) pt_me22_pid5_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==4) pt_me22_pid4_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==3) pt_me22_pid3_h->Fill(Pt);
-                if((ST==2 && RI==2) && pid==2) pt_me22_pid2_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid ==10) pt_me31_pid10_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==9) pt_me31_pid9_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==8) pt_me31_pid8_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==7) pt_me31_pid7_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==6) pt_me31_pid6_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==5) pt_me31_pid5_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==4) pt_me31_pid4_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==3) pt_me31_pid3_h->Fill(Pt);
-                if((ST==3 && RI==1) && pid==2) pt_me31_pid2_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid ==10) pt_me32_pid10_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==9) pt_me32_pid9_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==8) pt_me32_pid8_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==7) pt_me32_pid7_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==6) pt_me32_pid6_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==5) pt_me32_pid5_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==4) pt_me32_pid4_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==3) pt_me32_pid3_h->Fill(Pt);
-                if((ST==3 && RI==2) && pid==2) pt_me32_pid2_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid ==10) pt_me41_pid10_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==9) pt_me41_pid9_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==8) pt_me41_pid8_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==7) pt_me41_pid7_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==6) pt_me41_pid6_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==5) pt_me41_pid5_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==4) pt_me41_pid4_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==3) pt_me41_pid3_h->Fill(Pt);
-                if((ST==4 && RI==1) && pid==2) pt_me41_pid2_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid ==10) pt_me42_pid10_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==9) pt_me42_pid9_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==8) pt_me42_pid8_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==7) pt_me42_pid7_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==6) pt_me42_pid6_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==5) pt_me42_pid5_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==4) pt_me42_pid4_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==3) pt_me42_pid3_h->Fill(Pt);
-                if((ST==4 && RI==2) && pid==2) pt_me42_pid2_h->Fill(Pt);
+                if(q==1) 
+                {
+                    plotter.get1D(Form("pt_pmu_pid%i_h",pid))->Fill(Pt);
+                }
 
-                if(pid == 10) pt_pid10_h->Fill(Pt);
-                if(pid==9) pt_pid9_h->Fill(Pt);
-                if(pid==8) pt_pid8_h->Fill(Pt);
-                if(pid==7) pt_pid7_h->Fill(Pt);
-                if(pid==6) pt_pid6_h->Fill(Pt);
-                if(pid==5) pt_pid5_h->Fill(Pt);
-                if(pid==4) pt_pid4_h->Fill(Pt);
-                if(pid==3) pt_pid3_h->Fill(Pt);
-                if(pid==2) pt_pid2_h->Fill(Pt);
+                if(q==-1) 
+                {
+                    plotter.get1D(Form("pt_mmu_pid%i_h",pid))->Fill(Pt);
+                }
+
+                plotter.get1D(Form("pt_me%i%i_pid%i_h",ST,((RI-1)%3)+1,pid))->Fill(Pt);
+
+                plotter.get1D(Form("pt_pid%i_h",pid))->Fill(Pt);
             }//iseg
-            nLCT_ntfLCT_h->Fill(Nlct,Ntflct);
+            plotter.get2D("nLCT_ntfLCT_h")->Fill(Nlct,Ntflct);
             if(Nlct != 0 && Nlct - Ntflct == 1) 
             { 
                 misstflctid_h->Fill(missID); 
@@ -1185,9 +981,9 @@ void CSCDigiTree::Loop(string sName)
             }
             if(Nlct != 0 && Nlct - Ntflct == -1) { misslctid_h->Fill(missID); miss1lct_phi_h->Fill(phi); miss1lct_eta_h->Fill(eta); }
             if(Nlct == 0 && Ntflct > 0) { misslcts_phi_h->Fill(phi); misslcts_eta_h->Fill(eta); }
-            nSeg_nLCT_h->Fill(Nseg,Nlct);
-            nSegMinusNLCT_h->Fill(Nseg-Nlct);
-            nLCTMinusNtfLCT_h->Fill(Nlct-Ntflct);
+            plotter.get2D("nSeg_nLCT_h")->Fill(Nseg,Nlct);
+            plotter.get1D("nSegMinusNLCT_h")->Fill(Nseg-Nlct);
+            plotter.get1D("nLCTMinusNtfLCT_h")->Fill(Nlct-Ntflct);
         }//option if
     }
 
@@ -1251,76 +1047,76 @@ void CSCDigiTree::Loop(string sName)
     {
 
         /*c1->cd();
-        occu_h->Draw("colz text");
-        c1->SaveAs(Form("../%s/plots/occu.png",sName.c_str()));
+          occu_h->Draw("colz text");
+          c1->SaveAs(Form("../%s/plots/occu.png",sName.c_str()));
 
-        occuE_h->Draw("colz text");
-        c1->SaveAs(Form("../%s/plots/occuEven.png",sName.c_str()));
+          occuE_h->Draw("colz text");
+          c1->SaveAs(Form("../%s/plots/occuEven.png",sName.c_str()));
 
-        occuO_h->Draw("colz text");
-        c1->SaveAs(Form("../%s/plots/occuOdd.png",sName.c_str()));
+          occuO_h->Draw("colz text");
+          c1->SaveAs(Form("../%s/plots/occuOdd.png",sName.c_str()));
 
-        NoccuE_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        c1->SaveAs(Form("../%s/plots/NoccuEven.png",sName.c_str()));
+          NoccuE_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          c1->SaveAs(Form("../%s/plots/NoccuEven.png",sName.c_str()));
 
-        NoccuO_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        c1->SaveAs(Form("../%s/plots/NoccuOdd.png",sName.c_str()));
+          NoccuO_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          c1->SaveAs(Form("../%s/plots/NoccuOdd.png",sName.c_str()));
 
-        NoccuE_pat10_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(10);
-        c1->SaveAs(Form("../%s/plots/NoccuEven_pat10.png",sName.c_str()));
-        NoccuO_pat10_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(10);
-        c1->SaveAs(Form("../%s/plots/NoccuOdd_pat10.png",sName.c_str()));
-        NoccuE_pat9_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(9);
-        c1->SaveAs(Form("../%s/plots/NoccuEven_pat9.png",sName.c_str()));
-        NoccuO_pat9_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(9);
-        c1->SaveAs(Form("../%s/plots/NoccuOdd_pat9.png",sName.c_str()));
-        NoccuE_pat8_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(8);
-        c1->SaveAs(Form("../%s/plots/NoccuEven_pat8.png",sName.c_str()));
-        NoccuO_pat8_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(8);
-        c1->SaveAs(Form("../%s/plots/NoccuOdd_pat8.png",sName.c_str()));
-        NoccuE_pat7_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(7);
-        c1->SaveAs(Form("../%s/plots/NoccuEven_pat7.png",sName.c_str()));
-        NoccuO_pat7_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(7);
-        c1->SaveAs(Form("../%s/plots/NoccuOdd_pat7.png",sName.c_str()));
-        NoccuE_pat6_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(6);
-        c1->SaveAs(Form("../%s/plots/NoccuEven_pat6.png",sName.c_str()));
-        NoccuO_pat6_h->Draw("colz text");
-        l1->Draw();
-        l2->Draw();
-        DrawPats(6);
-        c1->SaveAs(Form("../%s/plots/NoccuOdd_pat6.png",sName.c_str()));
-        NoccuE_pat5_h->Draw("colz text");
+          NoccuE_pat10_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(10);
+          c1->SaveAs(Form("../%s/plots/NoccuEven_pat10.png",sName.c_str()));
+          NoccuO_pat10_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(10);
+          c1->SaveAs(Form("../%s/plots/NoccuOdd_pat10.png",sName.c_str()));
+          NoccuE_pat9_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(9);
+          c1->SaveAs(Form("../%s/plots/NoccuEven_pat9.png",sName.c_str()));
+          NoccuO_pat9_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(9);
+          c1->SaveAs(Form("../%s/plots/NoccuOdd_pat9.png",sName.c_str()));
+          NoccuE_pat8_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(8);
+          c1->SaveAs(Form("../%s/plots/NoccuEven_pat8.png",sName.c_str()));
+          NoccuO_pat8_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(8);
+          c1->SaveAs(Form("../%s/plots/NoccuOdd_pat8.png",sName.c_str()));
+          NoccuE_pat7_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(7);
+          c1->SaveAs(Form("../%s/plots/NoccuEven_pat7.png",sName.c_str()));
+          NoccuO_pat7_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(7);
+          c1->SaveAs(Form("../%s/plots/NoccuOdd_pat7.png",sName.c_str()));
+          NoccuE_pat6_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(6);
+          c1->SaveAs(Form("../%s/plots/NoccuEven_pat6.png",sName.c_str()));
+          NoccuO_pat6_h->Draw("colz text");
+          l1->Draw();
+          l2->Draw();
+          DrawPats(6);
+          c1->SaveAs(Form("../%s/plots/NoccuOdd_pat6.png",sName.c_str()));
+          NoccuE_pat5_h->Draw("colz text");
         l1->Draw();
         l2->Draw();
         DrawPats(5);
@@ -1386,11 +1182,8 @@ void CSCDigiTree::Loop(string sName)
 
 
 
-        plotter.write(Form("%sCSCDigiTreeAnaPlotter.root",sName.c_str()));
+            plotter.write(Form("%sCSCDigiTreeAnaPlotter.root",sName.c_str()));
         myF->cd();
-        seg_clctDis_h->Write();
-        nSeg_nLCT_h->Write();
-        nLCT_ntfLCT_h->Write();
         misslctid_h->Write();
         misslcts_phi_h->Write();
         misslcts_eta_h->Write();
@@ -1399,132 +1192,6 @@ void CSCDigiTree::Loop(string sName)
         miss1tflct_eta_h->Write();
         miss1lct_phi_h->Write();
         miss1lct_eta_h->Write();
-        nSegMinusNLCT_h->Write();
-        nLCTMinusNtfLCT_h->Write();
-        nRHpSeg_h->Write();
-        nLCTpSeg_h->Write();
-        pt_h->Write();
-        pt_seg_h->Write();
-        pt_0clct_h->Write();
-        pt_pid10_h->Write();
-        pt_pid9_h->Write();
-        pt_pid8_h->Write();
-        pt_pid7_h->Write();
-        pt_pid6_h->Write();
-        pt_pid5_h->Write();
-        pt_pid4_h->Write();
-        pt_pid3_h->Write();
-        pt_pid2_h->Write();
-        pt_pmu_h->Write();
-        pt_pmu_pid10_h->Write();
-        pt_pmu_pid9_h->Write();
-        pt_pmu_pid8_h->Write();
-        pt_pmu_pid7_h->Write();
-        pt_pmu_pid6_h->Write();
-        pt_pmu_pid5_h->Write();
-        pt_pmu_pid4_h->Write();
-        pt_pmu_pid3_h->Write();
-        pt_pmu_pid2_h->Write();
-        pt_mmu_h->Write();
-        pt_mmu_pid10_h->Write();
-        pt_mmu_pid9_h->Write();
-        pt_mmu_pid8_h->Write();
-        pt_mmu_pid7_h->Write();
-        pt_mmu_pid6_h->Write();
-        pt_mmu_pid5_h->Write();
-        pt_mmu_pid4_h->Write();
-        pt_mmu_pid3_h->Write();
-        pt_mmu_pid2_h->Write();
-        pt_me11_h->Write();
-        pt_me11_pid10_h->Write();
-        pt_me11_pid9_h->Write();
-        pt_me11_pid8_h->Write();
-        pt_me11_pid7_h->Write();
-        pt_me11_pid6_h->Write();
-        pt_me11_pid5_h->Write();
-        pt_me11_pid4_h->Write();
-        pt_me11_pid3_h->Write();
-        pt_me11_pid2_h->Write();
-        pt_me11_h->Write();
-        pt_me12_pid10_h->Write();
-        pt_me12_pid9_h->Write();
-        pt_me12_pid8_h->Write();
-        pt_me12_pid7_h->Write();
-        pt_me12_pid6_h->Write();
-        pt_me12_pid5_h->Write();
-        pt_me12_pid4_h->Write();
-        pt_me12_pid3_h->Write();
-        pt_me12_pid2_h->Write();
-        pt_me13_h->Write();
-        pt_me13_pid10_h->Write();
-        pt_me13_pid9_h->Write();
-        pt_me13_pid8_h->Write();
-        pt_me13_pid7_h->Write();
-        pt_me13_pid6_h->Write();
-        pt_me13_pid5_h->Write();
-        pt_me13_pid4_h->Write();
-        pt_me13_pid3_h->Write();
-        pt_me13_pid2_h->Write();
-        pt_me21_h->Write();
-        pt_me21_pid10_h->Write();
-        pt_me21_pid9_h->Write();
-        pt_me21_pid8_h->Write();
-        pt_me21_pid7_h->Write();
-        pt_me21_pid6_h->Write();
-        pt_me21_pid5_h->Write();
-        pt_me21_pid4_h->Write();
-        pt_me21_pid3_h->Write();
-        pt_me21_pid2_h->Write();
-        pt_me22_h->Write();
-        pt_me22_pid10_h->Write();
-        pt_me22_pid9_h->Write();
-        pt_me22_pid8_h->Write();
-        pt_me22_pid7_h->Write();
-        pt_me22_pid6_h->Write();
-        pt_me22_pid5_h->Write();
-        pt_me22_pid4_h->Write();
-        pt_me22_pid3_h->Write();
-        pt_me22_pid2_h->Write();
-        pt_me31_h->Write();
-        pt_me31_pid10_h->Write();
-        pt_me31_pid9_h->Write();
-        pt_me31_pid8_h->Write();
-        pt_me31_pid7_h->Write();
-        pt_me31_pid6_h->Write();
-        pt_me31_pid5_h->Write();
-        pt_me31_pid4_h->Write();
-        pt_me31_pid3_h->Write();
-        pt_me31_pid2_h->Write();
-        pt_me32_h->Write();
-        pt_me32_pid10_h->Write();
-        pt_me32_pid9_h->Write();
-        pt_me32_pid8_h->Write();
-        pt_me32_pid7_h->Write();
-        pt_me32_pid6_h->Write();
-        pt_me32_pid5_h->Write();
-        pt_me32_pid4_h->Write();
-        pt_me32_pid3_h->Write();
-        pt_me32_pid2_h->Write();
-        pt_me41_h->Write();
-        pt_me41_pid10_h->Write();
-        pt_me41_pid9_h->Write();
-        pt_me41_pid8_h->Write();
-        pt_me41_pid7_h->Write();
-        pt_me41_pid6_h->Write();
-        pt_me41_pid5_h->Write();
-        pt_me41_pid4_h->Write();
-        pt_me41_pid3_h->Write();
-        pt_me41_pid2_h->Write();
-        pt_me42_h->Write();
-        pt_me42_pid10_h->Write();
-        pt_me42_pid9_h->Write();
-        pt_me42_pid8_h->Write();
-        pt_me42_pid7_h->Write();
-        pt_me42_pid6_h->Write();
-        pt_me42_pid5_h->Write();
-        pt_me42_pid4_h->Write();
-        pt_me42_pid3_h->Write();
-        pt_me42_pid2_h->Write();
         pid_h->Write();
         pid13_h->Write();
         ED_h->Write();
