@@ -38,14 +38,14 @@ void CSCDigiTree::Loop(string sName)
     if (fChain == 0) return;
 
     bool op = false;
-    //HistGetter plotter;
+    HistGetter plotter;
 
     TFile *myF = new TFile(Form("%sCSCDigiTreeAna.root",sName.c_str()),"RECREATE");
 
     //TCanvas *c1 = new TCanvas("c1","c1",1750,400);
     //TCanvas *c2 = new TCanvas("c2","c2",850,700);
 
-    TH1D *segLay3_h = new TH1D("segLay3_h","RecHit position of layer 3 in Segments;Position [strips]",220,-10,100);
+    plotter.book1D("RHmean_seg_h","RecHit position of layer 3 in Segments;Position [strips]",220,-10,100);
     TH1D *seg_clctDis_h = new TH1D("seg_clctDis_h","Distance between Layer 3 RecHit and closest CLCT;Distance [strips]",100,0.0,10.0);
 
     TH2D *nSeg_nLCT_h = new TH2D("nSeg_nLCT_h",";Number of Segments;Number of LCTs",10,-0.5,9.5,10,-0.5,9.5);
@@ -251,7 +251,7 @@ void CSCDigiTree::Loop(string sName)
     TH1D *miss1lct_eta_h = new TH1D("miss1lct_eta_h","Missing LCT muon #eta",128,-3.2,3.2);
     TH1D *miss1tflct_phi_h = new TH1D("miss1tflct_phi_h","Missing tfLCT muon #phi",128,-3.2,3.2);
     TH1D *miss1tflct_eta_h = new TH1D("miss1tflct_eta_h","Missing tfLCT muon #eta",128,-3.2,3.2);
-    //plotter.book2D("miss1tflct_etaPhi_h","Muon direction for missing tfLCTs;#eta;#phi",64,-3.2,3.2,64,-3.2,3.2);
+    plotter.book2D("miss1tflct_etaPhi_h","Muon direction for missing tfLCTs;#eta;#phi",64,-3.2,3.2,64,-3.2,3.2);
 
     //Format histos to look nice when I draw them
     pid_h->SetStats(0);
@@ -739,7 +739,8 @@ void CSCDigiTree::Loop(string sName)
                 bool me11 = (ST==1 && (RI==1 || RI==4));
                 bool me1a = (ST==1 && RI==4);
                 bool me1b = (ST==1 && RI==1);
-                float segLay3 = -9;
+                float RHmean_seg = -9;
+                float RHsum = 0;
                 int Nrh_seg = 0;
 
                 //Loop over rechits
@@ -753,7 +754,7 @@ void CSCDigiTree::Loop(string sName)
                     Nrh_seg++;
                     Nrh++;
                     float recPos = rhPos->at(irh);
-                    if(iLay == 3) segLay3 = rhPos->at(irh);
+                    RHsum += recPos;
                     float minD = 999.0;
                     float fCompP = 999.0;
                     bool compFound = false;
@@ -818,7 +819,8 @@ void CSCDigiTree::Loop(string sName)
                     if((EC==1 && me1a)||(EC==2 && me1b)) rhmHS_rh_h->Fill(-1.0*minD);
                     else rhmHS_rh_h->Fill(minD);
                 }
-                segLay3_h->Fill(segLay3);
+                RHmean_seg = RHsum/float(Nrh_seg);
+                plotter.get1D("RHmean_seg_h")->Fill(RHmean_seg);
 
                 //if (me11) continue;
 
@@ -860,9 +862,9 @@ void CSCDigiTree::Loop(string sName)
                     {
                         int KHS = 32*clctCFEB->at(iclct).at(jclct)+clctKHS->at(iclct).at(jclct);
                         pid_h->Fill(clctPat->at(iclct).at(jclct));
-                        if(fabs( ( (KHS/2.0) + 0.75 ) - segLay3 ) < seg_clctDis )
+                        if(fabs( ( (KHS/2.0) + 0.75 ) - RHmean_seg ) < seg_clctDis )
                         {
-                            seg_clctDis = fabs( ( (KHS/2.0) + 0.75 ) - segLay3 );
+                            seg_clctDis = fabs( ( (KHS/2.0) + 0.75 ) - RHmean_seg );
                             pid = clctPat->at(iclct).at(jclct);
                         }
 
@@ -1045,7 +1047,6 @@ void CSCDigiTree::Loop(string sName)
                 nRHpSeg_h->Fill(Nrh_seg);
                 nLCTpSeg_h->Fill(Nlct_seg);
                 if(Nlct_seg == 0 || Ntflct_seg == 0) missID = chSid;
-                if(segLay3 == -9) continue;
                 //if(Nrh_seg != 4) continue;
                 seg_clctDis_h->Fill(seg_clctDis);
 
@@ -1181,7 +1182,7 @@ void CSCDigiTree::Loop(string sName)
                 misstflctid_h->Fill(missID); 
                 miss1tflct_phi_h->Fill(phi); 
                 miss1tflct_eta_h->Fill(eta); 
-                //plotter.get2D("miss1tflct_etaPhi_h")->Fill(eta,phi);
+                plotter.get2D("miss1tflct_etaPhi_h")->Fill(eta,phi);
             }
             if(Nlct != 0 && Nlct - Ntflct == -1) { misslctid_h->Fill(missID); miss1lct_phi_h->Fill(phi); miss1lct_eta_h->Fill(eta); }
             if(Nlct == 0 && Ntflct > 0) { misslcts_phi_h->Fill(phi); misslcts_eta_h->Fill(eta); }
@@ -1386,9 +1387,8 @@ void CSCDigiTree::Loop(string sName)
 
 
 
-        //plotter.write("testFile.root");
-        //myF->cd();
-        segLay3_h->Write();
+        plotter.write(Form("%sCSCDigiTreeAnaPlotter.root",sName.c_str()));
+        myF->cd();
         seg_clctDis_h->Write();
         nSeg_nLCT_h->Write();
         nLCT_ntfLCT_h->Write();
