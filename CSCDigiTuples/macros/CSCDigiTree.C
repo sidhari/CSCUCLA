@@ -36,7 +36,6 @@ void CSCDigiTree::Loop(string sName)
     //    fChain->GetEntry(jentry);       //read all branches
     //by  b_branchname->GetEntry(ientry); //read only this branch
     if (fChain == 0) return;
-
     bool op = false;
     HistGetter plotter;
 
