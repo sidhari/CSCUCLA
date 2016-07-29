@@ -1,5 +1,6 @@
 #define CSCDigiTree_cxx
 #include "../include/CSCDigiTree.h"
+#include "include/HistGetter.h"
 #include <TH2.h>
 #include <TStyle.h>
 #include <TCanvas.h>
@@ -37,6 +38,7 @@ void CSCDigiTree::Loop(string sName)
     if (fChain == 0) return;
 
     bool op = false;
+    //HistGetter plotter;
 
     TFile *myF = new TFile(Form("%sCSCDigiTreeAna.root",sName.c_str()),"RECREATE");
 
@@ -49,7 +51,7 @@ void CSCDigiTree::Loop(string sName)
     TH2D *nSeg_nLCT_h = new TH2D("nSeg_nLCT_h",";Number of Segments;Number of LCTs",10,-0.5,9.5,10,-0.5,9.5);
     TH2D *nLCT_ntfLCT_h = new TH2D("nLCT_ntfLCT_h",";Number of LCTs;Number of tfLCTs",10,-0.5,9.5,10,-0.5,9.5);
     TH1D *nSegMinusNLCT_h = new TH1D("nSegMinusNLCT_h",";Number of Segments - Number of LCTs",21,-10.5,10.5);
-    //TH1D *nLCTMinusNtfLCT_h = new TH2D("nLCTMinusNtfLCT_h",";Number of Segments;Number of LCTs",21,-10.5,10.5);
+    TH1D *nLCTMinusNtfLCT_h = new TH1D("nLCTMinusNtfLCT_h",";Number of Segments;Number of LCTs",21,-10.5,10.5);
     TH1D *nRHpSeg_h = new TH1D("nRHpSeg_h",";Number of Segments;Number of LCTs",7,-0.5,6.5);
     TH1D *nLCTpSeg_h = new TH1D("nLCTpSeg_h",";Number of Segments;Number of LCTs",7,-0.5,6.5);
 
@@ -249,6 +251,7 @@ void CSCDigiTree::Loop(string sName)
     TH1D *miss1lct_eta_h = new TH1D("miss1lct_eta_h","Missing LCT muon #eta",128,-3.2,3.2);
     TH1D *miss1tflct_phi_h = new TH1D("miss1tflct_phi_h","Missing tfLCT muon #phi",128,-3.2,3.2);
     TH1D *miss1tflct_eta_h = new TH1D("miss1tflct_eta_h","Missing tfLCT muon #eta",128,-3.2,3.2);
+    //plotter.book2D("miss1tflct_etaPhi_h","Muon direction for missing tfLCTs;#eta;#phi",64,-3.2,3.2,64,-3.2,3.2);
 
     //Format histos to look nice when I draw them
     pid_h->SetStats(0);
@@ -690,6 +693,7 @@ void CSCDigiTree::Loop(string sName)
         if (ientry < 0) break;
         nb = fChain->GetEntry(jentry);   nbytes += nb;
 
+        if(jentry%(nentries/100) == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
         if(!os) continue;
 
         if(op)
@@ -757,7 +761,7 @@ void CSCDigiTree::Loop(string sName)
                     {
                         if(iID != compId->at(icomp) || iLay != compLay->at(icomp)) continue;
                         if(compStr->at(icomp).size() == 0) continue;
-                        for(int istr = 0; istr < compStr->at(icomp).size(); istr++)
+                        for(int istr = 0; istr < int(compStr->at(icomp).size()); istr++)
                         {
                             float cPos = 2*(compStr->at(icomp).at(istr)-1) + compHS->at(icomp).at(istr);
                             cPos = cPos/2.0 + 0.75;
@@ -828,7 +832,7 @@ void CSCDigiTree::Loop(string sName)
                 for(int ilct = 0; ilct < (int) lctId->size(); ilct++)
                 {
                     if(!(chSid == lctId->at(ilct))) continue;
-                    for(int jlct = 0; jlct < lctQ->at(ilct).size(); jlct++)
+                    for(int jlct = 0; jlct < int(lctQ->at(ilct).size()); jlct++)
                     {
                         Nlct++;
                         Nlct_seg++;
@@ -840,30 +844,19 @@ void CSCDigiTree::Loop(string sName)
                 for(int itflct = 0; itflct < (int) tflctId->size(); itflct++)
                 {
                     if(!(chSid == tflctId->at(itflct))) continue;
-                    for(int jtflct = 0; jtflct < tflctQ->at(itflct).size(); jtflct++)
+                    for(int jtflct = 0; jtflct < int(tflctQ->at(itflct).size()); jtflct++)
                     {
                         Ntflct++;
                         Ntflct_seg++;
                     }
                 }
 
-
-                //Count tfLCTs
-                //for(int itflct = 0; itflct < (int) tflctId->size(); itflct++)
-                //{
-                //    if(!(chSid == tflctId->at(itflct))) continue;
-                //    for(int jtflct = 0; jtflct < tflctQ->at(itflct).size(); jtflct++)
-                //    {
-                //        Ntflct++;
-                //    }
-                //}
-
                 //Look for a CLCT
                 for(int iclct = 0; iclct < (int) clctId->size(); iclct++)
                 {
                     if(!(chSid == clctId->at(iclct))) continue;
                     Nclct++;
-                    for(int jclct = 0; jclct < clctQ->at(iclct).size(); jclct++)
+                    for(int jclct = 0; jclct < int(clctQ->at(iclct).size()); jclct++)
                     {
                         int KHS = 32*clctCFEB->at(iclct).at(jclct)+clctKHS->at(iclct).at(jclct);
                         pid_h->Fill(clctPat->at(iclct).at(jclct));
@@ -875,7 +868,7 @@ void CSCDigiTree::Loop(string sName)
 
                         if(ST==1 && RI==3 && Pt < 5.0) pid13_h->Fill(clctPat->at(iclct).at(jclct));
                         //Find Comparators for this clct
-                        for(int icomp = 0; icomp < compId->size(); icomp++)
+                        for(int icomp = 0; icomp < int(compId->size()); icomp++)
                         {
                             if(!(chSid == compId->at(icomp))) continue;
                             int minD = 999;
@@ -898,7 +891,7 @@ void CSCDigiTree::Loop(string sName)
                             occu_h->Fill(minD,layN);
                             float recPos = -99.9;
                             float recE = -999.0;
-                            for(int irh = 0; irh < rhId->size(); irh++)
+                            for(int irh = 0; irh < int(rhId->size()); irh++)
                             {
                                 if(chSid != rhId->at(irh)) continue;
                                 if(layN == rhLay->at(irh)) 
@@ -1048,16 +1041,17 @@ void CSCDigiTree::Loop(string sName)
                         }//icomp
                     }
                 }//iclct
-                if(Nrh_seg == 4 && Nlct_seg == 0) cout << "Show event " << jentry << endl;
+                //if(Nrh_seg == 4 && Nlct_seg == 0) cout << "Show event " << jentry << endl;
                 nRHpSeg_h->Fill(Nrh_seg);
                 nLCTpSeg_h->Fill(Nlct_seg);
                 if(Nlct_seg == 0 || Ntflct_seg == 0) missID = chSid;
                 if(segLay3 == -9) continue;
                 //if(Nrh_seg != 4) continue;
                 seg_clctDis_h->Fill(seg_clctDis);
+
                 pt_h->Fill(Pt);
                 if(q == 1) pt_pmu_h->Fill(Pt);
-                if(q == -1) pt_pmu_h->Fill(Pt);
+                if(q == -1) pt_mmu_h->Fill(Pt);
                 if(ST==1 && (RI==1 || RI == 4)) pt_me11_h->Fill(Pt);
                 if(ST==1 && RI==2) pt_me12_h->Fill(Pt);
                 if(ST==1 && RI==3) pt_me13_h->Fill(Pt);
@@ -1182,12 +1176,18 @@ void CSCDigiTree::Loop(string sName)
                 if(pid==2) pt_pid2_h->Fill(Pt);
             }//iseg
             nLCT_ntfLCT_h->Fill(Nlct,Ntflct);
-            if(Nlct != 0 && Nlct - Ntflct == 1) { misstflctid_h->Fill(missID); miss1tflct_phi_h->Fill(phi); miss1tflct_eta_h->Fill(eta); }
+            if(Nlct != 0 && Nlct - Ntflct == 1) 
+            { 
+                misstflctid_h->Fill(missID); 
+                miss1tflct_phi_h->Fill(phi); 
+                miss1tflct_eta_h->Fill(eta); 
+                //plotter.get2D("miss1tflct_etaPhi_h")->Fill(eta,phi);
+            }
             if(Nlct != 0 && Nlct - Ntflct == -1) { misslctid_h->Fill(missID); miss1lct_phi_h->Fill(phi); miss1lct_eta_h->Fill(eta); }
             if(Nlct == 0 && Ntflct > 0) { misslcts_phi_h->Fill(phi); misslcts_eta_h->Fill(eta); }
             nSeg_nLCT_h->Fill(Nseg,Nlct);
             nSegMinusNLCT_h->Fill(Nseg-Nlct);
-            //nLCTMinusNtfLCT_h->Fill(Nlct-Ntflct);
+            nLCTMinusNtfLCT_h->Fill(Nlct-Ntflct);
         }//option if
     }
 
@@ -1220,6 +1220,7 @@ void CSCDigiTree::Loop(string sName)
 
 
 
+
     NoccuO_h->SetAxisRange(0.0,100.0,"Z");
     NoccuE_h->SetAxisRange(0.0,100.0,"Z");
     NoccuO_pat10_h->SetAxisRange(0.0,100.0,"Z");
@@ -1248,6 +1249,7 @@ void CSCDigiTree::Loop(string sName)
 
     if(!op)
     {
+
         /*c1->cd();
         occu_h->Draw("colz text");
         c1->SaveAs(Form("../%s/plots/occu.png",sName.c_str()));
@@ -1382,6 +1384,10 @@ void CSCDigiTree::Loop(string sName)
         rhmHS_hQ_h->Draw();
         c2->SaveAs(Form("../%s/plots/rhmHS_hQ.png",sName.c_str()));*/
 
+
+
+        //plotter.write("testFile.root");
+        //myF->cd();
         segLay3_h->Write();
         seg_clctDis_h->Write();
         nSeg_nLCT_h->Write();
@@ -1395,7 +1401,7 @@ void CSCDigiTree::Loop(string sName)
         miss1lct_phi_h->Write();
         miss1lct_eta_h->Write();
         nSegMinusNLCT_h->Write();
-        //nLCTMinusNtfLCT_h->Write();
+        nLCTMinusNtfLCT_h->Write();
         nRHpSeg_h->Write();
         nLCTpSeg_h->Write();
         pt_h->Write();
