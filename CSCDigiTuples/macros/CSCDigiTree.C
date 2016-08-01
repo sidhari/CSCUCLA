@@ -67,29 +67,50 @@ void CSCDigiTree::Loop(string sName)
             for(int ring = 1; ring <= 3; ring++)
             {
                 if(station != 1 && ring > 2) continue;
-                if(pat == 10) plotter.book1D(Form("pt_me%i%i_h",station,((ring-1)%3)+1),
-                        Form("p_{T} of Muons for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                if(pat == 10) 
+                {
+                    plotter.book1D(Form("pt_me%i%i_h",station,((ring-1)%3)+1),
+                            Form("p_{T} of Muons for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                    plotter.book1D(Form("pt_pmu_1_me%i%i_h",station,((ring-1)%3)+1),
+                            Form("p_{T} of #mu^{+} for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                    plotter.book1D(Form("pt_mmu_1_me%i%i_h",station,((ring-1)%3)+1),
+                            Form("p_{T} of #mu^{-} for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                    plotter.book1D(Form("pt_pmu_2_me%i%i_h",station,((ring-1)%3)+1),
+                            Form("p_{T} of #mu^{+} for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                    plotter.book1D(Form("pt_mmu_2_me%i%i_h",station,((ring-1)%3)+1),
+                            Form("p_{T} of #mu^{-} for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                }
 
                 plotter.book1D(Form("pt_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
+                        Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
+                plotter.book1D(Form("pt_pmu_1_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
+                        Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
+                plotter.book1D(Form("pt_mmu_1_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
+                        Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
+                plotter.book1D(Form("pt_pmu_2_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
+                        Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
+                plotter.book1D(Form("pt_mmu_2_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
                         Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
             }
         }
         plotter.book1D(Form("pt_pid%i_h",pat),Form("p_{T} of Muons for LCTs with pid = %i",pat),200,0.0,100.0);
-        plotter.book1D(Form("pt_pmu_pid%i_h",pat),Form("p_{T} of #mu^{+} for LCTs with pid = %i",pat),200,0.0,100.0);
-        plotter.book1D(Form("pt_mmu_pid%i_h",pat),Form("p_{T} of #mu^{-} for LCTs with pid = %i",pat),200,0.0,100.0);
+        plotter.book1D(Form("pt_pmu_1_pid%i_h",pat),Form("p_{T} of #mu^{+} for LCTs with pid = %i",pat),200,0.0,100.0);
+        plotter.book1D(Form("pt_mmu_1_pid%i_h",pat),Form("p_{T} of #mu^{-} for LCTs with pid = %i",pat),200,0.0,100.0);
+        plotter.book1D(Form("pt_pmu_2_pid%i_h",pat),Form("p_{T} of #mu^{+} for LCTs with pid = %i",pat),200,0.0,100.0);
+        plotter.book1D(Form("pt_mmu_2_pid%i_h",pat),Form("p_{T} of #mu^{-} for LCTs with pid = %i",pat),200,0.0,100.0);
     }
 
-    TH1D *pid_h = new TH1D("pid_h","CLCT Pattern ID Occupancy",9,1.5,10.5);
-    TH1D *pid13_h = new TH1D("pid13_h","CLCT Pattern ID Occupancy",9,1.5,10.5);
-    TH1D *ED_h = new TH1D("ED_h","RecHit Energy Deposit",150,0.0,1500.0);
-    TH1D *ED_cF0_h = new TH1D("ED_cF0_h","RecHit Energy Deposit",150,0.0,1500.0);
-    TH1D *ED_cF1_h = new TH1D("ED_cF1_h","RecHit Energy Deposit",150,0.0,1500.0);
-    TH1D *MD_cF0_h = new TH1D("MD_cF0_h","RecHit Max ADC",400,0.0,1000.0);
-    TH1D *MD_cF1_h = new TH1D("MD_cF1_h","RecHit Max ADC",400,0.0,1000.0);
-    TH1D *recM50_phi_h = new TH1D("recM50_phi_h","RecHit Max > 50 muon #phi",128,-3.2,3.2);
-    TH1D *recM50_eta_h = new TH1D("recM50_eta_h","RecHit Max > 50 muon #eta",128,-3.2,3.2);
-    TH1D *misslcts_phi_h = new TH1D("misslcts_phi_h","Missing LCT muon #phi",128,-3.2,3.2);
-    TH1D *misslcts_eta_h = new TH1D("misslcts_eta_h","Missing LCT muon #eta",128,-3.2,3.2);
+    plotter.book1D("pid_h","CLCT Pattern ID Occupancy",9,1.5,10.5);
+    plotter.book1D("pid13_h","CLCT Pattern ID Occupancy",9,1.5,10.5);
+    plotter.book1D("ED_h","RecHit Energy Deposit",150,0.0,1500.0);
+    plotter.book1D("ED_cF0_h","RecHit Energy Deposit",150,0.0,1500.0);
+    plotter.book1D("ED_cF1_h","RecHit Energy Deposit",150,0.0,1500.0);
+    plotter.book1D("MD_cF0_h","RecHit Max ADC",400,0.0,1000.0);
+    plotter.book1D("MD_cF1_h","RecHit Max ADC",400,0.0,1000.0);
+    plotter.book1D("recM50_phi_h","RecHit Max > 50 muon #phi",128,-3.2,3.2);
+    plotter.book1D("recM50_eta_h","RecHit Max > 50 muon #eta",128,-3.2,3.2);
+    plotter.book1D("misslcts_phi_h","Missing LCT muon #phi",128,-3.2,3.2);
+    plotter.book1D("misslcts_eta_h","Missing LCT muon #eta",128,-3.2,3.2);
 
     TH2D *occu_h = new TH2D("occu_h","Occupancy of Half Strips Shifted by CLCT Key Half Strip",21,-10.5,10.5,6,0.5,6.5);
     TH2D *occuE_h = new TH2D("occuE_h","Occupancy of Even Half Strips Shifted by CLCT Key Half Strip",21,-10.5,10.5,6,0.5,6.5);
@@ -151,9 +172,6 @@ void CSCDigiTree::Loop(string sName)
     plotter.book2D("miss1tflct_etaPhi_h","Muon direction for missing tfLCTs;#eta;#phi",64,-3.2,3.2,64,-3.2,3.2);
 
     //Format histos to look nice when I draw them
-    pid_h->SetStats(0);
-    pid13_h->SetStats(0);
-    ED_h->SetStats(0);
     occu_h->SetStats(0);
     NoccuE_h->SetStats(0);
     NoccuO_h->SetStats(0);
@@ -180,9 +198,6 @@ void CSCDigiTree::Loop(string sName)
     rhHS_h->SetStats(0);
     rhmHSchID_h->SetStats(0);
 
-    pid_h->SetLineWidth(2);
-    pid13_h->SetLineWidth(2);
-    ED_h->SetLineWidth(2);
     rhmHS_h->SetLineWidth(2);
     rhmHS_lQ_h->SetLineWidth(2);
     rhmHS_mQ_h->SetLineWidth(2);
@@ -251,9 +266,6 @@ void CSCDigiTree::Loop(string sName)
     rhmHS_hQ_h->GetYaxis()->SetTitleOffset(1.45);
     rhmHSchID_h->GetYaxis()->SetTitleOffset(1.4);
 
-    pid_h->GetYaxis()->SetTitle("Entries");
-    pid13_h->GetYaxis()->SetTitle("Entries");
-    ED_h->GetYaxis()->SetTitle("Entries");
     occu_h->GetYaxis()->SetTitle("Layer");
     NoccuE_h->GetYaxis()->SetTitle("Layer");
     NoccuO_h->GetYaxis()->SetTitle("Layer");
@@ -285,9 +297,6 @@ void CSCDigiTree::Loop(string sName)
     rhmHSb_h->GetYaxis()->SetTitle("Entries");
     rhmHSchID_h->GetYaxis()->SetTitle("Chamber Number");
 
-    pid_h->GetXaxis()->CenterTitle();
-    pid13_h->GetXaxis()->CenterTitle();
-    ED_h->GetXaxis()->CenterTitle();
     rhHS_h->GetXaxis()->CenterTitle();
     occu_h->GetXaxis()->CenterTitle();
     NoccuE_h->GetXaxis()->CenterTitle();
@@ -320,9 +329,6 @@ void CSCDigiTree::Loop(string sName)
     rhmHSb_h->GetXaxis()->CenterTitle();
     rhmHSchID_h->GetXaxis()->CenterTitle();
 
-    pid_h->GetYaxis()->CenterTitle();
-    pid13_h->GetYaxis()->CenterTitle();
-    ED_h->GetYaxis()->CenterTitle();
     rhHS_h->GetYaxis()->CenterTitle();
     occu_h->GetYaxis()->CenterTitle();
     NoccuE_h->GetYaxis()->CenterTitle();
@@ -675,14 +681,14 @@ void CSCDigiTree::Loop(string sName)
                     }
                     if(!compFound)
                     {
-                        ED_cF0_h->Fill(recE);
-                        MD_cF0_h->Fill(recM);
+                        plotter.get1D("ED_cF0_h")->Fill(recE);
+                        plotter.get1D("MD_cF0_h")->Fill(recM);
                         NcompM++; 
-                        if(recE < 200.0)NcompM_lE++; 
+                        if(recE < 200.0) NcompM_lE++; 
                         if(recM > 50.0)
                         {
-                            recM50_phi_h->Fill(phi);
-                            recM50_eta_h->Fill(eta);
+                            plotter.get1D("recM50_phi_h")->Fill(phi);
+                            plotter.get1D("recM50_eta_h")->Fill(eta);
                             //cout << "Missing Comparator above threshold: " << jentry << endl;
                             //cout << "Run Number: " << Event_RunNumber << endl;
                             //cout << "Event Number: " << Event_EventNumber << endl;
@@ -710,8 +716,8 @@ void CSCDigiTree::Loop(string sName)
                     if(ST==4 && RI==2)                     rhmHS_me42_h->Fill(minD);
 
                     Ncomp++;
-                    ED_cF1_h->Fill(rhE->at(irh));
-                    MD_cF1_h->Fill(rhMax->at(irh));
+                    plotter.get1D("ED_cF1_h")->Fill(rhE->at(irh));
+                    plotter.get1D("MD_cF1_h")->Fill(rhMax->at(irh));
                     rhHS_rh_h->Fill(fCompP,recPos);
                     if((EC==1 && me1a)||(EC==2 && me1b)) rhmHS_rh_h->Fill(-1.0*minD);
                     else rhmHS_rh_h->Fill(minD);
@@ -758,14 +764,14 @@ void CSCDigiTree::Loop(string sName)
                     for(int jclct = 0; jclct < int(clctQ->at(iclct).size()); jclct++)
                     {
                         int KHS = 32*clctCFEB->at(iclct).at(jclct)+clctKHS->at(iclct).at(jclct);
-                        pid_h->Fill(clctPat->at(iclct).at(jclct));
+                        plotter.get1D("pid_h")->Fill(clctPat->at(iclct).at(jclct));
                         if(fabs( ( (KHS/2.0) + 0.75 ) - RHmean_seg ) < seg_clctDis )
                         {
                             seg_clctDis = fabs( ( (KHS/2.0) + 0.75 ) - RHmean_seg );
                             pid = clctPat->at(iclct).at(jclct);
                         }
 
-                        if(ST==1 && RI==3 && Pt < 5.0) pid13_h->Fill(clctPat->at(iclct).at(jclct));
+                        if(ST==1 && RI==3 && Pt < 5.0) plotter.get1D("pid13_h")->Fill(clctPat->at(iclct).at(jclct));
                         //Find Comparators for this clct
                         for(int icomp = 0; icomp < int(compId->size()); icomp++)
                         {
@@ -812,7 +818,7 @@ void CSCDigiTree::Loop(string sName)
                             if(recE > 500.0) rhmHS_hQ_h->Fill(compPos - recPos);
                             if(fabs(compPos - recPos) > 0.5) rhmHSb_h->Fill(chSid);
                             rhmHSchID_h->Fill(compPos - recPos,chSid);
-                            if(recE) ED_h->Fill(recE);
+                            if(recE) plotter.get1D("ED_h")->Fill(recE);
 
                             if(minD > 10 || minD < -10) continue;
                             if(KHS%2==1)
@@ -949,8 +955,17 @@ void CSCDigiTree::Loop(string sName)
 
                 //Fill Numerators
                 plotter.get1D("pt_h")->Fill(Pt);
-                if(q == 1) plotter.get1D("pt_pmu_h")->Fill(Pt);
-                if(q == -1) plotter.get1D("pt_mmu_h")->Fill(Pt);
+                if(q == 1) 
+                {
+                    plotter.get1D("pt_pmu_h")->Fill(Pt);
+                    plotter.get1D(Form("pt_pmu_%i_me%i%i_h",EC,ST,((RI-1)%3)+1))->Fill(Pt);
+                }
+                if(q == -1) 
+                {
+                    plotter.get1D("pt_mmu_h")->Fill(Pt);
+                    plotter.get1D(Form("pt_mmu_%i_me%i%i_h",EC,ST,((RI-1)%3)+1))->Fill(Pt);
+                }
+
                 plotter.get1D(Form("pt_me%i%i_h",ST,((RI-1)%3)+1))->Fill(Pt);
                 if(Nclct == 0) plotter.get1D("pt_0clct_h")->Fill(Pt);
 
@@ -959,12 +974,14 @@ void CSCDigiTree::Loop(string sName)
 
                 if(q==1) 
                 {
-                    plotter.get1D(Form("pt_pmu_pid%i_h",pid))->Fill(Pt);
+                    plotter.get1D(Form("pt_pmu_%i_pid%i_h",EC,pid))->Fill(Pt);
+                    plotter.get1D(Form("pt_pmu_%i_me%i%i_pid%i_h",EC,ST,((RI-1)%3)+1,pid))->Fill(Pt);
                 }
 
                 if(q==-1) 
                 {
-                    plotter.get1D(Form("pt_mmu_pid%i_h",pid))->Fill(Pt);
+                    plotter.get1D(Form("pt_mmu_%i_pid%i_h",EC,pid))->Fill(Pt);
+                    plotter.get1D(Form("pt_mmu_%i_me%i%i_pid%i_h",EC,ST,((RI-1)%3)+1,pid))->Fill(Pt);
                 }
 
                 plotter.get1D(Form("pt_me%i%i_pid%i_h",ST,((RI-1)%3)+1,pid))->Fill(Pt);
@@ -980,7 +997,7 @@ void CSCDigiTree::Loop(string sName)
                 plotter.get2D("miss1tflct_etaPhi_h")->Fill(eta,phi);
             }
             if(Nlct != 0 && Nlct - Ntflct == -1) { misslctid_h->Fill(missID); miss1lct_phi_h->Fill(phi); miss1lct_eta_h->Fill(eta); }
-            if(Nlct == 0 && Ntflct > 0) { misslcts_phi_h->Fill(phi); misslcts_eta_h->Fill(eta); }
+            if(Nlct == 0 && Ntflct > 0) { plotter.get1D("misslcts_phi_h")->Fill(phi); plotter.get1D("misslcts_eta_h")->Fill(eta); }
             plotter.get2D("nSeg_nLCT_h")->Fill(Nseg,Nlct);
             plotter.get1D("nSegMinusNLCT_h")->Fill(Nseg-Nlct);
             plotter.get1D("nLCTMinusNtfLCT_h")->Fill(Nlct-Ntflct);
@@ -1185,22 +1202,11 @@ void CSCDigiTree::Loop(string sName)
             plotter.write(Form("%sCSCDigiTreeAnaPlotter.root",sName.c_str()));
         myF->cd();
         misslctid_h->Write();
-        misslcts_phi_h->Write();
-        misslcts_eta_h->Write();
         misstflctid_h->Write();
         miss1tflct_phi_h->Write();
         miss1tflct_eta_h->Write();
         miss1lct_phi_h->Write();
         miss1lct_eta_h->Write();
-        pid_h->Write();
-        pid13_h->Write();
-        ED_h->Write();
-        ED_cF0_h->Write();
-        ED_cF1_h->Write();
-        MD_cF0_h->Write();
-        MD_cF1_h->Write();
-        recM50_phi_h->Write();
-        recM50_eta_h->Write();
         occu_h->Write();
         occuE_h->Write();
         occuO_h->Write();
