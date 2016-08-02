@@ -118,6 +118,10 @@ CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
     tree->Branch("segSt",&segSt);
     tree->Branch("segRi",&segRi);
     tree->Branch("segCh",&segCh);
+    tree->Branch("segX",&segX);
+    tree->Branch("segY",&segY);
+    tree->Branch("segdXdZ",&segdXdZ);
+    tree->Branch("segdYdZ",&segdYdZ);
 
     tree->Branch("rhId",&rhId);
     tree->Branch("rhLay",&rhLay);
@@ -383,6 +387,10 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         segSt.clear();
         segRi.clear();
         segCh.clear();
+        segX.clear();
+        segY.clear();
+        segdXdZ.clear();
+        segdYdZ.clear();
 
         rhId.clear();
         rhLay.clear();
@@ -446,10 +454,10 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         vector<int> ch_serialID;
 
-        for (vector<const CSCSegment*>::iterator rechit = range.begin(); rechit!=range.end();++rechit) 
+        for (vector<const CSCSegment*>::iterator iseg = range.begin(); iseg!=range.end();++iseg) 
         {
             // Create the ChamberId
-            DetId id = (*rechit)->geographicalId();
+            DetId id = (*iseg)->geographicalId();
 
             CSCDetId chamberId(id.rawId());
             int chamber = chamberSerial(chamberId);
@@ -457,9 +465,12 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
             segSt.push_back(chamberId.station());
             segRi.push_back(chamberId.ring());
             segCh.push_back(chamberId.chamber());
+            segX.push_back((*iseg)->localPosition().x());
+            segY.push_back((*iseg)->localPosition().y());
+            segdXdZ.push_back( (*iseg)->localDirection().x() / (*iseg)->localDirection().z() );
+            segdYdZ.push_back( (*iseg)->localDirection().y() / (*iseg)->localDirection().z() );
 
-
-            const vector<CSCRecHit2D> hits2d = (*rechit)->specificRecHits();
+            const vector<CSCRecHit2D> hits2d = (*iseg)->specificRecHits();
             for (vector<CSCRecHit2D>::const_iterator hiti=hits2d.begin(); hiti!=hits2d.end(); hiti++)
             {
                 DetId idd = (hiti)->geographicalId();

@@ -102,6 +102,10 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<int> segSt;
         vector<int> segRi;
         vector<int> segCh;
+        vector<float> segX;
+        vector<float> segY;
+        vector<float> segdXdZ;
+        vector<float> segdYdZ;
 
         //RecHit data
         vector<int> rhId;
