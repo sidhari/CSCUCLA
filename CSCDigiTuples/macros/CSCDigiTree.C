@@ -112,7 +112,7 @@ void CSCDigiTree::Loop(string sName)
     plotter.book1D("misslcts_phi_h","Missing LCT muon #phi",128,-3.2,3.2);
     plotter.book1D("misslcts_eta_h","Missing LCT muon #eta",128,-3.2,3.2);
 
-    TH2D *occu_h = new TH2D("occu_h","Occupancy of Half Strips Shifted by CLCT Key Half Strip",21,-10.5,10.5,6,0.5,6.5);
+    plotter.book2D("occu_h","Occupancy of Half Strips Shifted by CLCT Key Half Strip",21,-10.5,10.5,6,0.5,6.5);
     TH2D *occuE_h = new TH2D("occuE_h","Occupancy of Even Half Strips Shifted by CLCT Key Half Strip",21,-10.5,10.5,6,0.5,6.5);
     TH2D *occuO_h = new TH2D("occuO_h","Occupancy of Odd Half Strips Shifted by CLCT Key Half Strip",21,-10.5,10.5,6,0.5,6.5);
     TH2D *NoccuE_h = new TH2D("NoccuE_h","Occupancy of Even Half Strips Shifted by CLCT Key Half Strip",22,-10.5,11.5,7,0.5,7.5);
@@ -172,7 +172,7 @@ void CSCDigiTree::Loop(string sName)
     plotter.book2D("miss1tflct_etaPhi_h","Muon direction for missing tfLCTs;#eta;#phi",64,-3.2,3.2,64,-3.2,3.2);
 
     //Format histos to look nice when I draw them
-    occu_h->SetStats(0);
+    plotter.get2D("occu_h")->SetStats(0);
     NoccuE_h->SetStats(0);
     NoccuO_h->SetStats(0);
     NoccuE_pat10_h->SetStats(0);
@@ -203,8 +203,8 @@ void CSCDigiTree::Loop(string sName)
     rhmHS_mQ_h->SetLineWidth(2);
     rhmHS_hQ_h->SetLineWidth(2);
 
-    occu_h->GetXaxis()->SetTitle("Pattern ID");
-    occu_h->GetXaxis()->SetTitle("Half Strip");
+    plotter.get2D("occu_h")->GetXaxis()->SetTitle("Pattern ID");
+    plotter.get2D("occu_h")->GetXaxis()->SetTitle("Half Strip");
     NoccuE_h->GetXaxis()->SetTitle("Half Strip");
     NoccuO_h->GetXaxis()->SetTitle("Half Strip");
     NoccuE_pat10_h->GetXaxis()->SetTitle("Half Strip");
@@ -236,7 +236,7 @@ void CSCDigiTree::Loop(string sName)
     rhmHSchID_h->GetXaxis()->SetTitle("Difference [Strips]");
 
     float titO = 1.5;
-    occu_h->GetXaxis()->SetTitleOffset(titO);
+    plotter.get2D("occu_h")->GetXaxis()->SetTitleOffset(titO);
     NoccuE_h->GetXaxis()->SetTitleOffset(titO);
     NoccuO_h->GetXaxis()->SetTitleOffset(titO);
     NoccuE_pat10_h->GetXaxis()->SetTitleOffset(titO);
@@ -266,7 +266,7 @@ void CSCDigiTree::Loop(string sName)
     rhmHS_hQ_h->GetYaxis()->SetTitleOffset(1.45);
     rhmHSchID_h->GetYaxis()->SetTitleOffset(1.4);
 
-    occu_h->GetYaxis()->SetTitle("Layer");
+    plotter.get2D("occu_h")->GetYaxis()->SetTitle("Layer");
     NoccuE_h->GetYaxis()->SetTitle("Layer");
     NoccuO_h->GetYaxis()->SetTitle("Layer");
     NoccuE_pat10_h->GetYaxis()->SetTitle("Layer");
@@ -298,7 +298,7 @@ void CSCDigiTree::Loop(string sName)
     rhmHSchID_h->GetYaxis()->SetTitle("Chamber Number");
 
     rhHS_h->GetXaxis()->CenterTitle();
-    occu_h->GetXaxis()->CenterTitle();
+    plotter.get2D("occu_h")->GetXaxis()->CenterTitle();
     NoccuE_h->GetXaxis()->CenterTitle();
     NoccuO_h->GetXaxis()->CenterTitle();
     NoccuE_pat10_h->GetXaxis()->CenterTitle();
@@ -330,7 +330,7 @@ void CSCDigiTree::Loop(string sName)
     rhmHSchID_h->GetXaxis()->CenterTitle();
 
     rhHS_h->GetYaxis()->CenterTitle();
-    occu_h->GetYaxis()->CenterTitle();
+    plotter.get2D("occu_h")->GetYaxis()->CenterTitle();
     NoccuE_h->GetYaxis()->CenterTitle();
     NoccuO_h->GetYaxis()->CenterTitle();
     NoccuE_pat10_h->GetYaxis()->CenterTitle();
@@ -362,7 +362,7 @@ void CSCDigiTree::Loop(string sName)
     rhmHSchID_h->GetYaxis()->CenterTitle();
 
     float labelS = 0.08;
-    occu_h->GetXaxis()->SetLabelSize(labelS);
+    plotter.get2D("occu_h")->GetXaxis()->SetLabelSize(labelS);
     NoccuE_h->GetXaxis()->SetLabelSize(labelS);
     NoccuO_h->GetXaxis()->SetLabelSize(labelS);
     NoccuE_pat10_h->GetXaxis()->SetLabelSize(labelS);
@@ -387,7 +387,7 @@ void CSCDigiTree::Loop(string sName)
     occuO_h->GetXaxis()->SetLabelSize(labelS);
 
     labelS = 0.11;
-    occu_h->GetYaxis()->SetLabelSize(labelS);
+    plotter.get2D("occu_h")->GetYaxis()->SetLabelSize(labelS);
     NoccuE_h->GetYaxis()->SetLabelSize(labelS);
     NoccuO_h->GetYaxis()->SetLabelSize(labelS);
     NoccuE_pat10_h->GetYaxis()->SetLabelSize(labelS);
@@ -416,7 +416,7 @@ void CSCDigiTree::Loop(string sName)
     rhmHS_hQ_h->GetYaxis()->SetLabelSize(0.03);
 
     labelS = 0.08;
-    occu_h->GetZaxis()->SetLabelSize(labelS);
+    plotter.get2D("occu_h")->GetZaxis()->SetLabelSize(labelS);
     NoccuE_h->GetYaxis()->SetLabelSize(labelS);
     NoccuO_h->GetYaxis()->SetLabelSize(labelS);
     NoccuE_pat10_h->GetYaxis()->SetLabelSize(labelS);
@@ -441,7 +441,7 @@ void CSCDigiTree::Loop(string sName)
     occuO_h->GetZaxis()->SetLabelSize(labelS);
 
     int mCol = 2;
-    occu_h->SetMarkerColor(mCol);
+    plotter.get2D("occu_h")->SetMarkerColor(mCol);
     NoccuE_h->SetMarkerColor(mCol);
     NoccuO_h->SetMarkerColor(mCol);
     NoccuE_pat10_h->SetMarkerColor(mCol);
@@ -466,7 +466,7 @@ void CSCDigiTree::Loop(string sName)
     occuO_h->SetMarkerColor(mCol);
 
     float mS = 1.8;
-    occu_h->SetMarkerSize(mS);
+    plotter.get2D("occu_h")->SetMarkerSize(mS);
     NoccuE_h->SetMarkerSize(mS);
     NoccuO_h->SetMarkerSize(mS);
     NoccuE_pat10_h->SetMarkerSize(mS);
@@ -538,7 +538,7 @@ void CSCDigiTree::Loop(string sName)
 
     for(int iy = 1; iy < 7; iy++)
     {
-        occu_h->GetYaxis()->SetBinLabel(iy,Form("%i",iy));
+        plotter.get2D("occu_h")->GetYaxis()->SetBinLabel(iy,Form("%i",iy));
         NoccuO_h->GetYaxis()->SetBinLabel(iy,Form("%i",iy));
         NoccuE_h->GetYaxis()->SetBinLabel(iy,Form("%i",iy));
         NoccuO_pat10_h->GetYaxis()->SetBinLabel(iy,Form("%i",iy));
@@ -563,7 +563,7 @@ void CSCDigiTree::Loop(string sName)
 
     for(int ix = 1; ix < 23; ix+=5)
     {
-        occu_h->GetXaxis()->SetBinLabel(ix,Form("%i",ix - 11));
+        plotter.get2D("occu_h")->GetXaxis()->SetBinLabel(ix,Form("%i",ix - 11));
         NoccuO_h->GetXaxis()->SetBinLabel(ix,Form("%i",ix - 11));
         NoccuE_h->GetXaxis()->SetBinLabel(ix,Form("%i",ix - 11));
         NoccuE_pat10_h->GetXaxis()->SetBinLabel(ix,Form("%i",ix - 11));
@@ -793,7 +793,7 @@ void CSCDigiTree::Loop(string sName)
                                 }
                                 if(fabs(diffN) < fabs(minD)) minD = diffN;
                             }//jcomp
-                            occu_h->Fill(minD,layN);
+                            plotter.get2D("occu_h")->Fill(minD,layN);
                             float recPos = -99.9;
                             float recE = -999.0;
                             for(int irh = 0; irh < int(rhId->size()); irh++)
@@ -1064,7 +1064,7 @@ void CSCDigiTree::Loop(string sName)
     {
 
         /*c1->cd();
-          occu_h->Draw("colz text");
+          plotter.get2D("occu_h")->Draw("colz text");
           c1->SaveAs(Form("../%s/plots/occu.png",sName.c_str()));
 
           occuE_h->Draw("colz text");
@@ -1207,7 +1207,6 @@ void CSCDigiTree::Loop(string sName)
         miss1tflct_eta_h->Write();
         miss1lct_phi_h->Write();
         miss1lct_eta_h->Write();
-        occu_h->Write();
         occuE_h->Write();
         occuO_h->Write();
         NoccuE_h->Write();
