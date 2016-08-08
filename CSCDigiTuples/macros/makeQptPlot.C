@@ -35,7 +35,7 @@
     eff6->SetLineColor(632);
     eff5->SetLineColor(612);
     eff4->SetLineColor(419);
-    eff3->SetLineColor(428);
+    eff3->SetLineColor(kOrange);
     eff2->SetLineColor(402);
 
     eff10->SetLineWidth(2);
@@ -48,15 +48,15 @@
     eff3->SetLineWidth(2);
     eff2->SetLineWidth(2);
 
-    eff10->Draw("");
-    eff9->Draw("same");
-    eff8->Draw("same");
-    eff7->Draw("same");
-    eff6->Draw("same");
-    eff5->Draw("same");
-    eff4->Draw("same");
-    eff3->Draw("same");
-    eff2->Draw("same");
+    eff10->Draw("AP");
+    eff9->Draw("P,same");
+    eff8->Draw("P,same");
+    eff7->Draw("P,same");
+    eff6->Draw("P,same");
+    eff5->Draw("P,same");
+    eff4->Draw("P,same");
+    eff3->Draw("P,same");
+    eff2->Draw("P,same");
 
     eff10->GetYaxis()->SetRangeUser(0.0,1.0);
     eff10->GetXaxis()->SetRangeUser(0.0,15.0);

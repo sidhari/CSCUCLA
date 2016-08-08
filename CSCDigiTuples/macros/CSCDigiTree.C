@@ -77,6 +77,11 @@ void CSCDigiTree::Loop(string sName)
                             Form("p_{T} of #mu^{+} for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
                     plotter.book1D(Form("pt_mmu_2_me%i%i_h",station,((ring-1)%3)+1),
                             Form("p_{T} of #mu^{-} for all LCTs in ME%i/%i",station,((ring-1)%3)+1),200,0.0,100.0);
+                    plotter.book2D(Form("xSeg_KHS_me%i%i_h",station,((ring-1)%3)+1),
+                            ";Segment X Position [strip/2]; Key Half Strip [Strip/2]",226,-0.5,225.5,226,-0.5,225.5);
+                    plotter.book1D(Form("xSegMKHS_me%i%i_h",station,((ring-1)%3)+1),";Difference [Strip]",40,-2.0,2.0);
+                    plotter.book2D(Form("SegA_spt_me%i%i_h",station,((ring-1)%3)+1),
+                            ";EC*q*p_{T} [e*GeV];#frac{dx}{dz} #left[#frac{strips}{layer}#right]",200,-100.0,100.0,40,-2.0,2.0);
                 }
 
                 plotter.book1D(Form("pt_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
@@ -727,6 +732,7 @@ void CSCDigiTree::Loop(string sName)
 
                 int Nclct = 0;
                 int pid = -9;
+                int khs = -9;
                 int Nlct_seg = 0;
                 float seg_clctDis = 999.9;
                 plotter.get1D("pt_seg_h")->Fill(Pt);
@@ -767,6 +773,7 @@ void CSCDigiTree::Loop(string sName)
                         {
                             seg_clctDis = fabs( ( (KHS/2.0) + 0.75 ) - RHmean_seg );
                             pid = clctPat->at(iclct).at(jclct);
+                            khs = KHS;
                         }
 
                         if(ST==1 && RI==3 && Pt < 5.0) plotter.get1D("pid13_h")->Fill(clctPat->at(iclct).at(jclct));
@@ -950,6 +957,11 @@ void CSCDigiTree::Loop(string sName)
                 if(Nlct_seg == 0 || Ntflct_seg == 0) missID = chSid;
                 //if(Nrh_seg != 4) continue;
                 plotter.get1D("seg_clctDis_h")->Fill(seg_clctDis);
+
+                //Fill Segment info
+                plotter.get2D(Form("xSeg_KHS_me%i%i_h",ST,((RI-1)%3)+1))->Fill(2.0*segX->at(iseg),khs);
+                plotter.get1D(Form("xSegMKHS_me%i%i_h",ST,((RI-1)%3)+1))->Fill(segX->at(iseg) - float(khs + 0.5)/2.0);
+                plotter.get2D(Form("SegA_spt_me%i%i_h",ST,((RI-1)%3)+1))->Fill(float(-2*EC+3)*float(q)*Pt,segdXdZ->at(iseg));
 
                 //Fill Numerators
                 plotter.get1D("pt_h")->Fill(Pt);
@@ -1197,7 +1209,7 @@ void CSCDigiTree::Loop(string sName)
 
 
 
-        plotter.write(Form("%sCSCDigiTreeAna.root",sName.c_str()));
+            plotter.write(Form("%sCSCDigiTreeAna.root",sName.c_str()));
 
         cout << "Nrh: " << Nrh << " Ncomp: " << Ncomp << " NcompM: " << NcompM << " NcompM_lE: " << NcompM_lE << endl;
 

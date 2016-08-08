@@ -460,14 +460,35 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
             DetId id = (*iseg)->geographicalId();
 
             CSCDetId chamberId(id.rawId());
+            const CSCChamber *segChamber = theCSC->chamber(chamberId);
+            const CSCLayer *segLay3 = segChamber->layer(3);
+            const CSCLayer *segLay4 = segChamber->layer(4);
+            const CSCLayerGeometry *segLay3Geo = segLay3->geometry();
             int chamber = chamberSerial(chamberId);
+
+            LocalPoint lzero(0.0,0.0,0.0);
+            GlobalPoint lay4zero = segLay4->toGlobal(lzero);
+            LocalPoint lay4zeroIn3 = segLay3->toLocal(lay4zero);
+            float cm2lay = fabs(lay4zeroIn3.z());
+
             segEc.push_back(chamberId.endcap());
             segSt.push_back(chamberId.station());
             segRi.push_back(chamberId.ring());
             segCh.push_back(chamberId.chamber());
-            segX.push_back((*iseg)->localPosition().x());
+
+            LocalPoint segLPlayer = segLay3->toLocal(segChamber->toGlobal((*iseg)->localPosition()));
+            LocalVector segLVlayer = segLay3->toLocal(segChamber->toGlobal((*iseg)->localDirection()));
+            float scale = -1.0*segLPlayer.z()/segLVlayer.z();
+            LocalVector tV = scale*segLVlayer;
+            LocalPoint tP = segLPlayer + tV;
+            float segStr = segLay3Geo->strip(tP);
+            int strI = floor(segStr);
+            float cm2strip = fabs( segLay3Geo->xOfStrip(strI,tP.y()) - segLay3Geo->xOfStrip(strI+1,tP.y()) );
+            cout << "LP z: " << tP.z() << endl;
+
+            segX.push_back(segLay3Geo->strip(tP));
             segY.push_back((*iseg)->localPosition().y());
-            segdXdZ.push_back( (*iseg)->localDirection().x() / (*iseg)->localDirection().z() );
+            segdXdZ.push_back( ( (*iseg)->localDirection().x() / cm2strip ) / ( (*iseg)->localDirection().z() / cm2lay ) );
             segdYdZ.push_back( (*iseg)->localDirection().y() / (*iseg)->localDirection().z() );
 
             const vector<CSCRecHit2D> hits2d = (*iseg)->specificRecHits();

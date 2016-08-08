@@ -48,6 +48,10 @@ class CSCDigiTree {
         vector<int>     *segSt;
         vector<int>     *segRi;
         vector<int>     *segCh;
+        vector<float>     *segX;
+        vector<float>     *segY;
+        vector<float>     *segdXdZ;
+        vector<float>     *segdYdZ;
         vector<int>     *rhId;
         vector<int>     *rhLay;
         vector<float>     *rhPos;
@@ -105,6 +109,10 @@ class CSCDigiTree {
         TBranch        *b_segSt;   //!
         TBranch        *b_segRi;   //!
         TBranch        *b_segCh;   //!
+        TBranch        *b_segX;   //!
+        TBranch        *b_segY;   //!
+        TBranch        *b_segdXdZ;   //!
+        TBranch        *b_segdYdZ;   //!
         TBranch        *b_rhId;   //!
         TBranch        *b_rhLay;   //!
         TBranch        *b_rhPos;   //!
@@ -218,6 +226,10 @@ void CSCDigiTree::Init(TTree *tree)
     segSt = 0;
     segRi = 0;
     segCh = 0;
+    segX = 0;
+    segY = 0;
+    segdXdZ = 0;
+    segdYdZ = 0;
     rhId = 0;
     rhLay = 0;
     rhPos = 0;
@@ -279,6 +291,10 @@ void CSCDigiTree::Init(TTree *tree)
     fChain->SetBranchAddress("segSt", &segSt, &b_segSt);
     fChain->SetBranchAddress("segRi", &segRi, &b_segRi);
     fChain->SetBranchAddress("segCh", &segCh, &b_segCh);
+    fChain->SetBranchAddress("segX", &segX, &b_segX);
+    fChain->SetBranchAddress("segY", &segY, &b_segY);
+    fChain->SetBranchAddress("segdXdZ", &segdXdZ, &b_segdXdZ);
+    fChain->SetBranchAddress("segdYdZ", &segdYdZ, &b_segdYdZ);
     fChain->SetBranchAddress("rhId", &rhId, &b_rhId);
     fChain->SetBranchAddress("rhLay", &rhLay, &b_rhLay);
     fChain->SetBranchAddress("rhPos", &rhPos, &b_rhPos);

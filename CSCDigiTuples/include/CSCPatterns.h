@@ -13,6 +13,8 @@
 #include <DataFormats/CSCDigi/interface/CSCWireDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCStripDigiCollection.h>
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
+#include "Geometry/CSCGeometry/interface/CSCChamber.h"
+#include "Geometry/CSCGeometry/interface/CSCLayer.h"
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
@@ -30,6 +32,11 @@
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "CSCUCLA/CSCDigiTuples/include/MuonQualityCuts.h"
 
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
+#include "DataFormats/GeometryVector/interface/GlobalVector.h"
+#include "DataFormats/GeometryVector/interface/LocalPoint.h"
+#include "DataFormats/GeometryVector/interface/LocalVector.h"
+
 #include "DataFormats/CSCRecHit/interface/CSCSegment.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 
@@ -40,6 +47,7 @@
 #include "TLorentzVector.h"
 #include <memory>
 #include <vector>
+#include <math.h>
 #include "TH1F.h"
 
 using namespace std;
