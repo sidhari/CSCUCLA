@@ -94,6 +94,9 @@ void CSCDigiTree::Loop(string sName)
                         Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
                 plotter.book1D(Form("pt_mmu_2_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
                         Form("p_{T} of Muons in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),200,0.0,100.0);
+                plotter.book1D(Form("SegA_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),
+                        Form("Segment Angle in ME%i/%i LCTs with pid %i",station,((ring-1)%3)+1,pat),40,-2.0,2.0);
+                plotter.book1D(Form("xSegMKHS_me%i%i_pid%i_h",station,((ring-1)%3)+1,pat),";Difference [Strip]",40,-2.0,2.0);
             }
         }
         plotter.book1D(Form("pt_pid%i_h",pat),Form("p_{T} of Muons for LCTs with pid = %i",pat),200,0.0,100.0);
@@ -981,6 +984,9 @@ void CSCDigiTree::Loop(string sName)
 
                 //Check to see if there was an LCT and Fill Denominators
                 if(pid == -9) continue;
+
+                plotter.get1D(Form("SegA_me%i%i_pid%i_h",ST,((RI-1)%3)+1,pid))->Fill(segdXdZ->at(iseg));
+                plotter.get1D(Form("xSegMKHS_me%i%i_pid%i_h",ST,((RI-1)%3)+1,pid))->Fill(segX->at(iseg) - float(khs + 0.5)/2.0);
 
                 if(q==1) 
                 {
