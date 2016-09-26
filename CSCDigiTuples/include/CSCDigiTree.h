@@ -161,8 +161,8 @@ class CSCDigiTree {
         virtual Long64_t LoadTree(Long64_t entry);
         virtual void     Init(TTree *tree);
         virtual void     Loop(string sName);
-        virtual void     DrawBoxes(float x_pos, float y_pos);
-        virtual void     DrawPats(int pid);
+        //virtual void     DrawBoxes(float x_pos, float y_pos);
+        //virtual void     DrawPats(int pid);
         virtual Bool_t   Notify();
         virtual int      chamberSerial(int ec, int st, int ri, int ch );
         virtual void     Show(Long64_t entry = -1);
