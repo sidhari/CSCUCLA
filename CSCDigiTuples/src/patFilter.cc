@@ -109,20 +109,19 @@ void patFilter::emulate(hsData data)
     }
 
     //Apply Pattern Filter to each time bin and khs and fill highest pattern number into a vector to parse later
-    vector<int> Nlays;//time
-    vector<int> Bpids;//time
-    vector<int> Bkhss;//time
+    vector<vector<int>> tPids;
+    vector<vector<int>> tNlays;
     for(int t = 0; t < 16; t++)
     {
-        int BNlay = 0;
-        int Bpid = 0;
-        int Bkhs = -99;
         vector<vector<bool>> dataNow = EXdata[t];
-        vector<vector<int>> bPats;
+        vector<vector<int>> khsPids;
+        vector<vector<int>> khsNlays;
         for(int khs = 0; khs < dataNow[0].size(); khs++)
         {
             int NlayMax = -1;
             int Bpat = -1;
+            khsPids.clear();
+            khsNlays.clear();
             for(int pat = 10; pat > 1; pat--)
             {
                 vector<vector<bool>> dataHereNow = dataNow;
@@ -152,23 +151,53 @@ void patFilter::emulate(hsData data)
                         if(dataHereNow[lay][khs]){Nlay++; break;}
                     }
                 }
-                if(Nlay < 4) continue;
                 if(Nlay > NlayMax) {NlayMax = Nlay; Bpat = pat;}
                 //if(Nlay == 6) break;//If this happens you found the solution for this khs
             }//pat  For each pattern, filter data through pat and count layers. If Nlay > NlayMax update buffer
-            if((NlayMax == BNlay && Bpid > Bpat) || NlayMax > BNlay) {BNlay = NlayMax; Bpid = Bpat; Bkhs = khs;}
-            //if(BNlay == 6 && Bpid == 10) break;//if this happens this is the solution, so no need to keep looking
+            khsPids.push_back(Bpat);
+            khsNlays.push_back(Bpat);
         }//khs  For each khs apply all patterns and decide if it is better than anything found so far
-        Nlays.push_back(BNlay);
-        Bpids.push_back(Bpid);
-        Bkhss.push_back(Bkhs);
+        tPids.push_back(khsPids);
+        tNlays.push_back(khsNlays);
     }//t  For each time bin calculate NlayMax for each khs
     emuPatID0 = 0;
     emuKHS0 = 0;
+    Nlay0 = 0;
+    T0 = 0;
     int NlayBuf = 0;
     for(int t = 0; t < 16; t++)
     {
-        if(Nlays[t] >= NlayBuf && Bpids[t] > emuPatID0){ emuPatID0 = Bpids[t]; emuKHS0 = Bkhss[t]; T0 = t; Nlay0 = Nlays[t];}
+        int maxNlay = 0;
+        int maxPid = 0;
+        int bestKHS = -99;
+        for(int khs = 0; khs < tPids[t].size(); khs++)
+        {
+            if(tNlays[t][khs] > maxNlay) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
+            else if(tNlays[t][khs] == maxNlay && tPids[t][khs] > maxPid) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
+        }
+        if(maxNlay < 4) continue;
+        if(maxNlay > Nlay0) {emuPatID0 = maxNlay; emuKHS0 = bextKHS; Nlay0 = maxNlay; T0 = t;}
+        else if(maxNlay == Nlay0 && maxPid > emuPatID0) {emuPatID0 = maxNlay; emuKHS0 = bextKHS; Nlay0 = maxNlay; T0 = t;}
+    }
+    emuPatID1 = 0;
+    emuKHS1 = 0;
+    Nlay1 = 0;
+    T1 = 0;
+    int NlayBuf = 0;
+    for(int t = 0; t < 16; t++)
+    {
+        int maxNlay = 0;
+        int maxPid = 0;
+        int bestKHS = -99;
+        for(int khs = 0; khs < tPids[t].size(); khs++)
+        {
+            if(khs > emuKHS0 - 10 && khs < emuKHS0 + 10) continue;
+            if(tNlays[t][khs] > maxNlay) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
+            else if(tNlays[t][khs] == maxNlay && tPids[t][khs] > maxPid) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
+        }
+        if(maxNlay < 4) continue;
+        if(maxNlay > Nlay1) {emuPatID1 = maxNlay; emuKHS1 = bextKHS; Nlay1 = maxNlay; T1 = t;}
+        else if(maxNlay == Nlay1 && maxPid > emuPatID1) {emuPatID1 = maxNlay; emuKHS1 = bextKHS; Nlay1 = maxNlay; T1 = t;}
     }
 }
 
