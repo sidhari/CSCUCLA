@@ -172,9 +172,16 @@ void patFilter::emulate(hsData data)
         int bestKHS = -99;
         for(int khs = 0; khs < tPids[t].size(); khs++)
         {
+            cout << tNlays[t][khs] << " ";
+        }
+        cout << endl;
+        for(int khs = 0; khs < tPids[t].size(); khs++)
+        {
             if(tNlays[t][khs] > maxNlay) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
             else if(tNlays[t][khs] == maxNlay && tPids[t][khs] > maxPid) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
+            cout << tPids[t][khs] << " ";
         }
+        cout << endl << endl;
         if(maxNlay < 4) continue;
         if(maxNlay > Nlay0) {emuPatID0 = maxNlay; emuKHS0 = bextKHS; Nlay0 = maxNlay; T0 = t;}
         else if(maxNlay == Nlay0 && maxPid > emuPatID0) {emuPatID0 = maxNlay; emuKHS0 = bextKHS; Nlay0 = maxNlay; T0 = t;}
