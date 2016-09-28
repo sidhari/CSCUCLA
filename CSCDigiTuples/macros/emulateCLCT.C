@@ -21,8 +21,8 @@ void CSCDigiTree::Loop(string sName)
     HistGetter plotter;
     plotter.book1D("dataEmuDiff_KHS_h","Difference of Emulated and Digi CLCT KHS",21,-10.5,10.5);
     plotter.book1D("dataEmuDiff_pid_h","Difference of Emulated and Digi CLCT PID",21,-10.5,10.5);
-    plotter.book1D("KHS_h","Difference of Emulated and Digi CLCT KHS",200,-0.5,199.5);
-    plotter.book1D("pid_h","Difference of Emulated and Digi CLCT PID",10,0.5,10.5);
+    plotter.book1D("KHS_h","Emulated CLCT KHS",200,-0.5,199.5);
+    plotter.book1D("pid_h","Emulated CLCT PID",10,0.5,10.5);
     plotter.book1D("Nlay_h","Number of Layers in CLCT",6,0.5,6.5);
     plotter.book1D("T_h","Time bin of CLCT",16,-0.5,15.5);
     plotter.book2D("dataEmu_KHS_h","Emulated and Digi CLCT KHS",201,-0.5,200.5,201,-0.5,200.5);
@@ -41,7 +41,7 @@ void CSCDigiTree::Loop(string sName)
         nb = fChain->GetEntry(jentry);   nbytes += nb;
 
         //if(jentry%(nentries/1000) == 0) cout << "Loading event " << jentry << " out of " << nentries << endl; if(!os) continue;
-        if(jentry%10 == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
+        if(jentry%100 == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
         //cout << "Loading event " << jentry << " out of " << nentries << endl; 
         if(!os) continue;
 
@@ -88,7 +88,37 @@ void CSCDigiTree::Loop(string sName)
                 {
                     int pat = lctPat->at(ilct).at(jlct);
                     int khs = lctKHS->at(ilct).at(jlct);
-                    patF.emulate(comps);
+                    patF.emulate(comps,0);
+                    if(pat - patF.getEmuPatID(0) != 0 && 0)
+                    {
+                        cout << "PID does not match. Data PID: " << pat << " Emu PID: " << patF.getEmuPatID(0);
+                        comps.print();
+                        cout << endl;
+                        vector<vector<bool>> dataFilter = patF.filter(comps,pat,khs);
+                        vector<vector<bool>> emuFilter = patF.filter(comps,patF.getEmuPatID(0),patF.getEmuKHS(0));
+                        for(int ll = 0; ll < 6; ll++)
+                        {
+                            if(ll%2==0) cout << " ";
+                            for(int hs = 0; hs < int(dataFilter[ll].size()); hs++)
+                            {
+                                if(dataFilter[ll][hs]) cout << "x";
+                                else cout << "-";
+                            }
+                            cout << endl;
+                        }
+                        cout << endl;
+                        for(int ll = 0; ll < 6; ll++)
+                        {
+                            if(ll%2==0) cout << " ";
+                            for(int hs = 0; hs < int(emuFilter[ll].size()); hs++)
+                            {
+                                if(emuFilter[ll][hs]) cout << "x";
+                                else cout << "-";
+                            }
+                            cout << endl;
+                        }
+                        cout << endl;
+                    }
                     plotter.get1D("dataEmuDiff_KHS_h")->Fill(khs - patF.getEmuKHS(0));
                     plotter.get1D("dataEmuDiff_pid_h")->Fill(pat - patF.getEmuPatID(0));
                     plotter.get2D("dataEmu_KHS_h")->Fill(khs,patF.getEmuKHS(0));

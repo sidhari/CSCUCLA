@@ -67,7 +67,7 @@ vector<vector<bool>> patFilter::filter(hsData data, int pat, int khs)
     return sumBuf;
 }
 
-void patFilter::emulate(hsData data)
+void patFilter::emulate(hsData data, bool debug)
 {
     //Get the Chamber type for this data and set stager bool
     int CT = data.getCT();
@@ -114,14 +114,13 @@ void patFilter::emulate(hsData data)
     for(int t = 0; t < 16; t++)
     {
         vector<vector<bool>> dataNow = EXdata[t];
-        vector<vector<int>> khsPids;
-        vector<vector<int>> khsNlays;
+        vector<int> khsPids;
+        vector<int> khsNlays;
+        if(debug) cout << "t = " << t << endl;
         for(int khs = 0; khs < dataNow[0].size(); khs++)
         {
             int NlayMax = -1;
             int Bpat = -1;
-            khsPids.clear();
-            khsNlays.clear();
             for(int pat = 10; pat > 1; pat--)
             {
                 vector<vector<bool>> dataHereNow = dataNow;
@@ -151,11 +150,13 @@ void patFilter::emulate(hsData data)
                         if(dataHereNow[lay][khs]){Nlay++; break;}
                     }
                 }
+                if(debug) cout << Nlay << " ";
                 if(Nlay > NlayMax) {NlayMax = Nlay; Bpat = pat;}
                 //if(Nlay == 6) break;//If this happens you found the solution for this khs
             }//pat  For each pattern, filter data through pat and count layers. If Nlay > NlayMax update buffer
+            if(debug) cout << endl;
             khsPids.push_back(Bpat);
-            khsNlays.push_back(Bpat);
+            khsNlays.push_back(NlayMax);
         }//khs  For each khs apply all patterns and decide if it is better than anything found so far
         tPids.push_back(khsPids);
         tNlays.push_back(khsNlays);
@@ -164,38 +165,39 @@ void patFilter::emulate(hsData data)
     emuKHS0 = 0;
     Nlay0 = 0;
     T0 = 0;
-    int NlayBuf = 0;
+    int maxNlay = 0;
+    int maxPid = 0;
+    int bestKHS = -99;
     for(int t = 0; t < 16; t++)
     {
-        int maxNlay = 0;
-        int maxPid = 0;
-        int bestKHS = -99;
+        if(debug) cout << "t = " << t << endl;
         for(int khs = 0; khs < tPids[t].size(); khs++)
         {
-            cout << tNlays[t][khs] << " ";
+            if(debug && tNlays[t][khs] > 0) cout << tNlays[t][khs] << " ";
         }
-        cout << endl;
+        if(debug) cout << endl;
         for(int khs = 0; khs < tPids[t].size(); khs++)
         {
             if(tNlays[t][khs] > maxNlay) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
             else if(tNlays[t][khs] == maxNlay && tPids[t][khs] > maxPid) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
-            cout << tPids[t][khs] << " ";
+            if(debug && tNlays[t][khs] > 0) cout << tPids[t][khs] << " ";
         }
-        cout << endl << endl;
+        if(debug) cout << endl << endl;
         if(maxNlay < 4) continue;
-        if(maxNlay > Nlay0) {emuPatID0 = maxNlay; emuKHS0 = bextKHS; Nlay0 = maxNlay; T0 = t;}
-        else if(maxNlay == Nlay0 && maxPid > emuPatID0) {emuPatID0 = maxNlay; emuKHS0 = bextKHS; Nlay0 = maxNlay; T0 = t;}
+        if(maxNlay > Nlay0) {emuPatID0 = maxNlay; emuKHS0 = bestKHS; Nlay0 = maxNlay; T0 = t;}
+        else if(maxNlay == Nlay0 && maxPid > emuPatID0) {emuPatID0 = maxPid; emuKHS0 = bestKHS; Nlay0 = maxNlay; T0 = t;}
     }
+    if(debug) cout << "emuPatID0: " << emuPatID0 << " emuKHS0: " << emuKHS0 << " Nlay0: " << Nlay0 << " T0: " << T0 << endl;
+
     emuPatID1 = 0;
     emuKHS1 = 0;
     Nlay1 = 0;
     T1 = 0;
-    int NlayBuf = 0;
+    maxNlay = 0;
+    maxPid = 0;
+    bestKHS = -99;
     for(int t = 0; t < 16; t++)
     {
-        int maxNlay = 0;
-        int maxPid = 0;
-        int bestKHS = -99;
         for(int khs = 0; khs < tPids[t].size(); khs++)
         {
             if(khs > emuKHS0 - 10 && khs < emuKHS0 + 10) continue;
@@ -203,9 +205,10 @@ void patFilter::emulate(hsData data)
             else if(tNlays[t][khs] == maxNlay && tPids[t][khs] > maxPid) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
         }
         if(maxNlay < 4) continue;
-        if(maxNlay > Nlay1) {emuPatID1 = maxNlay; emuKHS1 = bextKHS; Nlay1 = maxNlay; T1 = t;}
-        else if(maxNlay == Nlay1 && maxPid > emuPatID1) {emuPatID1 = maxNlay; emuKHS1 = bextKHS; Nlay1 = maxNlay; T1 = t;}
+        if(maxNlay > Nlay1) {emuPatID1 = maxNlay; emuKHS1 = bestKHS; Nlay1 = maxNlay; T1 = t;}
+        else if(maxNlay == Nlay1 && maxPid > emuPatID1) {emuPatID1 = maxPid; emuKHS1 = bestKHS; Nlay1 = maxNlay; T1 = t;}
     }
+    if(debug) cout << "emuPatID1: " << emuPatID1 << " emuKHS1: " << emuKHS1 << " Nlay1: " << Nlay1 << " T1: " << T1 << endl;
 }
 
 void patFilter::print()
@@ -225,54 +228,6 @@ void patFilter::print()
         cout << endl;
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

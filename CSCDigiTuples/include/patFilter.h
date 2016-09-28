@@ -24,7 +24,7 @@ class patFilter
         ~patFilter();
 
         vector<vector<bool>> filter(hsData data, int pat, int khs);
-        void emulate(hsData data);
+        void emulate(hsData data, bool debug);
         int getEmuKHS(int n){if(n==0) return emuKHS0; else return emuKHS1;};
         int getEmuPatID(int n){if(n==0) return emuPatID0; else return emuPatID1;};
         int getEmuNlay(int n){if(n==0) return Nlay0; else return Nlay1;};
