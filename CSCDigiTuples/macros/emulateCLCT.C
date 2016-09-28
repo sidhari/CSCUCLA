@@ -37,11 +37,11 @@ void CSCDigiTree::Loop(string sName)
     {
         Long64_t ientry = LoadTree(jentry);
         if (ientry < 0) break;
-        if (jentry == 2000) break;
+        if (jentry == 100) break;
         nb = fChain->GetEntry(jentry);   nbytes += nb;
 
         //if(jentry%(nentries/1000) == 0) cout << "Loading event " << jentry << " out of " << nentries << endl; if(!os) continue;
-        if(jentry%100 == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
+        if(jentry%10 == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
         //cout << "Loading event " << jentry << " out of " << nentries << endl; 
         if(!os) continue;
 
@@ -89,15 +89,15 @@ void CSCDigiTree::Loop(string sName)
                     int pat = lctPat->at(ilct).at(jlct);
                     int khs = lctKHS->at(ilct).at(jlct);
                     patF.emulate(comps);
-                    plotter.get1D("dataEmuDiff_KHS_h")->Fill(khs - patF.getEmuKHS());
-                    plotter.get1D("dataEmuDiff_pid_h")->Fill(pat - patF.getEmuPatID());
-                    plotter.get2D("dataEmu_KHS_h")->Fill(khs,patF.getEmuKHS());
-                    plotter.get2D("dataEmu_pid_h")->Fill(pat,patF.getEmuPatID());
-                    plotter.get2D("Nlay_pid_h")->Fill(patF.getEmuNlay(),patF.getEmuPatID());
-                    plotter.get1D("KHS_h")->Fill(patF.getEmuKHS());
-                    plotter.get1D("pid_h")->Fill(patF.getEmuPatID());
-                    plotter.get1D("T_h")->Fill(patF.getEmuTime());
-                    plotter.get1D("Nlay_h")->Fill(patF.getEmuNlay());
+                    plotter.get1D("dataEmuDiff_KHS_h")->Fill(khs - patF.getEmuKHS(0));
+                    plotter.get1D("dataEmuDiff_pid_h")->Fill(pat - patF.getEmuPatID(0));
+                    plotter.get2D("dataEmu_KHS_h")->Fill(khs,patF.getEmuKHS(0));
+                    plotter.get2D("dataEmu_pid_h")->Fill(pat,patF.getEmuPatID(0));
+                    plotter.get2D("Nlay_pid_h")->Fill(patF.getEmuNlay(0),patF.getEmuPatID(0));
+                    plotter.get1D("KHS_h")->Fill(patF.getEmuKHS(0));
+                    plotter.get1D("pid_h")->Fill(patF.getEmuPatID(0));
+                    plotter.get1D("T_h")->Fill(patF.getEmuTime(0));
+                    plotter.get1D("Nlay_h")->Fill(patF.getEmuNlay(0));
                 }
             }
         }//iseg
