@@ -25,6 +25,7 @@ void CSCDigiTree::Loop(string sName)
     plotter.book1D("pid_h","Emulated CLCT PID",10,0.5,10.5);
     plotter.book1D("Nlay_h","Number of Layers in CLCT",6,0.5,6.5);
     plotter.book1D("T_h","Time bin of CLCT",16,-0.5,15.5);
+    plotter.book1D("errCount_h","Emulation Categorization",7,-0.5,6.5);
     plotter.book2D("dataEmu_KHS_h","Emulated and Digi CLCT KHS",201,-0.5,200.5,201,-0.5,200.5);
     plotter.book2D("dataEmu_pid_h","Emulated and Digi CLCT PID",10,-0.5,10.5,10,-0.5,10.5);
     plotter.book2D("Nlay_pid_h","Emulated and Digi CLCT PID",7,-0.5,6.5,10,-0.5,10.5);
@@ -37,7 +38,7 @@ void CSCDigiTree::Loop(string sName)
     {
         Long64_t ientry = LoadTree(jentry);
         if (ientry < 0) break;
-        if (jentry == 100) break;
+        if (jentry == 1000) break;
         nb = fChain->GetEntry(jentry);   nbytes += nb;
 
         //if(jentry%(nentries/1000) == 0) cout << "Loading event " << jentry << " out of " << nentries << endl; if(!os) continue;
@@ -89,13 +90,24 @@ void CSCDigiTree::Loop(string sName)
                     int pat = lctPat->at(ilct).at(jlct);
                     int khs = lctKHS->at(ilct).at(jlct);
                     patF.emulate(comps,0);
-                    if(pat - patF.getEmuPatID(0) != 0 && 0)
+                    int emuKHS = patF.getEmuKHS(0);
+                    int emuPID = patF.getEmuPatID(0);
+                    int emuT = patF.getEmuTime(0);
+                    int emuNlay = patF.getEmuNlay(0);
+                    if(fabs(khs - emuKHS) > fabs(khs - patF.getEmuPatID(1))) 
                     {
-                        cout << "PID does not match. Data PID: " << pat << " Emu PID: " << patF.getEmuPatID(0);
+                        emuKHS = patF.getEmuPatID(1); 
+                        emuPID = patF.getEmuPatID(1);
+                        emuT = patF.getEmuTime(1);
+                        emuNlay = patF.getEmuNlay(1);
+                    }
+                    if(pat - emuPID != 0 && 0)
+                    {
+                        cout << "PID does not match. Data PID: " << pat << " Emu PID: " << emuPID;
                         comps.print();
                         cout << endl;
                         vector<vector<bool>> dataFilter = patF.filter(comps,pat,khs);
-                        vector<vector<bool>> emuFilter = patF.filter(comps,patF.getEmuPatID(0),patF.getEmuKHS(0));
+                        vector<vector<bool>> emuFilter = patF.filter(comps,emuPID,emuKHS);
                         for(int ll = 0; ll < 6; ll++)
                         {
                             if(ll%2==0) cout << " ";
@@ -119,15 +131,22 @@ void CSCDigiTree::Loop(string sName)
                         }
                         cout << endl;
                     }
-                    plotter.get1D("dataEmuDiff_KHS_h")->Fill(khs - patF.getEmuKHS(0));
-                    plotter.get1D("dataEmuDiff_pid_h")->Fill(pat - patF.getEmuPatID(0));
-                    plotter.get2D("dataEmu_KHS_h")->Fill(khs,patF.getEmuKHS(0));
-                    plotter.get2D("dataEmu_pid_h")->Fill(pat,patF.getEmuPatID(0));
-                    plotter.get2D("Nlay_pid_h")->Fill(patF.getEmuNlay(0),patF.getEmuPatID(0));
-                    plotter.get1D("KHS_h")->Fill(patF.getEmuKHS(0));
-                    plotter.get1D("pid_h")->Fill(patF.getEmuPatID(0));
-                    plotter.get1D("T_h")->Fill(patF.getEmuTime(0));
-                    plotter.get1D("Nlay_h")->Fill(patF.getEmuNlay(0));
+
+                    plotter.get1D("errCount_h")->Fill(0);
+                    if(emuT != 0 && khs - emuKHS == 0 && pat - emuPID == 0) plotter.get1D("errCount_h")->Fill(1);
+                    if(emuT != 0 && khs - emuKHS != 0 && pat - emuPID == 0) plotter.get1D("errCount_h")->Fill(2);
+                    if(emuT != 0 && khs - emuKHS == 0 && pat - emuPID != 0) plotter.get1D("errCount_h")->Fill(3);
+                    if(emuT != 0 && khs - emuKHS != 0 && pat - emuPID != 0) plotter.get1D("errCount_h")->Fill(4);
+                    if(emuT == 0) plotter.get1D("errCount_h")->Fill(5);
+                    plotter.get1D("dataEmuDiff_KHS_h")->Fill(khs - emuKHS);
+                    plotter.get1D("dataEmuDiff_pid_h")->Fill(pat - emuPID);
+                    plotter.get2D("dataEmu_KHS_h")->Fill(khs,emuKHS);
+                    plotter.get2D("dataEmu_pid_h")->Fill(pat,emuPID);
+                    plotter.get2D("Nlay_pid_h")->Fill(emuNlay,emuPID);
+                    plotter.get1D("KHS_h")->Fill(emuKHS);
+                    plotter.get1D("pid_h")->Fill(emuPID);
+                    plotter.get1D("T_h")->Fill(emuT);
+                    plotter.get1D("Nlay_h")->Fill(emuNlay);
                 }
             }
         }//iseg
