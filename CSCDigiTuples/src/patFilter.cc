@@ -111,18 +111,21 @@ void patFilter::emulate(hsData data, bool debug)
     //Apply Pattern Filter to each time bin and khs and fill highest pattern number into a vector to parse later
     vector<vector<int>> tPids;
     vector<vector<int>> tNlays;
+    if(debug) cout << "Start applying filters" << endl;
     for(int t = 0; t < 16; t++)
     {
         vector<vector<bool>> dataNow = EXdata[t];
         vector<int> khsPids;
         vector<int> khsNlays;
-        if(debug) cout << "t = " << t << endl;
+        if(debug) { cout << "Data for t = " << t << endl; printVector(dataNow,stag); }
         for(int khs = 0; khs < dataNow[0].size(); khs++)
         {
+            if(debug) cout << "Apply filters at khs " << khs << endl;
             int NlayMax = -1;
             int Bpat = -1;
             for(int pat = 10; pat > 1; pat--)
             {
+                if(debug) cout << "Pattern " << pat << endl;
                 vector<vector<bool>> dataHereNow = dataNow;
                 for(int lay = 0; lay < int(dataHereNow.size()); lay++)
                 {
@@ -150,7 +153,12 @@ void patFilter::emulate(hsData data, bool debug)
                         if(dataHereNow[lay][khs]){Nlay++; break;}
                     }
                 }
-                if(debug) cout << Nlay << " ";
+                if(debug && Nlay > 0) 
+                {
+                    printVector(dataHereNow,stag);
+                    cout << endl;
+                    cout << "Number of layers: " << Nlay << endl;
+                }
                 if(Nlay > NlayMax) {NlayMax = Nlay; Bpat = pat;}
                 //if(Nlay == 6) break;//If this happens you found the solution for this khs
             }//pat  For each pattern, filter data through pat and count layers. If Nlay > NlayMax update buffer
@@ -184,7 +192,7 @@ void patFilter::emulate(hsData data, bool debug)
         }
         if(debug) cout << endl << endl;
         if(maxNlay < 4) continue;
-        if(maxNlay > Nlay0) {emuPatID0 = maxNlay; emuKHS0 = bestKHS; Nlay0 = maxNlay; T0 = t;}
+        if(maxNlay > Nlay0) {emuPatID0 = maxPid; emuKHS0 = bestKHS; Nlay0 = maxNlay; T0 = t;}
         else if(maxNlay == Nlay0 && maxPid > emuPatID0) {emuPatID0 = maxPid; emuKHS0 = bestKHS; Nlay0 = maxNlay; T0 = t;}
     }
     if(debug) cout << "emuPatID0: " << emuPatID0 << " emuKHS0: " << emuKHS0 << " Nlay0: " << Nlay0 << " T0: " << T0 << endl;
@@ -229,7 +237,19 @@ void patFilter::print()
     }
 }
 
-
+void patFilter::printVector(vector<vector<bool>> data, bool stag)
+{
+    for(int ll = 0; ll < 6; ll++)
+    {
+        if(ll%2==0 && stag) cout << " ";
+        for(int hs = 0; hs < int(data[ll].size()); hs++)
+        {
+            if(data[ll][hs]) cout << "x";
+            else cout << "-";
+        }
+        cout << endl;
+    }
+}
 
 
 
