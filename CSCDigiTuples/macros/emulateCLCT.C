@@ -1,5 +1,5 @@
 #define CSCDigiTree_cxx
-#include "../include/CSCDigiTree.h"
+#include "../include/CSCDigiTree.h.old"
 //#include "../src/hsData.cc"
 #include "../src/patFilter.cc"
 #include "include/HistGetter.h"
@@ -29,6 +29,7 @@ void CSCDigiTree::Loop(string sName)
     plotter.book2D("dataEmu_KHS_h","Emulated and Digi CLCT KHS",201,-0.5,200.5,201,-0.5,200.5);
     plotter.book2D("dataEmu_pid_h","Emulated and Digi CLCT PID",10,-0.5,10.5,10,-0.5,10.5);
     plotter.book2D("Nlay_pid_h","Emulated and Digi CLCT PID",7,-0.5,6.5,10,-0.5,10.5);
+    plotter.book2D("Nlay_emuNlay_h","Digi Emulated CLCT Number of Layers;Number of Layers from CLCT;Number of Layers from Emulation",7,-0.5,6.5,7,-0.5,6.5);
 
 
     Long64_t nentries = fChain->GetEntriesFast();
@@ -101,7 +102,24 @@ void CSCDigiTree::Loop(string sName)
                         emuT = patF.getEmuTime(1);
                         emuNlay = patF.getEmuNlay(1);
                     }
-                    if(pat - emuPID != 0 && 0)
+
+                    int cKHS = -99;
+                    int cPID = -99;
+                    int cNlay = -99;
+                    for(int iclct = 0; iclct < int(clctId->size()); iclct++)
+                    {
+                        if(!(chSid == clctId->at(iclct))) continue;
+                        for(int jclct = 0; jclct < int(clctKHS->at(iclct).size()); jclct++)
+                        {
+                            int icKHS = 32*clctCFEB->at(iclct).at(jclct) + clctKHS->at(iclct).at(jclct);
+                            int icPID = clctPat->at(iclct).at(jclct);
+                            if(icKHS == khs && icPID == pat) {cKHS = icKHS; cPID = icPID; cNlay = clctQ->at(iclct).at(jclct);}
+                        }
+                    }
+                    if(cKHS == -99) cout << "Failed to find CLCT for this LCT!" << endl;
+                    plotter.get2D("Nlay_emuNlay_h")->Fill(cNlay,emuNlay);
+
+                    if(0 & emuT == 0)
                     {
                         cout << "PID does not match. Data PID: " << pat << " Emu PID: " << emuPID;
                         comps.print();
