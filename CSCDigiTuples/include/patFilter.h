@@ -31,4 +31,5 @@ class patFilter
         int getEmuTime(int n){if(n==0) return T0; else return T1;};
 
         void print();
+        void printVector(vector<vector<bool>> data, bool stag);
 };

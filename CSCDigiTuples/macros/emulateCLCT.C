@@ -25,7 +25,9 @@ void CSCDigiTree::Loop(string sName)
     plotter.book1D("pid_h","Emulated CLCT PID",10,0.5,10.5);
     plotter.book1D("Nlay_h","Number of Layers in CLCT",6,0.5,6.5);
     plotter.book1D("T_h","Time bin of CLCT",16,-0.5,15.5);
+    plotter.book1D("Terr_h","Time bin of CLCT",16,-0.5,15.5);
     plotter.book1D("errCount_h","Emulation Categorization",7,-0.5,6.5);
+    plotter.book1D("errCT_h","Emulation Categorization",11,-0.5,10.5);
     plotter.book2D("dataEmu_KHS_h","Emulated and Digi CLCT KHS",201,-0.5,200.5,201,-0.5,200.5);
     plotter.book2D("dataEmu_pid_h","Emulated and Digi CLCT PID",10,-0.5,10.5,10,-0.5,10.5);
     plotter.book2D("Nlay_pid_h","Emulated and Digi CLCT PID",7,-0.5,6.5,10,-0.5,10.5);
@@ -38,11 +40,11 @@ void CSCDigiTree::Loop(string sName)
     {
         Long64_t ientry = LoadTree(jentry);
         if (ientry < 0) break;
-        if (jentry == 1000) break;
+        if (jentry == 100) break;
         nb = fChain->GetEntry(jentry);   nbytes += nb;
 
         //if(jentry%(nentries/1000) == 0) cout << "Loading event " << jentry << " out of " << nentries << endl; if(!os) continue;
-        if(jentry%100 == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
+        if(jentry%10 == 0) cout << "Loading event " << jentry << " out of " << nentries << endl;
         //cout << "Loading event " << jentry << " out of " << nentries << endl; 
         if(!os) continue;
 
@@ -57,6 +59,8 @@ void CSCDigiTree::Loop(string sName)
             int RI = segRi->at(iseg);
             int CH = segCh->at(iseg);
             int CT = getCT(ST,RI);
+            bool stag = true;
+            if(CT == 6 || CT == 9) stag = false;
             //cout << endl << "Segment in Chamber ME" << ((EC == 1) ? "+" : "-") << ST << "/" << RI << "/" << CH << endl;
             int chSid = chamberSerial(EC, ST, RI, CH);
 
@@ -101,43 +105,37 @@ void CSCDigiTree::Loop(string sName)
                         emuT = patF.getEmuTime(1);
                         emuNlay = patF.getEmuNlay(1);
                     }
-                    if(pat - emuPID != 0 && 0)
+                    //if(emuT != 0 && pat != emuPID && khs == emuKHS)
+                    if(emuT == 0)
                     {
+                        cout << "Event # " << jentry << endl;
                         cout << "PID does not match. Data PID: " << pat << " Emu PID: " << emuPID;
                         comps.print();
                         cout << endl;
                         vector<vector<bool>> dataFilter = patF.filter(comps,pat,khs);
                         vector<vector<bool>> emuFilter = patF.filter(comps,emuPID,emuKHS);
-                        for(int ll = 0; ll < 6; ll++)
-                        {
-                            if(ll%2==0) cout << " ";
-                            for(int hs = 0; hs < int(dataFilter[ll].size()); hs++)
-                            {
-                                if(dataFilter[ll][hs]) cout << "x";
-                                else cout << "-";
-                            }
-                            cout << endl;
-                        }
+                        vector<vector<bool>> compSumT = comps.getTimeSum(0,15);
+                        cout << "Comps sumed in time:" << endl;
+                        patF.printVector(compSumT,stag);
                         cout << endl;
-                        for(int ll = 0; ll < 6; ll++)
-                        {
-                            if(ll%2==0) cout << " ";
-                            for(int hs = 0; hs < int(emuFilter[ll].size()); hs++)
-                            {
-                                if(emuFilter[ll][hs]) cout << "x";
-                                else cout << "-";
-                            }
-                            cout << endl;
-                        }
+                        cout << "Filtered by Data CLCT:" << endl;
+                        patF.printVector(dataFilter,stag);
                         cout << endl;
+                        cout << "Filtered by Emulated CLCT:" << endl;
+                        patF.printVector(emuFilter,stag);
+                        cout << endl;
+                        //patF.emulate(comps,1);
+                        cout << "data PID: " << pat << " data KHS: " << khs << endl;
+                        cout << "emulated PID: " << emuPID << " emulated KHS: " << emuKHS << endl;
                     }
 
                     plotter.get1D("errCount_h")->Fill(0);
-                    if(emuT != 0 && khs - emuKHS == 0 && pat - emuPID == 0) plotter.get1D("errCount_h")->Fill(1);
-                    if(emuT != 0 && khs - emuKHS != 0 && pat - emuPID == 0) plotter.get1D("errCount_h")->Fill(2);
-                    if(emuT != 0 && khs - emuKHS == 0 && pat - emuPID != 0) plotter.get1D("errCount_h")->Fill(3);
-                    if(emuT != 0 && khs - emuKHS != 0 && pat - emuPID != 0) plotter.get1D("errCount_h")->Fill(4);
-                    if(emuT == 0) plotter.get1D("errCount_h")->Fill(5);
+                    if(emuT != 0 && khs - emuKHS == 0 && pat - emuPID == 0) {plotter.get1D("errCount_h")->Fill(1); plotter.get1D("errCT_h")->Fill(CT);}
+                    if(emuT != 0 && khs - emuKHS != 0 && pat - emuPID == 0) {plotter.get1D("errCount_h")->Fill(2); plotter.get1D("errCT_h")->Fill(CT);}
+                    if(emuT != 0 && khs - emuKHS == 0 && pat - emuPID != 0) {plotter.get1D("errCount_h")->Fill(3); plotter.get1D("errCT_h")->Fill(CT);}
+                    if(emuT != 0 && khs - emuKHS != 0 && pat - emuPID != 0) {plotter.get1D("errCount_h")->Fill(4); plotter.get1D("errCT_h")->Fill(CT);}
+                    if(emuT == 0) {plotter.get1D("errCount_h")->Fill(5); plotter.get1D("errCT_h")->Fill(CT);}
+                    if(khs != emuKHS || pat != emuPID) plotter.get1D("Terr_h")->Fill(emuT);
                     plotter.get1D("dataEmuDiff_KHS_h")->Fill(khs - emuKHS);
                     plotter.get1D("dataEmuDiff_pid_h")->Fill(pat - emuPID);
                     plotter.get2D("dataEmu_KHS_h")->Fill(khs,emuKHS);
