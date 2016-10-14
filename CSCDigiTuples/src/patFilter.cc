@@ -244,6 +244,7 @@ void patFilter::printVector(vector<vector<bool>> data, bool stag)
         if(ll%2==0 && stag) cout << " ";
         for(int hs = 0; hs < int(data[ll].size()); hs++)
         {
+            if(hs%32 == 0) cout << "|";
             if(data[ll][hs]) cout << "x";
             else cout << "-";
         }
