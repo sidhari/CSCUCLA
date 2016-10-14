@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Mon Oct 10 13:13:27 2016 by ROOT version 6.06/01
-// from TTree CSCDigiTree/Tree holding CSCDigis
-// found on file: CSCDigiTree449.root
+// Wed Apr 20 16:30:14 2016 by ROOT version 6.02/05
+// from TTree CSCDigiTree/Tree holding timing information
+// found on file: CSCDigiTree.root
 //////////////////////////////////////////////////////////
 
 #ifndef CSCDigiTree_h
@@ -23,6 +23,8 @@
 #include "vector"
 
 
+using namespace std;
+
 class CSCDigiTree {
     public :
         TTree          *fChain;   //!pointer to the analyzed TTree or TChain
@@ -35,58 +37,46 @@ class CSCDigiTree {
         Int_t           Event_RunNumber;
         Int_t           Event_LumiSection;
         Int_t           Event_BXCrossing;
-        Bool_t          ss;
-        Bool_t          os;
+        bool            os;
+        bool            ss;
         Double_t        Pt;
         Double_t        eta;
         Double_t        phi;
-        Int_t           q;
+        int             q;
         Int_t           Nseg;
         vector<int>     *segEc;
         vector<int>     *segSt;
         vector<int>     *segRi;
         vector<int>     *segCh;
-        vector<float>   *segX;
-        vector<float>   *segY;
-        vector<float>   *segdXdZ;
-        vector<float>   *segdYdZ;
+        vector<float>     *segX;
+        vector<float>     *segY;
+        vector<float>     *segdXdZ;
+        vector<float>     *segdYdZ;
         vector<int>     *rhId;
         vector<int>     *rhLay;
-        vector<float>   *rhPos;
-        vector<float>   *rhE;
-        vector<float>   *rhMax;
+        vector<float>     *rhPos;
+        vector<float>     *rhE;
+        vector<float>     *rhMax;
         vector<int>     *lctId;
         vector<vector<int> > *lctQ;
         vector<vector<int> > *lctPat;
         vector<vector<int> > *lctKWG;
         vector<vector<int> > *lctKHS;
         vector<vector<int> > *lctBend;
-        vector<vector<int> > *lctBX;
-        vector<int>     *csctflctId;
-        vector<vector<int> > *csctflctQ;
-        vector<vector<int> > *csctflctPat;
-        vector<vector<int> > *csctflctKWG;
-        vector<vector<int> > *csctflctKHS;
-        vector<vector<int> > *csctflctBend;
-        vector<vector<int> > *csctflctBX;
-        vector<int>     *emtflctId;
-        vector<vector<int> > *emtflctQ;
-        vector<vector<int> > *emtflctPat;
-        vector<vector<int> > *emtflctKWG;
-        vector<vector<int> > *emtflctKHS;
-        vector<vector<int> > *emtflctBend;
-        vector<vector<int> > *emtflctBX;
+        vector<int>     *tflctId;
+        vector<vector<int> > *tflctQ;
+        vector<vector<int> > *tflctPat;
+        vector<vector<int> > *tflctKWG;
+        vector<vector<int> > *tflctKHS;
+        vector<vector<int> > *tflctBend;
         vector<int>     *clctId;
         vector<vector<int> > *clctQ;
         vector<vector<int> > *clctPat;
         vector<vector<int> > *clctKHS;
         vector<vector<int> > *clctCFEB;
         vector<vector<int> > *clctBend;
-        vector<vector<int> > *clctBX;
-        vector<vector<int> > *clctFBX;
         vector<int>     *alctId;
         vector<vector<int> > *alctQ;
-        vector<vector<int> > *alctKWG;
         vector<vector<int> > *alctAc;
         vector<vector<int> > *alctPB;
         vector<int>     *compId;
@@ -108,8 +98,8 @@ class CSCDigiTree {
         TBranch        *b_Event_RunNumber;   //!
         TBranch        *b_Event_LumiSection;   //!
         TBranch        *b_Event_BXCrossing;   //!
-        TBranch        *b_ss;   //!
         TBranch        *b_os;   //!
+        TBranch        *b_ss;   //!
         TBranch        *b_Pt;   //!
         TBranch        *b_eta;   //!
         TBranch        *b_phi;   //!
@@ -134,32 +124,20 @@ class CSCDigiTree {
         TBranch        *b_lctKWG;   //!
         TBranch        *b_lctKHS;   //!
         TBranch        *b_lctBend;   //!
-        TBranch        *b_lctBX;   //!
-        TBranch        *b_csctflctId;   //!
-        TBranch        *b_csctflctQ;   //!
-        TBranch        *b_csctflctPat;   //!
-        TBranch        *b_csctflctKWG;   //!
-        TBranch        *b_csctflctKHS;   //!
-        TBranch        *b_csctflctBend;   //!
-        TBranch        *b_csctflctBX;   //!
-        TBranch        *b_emtflctId;   //!
-        TBranch        *b_emtflctQ;   //!
-        TBranch        *b_emtflctPat;   //!
-        TBranch        *b_emtflctKWG;   //!
-        TBranch        *b_emtflctKHS;   //!
-        TBranch        *b_emtflctBend;   //!
-        TBranch        *b_emtflctBX;   //!
+        TBranch        *b_tflctId;   //!
+        TBranch        *b_tflctQ;   //!
+        TBranch        *b_tflctPat;   //!
+        TBranch        *b_tflctKWG;   //!
+        TBranch        *b_tflctKHS;   //!
+        TBranch        *b_tflctBend;   //!
         TBranch        *b_clctId;   //!
         TBranch        *b_clctQ;   //!
         TBranch        *b_clctPat;   //!
         TBranch        *b_clctKHS;   //!
         TBranch        *b_clctCFEB;   //!
         TBranch        *b_clctBend;   //!
-        TBranch        *b_clctBX;   //!
-        TBranch        *b_clctFBX;   //!
         TBranch        *b_alctId;   //!
         TBranch        *b_alctQ;   //!
-        TBranch        *b_alctKWG;   //!
         TBranch        *b_alctAc;   //!
         TBranch        *b_alctPB;   //!
         TBranch        *b_compId;   //!
@@ -183,6 +161,8 @@ class CSCDigiTree {
         virtual Long64_t LoadTree(Long64_t entry);
         virtual void     Init(TTree *tree);
         virtual void     Loop(string sName);
+        //virtual void     DrawBoxes(float x_pos, float y_pos);
+        //virtual void     DrawPats(int pid);
         virtual Bool_t   Notify();
         virtual int      chamberSerial(int ec, int st, int ri, int ch );
         virtual void     Show(Long64_t entry = -1);
@@ -261,32 +241,21 @@ void CSCDigiTree::Init(TTree *tree)
     lctKWG = 0;
     lctKHS = 0;
     lctBend = 0;
-    lctBX = 0;
-    csctflctId = 0;
-    csctflctQ = 0;
-    csctflctPat = 0;
-    csctflctKWG = 0;
-    csctflctKHS = 0;
-    csctflctBend = 0;
-    csctflctBX = 0;
-    emtflctId = 0;
-    emtflctQ = 0;
-    emtflctPat = 0;
-    emtflctKWG = 0;
-    emtflctKHS = 0;
-    emtflctBend = 0;
-    emtflctBX = 0;
+    //lctBX = 0;
+    tflctId = 0;
+    tflctQ = 0;
+    tflctPat = 0;
+    tflctKWG = 0;
+    tflctKHS = 0;
+    tflctBend = 0;
     clctId = 0;
     clctQ = 0;
     clctPat = 0;
     clctKHS = 0;
     clctCFEB = 0;
     clctBend = 0;
-    clctBX = 0;
-    clctFBX = 0;
     alctId = 0;
     alctQ = 0;
-    alctKWG = 0;
     alctAc = 0;
     alctPB = 0;
     compId = 0;
@@ -312,8 +281,8 @@ void CSCDigiTree::Init(TTree *tree)
     fChain->SetBranchAddress("Event_RunNumber", &Event_RunNumber, &b_Event_RunNumber);
     fChain->SetBranchAddress("Event_LumiSection", &Event_LumiSection, &b_Event_LumiSection);
     fChain->SetBranchAddress("Event_BXCrossing", &Event_BXCrossing, &b_Event_BXCrossing);
-    fChain->SetBranchAddress("ss", &ss, &b_ss);
     fChain->SetBranchAddress("os", &os, &b_os);
+    fChain->SetBranchAddress("ss", &ss, &b_ss);
     fChain->SetBranchAddress("Pt", &Pt, &b_Pt);
     fChain->SetBranchAddress("eta", &eta, &b_eta);
     fChain->SetBranchAddress("phi", &phi, &b_phi);
@@ -338,32 +307,20 @@ void CSCDigiTree::Init(TTree *tree)
     fChain->SetBranchAddress("lctKWG", &lctKWG, &b_lctKWG);
     fChain->SetBranchAddress("lctKHS", &lctKHS, &b_lctKHS);
     fChain->SetBranchAddress("lctBend", &lctBend, &b_lctBend);
-    fChain->SetBranchAddress("lctBX", &lctBX, &b_lctBX);
-    fChain->SetBranchAddress("csctflctId", &csctflctId, &b_csctflctId);
-    fChain->SetBranchAddress("csctflctQ", &csctflctQ, &b_csctflctQ);
-    fChain->SetBranchAddress("csctflctPat", &csctflctPat, &b_csctflctPat);
-    fChain->SetBranchAddress("csctflctKWG", &csctflctKWG, &b_csctflctKWG);
-    fChain->SetBranchAddress("csctflctKHS", &csctflctKHS, &b_csctflctKHS);
-    fChain->SetBranchAddress("csctflctBend", &csctflctBend, &b_csctflctBend);
-    fChain->SetBranchAddress("csctflctBX", &csctflctBX, &b_csctflctBX);
-    fChain->SetBranchAddress("emtflctId", &emtflctId, &b_emtflctId);
-    fChain->SetBranchAddress("emtflctQ", &emtflctQ, &b_emtflctQ);
-    fChain->SetBranchAddress("emtflctPat", &emtflctPat, &b_emtflctPat);
-    fChain->SetBranchAddress("emtflctKWG", &emtflctKWG, &b_emtflctKWG);
-    fChain->SetBranchAddress("emtflctKHS", &emtflctKHS, &b_emtflctKHS);
-    fChain->SetBranchAddress("emtflctBend", &emtflctBend, &b_emtflctBend);
-    fChain->SetBranchAddress("emtflctBX", &emtflctBX, &b_emtflctBX);
+    fChain->SetBranchAddress("tflctId", &tflctId, &b_tflctId);
+    fChain->SetBranchAddress("tflctQ", &tflctQ, &b_tflctQ);
+    fChain->SetBranchAddress("tflctPat", &tflctPat, &b_tflctPat);
+    fChain->SetBranchAddress("tflctKWG", &tflctKWG, &b_tflctKWG);
+    fChain->SetBranchAddress("tflctKHS", &tflctKHS, &b_tflctKHS);
+    fChain->SetBranchAddress("tflctBend", &tflctBend, &b_tflctBend);
     fChain->SetBranchAddress("clctId", &clctId, &b_clctId);
     fChain->SetBranchAddress("clctQ", &clctQ, &b_clctQ);
     fChain->SetBranchAddress("clctPat", &clctPat, &b_clctPat);
     fChain->SetBranchAddress("clctKHS", &clctKHS, &b_clctKHS);
     fChain->SetBranchAddress("clctCFEB", &clctCFEB, &b_clctCFEB);
     fChain->SetBranchAddress("clctBend", &clctBend, &b_clctBend);
-    fChain->SetBranchAddress("clctBX", &clctBX, &b_clctBX);
-    fChain->SetBranchAddress("clctFBX", &clctFBX, &b_clctFBX);
     fChain->SetBranchAddress("alctId", &alctId, &b_alctId);
     fChain->SetBranchAddress("alctQ", &alctQ, &b_alctQ);
-    fChain->SetBranchAddress("alctKWG", &alctKWG, &b_alctKWG);
     fChain->SetBranchAddress("alctAc", &alctAc, &b_alctAc);
     fChain->SetBranchAddress("alctPB", &alctPB, &b_alctPB);
     fChain->SetBranchAddress("compId", &compId, &b_compId);
@@ -410,6 +367,7 @@ int CSCDigiTree::chamberSerial( int ec, int st, int ri, int ch ) {
     //cout << endl << endl << "Endcap: " << ec << "  Station: " << st << "  Ring: " << ri << "  Chamber: " << ch << "  serialID: " << kSerial << endl;
     return kSerial;
 }
+
 
 void CSCDigiTree::Show(Long64_t entry)
 {
@@ -695,6 +653,7 @@ void CSCDigiTree::Show(Long64_t entry)
     cWire->Update();
     cWire->SaveAs(Form("plots/wire_%i.png",(int)entry));
 }
+
 Int_t CSCDigiTree::Cut(Long64_t entry)
 {
     // This function may be called from Loop.
