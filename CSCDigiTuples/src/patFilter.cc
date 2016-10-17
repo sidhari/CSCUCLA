@@ -1,4 +1,3 @@
-#include "../src/hsData.cc"
 #include "../include/patFilter.h"
 
 #include <fstream>
@@ -93,9 +92,9 @@ void patFilter::emulate(hsData data, bool debug)
     for(int t = 0; t < 16; t++)
     {
         vector<vector<bool>> dataNow = data.getTime(t);
-        for(int lay = 0; lay < dataNow.size(); lay++)
+        for(int lay = 0; lay < int(dataNow.size()); lay++)
         {
-            for(int hs = 0; hs < dataNow[lay].size(); hs++)
+            for(int hs = 0; hs < int(dataNow[lay].size()); hs++)
             {
                 if(dataNow[lay][hs])
                 {
@@ -118,7 +117,7 @@ void patFilter::emulate(hsData data, bool debug)
         vector<int> khsPids;
         vector<int> khsNlays;
         if(debug) { cout << "Data for t = " << t << endl; printVector(dataNow,stag); }
-        for(int khs = 0; khs < dataNow[0].size(); khs++)
+        for(int khs = 0; khs < int(dataNow[0].size()); khs++)
         {
             if(debug) cout << "Apply filters at khs " << khs << endl;
             int NlayMax = -1;
@@ -179,12 +178,12 @@ void patFilter::emulate(hsData data, bool debug)
     for(int t = 0; t < 16; t++)
     {
         if(debug) cout << "t = " << t << endl;
-        for(int khs = 0; khs < tPids[t].size(); khs++)
+        for(int khs = 0; khs < int(tPids[t].size()); khs++)
         {
             if(debug && tNlays[t][khs] > 0) cout << tNlays[t][khs] << " ";
         }
         if(debug) cout << endl;
-        for(int khs = 0; khs < tPids[t].size(); khs++)
+        for(int khs = 0; khs < int(tPids[t].size()); khs++)
         {
             if(tNlays[t][khs] > maxNlay) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
             else if(tNlays[t][khs] == maxNlay && tPids[t][khs] > maxPid) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
@@ -206,7 +205,7 @@ void patFilter::emulate(hsData data, bool debug)
     bestKHS = -99;
     for(int t = 0; t < 16; t++)
     {
-        for(int khs = 0; khs < tPids[t].size(); khs++)
+        for(int khs = 0; khs < int(tPids[t].size()); khs++)
         {
             if(khs > emuKHS0 - 10 && khs < emuKHS0 + 10) continue;
             if(tNlays[t][khs] > maxNlay) {maxNlay = tNlays[t][khs]; maxPid = tPids[t][khs]; bestKHS = khs;}
