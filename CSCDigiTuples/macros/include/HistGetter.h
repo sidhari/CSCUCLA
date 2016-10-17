@@ -59,20 +59,20 @@ class HistGetter {
         TH1 * get1D(const char *name) {
             auto it = histsMap.find(name);
             if (it != histsMap.end())  return hists[it->second];
-            throw std::invalid_argument(TString::Format("You did not book a 1D histogram with name: %s",name));
+            throw std::invalid_argument(string("You did not book a 1D histogram with name: ") + string(name));
         }
         TH2 * get2D(const char *name) {
             auto it = hist2DsMap.find(name);
             if (it != hist2DsMap.end())  return hist2Ds[it->second];
-            throw std::invalid_argument(TString::Format("You did not book a 2D histogram with name: %s",name));
+            throw std::invalid_argument(string("You did not book a 2D histogram with name: ") + string(name));
         }
 
         TH1 * get1D(unsigned int iH) {
-            if(iH >= hists.size()) throw std::invalid_argument(TString::Format("You don't have this many 1D histograms: %u",iH));
+            if(iH >= hists.size()) throw std::invalid_argument("You don't have this many 1D histograms: "+std::to_string(iH));
             return hists[iH];
         }
         TH2 * get2D(unsigned int iH) {
-            if(iH >= hist2Ds.size()) throw std::invalid_argument(TString::Format("You don't have this many 2D histograms: %u",iH));
+            if(iH >= hist2Ds.size()) throw std::invalid_argument("You don't have this many 2D histograms: "+std::to_string(iH));
             return hist2Ds[iH];
         }
 
