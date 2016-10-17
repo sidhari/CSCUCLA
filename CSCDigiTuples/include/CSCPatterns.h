@@ -81,7 +81,8 @@ class CSCPatterns : public edm::EDAnalyzer {
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> ld_token;
         edm::EDGetTokenT<CSCComparatorDigiCollection> cod_token;
         edm::EDGetTokenT<reco::BeamSpot> obs_token;
-        edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> tflct_token;
+        edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> csctflct_token;
+        edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> emtflct_token;
 
         const CSCGeometry *theCSC;
         MuonServiceProxy *theService;
@@ -129,14 +130,25 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<vector<int>> lctKWG;
         vector<vector<int>> lctKHS;
         vector<vector<int>> lctBend;
+        vector<vector<int>> lctBX;
 
-        //tfLCT data
-        vector<int> tflctId;
-        vector<vector<int>> tflctQ;
-        vector<vector<int>> tflctPat;
-        vector<vector<int>> tflctKWG;
-        vector<vector<int>> tflctKHS;
-        vector<vector<int>> tflctBend;
+        //csctfLCT data
+        vector<int> csctflctId;
+        vector<vector<int>> csctflctQ;
+        vector<vector<int>> csctflctPat;
+        vector<vector<int>> csctflctKWG;
+        vector<vector<int>> csctflctKHS;
+        vector<vector<int>> csctflctBend;
+        vector<vector<int>> csctflctBX;
+
+        //emtfLCT data
+        vector<int> emtflctId;
+        vector<vector<int>> emtflctQ;
+        vector<vector<int>> emtflctPat;
+        vector<vector<int>> emtflctKWG;
+        vector<vector<int>> emtflctKHS;
+        vector<vector<int>> emtflctBend;
+        vector<vector<int>> emtflctBX;
 
         //CLCT data
         vector<int> clctId;
@@ -145,6 +157,8 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<vector<int>> clctKHS;
         vector<vector<int>> clctCFEB;
         vector<vector<int>> clctBend;
+        vector<vector<int>> clctBX;
+        vector<vector<int>> clctFBX;
 
         //ALCT data
         vector<int> alctId;
