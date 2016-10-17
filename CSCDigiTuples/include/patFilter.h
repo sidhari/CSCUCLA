@@ -21,4 +21,4 @@ class patFilter
         int getEmuPatID();
 
         void print();
-}
+};
