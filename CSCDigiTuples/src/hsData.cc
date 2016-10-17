@@ -25,7 +25,7 @@ hsData::hsData(vector<int> patData, vector<int> patLayer, vector<vector<int>> ti
 
     for(int i = 0; i < int(patData.size()); i++)
     {
-        for(int t = 0; t < timeOn[i].size(); t++)
+        for(int t = 0; t < int(timeOn[i].size()); t++)
         {
             data[timeOn[i][t]][patLayer[i]-1][patData[i]] = 1;
             count++;
@@ -45,7 +45,7 @@ vector< vector<bool> > hsData::getTimeSum(int it, int ft)
         vector<bool> layBuf (data[it][lay].size(),false);
         for(int t = it; t <= ft; t++)
         {
-            for(int hs = 0; hs < data[t][lay].size(); hs++)
+            for(int hs = 0; hs < int(data[t][lay].size()); hs++)
             {
                 layBuf[hs] = layBuf[hs] + data[t][lay][hs];
             }
