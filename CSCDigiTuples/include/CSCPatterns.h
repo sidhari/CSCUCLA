@@ -12,7 +12,12 @@
 #include <DataFormats/CSCDigi/interface/CSCComparatorDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCWireDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCStripDigiCollection.h>
+#include <DataFormats/CSCDigi/interface/CSCDDUStatusDigiCollection.h>
+#include <DataFormats/CSCDigi/interface/CSCDMBStatusDigiCollection.h>
+#include <DataFormats/CSCDigi/interface/CSCTMBStatusDigiCollection.h>
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
+#include "Geometry/CSCGeometry/interface/CSCChamber.h"
+#include "Geometry/CSCGeometry/interface/CSCLayer.h"
 #include "TrackingTools/Records/interface/TrackingComponentsRecord.h"
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
 #include "DataFormats/MuonReco/interface/MuonSelectors.h"
@@ -30,6 +35,11 @@
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "CSCUCLA/CSCDigiTuples/include/MuonQualityCuts.h"
 
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
+#include "DataFormats/GeometryVector/interface/GlobalVector.h"
+#include "DataFormats/GeometryVector/interface/LocalPoint.h"
+#include "DataFormats/GeometryVector/interface/LocalVector.h"
+
 #include "DataFormats/CSCRecHit/interface/CSCSegment.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 
@@ -40,6 +50,7 @@
 #include "TLorentzVector.h"
 #include <memory>
 #include <vector>
+#include <math.h>
 #include "TH1F.h"
 
 using namespace std;
@@ -73,7 +84,11 @@ class CSCPatterns : public edm::EDAnalyzer {
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> ld_token;
         edm::EDGetTokenT<CSCComparatorDigiCollection> cod_token;
         edm::EDGetTokenT<reco::BeamSpot> obs_token;
-        edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> tflct_token;
+        edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> csctflct_token;
+        edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> emtflct_token;
+        edm::EDGetTokenT<CSCDDUStatusDigiCollection> ddu_token;
+        edm::EDGetTokenT<CSCDMBStatusDigiCollection> dmb_token;
+        edm::EDGetTokenT<CSCTMBStatusDigiCollection> tmb_token;
 
         const CSCGeometry *theCSC;
         MuonServiceProxy *theService;
@@ -102,6 +117,10 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<int> segSt;
         vector<int> segRi;
         vector<int> segCh;
+        vector<float> segX;
+        vector<float> segY;
+        vector<float> segdXdZ;
+        vector<float> segdYdZ;
 
         //RecHit data
         vector<int> rhId;
@@ -117,14 +136,25 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<vector<int>> lctKWG;
         vector<vector<int>> lctKHS;
         vector<vector<int>> lctBend;
+        vector<vector<int>> lctBX;
 
-        //tfLCT data
-        vector<int> tflctId;
-        vector<vector<int>> tflctQ;
-        vector<vector<int>> tflctPat;
-        vector<vector<int>> tflctKWG;
-        vector<vector<int>> tflctKHS;
-        vector<vector<int>> tflctBend;
+        //csctfLCT data
+        vector<int> csctflctId;
+        vector<vector<int>> csctflctQ;
+        vector<vector<int>> csctflctPat;
+        vector<vector<int>> csctflctKWG;
+        vector<vector<int>> csctflctKHS;
+        vector<vector<int>> csctflctBend;
+        vector<vector<int>> csctflctBX;
+
+        //emtfLCT data
+        vector<int> emtflctId;
+        vector<vector<int>> emtflctQ;
+        vector<vector<int>> emtflctPat;
+        vector<vector<int>> emtflctKWG;
+        vector<vector<int>> emtflctKHS;
+        vector<vector<int>> emtflctBend;
+        vector<vector<int>> emtflctBX;
 
         //CLCT data
         vector<int> clctId;
@@ -133,6 +163,8 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<vector<int>> clctKHS;
         vector<vector<int>> clctCFEB;
         vector<vector<int>> clctBend;
+        vector<vector<int>> clctBX;
+        vector<vector<int>> clctFBX;
 
         //ALCT data
         vector<int> alctId;
@@ -140,6 +172,8 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<vector<int>> alctKWG;
         vector<vector<int>> alctAc;
         vector<vector<int>> alctPB;
+        vector<vector<int>> alctBX;
+        vector<vector<int>> alctFBX;
 
         //Comparator data
         vector<int> compId;
@@ -159,6 +193,21 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<int> stripLay;
         vector<vector<int>> strip;
         vector<vector<vector<int>>> stripADCs;
+
+        //DDU Status Data
+        vector<int> dduId;
+        vector<vector<int>> dduHeader;
+        vector<vector<int>> dduTrailer;
+
+        //DMB Status Data
+        vector<int> dmbId;
+        vector<vector<int>> dmbHeader;
+        vector<vector<int>> dmbTrailer;
+
+        //TMB Status Data
+        vector<int> tmbId;
+        vector<vector<int>> tmbHeader;
+        vector<vector<int>> tmbTrailer;
 
         // double anodeTime;
         //    double stripTime;
