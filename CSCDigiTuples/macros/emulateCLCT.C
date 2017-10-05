@@ -123,7 +123,7 @@ void CSCDigiTree::Loop(string sName)
                     if(cKHS == -99) cout << "Failed to find CLCT for this LCT!" << endl;
                     plotter.get2D("Nlay_emuNlay_h")->Fill(cNlay,emuNlay);
 
-                    if(0 & emuT == 0)
+                    if(emuT == 0)
                     {
                         cout << "Event # " << jentry << endl;
                         cout << "PID does not match. Data PID: " << pat << " Emu PID: " << emuPID;
@@ -144,6 +144,7 @@ void CSCDigiTree::Loop(string sName)
                         //patF.emulate(comps,1);
                         cout << "data PID: " << pat << " data KHS: " << khs << endl;
                         cout << "emulated PID: " << emuPID << " emulated KHS: " << emuKHS << endl;
+                        cout << "CLCT Nlay: " << cNlay << endl;
                     }
 
                     plotter.get1D("errCount_h")->Fill(0);
