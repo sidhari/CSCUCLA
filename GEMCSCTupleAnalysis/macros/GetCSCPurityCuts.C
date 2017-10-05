@@ -85,7 +85,7 @@ public:
       plotter.get1D("nEXRecHits")->Fill(recHitInfo.rh_id->size() - segmentInfo.segment_nHits->at(0));
       plotter.get1D("chi2")->Fill(segmentInfo.segment_chisq->at(0));
 
-      const double projZ = 30;
+      const double projZ = 34.3123;
       double projx,projy,projx_error,projy_error;
       projSement(0,projZ,projx,projy,projx_error,projy_error);
       projx -= segmentInfo.segment_pos_x->at(0);

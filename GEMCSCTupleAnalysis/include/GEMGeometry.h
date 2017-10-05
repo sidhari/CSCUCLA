@@ -25,8 +25,17 @@ public:
   float getStripAngle(int rowNumber, float strip) const;
   float getStripPitch(int rowNumber, float yHeight) const;
   float getRowHeight(int rowNumber) const;
+  float getRowTop(int rowNumber) const;
+  float getRowBottom(int rowNumber) const;
   float getRowBottomEdge(int rowNumber) const;
   float getRowTopEdge(int rowNumber) const;
+
+  //Finders
+  //return eta partion local y belongs to
+  // -1 means that it is above the widest vfat
+  // nRows means it is below the narrowest one
+  // (I know....)
+  int findEtaPartition(float yValue) const;
 
 
 
