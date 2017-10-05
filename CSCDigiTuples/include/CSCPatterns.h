@@ -12,6 +12,9 @@
 #include <DataFormats/CSCDigi/interface/CSCComparatorDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCWireDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCStripDigiCollection.h>
+#include <DataFormats/CSCDigi/interface/CSCDDUStatusDigiCollection.h>
+#include <DataFormats/CSCDigi/interface/CSCDMBStatusDigiCollection.h>
+#include <DataFormats/CSCDigi/interface/CSCTMBStatusDigiCollection.h>
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
 #include "Geometry/CSCGeometry/interface/CSCChamber.h"
 #include "Geometry/CSCGeometry/interface/CSCLayer.h"
@@ -83,6 +86,9 @@ class CSCPatterns : public edm::EDAnalyzer {
         edm::EDGetTokenT<reco::BeamSpot> obs_token;
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> csctflct_token;
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> emtflct_token;
+        edm::EDGetTokenT<CSCDDUStatusDigiCollection> ddu_token;
+        edm::EDGetTokenT<CSCDMBStatusDigiCollection> dmb_token;
+        edm::EDGetTokenT<CSCTMBStatusDigiCollection> tmb_token;
 
         const CSCGeometry *theCSC;
         MuonServiceProxy *theService;
@@ -166,6 +172,8 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<vector<int>> alctKWG;
         vector<vector<int>> alctAc;
         vector<vector<int>> alctPB;
+        vector<vector<int>> alctBX;
+        vector<vector<int>> alctFBX;
 
         //Comparator data
         vector<int> compId;
@@ -185,6 +193,21 @@ class CSCPatterns : public edm::EDAnalyzer {
         vector<int> stripLay;
         vector<vector<int>> strip;
         vector<vector<vector<int>>> stripADCs;
+
+        //DDU Status Data
+        vector<int> dduId;
+        vector<vector<int>> dduHeader;
+        vector<vector<int>> dduTrailer;
+
+        //DMB Status Data
+        vector<int> dmbId;
+        vector<vector<int>> dmbHeader;
+        vector<vector<int>> dmbTrailer;
+
+        //TMB Status Data
+        vector<int> tmbId;
+        vector<vector<int>> tmbHeader;
+        vector<vector<int>> tmbTrailer;
 
         // double anodeTime;
         //    double stripTime;

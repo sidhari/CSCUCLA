@@ -56,6 +56,9 @@ CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
     obs_token = consumes<reco::BeamSpot>( iConfig.getParameter<edm::InputTag>("offlineBeamSpotTag") );
     csctflct_token = consumes<CSCCorrelatedLCTDigiCollection>(iConfig.getParameter<edm::InputTag>("csctfDigiTag"));
     emtflct_token = consumes<CSCCorrelatedLCTDigiCollection>(iConfig.getParameter<edm::InputTag>("emtfDigiTag"));
+    ddu_token = consumes<CSCDDUStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dduDigiTag"));
+    dmb_token = consumes<CSCDMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dmbDigiTag"));
+    tmb_token = consumes<CSCTMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("tmbDigiTag"));
 
     minPt     = iConfig.getParameter<double>("minPt");
 
@@ -168,6 +171,8 @@ CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
     tree->Branch("alctKWG",&alctKWG);
     tree->Branch("alctAc",&alctAc);
     tree->Branch("alctPB",&alctPB);
+    tree->Branch("alctBX",&alctBX);
+    tree->Branch("alctFBX",&alctFBX);
 
     tree->Branch("compId",&compId);
     tree->Branch("compLay",&compLay);
@@ -184,6 +189,18 @@ CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
     tree->Branch("stripLay",&stripLay);
     tree->Branch("strip",&strip);
     tree->Branch("stripADCs",&stripADCs);
+
+    tree->Branch("dduId",&dduId);
+    tree->Branch("dduHeader",&dduHeader);
+    tree->Branch("dduTrailer",&dduTrailer);
+
+    tree->Branch("dmbId",&dmbId);
+    tree->Branch("dmbHeader",&dmbHeader);
+    tree->Branch("dmbTrailer",&dmbTrailer);
+
+    tree->Branch("tmbId",&tmbId);
+    tree->Branch("tmbHeader",&tmbHeader);
+    tree->Branch("tmbTrailer",&tmbTrailer);
 
 }
 
@@ -275,6 +292,15 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     edm::Handle<CSCComparatorDigiCollection> compDigi;
     iEvent.getByToken(cod_token, compDigi);
+
+    edm::Handle<CSCDDUStatusDigiCollection> dduDigi;
+    iEvent.getByToken(ddu_token, dduDigi);
+
+    edm::Handle<CSCDMBStatusDigiCollection> dmbDigi;
+    iEvent.getByToken(dmb_token, dmbDigi);
+
+    edm::Handle<CSCTMBStatusDigiCollection> tmbDigi;
+    iEvent.getByToken(tmb_token, tmbDigi);
 
     edm::Handle<reco::BeamSpot> beamSpotHandle;
     iEvent.getByToken(obs_token, beamSpotHandle);
@@ -452,6 +478,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         alctKWG.clear();
         alctAc.clear();
         alctPB.clear();
+        alctBX.clear();
+        alctFBX.clear();
 
         compId.clear();
         compLay.clear();
@@ -468,6 +496,18 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         stripLay.clear();
         strip.clear();
         stripADCs.clear();
+
+        dduId.clear();
+        dduHeader.clear();
+        dduTrailer.clear();
+
+        dmbId.clear();
+        dmbHeader.clear();
+        dmbTrailer.clear();
+
+        tmbId.clear();
+        tmbHeader.clear();
+        tmbTrailer.clear();
 
         Pt=muon->pt();
         eta=muon->eta();
@@ -703,6 +743,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 vector<int> alctKWGBuf;
                 vector<int> alctAcBuf;
                 vector<int> alctPBBuf;
+                vector<int> alctBXBuf;
+                vector<int> alctFBXBuf;
 
                 const CSCALCTDigiCollection::Range& range =(*alctDigi_id).second;
                 for(CSCALCTDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
@@ -711,11 +753,15 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                     alctKWGBuf.push_back((*digiItr).getKeyWG());
                     alctAcBuf.push_back((*digiItr).getAccelerator());
                     alctPBBuf.push_back((*digiItr).getCollisionB());
+                    alctBXBuf.push_back((*digiItr).getBX());
+                    alctFBXBuf.push_back((*digiItr).getFullBX());
                 }
                 alctQ.push_back(alctQBuf);
                 alctKWG.push_back(alctKWGBuf);
                 alctAc.push_back(alctAcBuf);
                 alctPB.push_back(alctPBBuf);
+                alctBX.push_back(alctBXBuf);
+                alctFBX.push_back(alctFBXBuf);
             }
 
             // Extract Comparator Data
@@ -790,6 +836,92 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
             }
 
         }// Matched CSCSegment loop
+
+        if(range.size() > 0)
+        {
+            // Extract DDU Status Digis
+            for (CSCDDUStatusDigiCollection::DigiRangeIterator dduDigi_id=dduDigi->begin(); dduDigi_id!=dduDigi->end(); dduDigi_id++)
+            {
+                CSCDetId dduID = (*dduDigi_id).first;
+                int idBuf = chamberSerial(dduID);
+                //if(idBuf != chamber) continue;
+                dduId.push_back(idBuf);
+
+                vector<vector<int>> dduHeaderBuf;
+                vector<vector<int>> dduTrailerBuf;
+
+                const CSCDDUStatusDigiCollection::Range& range =(*dduDigi_id).second;
+                for(CSCDDUStatusDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
+                {
+                    const uint16_t * headBuf = (*digiItr).header();
+                    const uint16_t * trailBuf = (*digiItr).trailer();
+                    vector<int> dduHeaderBuf;
+                    vector<int> dduTrailerBuf;
+                    for(int i = 0; i < 12; i++)
+                    {
+                        dduHeaderBuf.push_back(*(headBuf+i));
+                        dduTrailerBuf.push_back(*(trailBuf+i));
+                    }
+                    dduHeader.push_back(dduHeaderBuf);
+                    dduTrailer.push_back(dduTrailerBuf);
+                }
+            }
+            // Extract DMB Status Digis
+            for (CSCDMBStatusDigiCollection::DigiRangeIterator dmbDigi_id=dmbDigi->begin(); dmbDigi_id!=dmbDigi->end(); dmbDigi_id++)
+            {
+                CSCDetId dmbID = (*dmbDigi_id).first;
+                int idBuf = chamberSerial(dmbID);
+                //if(idBuf != chamber) continue;
+                dmbId.push_back(idBuf);
+
+                vector<vector<int>> dmbHeaderBuf;
+                vector<vector<int>> dmbTrailerBuf;
+
+                const CSCDMBStatusDigiCollection::Range& range =(*dmbDigi_id).second;
+                for(CSCDMBStatusDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
+                {
+                    const uint16_t * headBuf = (*digiItr).header();
+                    const uint16_t * trailBuf = (*digiItr).trailer();
+                    vector<int> dmbHeaderBuf;
+                    vector<int> dmbTrailerBuf;
+                    for(int i = 0; i < 8; i++)
+                    {
+                        dmbHeaderBuf.push_back(*(headBuf+i));
+                        dmbTrailerBuf.push_back(*(trailBuf+i));
+                    }
+                    dmbHeader.push_back(dmbHeaderBuf);
+                    dmbTrailer.push_back(dmbTrailerBuf);
+                }
+            }
+            // Extract TMB Status Digis
+            for (CSCTMBStatusDigiCollection::DigiRangeIterator tmbDigi_id=tmbDigi->begin(); tmbDigi_id!=tmbDigi->end(); tmbDigi_id++)
+            {
+                CSCDetId tmbID = (*tmbDigi_id).first;
+                int idBuf = chamberSerial(tmbID);
+                //if(idBuf != chamber) continue;
+                tmbId.push_back(idBuf);
+                //cout << "tmbID: " << idBuf << endl;
+
+                vector<vector<int>> tmbHeaderBuf;
+                vector<vector<int>> tmbTrailerBuf;
+
+                const CSCTMBStatusDigiCollection::Range& range =(*tmbDigi_id).second;
+                for(CSCTMBStatusDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
+                {
+                    const uint16_t * headBuf = (*digiItr).header();
+                    const uint16_t * trailBuf = (*digiItr).trailer();
+                    vector<int> tmbHeaderBuf;
+                    vector<int> tmbTrailerBuf;
+                    for(int i = 0; i < 43; i++)
+                    {
+                        tmbHeaderBuf.push_back(*(headBuf+i));
+                        if(i < 8) tmbTrailerBuf.push_back(*(trailBuf+i));
+                    }
+                    tmbHeader.push_back(tmbHeaderBuf);
+                    tmbTrailer.push_back(tmbTrailerBuf);
+                }
+            }
+        }
 
         cout << "Number of pats: " << clctPat.size() << " number of segments: " << range.size() <<  endl;
         if(range.size() > 0) tree->Fill();
