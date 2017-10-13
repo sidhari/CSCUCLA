@@ -16,6 +16,16 @@ const int DEBUG = 1;
 const int NLAYERS = 6; //6 layers
 
 
+class IdCount{
+public:
+	IdCount(int id) : m_id(id) {
+		m_count = 1;
+	}
+	~IdCount(){}
+private:
+	int m_count;
+	const int m_id;
+};
 
 
 //this class tells us what locations within a pattern with id "m_superPatternId" matches
@@ -44,6 +54,7 @@ void ChargePattern::printPattern() {
 	for(int i =0; i < NLAYERS; i++){
 		for(int j =0; j < 3; j++){
 			printf("%i", m_hits[i][j]);
+
 		}
 		printf("\n");
 	}

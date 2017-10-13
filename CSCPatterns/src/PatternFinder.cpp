@@ -428,8 +428,8 @@ int PatternFinder() {
 			///ALSO NEED TO CHECK TMB DATA, to make sure you use valid data
 			if(MAKE_MATCH_LAYER_COMPARISON){
 
-				SuperPatternSetMatchInfo compMatchInfo;
-				SuperPatternSetMatchInfo recMatchInfo;
+				SuperPatternSetMatchInfo* compMatchInfo = new SuperPatternSetMatchInfo();
+				SuperPatternSetMatchInfo* recMatchInfo = new SuperPatternSetMatchInfo();
 
 				bool hasTmbId = find(tmbId->begin(), tmbId->end(), chSid) != tmbId->end();
 
@@ -438,13 +438,15 @@ int PatternFinder() {
 				if(hasTmbId && (groupIndex == TESTING_GROUP_INDEX)) {
 					if(searchForMatch(theseCompHits, matchGroups[groupIndex].m_patterns,compMatchInfo)) return -1;
 					if(searchForMatch(theseRHHits, matchGroups[groupIndex].m_patterns,recMatchInfo)) return -1;
-					matchComparison->Fill(compMatchInfo.bestLayerCount(),recMatchInfo.bestLayerCount());
+					matchComparison->Fill(compMatchInfo->bestLayerCount(),recMatchInfo->bestLayerCount());
 				}
+				delete compMatchInfo;
+				delete recMatchInfo;
 			}
 
 
 
-			SuperPatternSetMatchInfo thisSetMatch;
+			SuperPatternSetMatchInfo* thisSetMatch = new SuperPatternSetMatchInfo();
 			ChamberHits* testChamber;
 			unsigned int nHits; //number of hits, counts at max one from each layer
 			if(USE_COMP_HITS){
@@ -460,11 +462,13 @@ int PatternFinder() {
 			if(searchForMatch(*testChamber, matchGroups[groupIndex].m_patterns,thisSetMatch)) return -1;
 
 
-			unsigned int maxLayerMatchCount = thisSetMatch.bestLayerCount();
-			unsigned int maxLayerId = thisSetMatch.bestPatternId();
-			unsigned int maxLayerBaseSetIndex = thisSetMatch.bestSetIndex();
+			unsigned int maxLayerMatchCount = thisSetMatch->bestLayerCount();
+			unsigned int maxLayerId = thisSetMatch->bestPatternId();
+			//unsigned int maxLayerBaseSetIndex = thisSetMatch.bestSetIndex();
 
 			//patternIdPlot->Fill(thisSetMatch)
+
+			delete thisSetMatch;
 
 
 			//skip every event that has no hits in it

@@ -111,99 +111,6 @@ struct ChamberHits {
 	int hits[N_MAX_HALF_STRIPS][NLAYERS];
 };
 
-
-
-class SingleSuperPatternMatchInfo {
-public:
-	SingleSuperPatternMatchInfo(int patternId, bool pat[NLAYERS][3]) : m_patternId (patternId) {
-		m_layerMatchCount = -1;
-		m_overlap = new ChargePattern(pat);
-	}
-	SingleSuperPatternMatchInfo(int patternId) : m_patternId(patternId){
-		m_layerMatchCount = -1;
-		m_overlap = 0;
-	}
-	void addOverlap(bool pat[NLAYERS][3]);
-	void printPattern();
-	~SingleSuperPatternMatchInfo() {}
-
-	int patId() {return m_patternId;}
-	int layMatCount();
-
-
-private:
-	const int m_patternId;
-	int m_layerMatchCount;
-
-	ChargePattern* m_overlap;
-
-};
-
-void SingleSuperPatternMatchInfo::printPattern(){
-	if(m_overlap) m_overlap->printPattern();
-}
-
-void SingleSuperPatternMatchInfo::addOverlap(bool pat[NLAYERS][3]) {
-	if(m_overlap) delete m_overlap;
-	m_overlap = new ChargePattern(pat);
-}
-
-int SingleSuperPatternMatchInfo::layMatCount() {
-	if(m_layerMatchCount < 0 && m_overlap){
-		m_layerMatchCount = m_overlap->getLayersMatched();
-	}
-	return m_layerMatchCount;
-}
-
-
-class SuperPatternSetMatchInfo {
-public:
-
-
-	SuperPatternSetMatchInfo() {
-		m_bestSetMatchIndex = 0;
-		m_matches = new vector<SingleSuperPatternMatchInfo>();
-	}
-	int bestLayerCount();
-	int bestPatternId();
-	int bestSetIndex() {return m_bestSetMatchIndex;}
-	void printBestPattern();
-	void addSingleInfo(SingleSuperPatternMatchInfo smi);
-	~SuperPatternSetMatchInfo() {
-		delete m_matches;
-	}
-private:
-
-	//index in the m_matches vector that corresponds
-	//to the best super pattern match
-	int m_bestSetMatchIndex;
-
-	vector<SingleSuperPatternMatchInfo>* m_matches;
-
-};
-
-//prints the overlap between the best super pattern and the chamber
-void SuperPatternSetMatchInfo::printBestPattern(){
-	if(m_matches->size()) m_matches->at(m_bestSetMatchIndex).printPattern();
-}
-
-int SuperPatternSetMatchInfo::bestLayerCount(){
-	if(m_bestSetMatchIndex >=(int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex).layMatCount();
-}
-
-int SuperPatternSetMatchInfo::bestPatternId() {
-	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex).patId();
-}
-
-void SuperPatternSetMatchInfo::addSingleInfo(SingleSuperPatternMatchInfo smi) {
-	if(smi.layMatCount() > bestLayerCount()){
-		m_bestSetMatchIndex = m_matches->size();
-	}
-	m_matches->push_back(smi);
-}
-
 // ChargeSuperPattern are scanned over the entire chamber, this class is
 // effectively just a small matrix, each of which (if we have a vector) represent
 // a broadly encompasing general pattern which gives us preliminary information on a pattern.
@@ -229,7 +136,6 @@ public:
 		}
 		m_name = name;
 	}
-
 
 	ChargeSuperPattern(const ChargeSuperPattern &obj) : m_id(obj.m_id) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
@@ -283,6 +189,104 @@ private:
 
 };
 
+
+class SingleSuperPatternMatchInfo {
+public:
+
+	SingleSuperPatternMatchInfo(ChargeSuperPattern p, bool overlap[NLAYERS][3]): m_superPattern(p) {
+		m_layerMatchCount = -1;
+		m_overlap = new ChargePattern(overlap);
+	}
+	SingleSuperPatternMatchInfo(ChargeSuperPattern p) : m_superPattern(p){
+		m_layerMatchCount = -1;
+		m_overlap = 0;
+	}
+	void addOverlap(bool pat[NLAYERS][3]);
+	void print3x6Pattern();
+	~SingleSuperPatternMatchInfo() {
+		if(m_overlap) delete m_overlap;
+	}
+
+	int patId() {return m_superPattern.m_id;}
+	int layMatCount();
+
+
+private:
+	int m_layerMatchCount;
+
+	ChargePattern* m_overlap = 0;
+	const ChargeSuperPattern m_superPattern;
+};
+
+void SingleSuperPatternMatchInfo::print3x6Pattern(){
+	if(m_overlap) m_overlap->printPattern();
+}
+
+void SingleSuperPatternMatchInfo::addOverlap(bool pat[NLAYERS][3]) {
+	if(m_overlap) delete m_overlap;
+	m_overlap = new ChargePattern(pat);
+}
+
+int SingleSuperPatternMatchInfo::layMatCount() {
+	if(m_layerMatchCount < 0 && m_overlap){
+		m_layerMatchCount = m_overlap->getLayersMatched();
+	}
+	return m_layerMatchCount;
+}
+
+
+class SuperPatternSetMatchInfo {
+public:
+
+	SuperPatternSetMatchInfo() {
+		m_bestSetMatchIndex = 0;
+		m_matches = new vector<SingleSuperPatternMatchInfo*>();
+	}
+	int bestLayerCount();
+	int bestPatternId();
+	int bestSetIndex() {return m_bestSetMatchIndex;}
+	void printBest3x6Pattern();
+	void addSingleInfo(SingleSuperPatternMatchInfo* smi);
+	~SuperPatternSetMatchInfo() {
+		while(m_matches->size()) {
+			delete m_matches->back();
+			m_matches->pop_back();
+		}
+		delete m_matches;
+	}
+private:
+
+	//index in the m_matches vector that corresponds
+	//to the best super pattern match
+	int m_bestSetMatchIndex;
+
+	vector<SingleSuperPatternMatchInfo*>* m_matches;
+
+};
+
+//prints the overlap between the best super pattern and the chamber
+void SuperPatternSetMatchInfo::printBest3x6Pattern(){
+	if(m_matches->size()) m_matches->at(m_bestSetMatchIndex)->print3x6Pattern();
+}
+
+int SuperPatternSetMatchInfo::bestLayerCount(){
+	if(m_bestSetMatchIndex >=(int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex)->layMatCount();
+}
+
+int SuperPatternSetMatchInfo::bestPatternId() {
+	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex)->patId();
+}
+
+void SuperPatternSetMatchInfo::addSingleInfo(SingleSuperPatternMatchInfo* smi) {
+	if(smi->layMatCount() > bestLayerCount()){
+		m_bestSetMatchIndex = m_matches->size();
+	}
+	m_matches->push_back(smi);
+}
+
+
 class PatternIDMatchPlots {
 public:
 	vector<TH1F*> m_plots;
@@ -305,7 +309,6 @@ public:
 		delete m_denominator;
 	};
 };
-
 
 void printSuperPattern(const ChargeSuperPattern &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
@@ -336,7 +339,6 @@ void printChamber(const ChamberHits &c){
 	}
 }
 
-
 bool validComparatorTime(bool isComparator, int time){
 	if(isComparator){
 		float lowTimeLimit = 0.5*MAX_COMP_TIME_BIN - TIME_RANGE;
@@ -348,11 +350,12 @@ bool validComparatorTime(bool isComparator, int time){
 
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
-int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p, SingleSuperPatternMatchInfo &mi){
+int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSuperPatternMatchInfo &mi){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
 	bool bestOverlap [NLAYERS][3];
+	//int bestHoriontalPosition = 0; //best horizontal position in chamber, from left
 	for(unsigned int i=0; i < NLAYERS; i++){
 		for(unsigned int j =0; j < 3; j++){
 			overlap[i][j] = false; //initialize all as false
@@ -436,30 +439,27 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p, SingleSup
 
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
-int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, SuperPatternSetMatchInfo &m){
+int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, SuperPatternSetMatchInfo *m){
 	if(ps->size() > N_MAX_PATTERN_SET) {
 		printf("ERROR: Pattern size too large\n");
 		return -1;
 	}
 
-
 	//now we have all the rh for this segment, so check if the patterns are there
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
-		SingleSuperPatternMatchInfo thisMatch(ps->at(ip).m_id);
-		if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
+		SingleSuperPatternMatchInfo *thisMatch = new SingleSuperPatternMatchInfo(ps->at(ip));
+		if(containsPattern(c,ps->at(ip),*thisMatch) < 0) {
 			printf("Error: pattern algorithm failed\n");
 			return -1;
 		}
 
-		m.addSingleInfo(thisMatch);
-
-
+		m->addSingleInfo(thisMatch);
 	}
 
 	if(DEBUG){
 		printChamber(c);
-		printSuperPattern(ps->at(m.bestSetIndex()));
-		m.printBestPattern();
+		printSuperPattern(ps->at(m->bestSetIndex()));
+		m->printBest3x6Pattern();
 	}
 
 	return 0;
