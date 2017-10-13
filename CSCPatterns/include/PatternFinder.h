@@ -10,19 +10,19 @@
 
 #include <iostream>
 
+#include "PatternFitter.h"
+
 using namespace std;
 
 
 
-unsigned int MAX_ENTRY = 200000; //how many events you look at
-const bool USE_COMP_HITS = 1; //false uses recHits
+unsigned int MAX_ENTRY = 2; //how many events you look at
+const bool USE_COMP_HITS = 0; //false uses recHits
 const int MAX_PATTERN_WIDTH = 11;
 const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
 const int MAX_COMP_TIME_BIN = 15;
 const int TIME_RANGE = USE_COMP_HITS ? 2: 1e9; //don't care about range for recHits
-const int NLAYERS = 6; //6 layers
-const int DEBUG = 0;
-const bool MAKE_MATCH_LAYER_COMPARISON = true;
+const bool MAKE_MATCH_LAYER_COMPARISON = false;
 const int N_LAYER_REQUIREMENT = 3;
 //maximum number of patterns we can have, this is currently arbitrary and has no relationship to what fits on the card
 const int N_MAX_PATTERN_SET = 20;
@@ -111,27 +111,117 @@ struct ChamberHits {
 	int hits[N_MAX_HALF_STRIPS][NLAYERS];
 };
 
-struct SetMatchInfo {
-	unsigned int bestLayerMatchCount;
-	unsigned int bestPatternId;
-	unsigned int bestSetIndex;
-	unsigned int patternMatchCount[N_MAX_PATTERN_SET]; //arbitrary value could cause problems if we try larger sets!
+
+
+class SingleSuperPatternMatchInfo {
+public:
+	SingleSuperPatternMatchInfo(int patternId, bool pat[NLAYERS][3]) : m_patternId (patternId) {
+		m_layerMatchCount = -1;
+		m_overlap = new ChargePattern(pat);
+	}
+	SingleSuperPatternMatchInfo(int patternId) : m_patternId(patternId){
+		m_layerMatchCount = -1;
+		m_overlap = 0;
+	}
+	void addOverlap(bool pat[NLAYERS][3]);
+	void printPattern();
+	~SingleSuperPatternMatchInfo() {}
+
+	int patId() {return m_patternId;}
+	int layMatCount();
+
+
+private:
+	const int m_patternId;
+	int m_layerMatchCount;
+
+	ChargePattern* m_overlap;
+
 };
 
-class ChargePattern {
+void SingleSuperPatternMatchInfo::printPattern(){
+	if(m_overlap) m_overlap->printPattern();
+}
+
+void SingleSuperPatternMatchInfo::addOverlap(bool pat[NLAYERS][3]) {
+	if(m_overlap) delete m_overlap;
+	m_overlap = new ChargePattern(pat);
+}
+
+int SingleSuperPatternMatchInfo::layMatCount() {
+	if(m_layerMatchCount < 0 && m_overlap){
+		m_layerMatchCount = m_overlap->getLayersMatched();
+	}
+	return m_layerMatchCount;
+}
+
+
+class SuperPatternSetMatchInfo {
+public:
+
+
+	SuperPatternSetMatchInfo() {
+		m_bestSetMatchIndex = 0;
+		m_matches = new vector<SingleSuperPatternMatchInfo>();
+	}
+	int bestLayerCount();
+	int bestPatternId();
+	int bestSetIndex() {return m_bestSetMatchIndex;}
+	void printBestPattern();
+	void addSingleInfo(SingleSuperPatternMatchInfo smi);
+	~SuperPatternSetMatchInfo() {
+		delete m_matches;
+	}
+private:
+
+	//index in the m_matches vector that corresponds
+	//to the best super pattern match
+	int m_bestSetMatchIndex;
+
+	vector<SingleSuperPatternMatchInfo>* m_matches;
+
+};
+
+//prints the overlap between the best super pattern and the chamber
+void SuperPatternSetMatchInfo::printBestPattern(){
+	if(m_matches->size()) m_matches->at(m_bestSetMatchIndex).printPattern();
+}
+
+int SuperPatternSetMatchInfo::bestLayerCount(){
+	if(m_bestSetMatchIndex >=(int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex).layMatCount();
+}
+
+int SuperPatternSetMatchInfo::bestPatternId() {
+	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex).patId();
+}
+
+void SuperPatternSetMatchInfo::addSingleInfo(SingleSuperPatternMatchInfo smi) {
+	if(smi.layMatCount() > bestLayerCount()){
+		m_bestSetMatchIndex = m_matches->size();
+	}
+	m_matches->push_back(smi);
+}
+
+// ChargeSuperPattern are scanned over the entire chamber, this class is
+// effectively just a small matrix, each of which (if we have a vector) represent
+// a broadly encompasing general pattern which gives us preliminary information on a pattern.
+
+class ChargeSuperPattern {
 public:
 
 	const unsigned int m_id;
 	bool m_hits[MAX_PATTERN_WIDTH][NLAYERS]; //layers
 
-	ChargePattern(unsigned int id, bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id) {
+	ChargeSuperPattern(unsigned int id, bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
 			}
 		}
 	}
-	ChargePattern(string name, unsigned int id, bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id){
+	ChargeSuperPattern(string name, unsigned int id, bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
@@ -141,7 +231,7 @@ public:
 	}
 
 
-	ChargePattern(const ChargePattern &obj) : m_id(obj.m_id) {
+	ChargeSuperPattern(const ChargeSuperPattern &obj) : m_id(obj.m_id) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = obj.m_hits[j][i];
@@ -151,7 +241,7 @@ public:
 	}
 
 
-	ChargePattern() :m_id(-1){
+	ChargeSuperPattern() :m_id(-1){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = 0;
@@ -160,18 +250,18 @@ public:
 		m_name = "";
 	}
 
-	~ChargePattern() {}
-	ChargePattern returnFlipped(unsigned int id){
+	~ChargeSuperPattern() {}
+	ChargeSuperPattern returnFlipped(unsigned int id){
 		return returnFlipped("", id);
 	}
-	ChargePattern returnFlipped(string name, unsigned int id){
+	ChargeSuperPattern returnFlipped(string name, unsigned int id){
 		bool flippedPattern[MAX_PATTERN_WIDTH][NLAYERS];
 		for(int i = 0; i < NLAYERS; i++){
 			for(int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				flippedPattern[j][i] = m_hits[MAX_PATTERN_WIDTH-1-j][i];
 			}
 		}
-		return ChargePattern(name, id, flippedPattern);
+		return ChargeSuperPattern(name, id, flippedPattern);
 	}
 
 	string name() {
@@ -199,17 +289,15 @@ public:
 	vector<vector<int>> m_matchIds; //tells us what pattern ids are contained in each respective plot
 	const string m_name;
 	TH1F* m_denominator;
-	vector<ChargePattern>* m_patterns; //patterns used to test against
+	vector<ChargeSuperPattern>* m_patterns; //patterns used to test against
 
-	PatternIDMatchPlots(string name, vector<ChargePattern>* patterns) : m_name(name){
-		//m_patterns = patterns;
+	PatternIDMatchPlots(string name, vector<ChargeSuperPattern>* patterns) : m_name(name){
 
-		m_patterns = new vector<ChargePattern>();
+		m_patterns = new vector<ChargeSuperPattern>();
 		for(unsigned int i =0; i < patterns->size(); i++){
 			m_patterns->push_back(patterns->at(i));
 		}
 
-		//m_patterns = patterns;
 		m_denominator = 0;
 	}
 	~PatternIDMatchPlots() {
@@ -219,7 +307,7 @@ public:
 };
 
 
-void printPattern(const ChargePattern &p) {
+void printSuperPattern(const ChargeSuperPattern &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
@@ -258,114 +346,122 @@ bool validComparatorTime(bool isComparator, int time){
 	} else return time;
 }
 
-//looks if a chamber "c" contains a pattern "p". returns
-//the maximum number of matched layers
-int containsPattern(const ChamberHits &c, const ChargePattern &p){
+//looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
+// run successfully, match info is stored in variable mi
+int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p, SingleSuperPatternMatchInfo &mi){
 
+	//overlap between tested super pattern and chamber hits
+	bool overlap [NLAYERS][3];
+	bool bestOverlap [NLAYERS][3];
+	for(unsigned int i=0; i < NLAYERS; i++){
+		for(unsigned int j =0; j < 3; j++){
+			overlap[i][j] = false; //initialize all as false
+			bestOverlap[i][j] = false;
+		}
+	}
 
 	unsigned int maxMatchedLayers = 0;
 
-	if(DEBUG) {
-		printChamber(c);
-		printPattern(p);
-		if(DEBUG>1)printf("++++ Printing Match Output ++++\n");
-	}
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
 	for(int x = -MAX_PATTERN_WIDTH+1; x < N_MAX_HALF_STRIPS; x++){
-		string printOuts[NLAYERS];
-
-		if(DEBUG>1) {
-			//fill the beginning part of the print out array
-			for(int iprinty = 0; iprinty < NLAYERS; iprinty++){
-				for(int iprintx = 0; iprintx < x; iprintx++){
-					printOuts[iprinty] += to_string((c.hits)[iprintx][iprinty]);
-				}
-			}
-		}
-
 
 		bool matchedLayers[NLAYERS];
 		for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
 
 		//for each x position in the chamber, were going to iterate through
 		// the pattern to see how much overlap there is at that position
-		for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
-			//go through the entire vertical dimension as well
-			for(unsigned int y = 0; y < NLAYERS; y++) {
-				//printf("%i\n", x+px);
-				//this accounts for checking patterns along the edges of the chamber that may extend
-				//past the bounds
-				if( (int)x+(int)px < 0 ||  x+px >= N_MAX_HALF_STRIPS) continue;
+		for(unsigned int y = 0; y < NLAYERS; y++) {
+
+			unsigned int overlapColumn = 0;
+			for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
 
 
-				if(validComparatorTime(c.isComparator, (c.hits)[x+px][y]) && p.m_hits[px][y]) {
-					matchedLayers[y] = true;
-					printOuts[y] += "$";
-				} else {
-					printOuts[y] += "-";
+
+				//check if we have a 1 in our superpattern
+				if(p.m_hits[px][y]){
+					if(overlapColumn >= 3){ //we are considering only patterns which, for each row, should only have at most 3 true spots
+						printf("Error, we have too many true booleans in a superpattern\n");
+						return -1;
+					}
+
+					//this accounts for checking patterns along the edges of the chamber that may extend
+					//past the bounds
+					if( (int)x+(int)px < 0 ||  x+px >= N_MAX_HALF_STRIPS) {
+						overlapColumn++;
+						continue;
+					}
+
+					//check the overlap of the actual chamber distribution
+					if(validComparatorTime(c.isComparator, (c.hits)[x+px][y])) {
+						overlap[y][overlapColumn] = true;
+						matchedLayers[y] = true;
+					} else {
+						overlap[y][overlapColumn] = false;
+					}
+					overlapColumn++; //we are now in the next column of
 				}
+
+
+			}
+			if(overlapColumn != 3) {
+				printf("Error: we don't have enough true booleans in a superpattern. overlapColumn = %i\n", overlapColumn);
+				return -1;
 			}
 		}
 
-		if(DEBUG>1) {
-			//fill the rest of the print out array
-			for(unsigned int iprinty = 0; iprinty < NLAYERS; iprinty++){
-				for(unsigned int iprintx = x+MAX_PATTERN_WIDTH; iprintx < N_MAX_HALF_STRIPS; iprintx++){
-					printOuts[iprinty] += to_string((c.hits)[iprintx][iprinty]);
-				}
-			}
-		}
 
 		unsigned int matchedLayerCount = 0;
 		for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayerCount += matchedLayers[imlc];
 
-		if(DEBUG>1){
-			for(int iprint = 0; iprint < NLAYERS; iprint++) cout << printOuts[iprint] << endl;
-			printf("for position x = %i, matchedLayerCount = %i\n",x, matchedLayerCount);
+
+		//if we have a better match than we have had before
+		if(matchedLayerCount > maxMatchedLayers) {
+			maxMatchedLayers = matchedLayerCount;
+			for(unsigned int i=0; i < NLAYERS; i++){
+					for(unsigned int j =0; j < 3; j++){
+						bestOverlap[i][j] = overlap[i][j];
+					}
+				}
 		}
-
-		//the pattern is said to match if hits are matched within three or more layers,
-		if(matchedLayerCount > maxMatchedLayers) maxMatchedLayers = matchedLayerCount;
-		if(maxMatchedLayers == NLAYERS) return NLAYERS;
+		if(maxMatchedLayers == NLAYERS) {
+			mi.addOverlap(bestOverlap);
+			return NLAYERS; //small optimization
+		}
 	}
-
+	mi.addOverlap(bestOverlap);
 	return maxMatchedLayers;
 }
 
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
-int searchForMatch(const ChamberHits &c, const vector<ChargePattern>* ps, SetMatchInfo &m){
+int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, SuperPatternSetMatchInfo &m){
 	if(ps->size() > N_MAX_PATTERN_SET) {
 		printf("ERROR: Pattern size too large\n");
 		return -1;
 	}
 
-	//initialize to zero
-	for(unsigned int i = 0; i < N_MAX_PATTERN_SET; i++){
-		m.patternMatchCount[i] = 0;
-	}
-
-	unsigned int maxMatchCount = 0;
-	unsigned int maxPatternId = 0;
-	unsigned int maxSetIndex = 0;
 
 	//now we have all the rh for this segment, so check if the patterns are there
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
-		unsigned int thisMatchCount = containsPattern(c,ps->at(ip));
-
-		m.patternMatchCount[ip] = thisMatchCount;
-
-		if(thisMatchCount > maxMatchCount) {
-			maxMatchCount = thisMatchCount;
-			maxPatternId = ps->at(ip).m_id;
-			maxSetIndex = ip;
+		SingleSuperPatternMatchInfo thisMatch(ps->at(ip).m_id);
+		if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
+			printf("Error: pattern algorithm failed\n");
+			return -1;
 		}
+
+		m.addSingleInfo(thisMatch);
+
+
 	}
-	m.bestLayerMatchCount = maxMatchCount;
-	m.bestPatternId = maxPatternId;
-	m.bestSetIndex = maxSetIndex;
+
+	if(DEBUG){
+		printChamber(c);
+		printSuperPattern(ps->at(m.bestSetIndex()));
+		m.printBestPattern();
+	}
+
 	return 0;
 }
 
@@ -373,44 +469,20 @@ int searchForMatch(const ChamberHits &c, const vector<ChargePattern>* ps, SetMat
 
 
 
-vector<ChargePattern>* createGroup1Pattern(){
+vector<ChargeSuperPattern>* createGroup1Pattern(){
 
-	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
-
-
-	ChargePattern id1("100",100,IDSV1_A);
-	ChargePattern id2("200",200,IDSV1_B);
-	ChargePattern id3 = id2.returnFlipped("300",300);
-	ChargePattern id4("400",400,IDSV1_C);
-	ChargePattern id5 = id4.returnFlipped("500",500);
-	ChargePattern id6("600",600,IDSV1_D);
-	ChargePattern id7 = id6.returnFlipped("700",700);
-	ChargePattern id8("800",800, IDSV1_E);
-	ChargePattern id9 = id8.returnFlipped("900",900);
-
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
-
-	return thisVector;
-}
-
-vector<ChargePattern>* createGroup2Pattern(){
-
-	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
+	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
 
 
-	ChargePattern id1("100",100,IDSV1_A);
-	ChargePattern id2("200",200,IDSV1_B);
-	ChargePattern id3 = id2.returnFlipped("300",300);
-	ChargePattern id4("400",400,IDSV1_C);
-	ChargePattern id5 = id4.returnFlipped("500",500);
-	ChargePattern id6("600",600,IDSV1_D);
-	ChargePattern id7 = id6.returnFlipped("700",700);
-	ChargePattern id8("800",800, IDSV1_E);
-	ChargePattern id9 = id8.returnFlipped("900",900);
+	ChargeSuperPattern id1("100",100,IDSV1_A);
+	ChargeSuperPattern id2("200",200,IDSV1_B);
+	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
+	ChargeSuperPattern id4("400",400,IDSV1_C);
+	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
+	ChargeSuperPattern id6("600",600,IDSV1_D);
+	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
+	ChargeSuperPattern id8("800",800, IDSV1_E);
+	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);
@@ -421,20 +493,20 @@ vector<ChargePattern>* createGroup2Pattern(){
 	return thisVector;
 }
 
-vector<ChargePattern>* createGroup3Pattern(){
+vector<ChargeSuperPattern>* createGroup2Pattern(){
 
-	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
+	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
 
 
-	ChargePattern id1("100",100,IDSV1_A);
-	ChargePattern id2("200",200,IDSV1_B);
-	ChargePattern id3 = id2.returnFlipped("300",300);
-	ChargePattern id4("400",400,IDSV1_C);
-	ChargePattern id5 = id4.returnFlipped("500",500);
-	ChargePattern id6("600",600,IDSV1_D);
-	ChargePattern id7 = id6.returnFlipped("700",700);
-	ChargePattern id8("800",800, IDSV1_E);
-	ChargePattern id9 = id8.returnFlipped("900",900);
+	ChargeSuperPattern id1("100",100,IDSV1_A);
+	ChargeSuperPattern id2("200",200,IDSV1_B);
+	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
+	ChargeSuperPattern id4("400",400,IDSV1_C);
+	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
+	ChargeSuperPattern id6("600",600,IDSV1_D);
+	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
+	ChargeSuperPattern id8("800",800, IDSV1_E);
+	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);
@@ -445,20 +517,44 @@ vector<ChargePattern>* createGroup3Pattern(){
 	return thisVector;
 }
 
-vector<ChargePattern>* createGroup4Pattern(){
+vector<ChargeSuperPattern>* createGroup3Pattern(){
 
-	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
+	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
 
 
-	ChargePattern id1("100",100,IDSV1_A);
-	ChargePattern id2("200",200,IDSV1_B);
-	ChargePattern id3 = id2.returnFlipped("300",300);
-	ChargePattern id4("400",400,IDSV1_C);
-	ChargePattern id5 = id4.returnFlipped("500",500);
-	ChargePattern id6("600",600,IDSV1_D);
-	ChargePattern id7 = id6.returnFlipped("700",700);
-	ChargePattern id8("800",800, IDSV1_E);
-	ChargePattern id9 = id8.returnFlipped("900",900);
+	ChargeSuperPattern id1("100",100,IDSV1_A);
+	ChargeSuperPattern id2("200",200,IDSV1_B);
+	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
+	ChargeSuperPattern id4("400",400,IDSV1_C);
+	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
+	ChargeSuperPattern id6("600",600,IDSV1_D);
+	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
+	ChargeSuperPattern id8("800",800, IDSV1_E);
+	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
+
+	thisVector->push_back(id1);
+	thisVector->push_back(id4);
+	thisVector->push_back(id5);
+	thisVector->push_back(id8);
+	thisVector->push_back(id9);
+
+	return thisVector;
+}
+
+vector<ChargeSuperPattern>* createGroup4Pattern(){
+
+	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
+
+
+	ChargeSuperPattern id1("100",100,IDSV1_A);
+	ChargeSuperPattern id2("200",200,IDSV1_B);
+	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
+	ChargeSuperPattern id4("400",400,IDSV1_C);
+	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
+	ChargeSuperPattern id6("600",600,IDSV1_D);
+	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
+	ChargeSuperPattern id8("800",800, IDSV1_E);
+	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);

@@ -18,8 +18,8 @@
 
 #include <iostream>
 
-
 #include "../include/PatternFinder.h"
+#include "../include/PatternFitter.h"
 
 using namespace std;
 
@@ -138,7 +138,6 @@ int PatternFinder() {
 	TH1F* idHist = new TH1F("id","id", 7, -0.5, 6.5);
 
 
-
 	// CREATE PID EFFICIENCY PLOTS
 	vector<TH1F*> lctPidEff; //pid efficiency of LCTs
 	vector<TH1F*> lctPidEff4; //pid efficiency of LCTs with RH >=4
@@ -184,6 +183,12 @@ int PatternFinder() {
 	const int nEndcaps = 2;
 
 
+	/*
+	TH1F* patternIdPlot("subpattern", "SubPattern Id Frequency", 1000, 0, pow(2,12));
+	patternIdPlot->GetXaxis()->SetTitle("Pattern ID Code");
+	patternIdPlot->GetYaxis()->SetTitle("Entries");
+	 */
+
 
 	//
 	// SET UP GROUPS
@@ -201,7 +206,7 @@ int PatternFinder() {
 
 
 	for(unsigned int igroup = 0; igroup < nMatchGroups; igroup++){
-		vector<ChargePattern>* thisPatternSet = matchGroups[igroup].m_patterns;
+		vector<ChargeSuperPattern>* thisPatternSet = matchGroups[igroup].m_patterns;
 		for(unsigned int i = 0; i < thisPatternSet->size(); i++){
 			TH1F* thisHist;
 			vector<int> thisHistIds;
@@ -423,8 +428,8 @@ int PatternFinder() {
 			///ALSO NEED TO CHECK TMB DATA, to make sure you use valid data
 			if(MAKE_MATCH_LAYER_COMPARISON){
 
-				SetMatchInfo compMatchInfo;
-				SetMatchInfo recMatchInfo;
+				SuperPatternSetMatchInfo compMatchInfo;
+				SuperPatternSetMatchInfo recMatchInfo;
 
 				bool hasTmbId = find(tmbId->begin(), tmbId->end(), chSid) != tmbId->end();
 
@@ -433,13 +438,13 @@ int PatternFinder() {
 				if(hasTmbId && (groupIndex == TESTING_GROUP_INDEX)) {
 					if(searchForMatch(theseCompHits, matchGroups[groupIndex].m_patterns,compMatchInfo)) return -1;
 					if(searchForMatch(theseRHHits, matchGroups[groupIndex].m_patterns,recMatchInfo)) return -1;
-					matchComparison->Fill(compMatchInfo.bestLayerMatchCount,recMatchInfo.bestLayerMatchCount);
+					matchComparison->Fill(compMatchInfo.bestLayerCount(),recMatchInfo.bestLayerCount());
 				}
 			}
 
 
 
-			SetMatchInfo thisSetMatch;
+			SuperPatternSetMatchInfo thisSetMatch;
 			ChamberHits* testChamber;
 			unsigned int nHits; //number of hits, counts at max one from each layer
 			if(USE_COMP_HITS){
@@ -455,9 +460,11 @@ int PatternFinder() {
 			if(searchForMatch(*testChamber, matchGroups[groupIndex].m_patterns,thisSetMatch)) return -1;
 
 
-			unsigned int maxLayerMatchCount = thisSetMatch.bestLayerMatchCount;
-			unsigned int maxLayerId = thisSetMatch.bestPatternId;
-			unsigned int maxLayerBaseSetIndex = thisSetMatch.bestSetIndex;
+			unsigned int maxLayerMatchCount = thisSetMatch.bestLayerCount();
+			unsigned int maxLayerId = thisSetMatch.bestPatternId();
+			unsigned int maxLayerBaseSetIndex = thisSetMatch.bestSetIndex();
+
+			//patternIdPlot->Fill(thisSetMatch)
 
 
 			//skip every event that has no hits in it
@@ -512,15 +519,6 @@ int PatternFinder() {
 					missed->Fill(Pt);
 				} else if(maxLayerMatchCount == nHits - 1){
 					missingOne->Fill(Pt);
-					/*
-					printf("~~~~ PRINTING NEW SEGMENT ID FOR MISSED 1 LAYER: %i Comparator Hits ~~~~\n", chSid);
-					printChamber(theseCompHits);
-					printf("~~~~ recHits ~~~~\n");
-
-					printChamber(theseRHHits);
-					printf("Best Match with %i layers is ID %i\n", maxLayerMatchCount ,  maxLayerId);
-					printPattern(matchGroups[groupIndex].m_patterns->at(maxLayerBaseSetIndex));
-					*/
 				} else if(maxLayerMatchCount == nHits - 2){
 					missingTwo->Fill(Pt);
 				} else if(maxLayerMatchCount == nHits - 3){
