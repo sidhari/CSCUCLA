@@ -26,7 +26,7 @@ const int TESTING_GROUP_INDEX = 3; //which of the 4 groups you are looking at (0
 
 bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0},
-		{0,0,0,0,0,0},
+		{0,0,0,0,0,0},	
 		{0,0,0,0,0,0},
 		{0,0,0,0,0,0},
 		{1,1,1,1,1,1},

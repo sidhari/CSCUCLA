@@ -8,6 +8,8 @@
 #ifndef PATTERNFINDERHELPERFUNCTIONS_H_
 #define PATTERNFINDERHELPERFUNCTIONS_H_
 
+#include "PatternFinderClasses.h"
+
 void printSuperPattern(const ChargeSuperPattern &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
@@ -53,7 +55,7 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
 	bool bestOverlap [NLAYERS][3];
-	//int bestHoriontalPosition = 0; //best horizontal position in chamber, from left
+	int bestHoriontalPosition = 0; //best horizontal position in chamber, from left
 	for(unsigned int i=0; i < NLAYERS; i++){
 		for(unsigned int j =0; j < 3; j++){
 			overlap[i][j] = false; //initialize all as false
@@ -120,18 +122,19 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 		//if we have a better match than we have had before
 		if(matchedLayerCount > maxMatchedLayers) {
 			maxMatchedLayers = matchedLayerCount;
+			bestHoriontalPosition = x;
 			for(unsigned int i=0; i < NLAYERS; i++){
-					for(unsigned int j =0; j < 3; j++){
-						bestOverlap[i][j] = overlap[i][j];
-					}
+				for(unsigned int j =0; j < 3; j++){
+					bestOverlap[i][j] = overlap[i][j];
 				}
+			}
 		}
 		if(maxMatchedLayers == NLAYERS) {
-			mi.addOverlap(bestOverlap);
+			mi.addMatchInfo(bestOverlap,bestHoriontalPosition);
 			return NLAYERS; //small optimization
 		}
 	}
-	mi.addOverlap(bestOverlap);
+	mi.addMatchInfo(bestOverlap,bestHoriontalPosition);
 	return maxMatchedLayers;
 }
 

@@ -10,7 +10,6 @@
 
 #include <iostream>
 
-//#include "PatternF.h"
 #include "PatternConstants.h"
 
 using namespace std;
@@ -55,7 +54,7 @@ public:
 		}
 	};
 	~ChargePattern() {}
-private:
+
 	bool m_hits[NLAYERS][3]; //all the hits within a superpattern that a chamber scan matched
 };
 
@@ -199,16 +198,22 @@ private:
 class SingleSuperPatternMatchInfo {
 public:
 
-	SingleSuperPatternMatchInfo(ChargeSuperPattern p, bool overlap[NLAYERS][3]): m_superPattern(p) {
+	SingleSuperPatternMatchInfo(ChargeSuperPattern p, int horOff, bool overlap[NLAYERS][3]):
+		m_superPattern(p) ,m_horizontalOffset(horOff){
+		m_horizontalOffset = horOff;
 		m_layerMatchCount = -1;
 		m_overlap = new ChargePattern(overlap);
 	}
-	SingleSuperPatternMatchInfo(ChargeSuperPattern p) : m_superPattern(p){
+	SingleSuperPatternMatchInfo(ChargeSuperPattern p) :
+		m_superPattern(p){
+		m_horizontalOffset = 0;
 		m_layerMatchCount = -1;
 		m_overlap = 0;
 	}
-	void addOverlap(bool pat[NLAYERS][3]);
+	void addMatchInfo(bool pat[NLAYERS][3],	int horOff);
 	void print3x6Pattern();
+	void printPatternInChamber();
+	int getHorOffset() {return m_horizontalOffset;}
 	~SingleSuperPatternMatchInfo() {
 		if(m_overlap) delete m_overlap;
 	}
@@ -222,15 +227,34 @@ private:
 
 	ChargePattern* m_overlap = 0;
 	const ChargeSuperPattern m_superPattern;
+	int m_horizontalOffset; //half strips, from lowest index
 };
 
 void SingleSuperPatternMatchInfo::print3x6Pattern(){
 	if(m_overlap) m_overlap->printPattern();
 }
 
-void SingleSuperPatternMatchInfo::addOverlap(bool pat[NLAYERS][3]) {
+void SingleSuperPatternMatchInfo::printPatternInChamber(){
+	printf("Horizontal offset (from left) is %i half strips\n", m_horizontalOffset);
+	for(int j=0; j < NLAYERS; j++){
+		int trueCounter = 0;//for each layer, should only have 3
+		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
+			if(!m_superPattern.m_hits[i][j]){
+				printf("0");
+			}else{
+				if(m_overlap->m_hits[j][trueCounter]) printf("1");
+				else printf("0");
+				trueCounter++;
+			}
+		}
+		printf("\n");
+	}
+}
+
+void SingleSuperPatternMatchInfo::addMatchInfo(bool pat[NLAYERS][3], int horOff) {
 	if(m_overlap) delete m_overlap;
 	m_overlap = new ChargePattern(pat);
+	m_horizontalOffset = horOff;
 }
 
 int SingleSuperPatternMatchInfo::layMatCount() {
@@ -272,7 +296,10 @@ private:
 
 //prints the overlap between the best super pattern and the chamber
 void SuperPatternSetMatchInfo::printBest3x6Pattern(){
-	if(m_matches->size()) m_matches->at(m_bestSetMatchIndex)->print3x6Pattern();
+	if(m_matches->size()) {
+		m_matches->at(m_bestSetMatchIndex)->print3x6Pattern();
+		m_matches->at(m_bestSetMatchIndex)->printPatternInChamber();
+	}
 }
 
 int SuperPatternSetMatchInfo::bestLayerCount(){

@@ -18,8 +18,9 @@
 
 #include <iostream>
 
-#include "../include/PatternFinder.h"
-#include "../include/PatternFitter.h"
+#include "../include/PatternConstants.h"
+#include "../include/PatternFinderClasses.h"
+#include "../include/PatternFinderHelperFunctions.h"
 
 using namespace std;
 
