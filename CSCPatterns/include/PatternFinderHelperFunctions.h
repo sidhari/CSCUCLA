@@ -80,8 +80,6 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 			unsigned int overlapColumn = 0;
 			for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
 
-
-
 				//check if we have a 1 in our superpattern
 				if(p.m_hits[px][y]){
 					if(overlapColumn >= 3){ //we are considering only patterns which, for each row, should only have at most 3 true spots
@@ -91,7 +89,8 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 
 					//this accounts for checking patterns along the edges of the chamber that may extend
 					//past the bounds
-					if( (int)x+(int)px < 0 ||  x+px >= N_MAX_HALF_STRIPS) {
+					if( x+(int)px < 0 ||  x+px >= N_MAX_HALF_STRIPS) {
+						overlap[y][overlapColumn] = false;
 						overlapColumn++;
 						continue;
 					}
@@ -130,11 +129,11 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 			}
 		}
 		if(maxMatchedLayers == NLAYERS) {
-			mi.addMatchInfo(bestOverlap,bestHoriontalPosition);
+			if(mi.addMatchInfo(bestOverlap,bestHoriontalPosition) < 0) return -1;
 			return NLAYERS; //small optimization
 		}
 	}
-	mi.addMatchInfo(bestOverlap,bestHoriontalPosition);
+	if(mi.addMatchInfo(bestOverlap,bestHoriontalPosition) < 0) return -1;
 	return maxMatchedLayers;
 }
 
@@ -142,7 +141,7 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 //look for the best matched pattern, when we have a set of them, and fill the set match info
 int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, SuperPatternSetMatchInfo *m){
 	if(ps->size() > N_MAX_PATTERN_SET) {
-		printf("ERROR: Pattern size too large\n");
+		printf("Error: Pattern size too large\n");
 		return -1;
 	}
 
@@ -151,9 +150,9 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, S
 		SingleSuperPatternMatchInfo *thisMatch = new SingleSuperPatternMatchInfo(ps->at(ip));
 		if(containsPattern(c,ps->at(ip),*thisMatch) < 0) {
 			printf("Error: pattern algorithm failed\n");
+			printChamber(c);
 			return -1;
 		}
-
 		m->addSingleInfo(thisMatch);
 	}
 
@@ -265,7 +264,6 @@ vector<ChargeSuperPattern>* createGroup4Pattern(){
 
 	return thisVector;
 }
-
 
 int chamberSerial( int ec, int st, int ri, int ch ) {
 

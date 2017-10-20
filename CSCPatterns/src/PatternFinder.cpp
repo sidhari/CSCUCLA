@@ -253,9 +253,13 @@ int PatternFinder() {
 		}
 
 
+		IdList thisList;
+
 	//
 	// TREE ITERATION
 	//
+
+
 
 	for(unsigned int i = 0; i < MAX_ENTRY; i++) {
 		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
@@ -464,10 +468,12 @@ int PatternFinder() {
 
 
 			unsigned int maxLayerMatchCount = thisSetMatch->bestLayerCount();
-			unsigned int maxLayerId = thisSetMatch->bestPatternId();
+			unsigned int maxLayerId = thisSetMatch->bestSuperPatternId();
 			//unsigned int maxLayerBaseSetIndex = thisSetMatch.bestSetIndex();
 
 			//patternIdPlot->Fill(thisSetMatch)
+
+			thisList.addId(thisSetMatch->bestSubPatternCode());
 
 			delete thisSetMatch;
 
@@ -598,6 +604,8 @@ int PatternFinder() {
 			}
 		}
 	}
+
+	thisList.printList();
 
 	TCanvas* c = new TCanvas("c","comp",1200,900);
 	c->SetLogy();

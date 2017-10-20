@@ -9,9 +9,9 @@
 #define PATTERNCONSTANTS_H_
 
 
-const int DEBUG = 1;
+const int DEBUG = 0;
 const int NLAYERS = 6; //6 layers
-unsigned int MAX_ENTRY = 2; //how many events you look at
+const unsigned int MAX_ENTRY = 200; //how many events you look at
 const bool USE_COMP_HITS = 0; //false uses recHits
 const int MAX_PATTERN_WIDTH = 11;
 const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
@@ -24,7 +24,7 @@ const int N_MAX_PATTERN_SET = 20;
 const int TESTING_GROUP_INDEX = 3; //which of the 4 groups you are looking at (0-3)
 
 
-bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {
+const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0},
 		{0,0,0,0,0,0},	
 		{0,0,0,0,0,0},
@@ -54,7 +54,7 @@ bool IDSV1_B[MAX_PATTERN_WIDTH][NLAYERS] = {
 };
 
 
-bool IDSV1_C[MAX_PATTERN_WIDTH][NLAYERS] = {
+const bool IDSV1_C[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0},
 		{0,0,0,0,0,0},
 		{1,0,0,0,0,0},
@@ -68,7 +68,7 @@ bool IDSV1_C[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0}
 };
 
-bool IDSV1_D[MAX_PATTERN_WIDTH][NLAYERS] = {
+const bool IDSV1_D[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0},
 		{1,0,0,0,0,0},
 		{1,1,0,0,0,0},
@@ -82,7 +82,7 @@ bool IDSV1_D[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0}
 };
 
-bool IDSV1_E[MAX_PATTERN_WIDTH][NLAYERS] = {
+const bool IDSV1_E[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{1,0,0,0,0,0},
 		{1,1,0,0,0,0},
 		{1,1,0,0,0,0},
