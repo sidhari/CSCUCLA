@@ -11,6 +11,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <bitset>
 
 #include "PatternConstants.h"
 
@@ -28,25 +29,22 @@ struct ChamberHits {
 //keeps track of the number of occurences of an individual pattern ID
 class IdCount{
 public:
-	IdCount(int id) : m_id(id) {
-		m_count = 1;
-	}
-	IdCount(const IdCount& c): m_id(c.m_id){
-		m_count = c.m_count;
-	}
+	IdCount(int id) : m_id(id) {}
 
-	IdCount& operator++() {
-		m_count++;
-		return *this;
-	}
+	void addPair(pair<float,float> positionSlope){m_positionSlopes.push_back(positionSlope);}
 
-
-	unsigned int count(){return m_count;}
+	unsigned int count(){return m_positionSlopes.size();}
 	int id(){return m_id;}
+
+	const vector<pair<float,float>>& getPosSlope() { return m_positionSlopes;}
 
 	~IdCount(){}
 private:
-	unsigned int m_count;
+	//vector of all positions [strips] (first element in pair) and angles [strips/layer](second element)
+	//of the segment associated with this pattern.
+	vector<pair<float, float>> m_positionSlopes;
+
+	//unsigned int m_count;
 	const int m_id;
 };
 
@@ -55,43 +53,45 @@ class IdList {
 public:
 	IdList(){}
 
-	void addId(int id);
+	void addId(int id,pair<float,float> positionSlope);
 	void printList();
+	const vector<IdCount*>& getIds(){return m_ids;}
 
 	~IdList(){
-		while(m_counts.size()) {
-			delete m_counts.back();
-			m_counts.pop_back();
+		while(m_ids.size()) {
+			delete m_ids.back();
+			m_ids.pop_back();
 		}
 	}
 
 private:
-	vector<IdCount*> m_counts;
+	vector<IdCount*> m_ids;
 };
 
-void IdList::addId(int id) {
-	for(unsigned int i = 0; i < m_counts.size(); i++){
-		if(m_counts.at(i)->id() == id){
-			++(*m_counts.at(i));
+void IdList::addId(int id, pair<float,float> positionSlope) {
+	for(unsigned int i = 0; i < m_ids.size(); i++){
+		if(m_ids.at(i)->id() == id){
+			m_ids.at(i)->addPair(positionSlope);
 			//sort as they come in
 			int shift = 0;
-			while(i-shift && m_counts.at(i-shift)->count() > m_counts.at(i-shift-1)->count()){
-				IdCount* temp = m_counts.at(i-shift);
-				m_counts.at(i-shift) = m_counts.at(i-shift-1);
-				m_counts.at(i-shift-1) = temp;
+			while(i-shift && m_ids.at(i-shift)->count() > m_ids.at(i-shift-1)->count()){
+				IdCount* temp = m_ids.at(i-shift);
+				m_ids.at(i-shift) = m_ids.at(i-shift-1);
+				m_ids.at(i-shift-1) = temp;
 				shift++;
 			}
 			return;
 		}
 	}
 	IdCount* thisId = new IdCount(id);
-	m_counts.push_back(thisId);
+	thisId->addPair(positionSlope);
+	m_ids.push_back(thisId);
 }
 
 void IdList::printList() {
 	printf("- Id -- Count -\n");
-	for(unsigned int i =0; i < m_counts.size(); i++){
-		printf("%i\t%i\n",m_counts[i]->id(), m_counts[i]->count());
+	for(unsigned int i =0; i < m_ids.size(); i++){
+		printf("%i\t%i\n",m_ids[i]->id(), m_ids[i]->count());
 	}
 }
 
@@ -118,7 +118,9 @@ public:
 };
 
 void ChargePattern::printPattern() {
-	//printf("Pattern Code: %i, layersMatched: %u\n", getPatternCode(),getLayersMatched());
+	int patCode = getPatternCode();
+	printf("Pattern Code: %i, layersMatched: %u\n", patCode,getLayersMatched());
+	if(DEBUG) cout << "patternId is: "  << bitset<12>(patCode) << endl;
 	for(int i =0; i < NLAYERS; i++){
 		for(int j =0; j < 3; j++){
 			printf("%i", m_hits[i][j]);
@@ -159,7 +161,7 @@ int ChargePattern::getPatternCode() {
 		//each column has two bits of information
 		patternId += (rowCode << 2*column);
 	}
-	if(DEBUG) cout << "patternId is: "  << bitset<12>(patternId) << endl;
+	//if(DEBUG) cout << "patternId is: "  << bitset<12>(patternId) << endl;
 	return patternId;
 }
 
@@ -235,6 +237,8 @@ public:
 		return ChargeSuperPattern(name, id, flippedPattern);
 	}
 
+	void printCode(int code);
+
 	string name() {
 		if(m_name.size()) return m_name;
 		string name = "";
@@ -253,6 +257,39 @@ private:
 	string m_name;
 
 };
+
+//given a pattern code, prints out how it looks within a super pattern
+void ChargeSuperPattern::printCode(int code){
+	printf("For superpattern: %i - printing code: %i (layer 1->6)\n", m_id,code);
+	if(code >= 4096) {//2^12
+		printf("Error: invalid pattern code\n");
+		return;
+	}
+
+	//iterator 1
+	int it = 1;
+
+	for(int j=0; j < NLAYERS; j++){
+		//0,1,2 or 3
+		int layerPattern = (code & (it | it << 1))/it;
+		if(layerPattern <0 || layerPattern > 3){
+			printf("Error: invalid code\n");
+			return;
+		}
+		int trueCounter = 3;//for each layer, should only have 3
+		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
+			if(!m_hits[i][j]){
+				printf("0");
+			}else{
+				if(trueCounter == layerPattern) printf("1");
+				else printf("0");
+				trueCounter--;
+			}
+		}
+		it = it << 2; //bitshift the iterator to look at the next part of the code
+		printf("\n");
+	}
+}
 
 class SingleSuperPatternMatchInfo {
 public:
@@ -278,6 +315,7 @@ public:
 	}
 
 	int superPatternId() {return m_superPattern.m_id;}
+	int horOff(){return m_horizontalOffset;}
 	int subPatternCode();
 	int layMatCount();
 
@@ -287,7 +325,7 @@ private:
 
 	ChargePattern* m_overlap = 0;
 	const ChargeSuperPattern m_superPattern;
-	int m_horizontalOffset; //half strips, from lowest index
+	float m_horizontalOffset; //half strips, middle of the pattern
 };
 
 void SingleSuperPatternMatchInfo::print3x6Pattern(){
@@ -295,7 +333,7 @@ void SingleSuperPatternMatchInfo::print3x6Pattern(){
 }
 
 void SingleSuperPatternMatchInfo::printPatternInChamber(){
-	printf("Horizontal offset (from left) is %i half strips\n", m_horizontalOffset);
+	printf("Horizontal offset (from left) is %3.2f half strips\n", m_horizontalOffset);
 	for(int j=0; j < NLAYERS; j++){
 		int trueCounter = 0;//for each layer, should only have 3
 		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
@@ -343,6 +381,7 @@ public:
 	int bestLayerCount();
 	int bestSuperPatternId();
 	int bestSubPatternCode();
+	int bestOffsetHS(); //best halfstrip offset
 	int bestSetIndex() {return m_bestSetMatchIndex;}
 	void printBest3x6Pattern();
 	void addSingleInfo(SingleSuperPatternMatchInfo* smi);
@@ -385,6 +424,12 @@ int SuperPatternSetMatchInfo::bestSubPatternCode(){
 	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
 	return m_matches->at(m_bestSetMatchIndex)->subPatternCode();
 }
+
+int SuperPatternSetMatchInfo::bestOffsetHS(){
+	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex)->horOff();
+}
+
 
 void SuperPatternSetMatchInfo::addSingleInfo(SingleSuperPatternMatchInfo* smi) {
 	if(smi->layMatCount() > bestLayerCount()){

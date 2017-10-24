@@ -55,7 +55,7 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
 	bool bestOverlap [NLAYERS][3];
-	int bestHoriontalPosition = 0; //best horizontal position in chamber, from left
+	int bestHorizontalIndex = 0;
 	for(unsigned int i=0; i < NLAYERS; i++){
 		for(unsigned int j =0; j < 3; j++){
 			overlap[i][j] = false; //initialize all as false
@@ -64,6 +64,10 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 	}
 
 	unsigned int maxMatchedLayers = 0;
+
+	//boolean to keep track of if the layers match on a given horizontal position matches that found in the previous spot
+	bool justFoundBest = false;
+	int consecutiveBestMatch = 0; //how many in a row we have had that had the same match count
 
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
@@ -121,19 +125,36 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 		//if we have a better match than we have had before
 		if(matchedLayerCount > maxMatchedLayers) {
 			maxMatchedLayers = matchedLayerCount;
-			bestHoriontalPosition = x;
+			consecutiveBestMatch = 1; //start the count up
+			bestHorizontalIndex = x;
+			justFoundBest = true;
 			for(unsigned int i=0; i < NLAYERS; i++){
 				for(unsigned int j =0; j < 3; j++){
 					bestOverlap[i][j] = overlap[i][j];
 				}
 			}
-		}
-		if(maxMatchedLayers == NLAYERS) {
-			if(mi.addMatchInfo(bestOverlap,bestHoriontalPosition) < 0) return -1;
-			return NLAYERS; //small optimization
+		} else if(matchedLayerCount == maxMatchedLayers && justFoundBest){
+			consecutiveBestMatch++; //increment how many ties we have
+		} else {
+			justFoundBest = false; //no longer tied the last match count
 		}
 	}
-	if(mi.addMatchInfo(bestOverlap,bestHoriontalPosition) < 0) return -1;
+	//TODO: adjust overlap layout to accompany shift
+	/*
+	int shift = 0.5*(consecutiveBestMatch-1);
+	for(unsigned int i=0; i < NLAYERS; i++){
+		for(unsigned int j =0; j < 3; j++){
+			bestOverlap[i][j] = overlap[i][j];
+		}
+	}
+
+
+	// shift to the middle of the pattern and average the location
+	// to the middle of the consecutive matches (if there are two tied, just add a half)
+	//float bestHorizontalPosition =  0.5*(MAX_PATTERN_WIDTH-1) +0.5*(consecutiveBestMatch-1) + bestHorizontalIndex;
+	 */
+	float bestHorizontalPosition =  0.5*(MAX_PATTERN_WIDTH-1) + bestHorizontalIndex;
+	if(mi.addMatchInfo(bestOverlap,bestHorizontalPosition) < 0) return -1;
 	return maxMatchedLayers;
 }
 
