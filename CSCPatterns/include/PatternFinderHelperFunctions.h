@@ -48,18 +48,59 @@ bool validComparatorTime(bool isComparator, int time){
 	} else return time;
 }
 
+int getOverlap(const ChamberHits &c, const ChargeSuperPattern &p, const int horPos, bool overlap[NLAYERS][3]){
+	//for each x position in the chamber, were going to iterate through
+	// the pattern to see how much overlap there is at that position
+	for(unsigned int y = 0; y < NLAYERS; y++) {
+
+		unsigned int overlapColumn = 0;
+		for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
+
+			//check if we have a 1 in our superpattern
+			if(p.m_hits[px][y]){
+				if(overlapColumn >= 3){ //we are considering only patterns which, for each row, should only have at most 3 true spots
+					printf("Error, we have too many true booleans in a superpattern\n");
+					return -1;
+				}
+
+				//this accounts for checking patterns along the edges of the chamber that may extend
+				//past the bounds
+				if( horPos+(int)px < 0 ||  horPos+px >= N_MAX_HALF_STRIPS) {
+					overlap[y][overlapColumn] = false;
+					overlapColumn++;
+					continue;
+				}
+
+				//check the overlap of the actual chamber distribution
+				if(validComparatorTime(c.isComparator, (c.hits)[horPos+px][y])) {
+					overlap[y][overlapColumn] = true;
+				} else {
+					overlap[y][overlapColumn] = false;
+				}
+				overlapColumn++; //we are now in the next column of overlap
+			}
+
+
+		}
+		if(overlapColumn != 3) {
+			printf("Error: we don't have enough true booleans in a superpattern. overlapColumn = %i\n", overlapColumn);
+			return -1;
+		}
+	}
+	return 0;
+}
+
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
 int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSuperPatternMatchInfo &mi){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
-	bool bestOverlap [NLAYERS][3];
+	//bool bestOverlap [NLAYERS][3];
 	int bestHorizontalIndex = 0;
 	for(unsigned int i=0; i < NLAYERS; i++){
 		for(unsigned int j =0; j < 3; j++){
 			overlap[i][j] = false; //initialize all as false
-			bestOverlap[i][j] = false;
 		}
 	}
 
@@ -69,92 +110,55 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 	bool justFoundBest = false;
 	int consecutiveBestMatch = 0; //how many in a row we have had that had the same match count
 
-
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
 	for(int x = -MAX_PATTERN_WIDTH+1; x < N_MAX_HALF_STRIPS; x++){
 
-		bool matchedLayers[NLAYERS];
-		for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
-
-		//for each x position in the chamber, were going to iterate through
-		// the pattern to see how much overlap there is at that position
-		for(unsigned int y = 0; y < NLAYERS; y++) {
-
-			unsigned int overlapColumn = 0;
-			for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
-
-				//check if we have a 1 in our superpattern
-				if(p.m_hits[px][y]){
-					if(overlapColumn >= 3){ //we are considering only patterns which, for each row, should only have at most 3 true spots
-						printf("Error, we have too many true booleans in a superpattern\n");
-						return -1;
-					}
-
-					//this accounts for checking patterns along the edges of the chamber that may extend
-					//past the bounds
-					if( x+(int)px < 0 ||  x+px >= N_MAX_HALF_STRIPS) {
-						overlap[y][overlapColumn] = false;
-						overlapColumn++;
-						continue;
-					}
-
-					//check the overlap of the actual chamber distribution
-					if(validComparatorTime(c.isComparator, (c.hits)[x+px][y])) {
-						overlap[y][overlapColumn] = true;
-						matchedLayers[y] = true;
-					} else {
-						overlap[y][overlapColumn] = false;
-					}
-					overlapColumn++; //we are now in the next column of
-				}
-
-
-			}
-			if(overlapColumn != 3) {
-				printf("Error: we don't have enough true booleans in a superpattern. overlapColumn = %i\n", overlapColumn);
-				return -1;
-			}
+		if(getOverlap(c,p,x,overlap)){
+			printf("Error: cannot get overlap for pattern\n");
+			return -1;
 		}
 
 
 		unsigned int matchedLayerCount = 0;
-		for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayerCount += matchedLayers[imlc];
+		for(int ilay = 0; ilay < NLAYERS; ilay++) {
+			bool inLayer = false;
+			for(int icol = 0; icol< 3; icol++){
+				inLayer |= overlap[ilay][icol]; //bitwise or
+			}
+			matchedLayerCount += inLayer;
+		}
 
 
 		//if we have a better match than we have had before
 		if(matchedLayerCount > maxMatchedLayers) {
 			maxMatchedLayers = matchedLayerCount;
-			consecutiveBestMatch = 1; //start the count up
+			consecutiveBestMatch = 1; //restart the count
 			bestHorizontalIndex = x;
 			justFoundBest = true;
-			for(unsigned int i=0; i < NLAYERS; i++){
-				for(unsigned int j =0; j < 3; j++){
-					bestOverlap[i][j] = overlap[i][j];
-				}
-			}
 		} else if(matchedLayerCount == maxMatchedLayers && justFoundBest){
 			consecutiveBestMatch++; //increment how many ties we have
 		} else {
 			justFoundBest = false; //no longer tied the last match count
 		}
 	}
-	//TODO: adjust overlap layout to accompany shift
-	/*
-	int shift = 0.5*(consecutiveBestMatch-1);
-	for(unsigned int i=0; i < NLAYERS; i++){
-		for(unsigned int j =0; j < 3; j++){
-			bestOverlap[i][j] = overlap[i][j];
-		}
-	}
-
 
 	// shift to the middle of the pattern and average the location
 	// to the middle of the consecutive matches (if there are two tied, just add a half)
-	//float bestHorizontalPosition =  0.5*(MAX_PATTERN_WIDTH-1) +0.5*(consecutiveBestMatch-1) + bestHorizontalIndex;
-	 */
-	float bestHorizontalPosition =  0.5*(MAX_PATTERN_WIDTH-1) + bestHorizontalIndex;
-	if(mi.addMatchInfo(bestOverlap,bestHorizontalPosition) < 0) return -1;
+	//float bestHorizontalPosition =  0.5*(MAX_PATTERN_WIDTH-1) + bestHorizontalIndex;
+
+	//reuse overlap to get overlap of the best location, taken as the average of all the consecutive matches
+	//with preference to the right most
+	if(getOverlap(c,p,bestHorizontalIndex + (consecutiveBestMatch-1)/2,overlap)){
+		printf("Error: someone can't refind best overlap\n");
+		return -1;
+	}
+	if(mi.addMatchInfo(overlap,bestHorizontalIndex, consecutiveBestMatch) < 0) return -1;
+	if(DEBUG > 1){
+		printChamber(c);
+		printSuperPattern(p);
+		mi.print3x6Pattern();
+	}
 	return maxMatchedLayers;
 }
 
@@ -178,8 +182,10 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, S
 	}
 
 	if(DEBUG){
+		printf("~~~~ BEST MATCH ~~~\n");
 		printChamber(c);
 		printSuperPattern(ps->at(m->bestSetIndex()));
+		printf("Match degeneracy: %i\n",m->bestMatchDegeneracy());
 		m->printBest3x6Pattern();
 	}
 

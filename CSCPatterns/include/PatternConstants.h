@@ -11,7 +11,7 @@
 
 const int DEBUG = 0;
 const int NLAYERS = 6; //6 layers
-const unsigned int MAX_ENTRY = 80000; //how many events you look at
+const unsigned int MAX_ENTRY = 800000; //how many events you look at
 const bool USE_COMP_HITS = 0; //false uses recHits
 const int MAX_PATTERN_WIDTH = 11;
 const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
@@ -39,7 +39,7 @@ const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {
 };
 
 
-bool IDSV1_B[MAX_PATTERN_WIDTH][NLAYERS] = {
+const bool IDSV1_B[MAX_PATTERN_WIDTH][NLAYERS] = {
 		{0,0,0,0,0,0},
 		{0,0,0,0,0,0},
 		{0,0,0,0,0,0},

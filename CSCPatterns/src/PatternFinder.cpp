@@ -111,6 +111,7 @@ int PatternFinder() {
 			PatternIDMatchPlots("ME21 & ME22",createGroup3Pattern()),
 			PatternIDMatchPlots("ME31 & ME32 & ME41 & ME42",createGroup4Pattern())};
 
+
 	//
 	// LIST OF PATTERNS
 	//
@@ -217,6 +218,8 @@ int PatternFinder() {
 							}
 						}
 					}
+
+
 				}
 			}
 			int nCh = 0; //number of comp hits
@@ -316,13 +319,17 @@ int PatternFinder() {
 
 			if(me11a && maxLayerId == 100){ //temporary lazy sorting
 
-				if(thisSetMatch->bestSubPatternCode() == 1365){
+				/*
+				if(thisSetMatch->bestSubPatternCode() == 2730){
+
 					printf("~~~~ For ME11A - superPatternId: %i - patternCode: %i ~~~~~\n", maxLayerId, thisSetMatch->bestSubPatternCode());
 					printChamber(*testChamber);
 					printf("Adding data: segX: %f, chamberStrip: %f, segSlope: %f\n\n",segmentX,thisSetMatch->bestOffsetHS()/2.,segmentSlope);
-				}
 
-				float posDiff = segmentX-thisSetMatch->bestOffsetHS()/2.; //correct?
+				}*/
+
+				//segments start at 0, rh & comp hits start at 0.25
+				float posDiff = 0.25 + segmentX-thisSetMatch->bestX()/2.; //correct?
 				thisList.addId(thisSetMatch->bestSubPatternCode(), make_pair(posDiff, segmentSlope));
 			}
 			delete thisSetMatch;
@@ -332,14 +339,14 @@ int PatternFinder() {
 
 
 	TCanvas* cOverlap = new TCanvas("cOverlap","",1200,900);
-	unsigned int overlapDivisions = 4;
-	cOverlap->Divide((overlapDivisions+1)/2, overlapDivisions/2);
+	unsigned int overlapDivisions = 3;
+	cOverlap->Divide(overlapDivisions, overlapDivisions);
 
 	thisList.printList();
 	const vector<IdCount*> ids = thisList.getIds();
 
 
-	for(unsigned int i =0; i < overlapDivisions; i++){
+	for(unsigned int i =0; i < overlapDivisions*overlapDivisions; i++){
 		if(i < ids.size()){
 			IdCount* iid = ids.at(i);
 			matchGroups[TESTING_GROUP_INDEX].m_patterns->front().printCode(iid->id());
@@ -350,12 +357,14 @@ int PatternFinder() {
 			const vector<pair<float,float>> posSlope = iid->getPosSlope();
 
 			for(unsigned int i =0; i < posSlope.size(); i++){
-				//printf("adding: %f, %f\n",posSlope.at(i).first,posSlope.at(i).second);
 				patternOverlap->Fill(posSlope.at(i).first,posSlope.at(i).second);
 			}
 			cOverlap->cd(i+1);
 			patternOverlap->Draw("colz");
 		}
 	}
+
+
+
 	return 0;
 }

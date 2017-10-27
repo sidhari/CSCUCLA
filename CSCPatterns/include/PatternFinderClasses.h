@@ -155,7 +155,6 @@ int ChargePattern::getPatternCode() {
 					break;
 			default:
 				printf("Error: unknown rowPattern - %i\n", rowPat);
-				printPattern();
 				return -1;
 		}
 		//each column has two bits of information
@@ -294,30 +293,37 @@ void ChargeSuperPattern::printCode(int code){
 class SingleSuperPatternMatchInfo {
 public:
 
-	SingleSuperPatternMatchInfo(ChargeSuperPattern p, int horOff, bool overlap[NLAYERS][3]):
-		m_superPattern(p) ,m_horizontalOffset(horOff){
-		m_horizontalOffset = horOff;
+	SingleSuperPatternMatchInfo(ChargeSuperPattern p, int horInd, bool overlap[NLAYERS][3]):
+		m_superPattern(p){
+		m_horizontalIndex = horInd;
+		m_horizontalDegeneracy = 1;
 		m_layerMatchCount = -1;
 		m_overlap = new ChargePattern(overlap);
 	}
 	SingleSuperPatternMatchInfo(ChargeSuperPattern p) :
 		m_superPattern(p){
-		m_horizontalOffset = 0;
+		m_horizontalIndex = 0;
+		m_horizontalDegeneracy = 1;
 		m_layerMatchCount = -1;
 		m_overlap = 0;
 	}
-	int addMatchInfo(bool pat[NLAYERS][3],	int horOff);
+	int addMatchInfo(bool pat[NLAYERS][3],	int horInd, int horDeg);
 	void print3x6Pattern();
 	void printPatternInChamber();
-	int getHorOffset() {return m_horizontalOffset;}
+	//int getHorOffset() {return m_horizontalOffset;}
 	~SingleSuperPatternMatchInfo() {
 		if(m_overlap) delete m_overlap;
 	}
 
 	int superPatternId() {return m_superPattern.m_id;}
-	int horOff(){return m_horizontalOffset;}
+	//int horOff(){return m_horizontalOffset + (m_horizontalDegeneracy-1)/2;}
+	//center position of the track
+	float x(){
+		return 1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1) + 0.5*(m_horizontalDegeneracy-1);
+	}
 	int subPatternCode();
 	int layMatCount();
+	int matchDegeneracy(){return m_horizontalDegeneracy;}
 
 
 private:
@@ -325,7 +331,8 @@ private:
 
 	ChargePattern* m_overlap = 0;
 	const ChargeSuperPattern m_superPattern;
-	float m_horizontalOffset; //half strips, middle of the pattern
+	int m_horizontalIndex; //half strips, leftmost index of the pattern
+	int m_horizontalDegeneracy; //half strips, amount of consecutive locations the pattern matched over
 };
 
 void SingleSuperPatternMatchInfo::print3x6Pattern(){
@@ -333,7 +340,7 @@ void SingleSuperPatternMatchInfo::print3x6Pattern(){
 }
 
 void SingleSuperPatternMatchInfo::printPatternInChamber(){
-	printf("Horizontal offset (from left) is %3.2f half strips\n", m_horizontalOffset);
+	printf("Horizontal index (from left) is %i half strips, position is %f\n", m_horizontalIndex, x());
 	for(int j=0; j < NLAYERS; j++){
 		int trueCounter = 0;//for each layer, should only have 3
 		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
@@ -349,10 +356,11 @@ void SingleSuperPatternMatchInfo::printPatternInChamber(){
 	}
 }
 
-int SingleSuperPatternMatchInfo::addMatchInfo(bool pat[NLAYERS][3], int horOff) {
+int SingleSuperPatternMatchInfo::addMatchInfo(bool pat[NLAYERS][3], int horInd, int horDeg) {
 	if(m_overlap) delete m_overlap;
 	m_overlap = new ChargePattern(pat);
-	m_horizontalOffset = horOff;
+	m_horizontalIndex = horInd;
+	m_horizontalDegeneracy = horDeg;
 	return m_overlap->getPatternCode();
 }
 
@@ -381,7 +389,9 @@ public:
 	int bestLayerCount();
 	int bestSuperPatternId();
 	int bestSubPatternCode();
-	int bestOffsetHS(); //best halfstrip offset
+	int bestMatchDegeneracy();
+	//int bestOffsetHS(); //best halfstrip offset
+	float bestX(); //best hs position (from 0)
 	int bestSetIndex() {return m_bestSetMatchIndex;}
 	void printBest3x6Pattern();
 	void addSingleInfo(SingleSuperPatternMatchInfo* smi);
@@ -425,9 +435,20 @@ int SuperPatternSetMatchInfo::bestSubPatternCode(){
 	return m_matches->at(m_bestSetMatchIndex)->subPatternCode();
 }
 
+/*
 int SuperPatternSetMatchInfo::bestOffsetHS(){
 	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
 	return m_matches->at(m_bestSetMatchIndex)->horOff();
+}*/
+
+int SuperPatternSetMatchInfo::bestMatchDegeneracy(){
+	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex)->matchDegeneracy();
+}
+
+float SuperPatternSetMatchInfo::bestX() {
+	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
+	return m_matches->at(m_bestSetMatchIndex)->x();
 }
 
 
