@@ -26,83 +26,12 @@ struct ChamberHits {
 	int hits[N_MAX_HALF_STRIPS][NLAYERS];
 };
 
-//keeps track of the number of occurences of an individual pattern ID
-class IdCount{
-public:
-	IdCount(int id) : m_id(id) {}
-
-	void addPair(pair<float,float> positionSlope){m_positionSlopes.push_back(positionSlope);}
-
-	unsigned int count(){return m_positionSlopes.size();}
-	int id(){return m_id;}
-
-	const vector<pair<float,float>>& getPosSlope() { return m_positionSlopes;}
-
-	~IdCount(){}
-private:
-	//vector of all positions [strips] (first element in pair) and angles [strips/layer](second element)
-	//of the segment associated with this pattern.
-	vector<pair<float, float>> m_positionSlopes;
-
-	//unsigned int m_count;
-	const int m_id;
-};
-
-//keeps track of the occurences of a collective of pattern ids
-class IdList {
-public:
-	IdList(){}
-
-	void addId(int id,pair<float,float> positionSlope);
-	void printList();
-	const vector<IdCount*>& getIds(){return m_ids;}
-
-	~IdList(){
-		while(m_ids.size()) {
-			delete m_ids.back();
-			m_ids.pop_back();
-		}
-	}
-
-private:
-	vector<IdCount*> m_ids;
-};
-
-void IdList::addId(int id, pair<float,float> positionSlope) {
-	for(unsigned int i = 0; i < m_ids.size(); i++){
-		if(m_ids.at(i)->id() == id){
-			m_ids.at(i)->addPair(positionSlope);
-			//sort as they come in
-			int shift = 0;
-			while(i-shift && m_ids.at(i-shift)->count() > m_ids.at(i-shift-1)->count()){
-				IdCount* temp = m_ids.at(i-shift);
-				m_ids.at(i-shift) = m_ids.at(i-shift-1);
-				m_ids.at(i-shift-1) = temp;
-				shift++;
-			}
-			return;
-		}
-	}
-	IdCount* thisId = new IdCount(id);
-	thisId->addPair(positionSlope);
-	m_ids.push_back(thisId);
-}
-
-void IdList::printList() {
-	printf("- Id -- Count -\n");
-	for(unsigned int i =0; i < m_ids.size(); i++){
-		printf("%i\t%i\n",m_ids[i]->id(), m_ids[i]->count());
-	}
-}
-
-
-
-//this class tells us what locations within a pattern with id "m_superPatternId" matches
+//this class tells us what locations within a pattern with id "m_EnvelopeId" matches
 // each of the true booleans within the superchargepattern.
 class ChargePattern {
 public:
-	unsigned int getLayersMatched();
-	int getPatternCode(); //hexidecimal code used to identify each possible arrangement of the charge in the pattern
+	unsigned int getLayersMatched() const {return m_layersMatched;}
+	int getPatternId() const {return m_patternId;} //hexidecimal code used to identify each possible arrangement of the charge in the pattern
 	void printPattern();
 
 	ChargePattern(bool pat[NLAYERS][3]) {
@@ -111,14 +40,47 @@ public:
 				m_hits[i][j] = pat[i][j];
 			}
 		}
+		//only calculate them once, to keep things efficient
+		calculateId();
+		calculateLayersMatched();
 	};
+
+	ChargePattern(const ChargePattern& c){
+		for(int i = 0; i < NLAYERS; i++){
+			for(int j = 0; j < 3; j++){
+				m_hits[i][j] = c.m_hits[i][j];
+			}
+		}
+		m_patternId = c.m_patternId;
+		m_layersMatched = c.m_layersMatched;
+
+	}
+	ChargePattern(){
+		for(int i = 0; i < NLAYERS; i++){
+			for(int j = 0; j < 3; j++){
+				m_hits[i][j] = 0;
+			}
+		}
+		//only calculate them once, to keep things efficient
+		calculateId();
+		calculateLayersMatched();
+	}
+
 	~ChargePattern() {}
 
-	bool m_hits[NLAYERS][3]; //all the hits within a superpattern that a chamber scan matched
+	bool m_hits[NLAYERS][3]; //all the hits within a Envelope that a chamber scan matched
+
+
+private:
+	int m_patternId;
+	int m_layersMatched;
+
+	void calculateId();
+	void calculateLayersMatched();
 };
 
 void ChargePattern::printPattern() {
-	int patCode = getPatternCode();
+	int patCode = getPatternId();
 	printf("Pattern Code: %i, layersMatched: %u\n", patCode,getLayersMatched());
 	if(DEBUG) cout << "patternId is: "  << bitset<12>(patCode) << endl;
 	for(int i =0; i < NLAYERS; i++){
@@ -130,9 +92,9 @@ void ChargePattern::printPattern() {
 	}
 }
 
-int ChargePattern::getPatternCode() {
-	int patternId = 0;
-
+void ChargePattern::calculateId(){
+	//only do this iteration once, to keep things efficient
+	m_patternId = 0;
 	for(int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
@@ -141,60 +103,187 @@ int ChargePattern::getPatternCode() {
 			rowPat += m_hits[column][row];
 		}
 		switch(rowPat) {
-			case 0 : //000
-					rowCode = 0;
-					break;
-			case 1 : //001
-					rowCode = 1;
-					break;
-			case 2 : //010
-					rowCode = 2;
-					break;
-			case 4 : //100
-					rowCode = 3;
-					break;
-			default:
-				printf("Error: unknown rowPattern - %i\n", rowPat);
-				return -1;
+		case 0 : //000
+			rowCode = 0;
+			break;
+		case 1 : //001
+			rowCode = 1;
+			break;
+		case 2 : //010
+			rowCode = 2;
+			break;
+		case 4 : //100
+			rowCode = 3;
+			break;
+		default:
+			printf("Error: unknown rowPattern - %i\n", rowPat);
+			m_patternId = -1;
+			return;
 		}
 		//each column has two bits of information
-		patternId += (rowCode << 2*column);
+		m_patternId += (rowCode << 2*column);
 	}
-	//if(DEBUG) cout << "patternId is: "  << bitset<12>(patternId) << endl;
-	return patternId;
+	if(DEBUG) cout << "patternId is: "  << bitset<12>(m_patternId) << endl;
 }
 
-
-unsigned int ChargePattern::getLayersMatched() {
-	unsigned int layersMatched = 0;
+void ChargePattern::calculateLayersMatched(){
+	m_layersMatched = 0;
 	for(int i = 0; i < NLAYERS; i++){
 		bool matched = false;
 		for(int j = 0; j < 3; j++){
 			if(m_hits[i][j]) matched = 1;
 		}
-		layersMatched += matched;
+		m_layersMatched += matched;
 	}
-	return layersMatched;
 }
 
-// ChargeSuperPattern are scanned over the entire chamber, this class is
+//keeps track of the number of occurences of an individual pattern ID
+class PatternCount{
+public:
+	PatternCount(ChargePattern cp) : m_cp(cp) {}
+
+	void addPair(pair<float,float> positionSlope){m_positionSlopes.push_back(positionSlope);}
+	void center();
+	unsigned int count() {return m_positionSlopes.size();}
+	int id() { return m_cp.getPatternId();}
+	int nLayers() { return m_cp.getLayersMatched();} //amount of layers the pattern matches to
+
+	const vector<pair<float,float>>& getPosSlope() { return m_positionSlopes;}
+
+	~PatternCount(){}
+private:
+	//vector of all positions [strips] (first element in pair) and angles [strips/layer](second element)
+	//of the segment associated with this pattern.
+	vector<pair<float, float>> m_positionSlopes;
+
+	const ChargePattern m_cp;
+};
+
+//shifts the location of each position and slope to average to zero
+// do this only when you have finished adding everything together!
+void PatternCount::center(){
+	float totalX = 0;
+	float totalY = 0;
+	for(unsigned int i =0; i < m_positionSlopes.size();i++){
+		totalX += m_positionSlopes.at(i).first;
+		totalY += m_positionSlopes.at(i).second;
+	}
+	float avgX = totalX / m_positionSlopes.size();
+	float avgY = totalY / m_positionSlopes.size();
+
+	for(unsigned int i =0; i < m_positionSlopes.size(); i++){
+		m_positionSlopes.at(i).first -= avgX;
+		m_positionSlopes.at(i).second -= avgY;
+	}
+
+}
+
+
+//keeps track of the occurences of a collective of pattern ids
+class PatternList {
+public:
+	PatternList(){}
+
+	void addPattern(const ChargePattern p,pair<float,float> positionSlope);
+	void printList();
+	unsigned int totalCount();
+	const vector<PatternCount*>& getIds(){return m_patterns;}
+	void center();
+
+	~PatternList(){
+		while(m_patterns.size()) {
+			delete m_patterns.back();
+			m_patterns.pop_back();
+		}
+	}
+
+private:
+	vector<PatternCount*> m_patterns;
+};
+
+//returns the integral number of patterns put into this list
+unsigned int PatternList::totalCount() {
+	unsigned int tc = 0;
+	for(unsigned int i =0; i < m_patterns.size(); i++){
+		tc += m_patterns[i]->count();
+	}
+	return tc;
+}
+
+//adds a pattern to the list
+void PatternList::addPattern(const ChargePattern p, pair<float,float> positionSlope) {
+	for(unsigned int i = 0; i < m_patterns.size(); i++){
+		//look if we have it already
+		if(m_patterns.at(i)->id() == p.getPatternId()){
+			m_patterns.at(i)->addPair(positionSlope);
+			//sort as they come in
+			int shift = 0;
+			while(i-shift && m_patterns.at(i-shift)->count() > m_patterns.at(i-shift-1)->count()){
+				PatternCount* temp = m_patterns.at(i-shift);
+				m_patterns.at(i-shift) = m_patterns.at(i-shift-1);
+				m_patterns.at(i-shift-1) = temp;
+				shift++;
+			}
+			return;
+		}
+	}
+	PatternCount* thisId = new PatternCount(p);
+	thisId->addPair(positionSlope);
+	m_patterns.push_back(thisId);
+}
+
+//prints all of the patterns put into the list
+void PatternList::printList() {
+	printf("Id\tId(b4)\tCount\tIntegral\tLayers\n");
+	unsigned int integralCount = 0;
+	unsigned int size = m_patterns.size();
+
+	cout.precision(3);
+	for(unsigned int i =0; i < size; i++){
+		int thisCount = m_patterns[i]->count();
+		integralCount += thisCount;
+		cout << m_patterns[i]->id() << "\t";
+		int id = m_patterns[i]->id();
+		int layers = NLAYERS;
+		while (layers--){
+			cout << (id % 4); // print in base 4
+			id /= 4;
+		}
+		cout << "\t" << thisCount << "\t"
+				<< 1.*integralCount/totalCount() << "\t"
+				<< m_patterns[i]->nLayers() << endl;
+
+	}
+	printf("Total chambers matched: %i\n", totalCount());
+}
+
+//zeroes the distribution, be careful when to use this!
+void PatternList::center() {
+	for(unsigned int i =0; i< m_patterns.size(); i++){
+		m_patterns.at(i)->center();
+	}
+}
+
+
+
+// ChargeEnvelope are scanned over the entire chamber, this class is
 // effectively just a small matrix, each of which (if we have a vector) represent
 // a broadly encompasing general pattern which gives us preliminary information on a pattern.
 
-class ChargeSuperPattern {
+class ChargeEnvelope {
 public:
 
 	const unsigned int m_id;
 	bool m_hits[MAX_PATTERN_WIDTH][NLAYERS]; //layers
 
-	ChargeSuperPattern(unsigned int id, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id) {
+	ChargeEnvelope(unsigned int id, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
 			}
 		}
 	}
-	ChargeSuperPattern(string name, unsigned int id,const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id){
+	ChargeEnvelope(string name, unsigned int id,const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
@@ -203,7 +292,7 @@ public:
 		m_name = name;
 	}
 
-	ChargeSuperPattern(const ChargeSuperPattern &obj) : m_id(obj.m_id) {
+	ChargeEnvelope(const ChargeEnvelope &obj) : m_id(obj.m_id) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = obj.m_hits[j][i];
@@ -213,7 +302,7 @@ public:
 	}
 
 
-	ChargeSuperPattern() :m_id(-1){
+	ChargeEnvelope() :m_id(-1){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = 0;
@@ -222,18 +311,18 @@ public:
 		m_name = "";
 	}
 
-	~ChargeSuperPattern() {}
-	ChargeSuperPattern returnFlipped(unsigned int id){
+	~ChargeEnvelope() {}
+	ChargeEnvelope returnFlipped(unsigned int id){
 		return returnFlipped("", id);
 	}
-	ChargeSuperPattern returnFlipped(string name, unsigned int id){
+	ChargeEnvelope returnFlipped(string name, unsigned int id){
 		bool flippedPattern[MAX_PATTERN_WIDTH][NLAYERS];
 		for(int i = 0; i < NLAYERS; i++){
 			for(int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				flippedPattern[j][i] = m_hits[MAX_PATTERN_WIDTH-1-j][i];
 			}
 		}
-		return ChargeSuperPattern(name, id, flippedPattern);
+		return ChargeEnvelope(name, id, flippedPattern);
 	}
 
 	void printCode(int code);
@@ -258,8 +347,8 @@ private:
 };
 
 //given a pattern code, prints out how it looks within a super pattern
-void ChargeSuperPattern::printCode(int code){
-	printf("For superpattern: %i - printing code: %i (layer 1->6)\n", m_id,code);
+void ChargeEnvelope::printCode(int code){
+	printf("For Envelope: %i - printing code: %i (layer 1->6)\n", m_id,code);
 	if(code >= 4096) {//2^12
 		printf("Error: invalid pattern code\n");
 		return;
@@ -290,61 +379,50 @@ void ChargeSuperPattern::printCode(int code){
 	}
 }
 
-class SingleSuperPatternMatchInfo {
+class SingleEnvelopeMatchInfo {
 public:
 
-	SingleSuperPatternMatchInfo(ChargeSuperPattern p, int horInd, bool overlap[NLAYERS][3]):
-		m_superPattern(p){
+	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, bool overlap[NLAYERS][3]):
+		m_Envelope(p){
 		m_horizontalIndex = horInd;
-		m_horizontalDegeneracy = 1;
-		m_layerMatchCount = -1;
+		//m_layerMatchCount = -1;
 		m_overlap = new ChargePattern(overlap);
 	}
-	SingleSuperPatternMatchInfo(ChargeSuperPattern p) :
-		m_superPattern(p){
-		m_horizontalIndex = 0;
-		m_horizontalDegeneracy = 1;
-		m_layerMatchCount = -1;
-		m_overlap = 0;
-	}
-	int addMatchInfo(bool pat[NLAYERS][3],	int horInd, int horDeg);
+
 	void print3x6Pattern();
 	void printPatternInChamber();
-	//int getHorOffset() {return m_horizontalOffset;}
-	~SingleSuperPatternMatchInfo() {
+
+	~SingleEnvelopeMatchInfo() {
 		if(m_overlap) delete m_overlap;
 	}
 
-	int superPatternId() {return m_superPattern.m_id;}
-	//int horOff(){return m_horizontalOffset + (m_horizontalDegeneracy-1)/2;}
+	int EnvelopeId() {return m_Envelope.m_id;}
+
 	//center position of the track
-	float x(){
-		return 1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1) + 0.5*(m_horizontalDegeneracy-1);
-	}
-	int subPatternCode();
+	float x(){return 1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1);}
+	int patternId();
 	int layMatCount();
-	int matchDegeneracy(){return m_horizontalDegeneracy;}
+	const ChargePattern chargePattern() {return *m_overlap;}
 
 
 private:
-	int m_layerMatchCount;
 
-	ChargePattern* m_overlap = 0;
-	const ChargeSuperPattern m_superPattern;
+	ChargePattern* m_overlap;
+	const ChargeEnvelope m_Envelope;
 	int m_horizontalIndex; //half strips, leftmost index of the pattern
-	int m_horizontalDegeneracy; //half strips, amount of consecutive locations the pattern matched over
+
 };
 
-void SingleSuperPatternMatchInfo::print3x6Pattern(){
+void SingleEnvelopeMatchInfo::print3x6Pattern(){
 	if(m_overlap) m_overlap->printPattern();
 }
 
-void SingleSuperPatternMatchInfo::printPatternInChamber(){
+void SingleEnvelopeMatchInfo::printPatternInChamber(){
 	printf("Horizontal index (from left) is %i half strips, position is %f\n", m_horizontalIndex, x());
 	for(int j=0; j < NLAYERS; j++){
 		int trueCounter = 0;//for each layer, should only have 3
 		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
-			if(!m_superPattern.m_hits[i][j]){
+			if(!m_Envelope.m_hits[i][j]){
 				printf("0");
 			}else{
 				if(m_overlap->m_hits[j][trueCounter]) printf("1");
@@ -356,46 +434,36 @@ void SingleSuperPatternMatchInfo::printPatternInChamber(){
 	}
 }
 
-int SingleSuperPatternMatchInfo::addMatchInfo(bool pat[NLAYERS][3], int horInd, int horDeg) {
-	if(m_overlap) delete m_overlap;
-	m_overlap = new ChargePattern(pat);
-	m_horizontalIndex = horInd;
-	m_horizontalDegeneracy = horDeg;
-	return m_overlap->getPatternCode();
-}
-
-int SingleSuperPatternMatchInfo::layMatCount() {
-	if(m_layerMatchCount < 0 && m_overlap){
-		m_layerMatchCount = m_overlap->getLayersMatched();
-	}
-	return m_layerMatchCount;
-}
-
-int SingleSuperPatternMatchInfo::subPatternCode(){
+int SingleEnvelopeMatchInfo::layMatCount() {
 	if(m_overlap){
-		return m_overlap->getPatternCode();
+		return m_overlap->getLayersMatched();
+	}
+	return -1;
+}
+
+int SingleEnvelopeMatchInfo::patternId(){
+	if(m_overlap){
+		return m_overlap->getPatternId();
 	} else {
 		return -1;
 	}
 }
 
-class SuperPatternSetMatchInfo {
+class EnvelopeSetMatchInfo {
 public:
 
-	SuperPatternSetMatchInfo() {
+	EnvelopeSetMatchInfo() {
 		m_bestSetMatchIndex = 0;
-		m_matches = new vector<SingleSuperPatternMatchInfo*>();
+		m_matches = new vector<SingleEnvelopeMatchInfo*>();
 	}
 	int bestLayerCount();
-	int bestSuperPatternId();
-	int bestSubPatternCode();
-	int bestMatchDegeneracy();
-	//int bestOffsetHS(); //best halfstrip offset
+	int bestEnvelopeId();
+	const ChargePattern bestChargePattern();
 	float bestX(); //best hs position (from 0)
 	int bestSetIndex() {return m_bestSetMatchIndex;}
 	void printBest3x6Pattern();
-	void addSingleInfo(SingleSuperPatternMatchInfo* smi);
-	~SuperPatternSetMatchInfo() {
+	void addSingleInfo(SingleEnvelopeMatchInfo* smi);
+	~EnvelopeSetMatchInfo() {
 		while(m_matches->size()) {
 			delete m_matches->back();
 			m_matches->pop_back();
@@ -408,80 +476,45 @@ private:
 	//to the best super pattern match
 	int m_bestSetMatchIndex;
 
-	vector<SingleSuperPatternMatchInfo*>* m_matches;
+	vector<SingleEnvelopeMatchInfo*>* m_matches;
 
 };
 
 //prints the overlap between the best super pattern and the chamber
-void SuperPatternSetMatchInfo::printBest3x6Pattern(){
+void EnvelopeSetMatchInfo::printBest3x6Pattern(){
 	if(m_matches->size()) {
 		m_matches->at(m_bestSetMatchIndex)->print3x6Pattern();
 		m_matches->at(m_bestSetMatchIndex)->printPatternInChamber();
 	}
 }
 
-int SuperPatternSetMatchInfo::bestLayerCount(){
+const ChargePattern EnvelopeSetMatchInfo::bestChargePattern() {
+	if(m_bestSetMatchIndex >=(int)m_matches->size()) return ChargePattern();
+	return m_matches->at(m_bestSetMatchIndex)->chargePattern();
+}
+
+int EnvelopeSetMatchInfo::bestLayerCount(){
 	if(m_bestSetMatchIndex >=(int)m_matches->size()) return -1;
 	return m_matches->at(m_bestSetMatchIndex)->layMatCount();
 }
 
-int SuperPatternSetMatchInfo::bestSuperPatternId() {
+int EnvelopeSetMatchInfo::bestEnvelopeId() {
 	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex)->superPatternId();
+	return m_matches->at(m_bestSetMatchIndex)->EnvelopeId();
 }
 
-int SuperPatternSetMatchInfo::bestSubPatternCode(){
-	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex)->subPatternCode();
-}
-
-/*
-int SuperPatternSetMatchInfo::bestOffsetHS(){
-	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex)->horOff();
-}*/
-
-int SuperPatternSetMatchInfo::bestMatchDegeneracy(){
-	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex)->matchDegeneracy();
-}
-
-float SuperPatternSetMatchInfo::bestX() {
+float EnvelopeSetMatchInfo::bestX() {
 	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
 	return m_matches->at(m_bestSetMatchIndex)->x();
 }
 
-
-void SuperPatternSetMatchInfo::addSingleInfo(SingleSuperPatternMatchInfo* smi) {
+void EnvelopeSetMatchInfo::addSingleInfo(SingleEnvelopeMatchInfo* smi) {
 	if(smi->layMatCount() > bestLayerCount()){
 		m_bestSetMatchIndex = m_matches->size();
 	}
 	m_matches->push_back(smi);
 }
 
-
-class PatternIDMatchPlots {
-public:
-	vector<TH1F*> m_plots;
-	vector<vector<int>> m_matchIds; //tells us what pattern ids are contained in each respective plot
-	const string m_name;
-	TH1F* m_denominator;
-	vector<ChargeSuperPattern>* m_patterns; //patterns used to test against
-
-	PatternIDMatchPlots(string name, vector<ChargeSuperPattern>* patterns) : m_name(name){
-
-		m_patterns = new vector<ChargeSuperPattern>();
-		for(unsigned int i =0; i < patterns->size(); i++){
-			m_patterns->push_back(patterns->at(i));
-		}
-
-		m_denominator = 0;
-	}
-	~PatternIDMatchPlots() {
-		//should also delete all the stuff in the vector
-		delete m_denominator;
-	};
-};
 
 
 

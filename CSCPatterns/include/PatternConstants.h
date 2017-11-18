@@ -11,7 +11,7 @@
 
 const int DEBUG = 0;
 const int NLAYERS = 6; //6 layers
-const unsigned int MAX_ENTRY = 800000; //how many events you look at
+const unsigned int MAX_ENTRY = 20000; //how many events you look at (max ~2,000,000 for 2016F)
 const bool USE_COMP_HITS = 0; //false uses recHits
 const int MAX_PATTERN_WIDTH = 11;
 const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
@@ -19,9 +19,6 @@ const int MAX_COMP_TIME_BIN = 15;
 const int TIME_RANGE = USE_COMP_HITS ? 2: 1e9; //don't care about range for recHits
 const bool MAKE_MATCH_LAYER_COMPARISON = false;
 const int N_LAYER_REQUIREMENT = 3;
-//maximum number of patterns we can have, this is currently arbitrary and has no relationship to what fits on the card
-const int N_MAX_PATTERN_SET = 20;
-const int TESTING_GROUP_INDEX = 3; //which of the 4 groups you are looking at (0-3)
 
 
 const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {

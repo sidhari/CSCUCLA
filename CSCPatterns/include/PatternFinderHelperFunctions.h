@@ -10,7 +10,7 @@
 
 #include "PatternFinderClasses.h"
 
-void printSuperPattern(const ChargeSuperPattern &p) {
+void printEnvelope(const ChargeEnvelope &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
@@ -48,7 +48,7 @@ bool validComparatorTime(bool isComparator, int time){
 	} else return time;
 }
 
-int getOverlap(const ChamberHits &c, const ChargeSuperPattern &p, const int horPos, bool overlap[NLAYERS][3]){
+int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, bool overlap[NLAYERS][3]){
 	//for each x position in the chamber, were going to iterate through
 	// the pattern to see how much overlap there is at that position
 	for(unsigned int y = 0; y < NLAYERS; y++) {
@@ -56,10 +56,10 @@ int getOverlap(const ChamberHits &c, const ChargeSuperPattern &p, const int horP
 		unsigned int overlapColumn = 0;
 		for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
 
-			//check if we have a 1 in our superpattern
+			//check if we have a 1 in our Envelope
 			if(p.m_hits[px][y]){
 				if(overlapColumn >= 3){ //we are considering only patterns which, for each row, should only have at most 3 true spots
-					printf("Error, we have too many true booleans in a superpattern\n");
+					printf("Error, we have too many true booleans in a Envelope\n");
 					return -1;
 				}
 
@@ -83,7 +83,7 @@ int getOverlap(const ChamberHits &c, const ChargeSuperPattern &p, const int horP
 
 		}
 		if(overlapColumn != 3) {
-			printf("Error: we don't have enough true booleans in a superpattern. overlapColumn = %i\n", overlapColumn);
+			printf("Error: we don't have enough true booleans in a Envelope. overlapColumn = %i\n", overlapColumn);
 			return -1;
 		}
 	}
@@ -92,11 +92,10 @@ int getOverlap(const ChamberHits &c, const ChargeSuperPattern &p, const int horP
 
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
-int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSuperPatternMatchInfo &mi){
+int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelopeMatchInfo *&mi){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
-	//bool bestOverlap [NLAYERS][3];
 	int bestHorizontalIndex = 0;
 	for(unsigned int i=0; i < NLAYERS; i++){
 		for(unsigned int j =0; j < 3; j++){
@@ -105,10 +104,6 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 	}
 
 	unsigned int maxMatchedLayers = 0;
-
-	//boolean to keep track of if the layers match on a given horizontal position matches that found in the previous spot
-	bool justFoundBest = false;
-	int consecutiveBestMatch = 0; //how many in a row we have had that had the same match count
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
@@ -131,49 +126,42 @@ int containsPattern(const ChamberHits &c, const ChargeSuperPattern &p,  SingleSu
 
 
 		//if we have a better match than we have had before
+		if(matchedLayerCount == NLAYERS){ //optimization
+			mi = new SingleEnvelopeMatchInfo(p, x, overlap);
+			if(mi->patternId() < 0) return -1;
+			return matchedLayerCount;
+		}
 		if(matchedLayerCount > maxMatchedLayers) {
 			maxMatchedLayers = matchedLayerCount;
-			consecutiveBestMatch = 1; //restart the count
 			bestHorizontalIndex = x;
-			justFoundBest = true;
-		} else if(matchedLayerCount == maxMatchedLayers && justFoundBest){
-			consecutiveBestMatch++; //increment how many ties we have
-		} else {
-			justFoundBest = false; //no longer tied the last match count
 		}
+
 	}
 
-	// shift to the middle of the pattern and average the location
-	// to the middle of the consecutive matches (if there are two tied, just add a half)
-	//float bestHorizontalPosition =  0.5*(MAX_PATTERN_WIDTH-1) + bestHorizontalIndex;
-
-	//reuse overlap to get overlap of the best location, taken as the average of all the consecutive matches
-	//with preference to the right most
-	if(getOverlap(c,p,bestHorizontalIndex + (consecutiveBestMatch-1)/2,overlap)){
-		printf("Error: someone can't refind best overlap\n");
+	//refill the overlap with the best found location
+	if(getOverlap(c,p,bestHorizontalIndex,overlap)){
+		printf("Error: cannot get overlap for pattern\n");
 		return -1;
 	}
-	if(mi.addMatchInfo(overlap,bestHorizontalIndex, consecutiveBestMatch) < 0) return -1;
+
+	mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, overlap);
+	if(mi->patternId() < 0) return -1;
 	if(DEBUG > 1){
 		printChamber(c);
-		printSuperPattern(p);
-		mi.print3x6Pattern();
+		printEnvelope(p);
+		mi->print3x6Pattern();
 	}
 	return maxMatchedLayers;
 }
 
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
-int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, SuperPatternSetMatchInfo *m){
-	if(ps->size() > N_MAX_PATTERN_SET) {
-		printf("Error: Pattern size too large\n");
-		return -1;
-	}
+int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, EnvelopeSetMatchInfo *m){
 
 	//now we have all the rh for this segment, so check if the patterns are there
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
-		SingleSuperPatternMatchInfo *thisMatch = new SingleSuperPatternMatchInfo(ps->at(ip));
-		if(containsPattern(c,ps->at(ip),*thisMatch) < 0) {
+		SingleEnvelopeMatchInfo *thisMatch = 0;
+		if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
 			printf("Error: pattern algorithm failed\n");
 			printChamber(c);
 			return -1;
@@ -184,8 +172,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, S
 	if(DEBUG){
 		printf("~~~~ BEST MATCH ~~~\n");
 		printChamber(c);
-		printSuperPattern(ps->at(m->bestSetIndex()));
-		printf("Match degeneracy: %i\n",m->bestMatchDegeneracy());
+		printEnvelope(ps->at(m->bestSetIndex()));
 		m->printBest3x6Pattern();
 	}
 
@@ -196,20 +183,15 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeSuperPattern>* ps, S
 
 
 
-vector<ChargeSuperPattern>* createGroup1Pattern(){
+vector<ChargeEnvelope>* createEnvelopes(){
 
-	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
+	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
 
-
-	ChargeSuperPattern id1("100",100,IDSV1_A);
-	ChargeSuperPattern id2("200",200,IDSV1_B);
-	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
-	ChargeSuperPattern id4("400",400,IDSV1_C);
-	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
-	ChargeSuperPattern id6("600",600,IDSV1_D);
-	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
-	ChargeSuperPattern id8("800",800, IDSV1_E);
-	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
+	ChargeEnvelope id1("100",100,IDSV1_A);
+	ChargeEnvelope id4("400",400,IDSV1_C);
+	ChargeEnvelope id5 = id4.returnFlipped("500",500);
+	ChargeEnvelope id8("800",800, IDSV1_E);
+	ChargeEnvelope id9 = id8.returnFlipped("900",900);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);
@@ -220,77 +202,6 @@ vector<ChargeSuperPattern>* createGroup1Pattern(){
 	return thisVector;
 }
 
-vector<ChargeSuperPattern>* createGroup2Pattern(){
-
-	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
-
-
-	ChargeSuperPattern id1("100",100,IDSV1_A);
-	ChargeSuperPattern id2("200",200,IDSV1_B);
-	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
-	ChargeSuperPattern id4("400",400,IDSV1_C);
-	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
-	ChargeSuperPattern id6("600",600,IDSV1_D);
-	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
-	ChargeSuperPattern id8("800",800, IDSV1_E);
-	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
-
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
-
-	return thisVector;
-}
-
-vector<ChargeSuperPattern>* createGroup3Pattern(){
-
-	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
-
-
-	ChargeSuperPattern id1("100",100,IDSV1_A);
-	ChargeSuperPattern id2("200",200,IDSV1_B);
-	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
-	ChargeSuperPattern id4("400",400,IDSV1_C);
-	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
-	ChargeSuperPattern id6("600",600,IDSV1_D);
-	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
-	ChargeSuperPattern id8("800",800, IDSV1_E);
-	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
-
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
-
-	return thisVector;
-}
-
-vector<ChargeSuperPattern>* createGroup4Pattern(){
-
-	vector<ChargeSuperPattern>* thisVector = new vector<ChargeSuperPattern>();
-
-
-	ChargeSuperPattern id1("100",100,IDSV1_A);
-	ChargeSuperPattern id2("200",200,IDSV1_B);
-	ChargeSuperPattern id3 = id2.returnFlipped("300",300);
-	ChargeSuperPattern id4("400",400,IDSV1_C);
-	ChargeSuperPattern id5 = id4.returnFlipped("500",500);
-	ChargeSuperPattern id6("600",600,IDSV1_D);
-	ChargeSuperPattern id7 = id6.returnFlipped("700",700);
-	ChargeSuperPattern id8("800",800, IDSV1_E);
-	ChargeSuperPattern id9 = id8.returnFlipped("900",900);
-
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
-
-	return thisVector;
-}
 
 int chamberSerial( int ec, int st, int ri, int ch ) {
 
@@ -306,9 +217,10 @@ int chamberSerial( int ec, int st, int ri, int ch ) {
     if (st == 4 && ri == 1) kSerial = ch + 216;
     if (st == 4 && ri == 2) kSerial = ch + 234;  // one day...
     if (ec == 2) kSerial = kSerial + 300;
-    //cout << endl << endl << "Endcap: " << ec << "  Station: " << st << "  Ring: " << ri << "  Chamber: " << ch << "  serialID: " << kSerial << endl;
+
     return kSerial;
 }
+
 
 
 

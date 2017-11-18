@@ -49,6 +49,7 @@ int PatternFinder() {
 	double Pt = 0;
 	double eta = 0;
 	bool os = 0;
+
 	//reconstructed offline hits
 	vector<int>* rhId = 0; //id/serial
 	vector<int>* rhLay = 0;
@@ -100,28 +101,22 @@ int PatternFinder() {
 
 
 	//
-	// SET UP GROUPS
+	// SET ALL OUR CHARGE ENVELOPES
 	//
 
 
-	const unsigned int nMatchGroups = 4;
-	PatternIDMatchPlots matchGroups[nMatchGroups] = {
-			PatternIDMatchPlots("ME11A & ME12", createGroup1Pattern()),
-			PatternIDMatchPlots("ME11B & ME13",createGroup2Pattern()),
-			PatternIDMatchPlots("ME21 & ME22",createGroup3Pattern()),
-			PatternIDMatchPlots("ME31 & ME32 & ME41 & ME42",createGroup4Pattern())};
-
+	vector<ChargeEnvelope>* envelopes = createEnvelopes();
 
 	//
 	// LIST OF PATTERNS
 	//
 
-	IdList thisList;
+	PatternList thisList;
+
 
 	//
 	// TREE ITERATION
 	//
-
 
 
 	for(unsigned int i = 0; i < MAX_ENTRY; i++) {
@@ -286,9 +281,9 @@ int PatternFinder() {
 			//find which group the current chamber you are looking at belongs to
 			unsigned int groupIndex;
 			if((ST == 1 && RI == 4 )||(ST == 1 && RI == 2)) groupIndex = 0; //ME11a || ME12
-			else if((ST == 1 && RI == 1) || (ST == 1 && RI == 3)) groupIndex = 1;
-			else if((ST == 2 && RI == 1) || (ST == 2 && RI == 2)) groupIndex = 2;
-			else if(ST == 3 || ST == 4) groupIndex = 3;
+			else if((ST == 1 && RI == 1) || (ST == 1 && RI == 3)) groupIndex = 1; //ME11b || ME13
+			else if((ST == 2 && RI == 1) || (ST == 2 && RI == 2)) groupIndex = 2; //ME21 || ME22
+			else if(ST == 3 || ST == 4) groupIndex = 3; //ME3X || ME4X
 			else{
 				printf("ERROR: can find group\n");
 				return -1;
@@ -296,7 +291,7 @@ int PatternFinder() {
 
 
 
-			SuperPatternSetMatchInfo* thisSetMatch = new SuperPatternSetMatchInfo();
+			EnvelopeSetMatchInfo* thisSetMatch = new EnvelopeSetMatchInfo();
 			ChamberHits* testChamber;
 			unsigned int nHits; //number of hits, counts at max one from each layer
 			if(USE_COMP_HITS){
@@ -309,28 +304,26 @@ int PatternFinder() {
 			}
 
 			//now run on comparator hits
-			if(searchForMatch(*testChamber, matchGroups[groupIndex].m_patterns,thisSetMatch)) return -1;
+			if(searchForMatch(*testChamber, envelopes,thisSetMatch)) return -1;
 
 
 			unsigned int maxLayerMatchCount = thisSetMatch->bestLayerCount();
-			unsigned int maxLayerId = thisSetMatch->bestSuperPatternId();
+			unsigned int maxLayerId = thisSetMatch->bestEnvelopeId();
 
-			// GET ID DATA
-
-			if(me11a && maxLayerId == 100){ //temporary lazy sorting
+			// GET ID DATA - ME21
+			if(ST == 2 && RI == 1 && maxLayerId == 100){ //temporary lazy sorting
 
 				/*
 				if(thisSetMatch->bestSubPatternCode() == 2730){
 
-					printf("~~~~ For ME11A - superPatternId: %i - patternCode: %i ~~~~~\n", maxLayerId, thisSetMatch->bestSubPatternCode());
+					printf("~~~~ For ME11A - EnvelopeId: %i - patternCode: %i ~~~~~\n", maxLayerId, thisSetMatch->bestSubPatternCode());
 					printChamber(*testChamber);
 					printf("Adding data: segX: %f, chamberStrip: %f, segSlope: %f\n\n",segmentX,thisSetMatch->bestOffsetHS()/2.,segmentSlope);
 
 				}*/
 
-				//segments start at 0, rh & comp hits start at 0.25
-				float posDiff = 0.25 + segmentX-thisSetMatch->bestX()/2.; //correct?
-				thisList.addId(thisSetMatch->bestSubPatternCode(), make_pair(posDiff, segmentSlope));
+				float posDiff = segmentX-thisSetMatch->bestX()/2.;
+				thisList.addPattern(thisSetMatch->bestChargePattern(), make_pair(posDiff, segmentSlope));
 			}
 			delete thisSetMatch;
 
@@ -338,18 +331,71 @@ int PatternFinder() {
 	}
 
 
+	//
+	// 2D DISTRIBUTIONS
+	//
+
 	TCanvas* cOverlap = new TCanvas("cOverlap","",1200,900);
 	unsigned int overlapDivisions = 3;
 	cOverlap->Divide(overlapDivisions, overlapDivisions);
 
 	thisList.printList();
-	const vector<IdCount*> ids = thisList.getIds();
 
+
+	//envelope distribution, currently doing it here, before we shift to zero
+
+	float resolutionRange = 2.;
+	TH1F* envelopeResolution = new TH1F("envelope", "Envelopes",400, -resolutionRange, resolutionRange);
+	envelopeResolution->SetLineColor(kRed);
+	envelopeResolution->GetXaxis()->SetTitle("Position Difference [Half Strips]");
+
+
+	//TODO: this works, but the const vector being changes by the call to .center() is confusing, fix when we figure out
+	// how to do this for patterns other than just straight through
+	const vector<PatternCount*> ids = thisList.getIds();
+
+	//find average position first
+	float totalX = 0;
+	unsigned int totalCount = 0;
+	//iterate over all of the patterns we found
+	for(unsigned int i =0; i < ids.size(); i++){
+		PatternCount* iid = ids.at(i);
+		const vector<pair<float,float>> posSlope = iid->getPosSlope();
+		//iterate over all of the matches in each pattern
+		for(unsigned int j = 0; j < posSlope.size(); j++){
+			totalX +=posSlope.at(j).first;
+			totalCount++;
+		}
+	}
+	if(!totalCount) return -1; //will be fixed later...
+	float avgX = totalX/totalCount;
+
+	//iterate over all of the patterns we found
+	for(unsigned int i =0; i < ids.size(); i++){
+		PatternCount* iid = ids.at(i);
+		const vector<pair<float,float>> posSlope = iid->getPosSlope();
+		//iterate over all of the matches in each pattern
+		for(unsigned int j = 0; j < posSlope.size(); j++){
+			//strips -> half strips
+			envelopeResolution->Fill(2.*(posSlope.at(j).first - avgX));
+			//if(2.*(posSlope.at(j).first - avgX) < -2) printf("posSlope[i] = %f\n",2.*(posSlope.at(j).first - avgX));
+		}
+	}
+
+
+
+
+	// SHIFT EVERYTHING TO HAVE MEAN 0
+	thisList.center();
+
+	//
+	// 2D Distributions
+	//
 
 	for(unsigned int i =0; i < overlapDivisions*overlapDivisions; i++){
 		if(i < ids.size()){
-			IdCount* iid = ids.at(i);
-			matchGroups[TESTING_GROUP_INDEX].m_patterns->front().printCode(iid->id());
+			PatternCount* iid = ids.at(i);
+			envelopes->front().printCode(iid->id());
 			TH2F* patternOverlap = new TH2F(("patOverlap"+to_string(i)).c_str(), (to_string(i) + " - " + to_string(iid->id())).c_str(),
 					50,-1, 1,50,-0.4,0.4);
 			patternOverlap->GetXaxis()->SetTitle("Position from Center Strip [strips]");
@@ -364,6 +410,32 @@ int PatternFinder() {
 		}
 	}
 
+	//
+	// 1D DISTRIBUTIONS
+	//
+
+
+	gStyle->SetOptStat(111111);
+
+	TCanvas* cRes1d = new TCanvas("cRes1d","",1200,900);
+	cRes1d->cd();
+
+	TH1F* patternResolution = new TH1F("pattern", "Patterns",400, -resolutionRange, resolutionRange);
+	patternResolution->GetXaxis()->SetTitle("Position Difference [Half Strips]");
+
+	//iterate over all of the patterns we found
+	for(unsigned int i =0; i < ids.size(); i++){
+		PatternCount* iid = ids.at(i);
+		const vector<pair<float,float>> posSlope = iid->getPosSlope();
+		//iterate over all of the matches in each pattern
+		for(unsigned int j = 0; j < posSlope.size(); j++){
+			//strips->halfstrips
+			patternResolution->Fill(2*posSlope.at(j).first);
+		}
+	}
+
+	patternResolution->Draw("hist");
+	envelopeResolution->Draw("hist sames");
 
 
 	return 0;
