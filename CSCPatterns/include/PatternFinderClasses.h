@@ -186,6 +186,7 @@ public:
 
 	void addPattern(const ChargePattern p,pair<float,float> positionSlope);
 	void printList();
+	void removePatternsUnder(unsigned int num);
 	unsigned int totalCount();
 	const vector<PatternCount*>& getIds(){return m_patterns;}
 	void center();
@@ -208,6 +209,16 @@ unsigned int PatternList::totalCount() {
 		tc += m_patterns[i]->count();
 	}
 	return tc;
+}
+
+//removes all patterns with a count less than <num>
+void PatternList::removePatternsUnder(unsigned int num){
+	for(unsigned int i =0; i < m_patterns.size(); i++){
+		if(m_patterns[i]->count() < num){
+			m_patterns.erase(m_patterns.begin()+i,m_patterns.end());
+			return;
+		}
+	}
 }
 
 //adds a pattern to the list

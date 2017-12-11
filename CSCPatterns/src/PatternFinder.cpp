@@ -32,7 +32,7 @@ using namespace std;
 
 
 int PatternFinder() {
-	TFile* f = TFile::Open("../data/CSCDigiTreeCharmonium2016F.root");
+	TFile* f = TFile::Open("../data/CSCDigiTree161031.root");
 
 	if(!f)
 	{
@@ -341,6 +341,11 @@ int PatternFinder() {
 
 	thisList.printList();
 
+	printf("Erasing patterns with less that 10 counts\n");
+
+	thisList.removePatternsUnder(10);
+	thisList.printList();
+
 
 	//envelope distribution, currently doing it here, before we shift to zero
 
@@ -367,7 +372,7 @@ int PatternFinder() {
 			totalCount++;
 		}
 	}
-	if(!totalCount) return -1; //will be fixed later...
+	if(!totalCount) return -1; //TODO: will be fixed later...
 	float avgX = totalX/totalCount;
 
 	//iterate over all of the patterns we found
