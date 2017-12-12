@@ -16,7 +16,9 @@
 #include <THStack.h>
 #include <TString.h>
 
-#include <iostream>
+//#include <iostream>
+#include <vector>
+#include <stdio.h>
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
@@ -113,6 +115,27 @@ int PatternFinder() {
 
 	PatternList thisList;
 
+	//
+	// OUTPUT TREE
+	//
+
+
+	int envelopeId = 0;
+	int patternId = 0;
+	float segmentX;
+	float patX = 0;
+
+	TFile * outF = new TFile("plotTree.root","RECREATE");
+	TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
+    plotTree->Branch("segEc",&segEc,"segEc/I");
+    plotTree->Branch("segSt",&segSt,"segSt/I");
+    plotTree->Branch("segRi",&segRi,"segRi/I");
+    plotTree->Branch("segCh",&segCh,"segCh/I");
+    plotTree->Branch("envelopeId", &envelopeId, "envelopeId/I");
+    plotTree->Branch("patternId", &patternId, "patternId/I");
+    plotTree->Branch("segmentX", &segmentX, "segmentX/F");
+    plotTree->Branch("patX", &patX, "patX/F");
+
 
 	//
 	// TREE ITERATION
@@ -128,14 +151,14 @@ int PatternFinder() {
 		//iterate through segments
 		for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
 
-			int EC = segEc->at(thisSeg);
-			int ST = segSt->at(thisSeg);
-			int RI = segRi->at(thisSeg);
-			int CH = segCh->at(thisSeg);
+			int EC = (*segEc)[thisSeg];
+			int ST = (*segSt)[thisSeg];
+			int RI = (*segRi)[thisSeg];
+			int CH = (*segCh)[thisSeg];
 			int chSid = chamberSerial(EC, ST, RI, CH);
 
-			float segmentX = segX->at(thisSeg);
-			float segmentSlope = segdXdZ->at(thisSeg);
+			segmentX = (*segX)[thisSeg];
+			float segmentSlope = (*segdXdZ)[thisSeg];
 
 			//if(ST != 2 && RI != 2) continue;
 
@@ -167,10 +190,10 @@ int PatternFinder() {
 			bool compLayers[NLAYERS] = {0,0,0,0,0,0};
 
 			for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
-				if(chSid != compId->at(icomp)) continue; //only look at where we are now
+				if(chSid != (*compId)[icomp]) continue; //only look at where we are now
 
-				unsigned int thisCompLay = compLay->at(icomp)-1;
-				for(unsigned int icompstr = 0; icompstr < compStr->at(icomp).size(); icompstr++){
+				unsigned int thisCompLay = (*compLay)[icomp]-1;
+				for(unsigned int icompstr = 0; icompstr < (*compStr)[icomp].size(); icompstr++){
 					//goes from 1-80
 					int compStrip = compStr->at(icomp).at(icompstr);
 					int compHStrip = compHS->at(icomp).at(icompstr);
@@ -276,8 +299,6 @@ int PatternFinder() {
 
 
 
-
-
 			//find which group the current chamber you are looking at belongs to
 			unsigned int groupIndex;
 			if((ST == 1 && RI == 4 )||(ST == 1 && RI == 2)) groupIndex = 0; //ME11a || ME12
@@ -310,6 +331,23 @@ int PatternFinder() {
 			unsigned int maxLayerMatchCount = thisSetMatch->bestLayerCount();
 			unsigned int maxLayerId = thisSetMatch->bestEnvelopeId();
 
+
+			// Fill Tree Data
+
+			//if(maxLayerId == 100){
+				/*
+				segmST = ST;
+				segmRI = RI;
+				segmCH = CH;
+				segmEC = EC;
+				*/
+				//segmentX = segmentX;
+				patX = thisSetMatch->bestX()/2.;
+				patternId = thisSetMatch->bestChargePattern().getPatternId();
+				envelopeId = maxLayerId;
+				plotTree->Fill();
+			//}
+
 			// GET ID DATA - ME21
 			if(ST == 2 && RI == 1 && maxLayerId == 100){ //temporary lazy sorting
 
@@ -326,9 +364,12 @@ int PatternFinder() {
 				thisList.addPattern(thisSetMatch->bestChargePattern(), make_pair(posDiff, segmentSlope));
 			}
 			delete thisSetMatch;
-
 		}
+
 	}
+
+	plotTree->Write();
+	outF->Close();
 
 
 	//
@@ -386,8 +427,6 @@ int PatternFinder() {
 			//if(2.*(posSlope.at(j).first - avgX) < -2) printf("posSlope[i] = %f\n",2.*(posSlope.at(j).first - avgX));
 		}
 	}
-
-
 
 
 	// SHIFT EVERYTHING TO HAVE MEAN 0
