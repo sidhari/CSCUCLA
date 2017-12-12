@@ -9,6 +9,7 @@
 #define PATTERNFITTER_H_
 
 #include <iostream>
+#include <fstream>
 #include <algorithm>
 #include <vector>
 #include <bitset>
@@ -140,11 +141,16 @@ void ChargePattern::calculateLayersMatched(){
 //keeps track of the number of occurences of an individual pattern ID
 class PatternCount{
 public:
-	PatternCount(ChargePattern cp) : m_cp(cp) {}
+	PatternCount(ChargePattern cp) : m_cp(cp) { isCentered = false;}
 
 	void addPair(pair<float,float> positionSlope){m_positionSlopes.push_back(positionSlope);}
 	void center();
 	unsigned int count() {return m_positionSlopes.size();}
+    float getMeanPos()
+    {
+        if(!isCentered) center();
+        return mean_positionSlopes.first;
+    }
 	int id() { return m_cp.getPatternId();}
 	int nLayers() { return m_cp.getLayersMatched();} //amount of layers the pattern matches to
 
@@ -155,6 +161,8 @@ private:
 	//vector of all positions [strips] (first element in pair) and angles [strips/layer](second element)
 	//of the segment associated with this pattern.
 	vector<pair<float, float>> m_positionSlopes;
+	pair<float, float> mean_positionSlopes;
+    bool isCentered;
 
 	const ChargePattern m_cp;
 };
@@ -168,13 +176,14 @@ void PatternCount::center(){
 		totalX += m_positionSlopes.at(i).first;
 		totalY += m_positionSlopes.at(i).second;
 	}
-	float avgX = totalX / m_positionSlopes.size();
-	float avgY = totalY / m_positionSlopes.size();
+	mean_positionSlopes.first  = totalX / m_positionSlopes.size();
+	mean_positionSlopes.second = totalY / m_positionSlopes.size();
 
 	for(unsigned int i =0; i < m_positionSlopes.size(); i++){
-		m_positionSlopes.at(i).first -= avgX;
-		m_positionSlopes.at(i).second -= avgY;
+		m_positionSlopes.at(i).first -= mean_positionSlopes.first;
+		m_positionSlopes.at(i).second -= mean_positionSlopes.second;
 	}
+    isCentered = true;
 
 }
 
