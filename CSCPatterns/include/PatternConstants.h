@@ -8,6 +8,8 @@
 #ifndef PATTERNCONSTANTS_H_
 #define PATTERNCONSTANTS_H_
 
+#include <string>
+
 
 const int DEBUG = 0;
 const int NLAYERS = 6; //6 layers
@@ -19,6 +21,8 @@ const int MAX_COMP_TIME_BIN = 15;
 const int TIME_RANGE = USE_COMP_HITS ? 2: 1e9; //don't care about range for recHits
 const bool MAKE_MATCH_LAYER_COMPARISON = false;
 const int N_LAYER_REQUIREMENT = 3;
+
+const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
 
 
 const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {

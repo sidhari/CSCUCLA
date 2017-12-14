@@ -34,7 +34,7 @@ using namespace std;
 
 
 int PatternFinder() {
-    TFile* f = TFile::Open("../data/CSCDigiTree161031.root");
+    TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
     if(!f)
     {
@@ -113,7 +113,7 @@ int PatternFinder() {
     // LIST OF PATTERNS
     //
 
-    PatternList thisList;
+    PatternList envelope100(100);
 
     //
     // OUTPUT TREE
@@ -366,7 +366,7 @@ int PatternFinder() {
                    }*/
 
                 float posDiff = segmentX-thisSetMatch->bestX()/2.;
-                thisList.addPattern(thisSetMatch->bestChargePattern(), make_pair(posDiff, segmentSlope));
+                envelope100.addPattern(thisSetMatch->bestChargePattern(), make_pair(posDiff, segmentSlope));
             }
             delete thisSetMatch;
         }
@@ -385,12 +385,12 @@ int PatternFinder() {
     unsigned int overlapDivisions = 3;
     cOverlap->Divide(overlapDivisions, overlapDivisions);
 
-    thisList.printList();
+    envelope100.printList();
 
     printf("Erasing patterns with less that 10 counts\n");
 
-    thisList.removePatternsUnder(10);
-    thisList.printList();
+    envelope100.removePatternsUnder(10);
+    envelope100.printList();
 
 
     //envelope distribution, currently doing it here, before we shift to zero
@@ -403,7 +403,7 @@ int PatternFinder() {
 
     //TODO: this works, but the const vector being changes by the call to .center() is confusing, fix when we figure out
     // how to do this for patterns other than just straight through
-    const vector<PatternCount*> ids = thisList.getIds();
+    const vector<PatternCount*> ids = envelope100.getIds();
 
     //find average position first
     float totalX = 0;
@@ -434,8 +434,15 @@ int PatternFinder() {
     }
 
 
+
+    ofstream outfile;
+    outfile.open ((INPUT_FILENAME+".averages").c_str());
+    outfile << "Envelope\tID\tMean[strips]\n";
+
     // SHIFT EVERYTHING TO HAVE MEAN 0
-    thisList.center();
+    envelope100.center(outfile);
+
+    outfile.close();
 
     //
     // 2D Distributions
