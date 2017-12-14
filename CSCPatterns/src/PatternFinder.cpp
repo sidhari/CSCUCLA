@@ -437,7 +437,7 @@ int PatternFinder() {
 
     ofstream outfile;
     outfile.open ((INPUT_FILENAME+".averages").c_str());
-    outfile << "Envelope\tID\tMean[strips]\n";
+    outfile << "envID/I:patID/I:mean/F" << endl;
 
     // SHIFT EVERYTHING TO HAVE MEAN 0
     envelope100.center(outfile);
