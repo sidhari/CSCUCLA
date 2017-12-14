@@ -191,14 +191,14 @@ void PatternCount::center(){
 //keeps track of the occurences of a collective of pattern ids
 class PatternList {
 public:
-	PatternList(){}
+	PatternList(unsigned int envelopeId): m_envelopeId(envelopeId){}
 
 	void addPattern(const ChargePattern p,pair<float,float> positionSlope);
 	void printList();
 	void removePatternsUnder(unsigned int num);
 	unsigned int totalCount();
 	const vector<PatternCount*>& getIds(){return m_patterns;}
-	void center();
+	void center(ofstream& f);
 
 	~PatternList(){
 		while(m_patterns.size()) {
@@ -208,6 +208,7 @@ public:
 	}
 
 private:
+	const unsigned int m_envelopeId;
 	vector<PatternCount*> m_patterns;
 };
 
@@ -277,10 +278,11 @@ void PatternList::printList() {
 	printf("Total chambers matched: %i\n", totalCount());
 }
 
-//zeroes the distribution, be careful when to use this!
-void PatternList::center() {
+//zeroes the distribution, be careful when to use this! writes average to output file
+void PatternList::center(ofstream& f) {
 	for(unsigned int i =0; i< m_patterns.size(); i++){
 		m_patterns.at(i)->center();
+		f <<m_envelopeId << "\t" << m_patterns.at(i)->id() << "\t" << m_patterns.at(i)->getMeanPos() << "\n";
 	}
 }
 
