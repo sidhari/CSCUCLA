@@ -147,8 +147,8 @@ int PatternFinder() {
     //
 
 
-    for(unsigned int i = 0; i < MAX_ENTRY; i++) {
-        if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
+    for(unsigned int i = 0; i < t->GetEntries(); i++) {
+        if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/(t->GetEntries()), i);
         t->GetEntry(i);
 
         if(!os) continue;

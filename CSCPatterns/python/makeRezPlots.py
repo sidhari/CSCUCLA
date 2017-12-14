@@ -2,14 +2,18 @@
 import ROOT as r
 
 #open file
-inF = r.TFile("/uscms/home/wnash/nobackup/cscPat/ntuple/plotTree.root")
+inF = r.TFile("../src/plotTree.root")
 myT = inF.plotTree
 
 #init plots
 rezPlots = {}
 
 #loop over tree
+Nev = myT.GetEntries()
+Nproc = 0
 for event in myT:
+    Nproc += 1
+    if Nproc%1000 == 0: print "Processing event %i of %i"%(Nproc,Nev)
     if not (event.envelopeId in rezPlots): rezPlots[event.envelopeId] = {}
     if not (event.patternId in rezPlots[event.envelopeId]): rezPlots[event.envelopeId][event.patternId] = r.TH1D(
             "rez%i_%i_h"%(event.envelopeId,event.patternId),
@@ -18,15 +22,18 @@ for event in myT:
     rezPlots[event.envelopeId][event.patternId].Fill(event.segmentX-event.patX)
     pass
 
-rezMeans = {}
 #draw stuff
+posRes_h = r.TH1D("posRes_h","posRes_h",400,-2.0,2.0)
+envPosRes_h = r.TH1D("envPosRes_h","envPosRes_h",400,-2.0,2.0)
 outF = r.TFile("rezPlots.root","RECREATE")
-for env in rezPlots:
-    rezMeans[env] = {}
-    for pat in rezPlots[env]:
-        rezPlots[env][pat].Write()
-        rezMeans[env][pat] = rezPlots[env][pat].GetMean()
-        pass
+Nproc = 0
+for event in myT:
+    Nproc += 1
+    if Nproc%1000 == 0: print "Processing event %i of %i"%(Nproc,Nev)
+    posRes_h.Fill(event.segmentX-event.patX-rezPlots[event.envelopeId][event.patternId].GetMean())
+    envPosRes_h.Fill(event.segmentX-event.patX)
     pass
 
+posRes_h.Write()
+envPosRes_h.Write()
 outF.Close()
