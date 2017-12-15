@@ -10,7 +10,6 @@
 #include <TFile.h>
 #include <TH1F.h>
 #include <TH2F.h>
-#include <TCanvas.h>
 #include <TLegend.h>
 #include <TStyle.h>
 #include <THStack.h>
@@ -381,118 +380,16 @@ int PatternFinder() {
     // 2D DISTRIBUTIONS
     //
 
-    TCanvas* cOverlap = new TCanvas("cOverlap","",1200,900);
-    unsigned int overlapDivisions = 3;
-    cOverlap->Divide(overlapDivisions, overlapDivisions);
-
     envelope100.printList();
-
-    printf("Erasing patterns with less that 10 counts\n");
-
-    envelope100.removePatternsUnder(10);
-    envelope100.printList();
-
-
-    //envelope distribution, currently doing it here, before we shift to zero
-
-    float resolutionRange = 2.;
-    TH1F* envelopeResolution = new TH1F("envelope", "Envelopes",400, -resolutionRange, resolutionRange);
-    envelopeResolution->SetLineColor(kRed);
-    envelopeResolution->GetXaxis()->SetTitle("Position Difference [Half Strips]");
-
-
-    //TODO: this works, but the const vector being changes by the call to .center() is confusing, fix when we figure out
-    // how to do this for patterns other than just straight through
-    const vector<PatternCount*> ids = envelope100.getIds();
-
-    //find average position first
-    float totalX = 0;
-    unsigned int totalCount = 0;
-    //iterate over all of the patterns we found
-    for(unsigned int i =0; i < ids.size(); i++){
-        PatternCount* iid = ids.at(i);
-        const vector<pair<float,float>> posSlope = iid->getPosSlope();
-        //iterate over all of the matches in each pattern
-        for(unsigned int j = 0; j < posSlope.size(); j++){
-            totalX +=posSlope.at(j).first;
-            totalCount++;
-        }
-    }
-    if(!totalCount) return -1; //TODO: will be fixed later...
-    float avgX = totalX/totalCount;
-
-    //iterate over all of the patterns we found
-    for(unsigned int i =0; i < ids.size(); i++){
-        PatternCount* iid = ids.at(i);
-        const vector<pair<float,float>> posSlope = iid->getPosSlope();
-        //iterate over all of the matches in each pattern
-        for(unsigned int j = 0; j < posSlope.size(); j++){
-            //strips -> half strips
-            envelopeResolution->Fill(2.*(posSlope.at(j).first - avgX));
-            //if(2.*(posSlope.at(j).first - avgX) < -2) printf("posSlope[i] = %f\n",2.*(posSlope.at(j).first - avgX));
-        }
-    }
-
-
 
     ofstream outfile;
     outfile.open ((INPUT_FILENAME+".averages").c_str());
-    outfile << "envID/I:patID/I:mean/F" << endl;
+    outfile << "envID/I:patID/I:Nseg/I:mean/F" << endl;
 
     // SHIFT EVERYTHING TO HAVE MEAN 0
     envelope100.center(outfile);
 
     outfile.close();
-
-    //
-    // 2D Distributions
-    //
-
-    for(unsigned int i =0; i < overlapDivisions*overlapDivisions; i++){
-        if(i < ids.size()){
-            PatternCount* iid = ids.at(i);
-            envelopes->front().printCode(iid->id());
-            TH2F* patternOverlap = new TH2F(("patOverlap"+to_string(i)).c_str(), (to_string(i) + " - " + to_string(iid->id())).c_str(),
-                    50,-1, 1,50,-0.4,0.4);
-            patternOverlap->GetXaxis()->SetTitle("Position from Center Strip [strips]");
-            patternOverlap->GetYaxis()->SetTitle("Slope [strips/layer]");
-            const vector<pair<float,float>> posSlope = iid->getPosSlope();
-
-            for(unsigned int i =0; i < posSlope.size(); i++){
-                patternOverlap->Fill(posSlope.at(i).first,posSlope.at(i).second);
-            }
-            cOverlap->cd(i+1);
-            patternOverlap->Draw("colz");
-        }
-    }
-
-    //
-    // 1D DISTRIBUTIONS
-    //
-
-
-    gStyle->SetOptStat(111111);
-
-    TCanvas* cRes1d = new TCanvas("cRes1d","",1200,900);
-    cRes1d->cd();
-
-    TH1F* patternResolution = new TH1F("pattern", "Patterns",400, -resolutionRange, resolutionRange);
-    patternResolution->GetXaxis()->SetTitle("Position Difference [Half Strips]");
-
-    //iterate over all of the patterns we found
-    for(unsigned int i =0; i < ids.size(); i++){
-        PatternCount* iid = ids.at(i);
-        const vector<pair<float,float>> posSlope = iid->getPosSlope();
-        //iterate over all of the matches in each pattern
-        for(unsigned int j = 0; j < posSlope.size(); j++){
-            //strips->halfstrips
-            patternResolution->Fill(2*posSlope.at(j).first);
-        }
-    }
-
-    patternResolution->Draw("hist");
-    envelopeResolution->Draw("hist sames");
-
 
     return 0;
 }
