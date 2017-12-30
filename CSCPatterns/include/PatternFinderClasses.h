@@ -282,7 +282,7 @@ void PatternList::printList() {
 void PatternList::center(ofstream& f) {
 	for(unsigned int i =0; i< m_patterns.size(); i++){
 		m_patterns.at(i)->center();
-		f <<m_envelopeId << "\t" << m_patterns.at(i)->id() << "\t" << m_patterns.at(i)->getMeanPos() << "\n";
+		f << m_envelopeId << "\t" << m_patterns.at(i)->id() << "\t" << m_patterns.at(i)->count() << "\t" << m_patterns.at(i)->getMeanPos() << endl;
 	}
 }
 
