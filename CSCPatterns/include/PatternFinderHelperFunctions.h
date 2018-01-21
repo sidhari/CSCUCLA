@@ -11,7 +11,7 @@
 #include "PatternFinderClasses.h"
 
 void printEnvelope(const ChargeEnvelope &p) {
-	printf("-- Printing Pattern: %i ---\n", p.m_id);
+	printf("-- Printing Envelope: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
 			if(p.m_hits[x][y]) printf("X");
@@ -79,8 +79,6 @@ int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, 
 				}
 				overlapColumn++; //we are now in the next column of overlap
 			}
-
-
 		}
 		if(overlapColumn != 3) {
 			printf("Error: we don't have enough true booleans in a Envelope. overlapColumn = %i\n", overlapColumn);
@@ -88,6 +86,36 @@ int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, 
 		}
 	}
 	return 0;
+}
+
+
+
+//looks if a chamber "c" contains an envelope "p" at the location horPos returns
+//the number of matched layers
+int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int horPos){
+
+	bool matchedLayers[NLAYERS];
+	for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
+
+	//for each x position in the chamber, were going to iterate through
+	// the pattern to see how much overlap there is at that position
+	for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
+		//go through the entire vertical dimension as well
+		for(unsigned int y = 0; y < NLAYERS; y++) {
+
+			//this accounts for checking patterns along the edges of the chamber that may extend
+			//past the bounds
+			if( (int)horPos+(int)px < 0 ||  horPos+px >= N_MAX_HALF_STRIPS) continue;
+			if((c.hits)[horPos+px][y] && p.m_hits[px][y]) {
+				matchedLayers[y] = true;
+			}
+		}
+	}
+
+	unsigned int matchedLayerCount = 0;
+	for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayerCount += matchedLayers[imlc];
+
+	return matchedLayerCount;
 }
 
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
@@ -109,26 +137,36 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 	//everywhere starting at the left most edge to the rightmost edge
 	for(int x = -MAX_PATTERN_WIDTH+1; x < N_MAX_HALF_STRIPS; x++){
 
-		if(getOverlap(c,p,x,overlap)){
-			printf("Error: cannot get overlap for pattern\n");
-			return -1;
-		}
-
-
 		unsigned int matchedLayerCount = 0;
-		for(int ilay = 0; ilay < NLAYERS; ilay++) {
-			bool inLayer = false;
-			for(int icol = 0; icol< 3; icol++){
-				inLayer |= overlap[ilay][icol]; //bitwise or
+
+		//legacy code doesnt use overlaps, so we have a slightly different algorithm
+		if(p.m_isLegacy){
+			matchedLayerCount = legacyLayersMatched(c,p,x);
+		} else {
+			if(getOverlap(c,p,x,overlap)){
+				printf("Error: cannot get overlap for pattern\n");
+				return -1;
 			}
-			matchedLayerCount += inLayer;
+
+			for(int ilay = 0; ilay < NLAYERS; ilay++) {
+				bool inLayer = false;
+				for(int icol = 0; icol< 3; icol++){
+					inLayer |= overlap[ilay][icol]; //bitwise or
+				}
+				matchedLayerCount += inLayer;
+			}
 		}
+
 
 
 		//if we have a better match than we have had before
 		if(matchedLayerCount == NLAYERS){ //optimization
-			mi = new SingleEnvelopeMatchInfo(p, x, overlap);
-			if(mi->patternId() < 0) return -1;
+			if(p.m_isLegacy){
+				mi = new SingleEnvelopeMatchInfo(p,x,matchedLayerCount);
+			}else{
+				mi = new SingleEnvelopeMatchInfo(p, x, overlap);
+				if(mi->patternId() < 0) return -1;
+			}
 			return matchedLayerCount;
 		}
 		if(matchedLayerCount > maxMatchedLayers) {
@@ -139,13 +177,17 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 	}
 
 	//refill the overlap with the best found location
-	if(getOverlap(c,p,bestHorizontalIndex,overlap)){
+	if(!p.m_isLegacy && getOverlap(c,p,bestHorizontalIndex,overlap)){
 		printf("Error: cannot get overlap for pattern\n");
 		return -1;
 	}
 
-	mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, overlap);
-	if(mi->patternId() < 0) return -1;
+	if(p.m_isLegacy){
+		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, maxMatchedLayers);
+	}else {
+		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, overlap);
+		if(mi->patternId() < 0) return -1;
+	}
 	if(DEBUG > 1){
 		printChamber(c);
 		printEnvelope(p);
@@ -182,22 +224,67 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, Envel
 
 
 
-
-vector<ChargeEnvelope>* createEnvelopes(){
+//creates the new set of envelopes
+vector<ChargeEnvelope>* createNewEnvelopes(){
 
 	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
 
-	ChargeEnvelope id1("100",100,IDSV1_A);
-	ChargeEnvelope id4("400",400,IDSV1_C);
-	ChargeEnvelope id5 = id4.returnFlipped("500",500);
-	ChargeEnvelope id8("800",800, IDSV1_E);
-	ChargeEnvelope id9 = id8.returnFlipped("900",900);
+	ChargeEnvelope id1("100",ENVELOPE_IDS[0],false,IDSV1_A);
+	ChargeEnvelope id4("400",ENVELOPE_IDS[1],false,IDSV1_C);
+	ChargeEnvelope id5 = id4.returnFlipped("500",ENVELOPE_IDS[2]);
+	ChargeEnvelope id8("800",ENVELOPE_IDS[3], false, IDSV1_E);
+	ChargeEnvelope id9 = id8.returnFlipped("900",ENVELOPE_IDS[4]);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);
 	thisVector->push_back(id5);
 	thisVector->push_back(id8);
 	thisVector->push_back(id9);
+
+	return thisVector;
+}
+
+//creates the currently implemented patterns in the TMB, here treated as envelopes
+vector<ChargeEnvelope>* createOldEnvelopes(){
+	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
+
+	//fill in the correctly oriented matrices, should change eventually...
+	for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
+		for(unsigned int y = 0; y< NLAYERS; y++){
+			ID2_BASE[x][y] = id2Bools[NLAYERS-1-y][x];
+			ID3_BASE[MAX_PATTERN_WIDTH-x-1][y] =id2Bools[NLAYERS-1-y][x];
+			ID4_BASE[x][y] = id4Bools[NLAYERS-1-y][x];
+			ID5_BASE[MAX_PATTERN_WIDTH-x-1][y] =id4Bools[NLAYERS-1-y][x];
+			ID6_BASE[x][y] = id6Bools[NLAYERS-1-y][x];
+			ID7_BASE[MAX_PATTERN_WIDTH-x-1][y] =id6Bools[NLAYERS-1-y][x];
+			ID8_BASE[x][y] = id8Bools[NLAYERS-1-y][x];
+			ID9_BASE[MAX_PATTERN_WIDTH-x-1][y] =id8Bools[NLAYERS-1-y][x];
+			IDA_BASE[x][y] = idABools[NLAYERS-1-y][x];
+		}
+	}
+
+
+	ChargeEnvelope id2("ID2",2,true, ID2_BASE);
+	ChargeEnvelope id3("ID3",3,true,ID3_BASE);
+	ChargeEnvelope id4("ID4",4,true,ID4_BASE);
+	ChargeEnvelope id5("ID5",5,true,ID5_BASE);
+	ChargeEnvelope id6("ID6",6,true,ID6_BASE);
+	ChargeEnvelope id7("ID7",7,true,ID7_BASE);
+	ChargeEnvelope id8("ID8",8,true,ID8_BASE);
+	ChargeEnvelope id9("ID9",9,true,ID9_BASE);
+	ChargeEnvelope idA("IDA",10,true,IDA_BASE);
+
+	thisVector->push_back(idA);
+	thisVector->push_back(id9);
+	thisVector->push_back(id8);
+	thisVector->push_back(id7);
+	thisVector->push_back(id6);
+	thisVector->push_back(id5);
+	thisVector->push_back(id4);
+	thisVector->push_back(id3);
+	thisVector->push_back(id2);
+
+	//ChargeEnvelope id1("100",ENVELOPE_IDS[0],IDSV1_A);
 
 	return thisVector;
 }

@@ -82,7 +82,7 @@ private:
 
 void ChargePattern::printPattern() {
 	int patCode = getPatternId();
-	printf("Pattern Code: %i, layersMatched: %u\n", patCode,getLayersMatched());
+	printf("Pattern Code: %#04x, layersMatched: %u\n", patCode,getLayersMatched());
 	if(DEBUG) cout << "patternId is: "  << bitset<12>(patCode) << endl;
 	for(int i =0; i < NLAYERS; i++){
 		for(int j =0; j < 3; j++){
@@ -121,10 +121,9 @@ void ChargePattern::calculateId(){
 			m_patternId = -1;
 			return;
 		}
-		//each column has two bits of information
+		//each column has two bits of information, largest layer is most significant bit
 		m_patternId += (rowCode << 2*column);
 	}
-	if(DEBUG) cout << "patternId is: "  << bitset<12>(m_patternId) << endl;
 }
 
 void ChargePattern::calculateLayersMatched(){
@@ -188,6 +187,10 @@ void PatternCount::center(){
 }
 
 
+
+
+
+
 //keeps track of the occurences of a collective of pattern ids
 class PatternList {
 public:
@@ -215,9 +218,7 @@ private:
 //returns the integral number of patterns put into this list
 unsigned int PatternList::totalCount() {
 	unsigned int tc = 0;
-	for(unsigned int i =0; i < m_patterns.size(); i++){
-		tc += m_patterns[i]->count();
-	}
+	for(unsigned int i =0; i < m_patterns.size(); i++)	tc += m_patterns[i]->count();
 	return tc;
 }
 
@@ -296,16 +297,17 @@ class ChargeEnvelope {
 public:
 
 	const unsigned int m_id;
+	const bool m_isLegacy;
 	bool m_hits[MAX_PATTERN_WIDTH][NLAYERS]; //layers
 
-	ChargeEnvelope(unsigned int id, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id) {
+	ChargeEnvelope(unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
 			}
 		}
 	}
-	ChargeEnvelope(string name, unsigned int id,const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id){
+	ChargeEnvelope(string name, unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
@@ -314,7 +316,7 @@ public:
 		m_name = name;
 	}
 
-	ChargeEnvelope(const ChargeEnvelope &obj) : m_id(obj.m_id) {
+	ChargeEnvelope(const ChargeEnvelope &obj) : m_id(obj.m_id), m_isLegacy(obj.m_isLegacy) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = obj.m_hits[j][i];
@@ -324,7 +326,7 @@ public:
 	}
 
 
-	ChargeEnvelope() :m_id(-1){
+	ChargeEnvelope() :m_id(-1), m_isLegacy(false){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = 0;
@@ -344,7 +346,7 @@ public:
 				flippedPattern[j][i] = m_hits[MAX_PATTERN_WIDTH-1-j][i];
 			}
 		}
-		return ChargeEnvelope(name, id, flippedPattern);
+		return ChargeEnvelope(name, id, m_isLegacy, flippedPattern);
 	}
 
 	void printCode(int code);
@@ -409,6 +411,13 @@ public:
 		m_horizontalIndex = horInd;
 		//m_layerMatchCount = -1;
 		m_overlap = new ChargePattern(overlap);
+		m_layerMatchCount = m_overlap->getLayersMatched();
+	}
+
+	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, int layMatCount) : m_Envelope(p){
+		m_horizontalIndex = horInd;
+		m_overlap = 0;
+		m_layerMatchCount = layMatCount;
 	}
 
 	void print3x6Pattern();
@@ -418,7 +427,7 @@ public:
 		if(m_overlap) delete m_overlap;
 	}
 
-	int EnvelopeId() {return m_Envelope.m_id;}
+	int envelopeId() {return m_Envelope.m_id;}
 
 	//center position of the track
 	float x(){return 1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1);}
@@ -432,14 +441,20 @@ private:
 	ChargePattern* m_overlap;
 	const ChargeEnvelope m_Envelope;
 	int m_horizontalIndex; //half strips, leftmost index of the pattern
+	int m_layerMatchCount;
 
 };
 
 void SingleEnvelopeMatchInfo::print3x6Pattern(){
 	if(m_overlap) m_overlap->printPattern();
+	else {
+		printf("Layers Match = %i\n", m_layerMatchCount);
+		printf("Overlap pattern not available for this set match\n");
+	}
 }
 
 void SingleEnvelopeMatchInfo::printPatternInChamber(){
+	if(!m_overlap) return;
 	printf("Horizontal index (from left) is %i half strips, position is %f\n", m_horizontalIndex, x());
 	for(int j=0; j < NLAYERS; j++){
 		int trueCounter = 0;//for each layer, should only have 3
@@ -457,10 +472,7 @@ void SingleEnvelopeMatchInfo::printPatternInChamber(){
 }
 
 int SingleEnvelopeMatchInfo::layMatCount() {
-	if(m_overlap){
-		return m_overlap->getLayersMatched();
-	}
-	return -1;
+	return m_layerMatchCount;
 }
 
 int SingleEnvelopeMatchInfo::patternId(){
@@ -522,7 +534,7 @@ int EnvelopeSetMatchInfo::bestLayerCount(){
 
 int EnvelopeSetMatchInfo::bestEnvelopeId() {
 	if(m_bestSetMatchIndex >= (int)m_matches->size()) return -1;
-	return m_matches->at(m_bestSetMatchIndex)->EnvelopeId();
+	return m_matches->at(m_bestSetMatchIndex)->envelopeId();
 }
 
 float EnvelopeSetMatchInfo::bestX() {

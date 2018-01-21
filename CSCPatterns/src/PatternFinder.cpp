@@ -16,8 +16,8 @@
 #include <THStack.h>
 #include <TString.h>
 
-//#include <iostream>
 #include <vector>
+#include <map>
 #include <stdio.h>
 
 #include "../include/PatternConstants.h"
@@ -107,30 +107,28 @@ int PatternFinder() {
     //
 
 
-    vector<ChargeEnvelope>* envelopes = createEnvelopes();
+    vector<ChargeEnvelope>* newEnvelopes = createNewEnvelopes();
 
-    //
-    // LIST OF PATTERNS
-    //
+    vector<ChargeEnvelope>* oldEnvelopes = createOldEnvelopes();
 
-    PatternList envelope100(100);
 
     //
     // OUTPUT TREE
     //
 
-
     int envelopeId = 0;
     int patternId = 0;
-    int EC = 0;
-    int ST = 0;
-    int RI = 0;
+    int legacyLctId = 0;
+    int EC = 0; // 1-2
+    int ST = 0; // 1-4
+    int RI = 0; // 1-4
     int CH = 0;
     int chSid = 0;
-    float segmentX;
+    float segmentX = 0;
     float patX = 0;
+    float legacyLctX = 0;
 
-    TFile * outF = new TFile("plotTree.root","RECREATE");
+    TFile * outF = new TFile("../data/plotTree.root","RECREATE");
     TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
     plotTree->Branch("EC",&EC,"EC/I");
     plotTree->Branch("ST",&ST,"ST/I");
@@ -138,17 +136,20 @@ int PatternFinder() {
     plotTree->Branch("CH",&CH,"CH/I");
     plotTree->Branch("envelopeId", &envelopeId, "envelopeId/I");
     plotTree->Branch("patternId", &patternId, "patternId/I");
+    plotTree->Branch("legacyLctId", &legacyLctId, "legacyLctId/I");
     plotTree->Branch("segmentX", &segmentX, "segmentX/F");
     plotTree->Branch("patX", &patX, "patX/F");
+    plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
+
+	TH1F* test = new TH1F("nRh3", "nRh3", 6, 1, 7);
 
     //
     // TREE ITERATION
     //
 
-
     for(unsigned int i = 0; i < MAX_ENTRY; i++) {
-        if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
+        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
         t->GetEntry(i);
 
         if(!os) continue;
@@ -302,6 +303,8 @@ int PatternFinder() {
                 nRh++;
             }
 
+			test->Fill(nRh);
+
 
 
             //find which group the current chamber you are looking at belongs to
@@ -317,7 +320,8 @@ int PatternFinder() {
 
 
 
-            EnvelopeSetMatchInfo* thisSetMatch = new EnvelopeSetMatchInfo();
+            EnvelopeSetMatchInfo* newSetMatch = new EnvelopeSetMatchInfo();
+            EnvelopeSetMatchInfo* oldSetMatch = new EnvelopeSetMatchInfo();
             ChamberHits* testChamber;
             unsigned int nHits; //number of hits, counts at max one from each layer
             if(USE_COMP_HITS){
@@ -330,168 +334,30 @@ int PatternFinder() {
             }
 
             //now run on comparator hits
-            if(searchForMatch(*testChamber, envelopes,thisSetMatch)) return -1;
+            if(DEBUG) cout << "-- Running over old set --" << endl;
+            if(searchForMatch(*testChamber, oldEnvelopes,oldSetMatch)) return -1;
 
-
-            unsigned int maxLayerMatchCount = thisSetMatch->bestLayerCount();
-            unsigned int maxLayerId = thisSetMatch->bestEnvelopeId();
+            if(DEBUG) cout << "-- Running over new set --" << endl;
+            if(searchForMatch(*testChamber, newEnvelopes,newSetMatch)) return -1;
 
 
             // Fill Tree Data
 
-            //if(maxLayerId == 100){
-            /*
-               segmST = ST;
-               segmRI = RI;
-               segmCH = CH;
-               segmEC = EC;
-               */
-            //segmentX = segmentX;
-            patX = thisSetMatch->bestX()/2.;
-            patternId = thisSetMatch->bestChargePattern().getPatternId();
-            envelopeId = maxLayerId;
+            patX = newSetMatch->bestX()/2.;
+            patternId = newSetMatch->bestChargePattern().getPatternId();
+            envelopeId = newSetMatch->bestEnvelopeId();
+            legacyLctId = oldSetMatch->bestEnvelopeId();
+            legacyLctX = oldSetMatch->bestX()/2.;
             plotTree->Fill();
-            //}
 
-            // GET ID DATA - ME21
-            if(ST == 2 && RI == 1 && maxLayerId == 100){ //temporary lazy sorting
-
-                /*
-                   if(thisSetMatch->bestSubPatternCode() == 2730){
-
-                   printf("~~~~ For ME11A - EnvelopeId: %i - patternCode: %i ~~~~~\n", maxLayerId, thisSetMatch->bestSubPatternCode());
-                   printChamber(*testChamber);
-                   printf("Adding data: segX: %f, chamberStrip: %f, segSlope: %f\n\n",segmentX,thisSetMatch->bestOffsetHS()/2.,segmentSlope);
-
-                   }*/
-
-                float posDiff = segmentX-thisSetMatch->bestX()/2.;
-                envelope100.addPattern(thisSetMatch->bestChargePattern(), make_pair(posDiff, segmentSlope));
-            }
-            delete thisSetMatch;
+            delete newSetMatch;
+            delete oldSetMatch;
         }
 
     }
 
     plotTree->Write();
     outF->Close();
-
-
-    //
-    // 2D DISTRIBUTIONS
-    //
-
-    TCanvas* cOverlap = new TCanvas("cOverlap","",1200,900);
-    unsigned int overlapDivisions = 3;
-    cOverlap->Divide(overlapDivisions, overlapDivisions);
-
-    envelope100.printList();
-
-    printf("Erasing patterns with less that 10 counts\n");
-
-    envelope100.removePatternsUnder(10);
-    envelope100.printList();
-
-
-    //envelope distribution, currently doing it here, before we shift to zero
-
-    float resolutionRange = 2.;
-    TH1F* envelopeResolution = new TH1F("envelope", "Envelopes",400, -resolutionRange, resolutionRange);
-    envelopeResolution->SetLineColor(kRed);
-    envelopeResolution->GetXaxis()->SetTitle("Position Difference [Half Strips]");
-
-
-    //TODO: this works, but the const vector being changes by the call to .center() is confusing, fix when we figure out
-    // how to do this for patterns other than just straight through
-    const vector<PatternCount*> ids = envelope100.getIds();
-
-    //find average position first
-    float totalX = 0;
-    unsigned int totalCount = 0;
-    //iterate over all of the patterns we found
-    for(unsigned int i =0; i < ids.size(); i++){
-        PatternCount* iid = ids.at(i);
-        const vector<pair<float,float>> posSlope = iid->getPosSlope();
-        //iterate over all of the matches in each pattern
-        for(unsigned int j = 0; j < posSlope.size(); j++){
-            totalX +=posSlope.at(j).first;
-            totalCount++;
-        }
-    }
-    if(!totalCount) return -1; //TODO: will be fixed later...
-    float avgX = totalX/totalCount;
-
-    //iterate over all of the patterns we found
-    for(unsigned int i =0; i < ids.size(); i++){
-        PatternCount* iid = ids.at(i);
-        const vector<pair<float,float>> posSlope = iid->getPosSlope();
-        //iterate over all of the matches in each pattern
-        for(unsigned int j = 0; j < posSlope.size(); j++){
-            //strips -> half strips
-            envelopeResolution->Fill(2.*(posSlope.at(j).first - avgX));
-            //if(2.*(posSlope.at(j).first - avgX) < -2) printf("posSlope[i] = %f\n",2.*(posSlope.at(j).first - avgX));
-        }
-    }
-
-
-
-    ofstream outfile;
-    outfile.open ((INPUT_FILENAME+".averages").c_str());
-    outfile << "Envelope\tID\tMean[strips]\n";
-
-    // SHIFT EVERYTHING TO HAVE MEAN 0
-    envelope100.center(outfile);
-
-    outfile.close();
-
-    //
-    // 2D Distributions
-    //
-
-    for(unsigned int i =0; i < overlapDivisions*overlapDivisions; i++){
-        if(i < ids.size()){
-            PatternCount* iid = ids.at(i);
-            envelopes->front().printCode(iid->id());
-            TH2F* patternOverlap = new TH2F(("patOverlap"+to_string(i)).c_str(), (to_string(i) + " - " + to_string(iid->id())).c_str(),
-                    50,-1, 1,50,-0.4,0.4);
-            patternOverlap->GetXaxis()->SetTitle("Position from Center Strip [strips]");
-            patternOverlap->GetYaxis()->SetTitle("Slope [strips/layer]");
-            const vector<pair<float,float>> posSlope = iid->getPosSlope();
-
-            for(unsigned int i =0; i < posSlope.size(); i++){
-                patternOverlap->Fill(posSlope.at(i).first,posSlope.at(i).second);
-            }
-            cOverlap->cd(i+1);
-            patternOverlap->Draw("colz");
-        }
-    }
-
-    //
-    // 1D DISTRIBUTIONS
-    //
-
-
-    gStyle->SetOptStat(111111);
-
-    TCanvas* cRes1d = new TCanvas("cRes1d","",1200,900);
-    cRes1d->cd();
-
-    TH1F* patternResolution = new TH1F("pattern", "Patterns",400, -resolutionRange, resolutionRange);
-    patternResolution->GetXaxis()->SetTitle("Position Difference [Half Strips]");
-
-    //iterate over all of the patterns we found
-    for(unsigned int i =0; i < ids.size(); i++){
-        PatternCount* iid = ids.at(i);
-        const vector<pair<float,float>> posSlope = iid->getPosSlope();
-        //iterate over all of the matches in each pattern
-        for(unsigned int j = 0; j < posSlope.size(); j++){
-            //strips->halfstrips
-            patternResolution->Fill(2*posSlope.at(j).first);
-        }
-    }
-
-    patternResolution->Draw("hist");
-    envelopeResolution->Draw("hist sames");
 
 
     return 0;
