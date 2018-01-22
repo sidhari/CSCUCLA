@@ -47,7 +47,6 @@ fullOldResPlot = r.TH1D("fullLegacyResolution", "events;[strip]",600,-2.,2.)
 fullEnvelopeResPlot = r.TH1D("fullEnvelopeResolution","events;[strip]",600,-2.,2.)
 fullPatternResPlot = r.TH1D("fullPatternResolution", "events;[strip]", 600,-2.,2.)
 
-
 #loop over tree
 counter = 0
 calculatedNewPattMeans = {}
@@ -107,6 +106,7 @@ fullPatternResPlot.Write()
 #    newResPlots[event.envelopeId][event.patternId].Fill(event.segmentX-event.patX)
 #    oldResPlots[event.legacyLctId].Fill(event.segmentX-event.legacyLctX)
 #    pass    
+
 
 
 outF.Close()

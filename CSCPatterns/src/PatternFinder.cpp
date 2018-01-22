@@ -10,7 +10,6 @@
 #include <TFile.h>
 #include <TH1F.h>
 #include <TH2F.h>
-#include <TCanvas.h>
 #include <TLegend.h>
 #include <TStyle.h>
 #include <THStack.h>
@@ -150,6 +149,7 @@ int PatternFinder() {
 
     for(unsigned int i = 0; i < MAX_ENTRY; i++) {
         if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
+
         t->GetEntry(i);
 
         if(!os) continue;
