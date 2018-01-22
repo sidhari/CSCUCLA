@@ -244,6 +244,30 @@ vector<ChargeEnvelope>* createNewEnvelopes(){
 	return thisVector;
 }
 
+//creates the new set of envelopes TO REMOVE, TESTING
+/*
+vector<ChargeEnvelope>* createNewEnvelopesVERIFICATION(){
+
+	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
+
+	ChargeEnvelope id1("100",ENVELOPE_IDS[0],1,IDSV1_A);
+	ChargeEnvelope id4("400",ENVELOPE_IDS[1],1,IDSV1_C);
+	ChargeEnvelope id5 = id4.returnFlipped("500",ENVELOPE_IDS[2]);
+	ChargeEnvelope id8("800",ENVELOPE_IDS[3], 1, IDSV1_E);
+	ChargeEnvelope id9 = id8.returnFlipped("900",ENVELOPE_IDS[4]);
+
+	thisVector->push_back(id1);
+	thisVector->push_back(id4);
+	thisVector->push_back(id5);
+	thisVector->push_back(id8);
+	thisVector->push_back(id9);
+
+	return thisVector;
+}
+*/
+
+
+
 //creates the currently implemented patterns in the TMB, here treated as envelopes
 vector<ChargeEnvelope>* createOldEnvelopes(){
 	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
