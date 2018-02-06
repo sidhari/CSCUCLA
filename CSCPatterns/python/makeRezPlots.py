@@ -3,8 +3,12 @@ import ROOT as r
 import numpy as np
 import math as m
 
-def decodeChamberCode(chamberCode):
-    return 0
+useCompHits = 1 # 0 means use recHits
+folder = ""
+if(useCompHits):
+    folder = "compHits"
+else:
+    folder= "recHits"
 
 def printProgress(counter, entries):
     if((counter % 1000000) == 0) : print("Finished %0.2f%% of events"%(100.*counter/entries))
@@ -15,16 +19,35 @@ def validEvent(event,st,ri):
         return True
     return False
 
+#consider 10^-7 a frequency of zero
+def getLogFrequency(frequency):
+    logFreq = 0
+    if (frequency != 0):
+        logFreq = m.log10(frequency)
+        if(logFreq <= -7.):
+            print("Error, found frequency 10^%f reported as less than effective zero" % (logFreq))   
+            sys.exit()     
+    else:
+        logFreq = -7.
+    return logFreq
 
 def createHists(chamber):
     print("=== Running over Chamber %s ==="%(chamber[0]))
     
     #open file
-    inF = r.TFile("../data/plotTree.root")
+    inF = r.TFile("../data/%s/plotTree.root"%folder)
     myT = inF.plotTree
     
     #output file
-    outF = r.TFile("%s_resolutionPlots.root"%(chamber[0]),"RECREATE")
+    outF = r.TFile("../data/%s/%s_resolutionPlots.root"%(folder,chamber[0]),"RECREATE")
+    
+    
+    #frequency plots, will be returned
+    patList = [100,400,500,800,900]
+    #freakwencies = {100:{},400:{},500:{},800:{},900:{}}
+    freakwencies = {}
+    for pat in patList:
+        freakwencies[pat] = np.zeros(4096) #all the possible comparator codes, initialize their frequency to zero
     
     
     #init plots
@@ -182,6 +205,11 @@ def createHists(chamber):
         #bad code
         for pat in sortedccPosPlots:
              totalEntries += pat[0].GetEntries()
+             
+        #real bad code lel
+        for pat in sortedccPosPlots:
+            freakwencies[env][pat[1]] = 1.*pat[0].GetEntries()/totalEntries
+             
         #print("For Pattern %i - CC - per - int"%(env))
         ccEnvFrequency  = r.TH1D("percentage_pat%i"%(env), "%s - Pattern %i using %i matches; Percentage; CC Count"%(chamber[0], env, totalEntries), 8,np.logspace(-6,2,9));
         ccEnvFrequency.SetLineColor(colors[ccounter])
@@ -201,7 +229,7 @@ def createHists(chamber):
             ccCutOffNum.SetBinContent(bin, totalEntries - int)
             ccCutOffDen.SetBinContent(bin,totalEntries)
         
-        mcanvas = r.TCanvas("can","can",1)
+        mcanvas = r.TCanvas("can%i"%(env),"can%i"%(env),1)
         mcanvas.SetLogx()
         mcanvas.SetLogy()
         mcanvas.SetTickx()
@@ -217,7 +245,7 @@ def createHists(chamber):
         ccCutOff.GetXaxis().CenterTitle()
         ccCutOff.GetXaxis().SetMoreLogLabels()
         ccCutOff.Draw()
-        mcanvas.SaveAs("../img/patternFreq/1-e_%s_p%i.pdf"%(chamber[0], env))
+        mcanvas.SaveAs("../img/%s/patternFreq/1-e_%s_p%i.pdf"%(folder, chamber[0], env))
         
         mcanvas.Clear()
         mcanvas.SetGridy(0)
@@ -231,7 +259,7 @@ def createHists(chamber):
             ccEnvFrequency.Fill(100.*pat[0].GetEntries()/totalEntries)
             #pat[0].Write()
         ccEnvFrequency.Draw()
-        mcanvas.SaveAs("../img/patternFreq/%s-p%i.pdf"%(chamber[0], env))
+        mcanvas.SaveAs("../img/%s/patternFreq/%s-p%i.pdf"%(folder, chamber[0], env))
         ccEnvFrequency.Write()
         ccFrequency.Add(ccEnvFrequency)
         
@@ -268,7 +296,9 @@ def createHists(chamber):
     cumulativeLegacyPosResolution.Write()
     cumulativeLegacySlopeResolution.Write()
     
-    outF.Close()    
+    outF.Close()   
+    
+    return freakwencies 
        
 #actually run the code, not particularly efficient
 chambers = []
@@ -278,12 +308,54 @@ chambers.append(["ME11B", 1,1])
 chambers.append(["ME11A", 1,4])
 chambers.append(["ME12", 1,2])
 chambers.append(["ME13", 1,3])
-#chambers.append(["ME21", 2,1])
+chambers.append(["ME21", 2,1])
 chambers.append(["ME22", 2,2])
 chambers.append(["ME31", 3,1])
 chambers.append(["ME32", 3,2])
 chambers.append(["ME41", 4,1])
 chambers.append(["ME42", 4,2])
 
+frequencies = []
+
 for chamber in chambers:
-    createHists(chamber)
+    frequencies.append([chamber[0], createHists(chamber)])    
+
+outF = r.TFile("../data/%s/fullAnalFrequency.root"%(folder),"RECREATE")
+ 
+patList = [100,400,500,800,900]
+
+#iterate over all combinations of chambers
+for chamber1 in range(0,len(frequencies)):
+    for chamber2 in range(chamber1+1, len(frequencies)):
+        for pat in patList:
+        
+            freqPlot1D = r.TH1D("%s-%s-1DlogFreq%i"%(frequencies[chamber1][0],frequencies[chamber2][0],pat),
+                              "%s vs %s (Pattern %i)"%(frequencies[chamber1][0],frequencies[chamber2][0], pat),
+                               200, -3., 3.)  
+            freqPlot1D.GetXaxis().SetTitle("log_{10}(f_{%s}/f_{%s})"%(frequencies[chamber1][0],frequencies[chamber2][0]))
+            freqPlot1D.GetXaxis().CenterTitle()
+            
+            freqPlot1D.GetYaxis().SetTitle("Counts")
+            
+            freqPlot2D = r.TH2D("%s-%s-2DlogFreq%i"%(frequencies[chamber1][0],frequencies[chamber2][0],pat),
+                                "%s vs %s (Pattern %i); log_{10}(f_{%s}); log_{10}(f_{%s})"%(frequencies[chamber1][0],frequencies[chamber2][0],pat,
+                                                                               frequencies[chamber1][0],frequencies[chamber2][0]),
+                                           200, -8., 0.,
+                                           200, -8., 0.)
+                                
+            
+            for cc in range(0,len(frequencies[chamber1][1][pat])): #0-4096
+ 
+                chamber1Fill = getLogFrequency(frequencies[chamber1][1][pat][cc])
+                chamber2Fill = getLogFrequency(frequencies[chamber2][1][pat][cc])     
+                
+                
+                ### THESE ARE HEAVILY EFFECTED BY FAKE ZERO RATES
+                freqPlot1D.Fill(chamber1Fill-chamber2Fill)
+                freqPlot2D.Fill(chamber1Fill,chamber2Fill)
+                
+            freqPlot1D.Write()
+            freqPlot2D.Write()
+              
+outF.Close()
+

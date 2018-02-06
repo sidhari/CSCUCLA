@@ -124,10 +124,12 @@ int PatternFinder() {
     int CH = 0;
     int chSid = 0;
     float segmentX = 0;
+    float segmentdXdZ = 0;
     float patX = 0;
     float legacyLctX = 0;
 
-    TFile * outF = new TFile("../data/plotTree.root","RECREATE");
+    string folder = (USE_COMP_HITS ? "compHits" : "recHits");
+    TFile * outF = new TFile(string("../data/" + folder + "/plotTree.root").c_str(),"RECREATE");
     TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
     plotTree->Branch("EC",&EC,"EC/I");
     plotTree->Branch("ST",&ST,"ST/I");
@@ -137,18 +139,21 @@ int PatternFinder() {
     plotTree->Branch("patternId", &patternId, "patternId/I");
     plotTree->Branch("legacyLctId", &legacyLctId, "legacyLctId/I");
     plotTree->Branch("segmentX", &segmentX, "segmentX/F");
+    plotTree->Branch("segmentdXdZ", &segmentdXdZ, "segmentdXdZ/F");
     plotTree->Branch("patX", &patX, "patX/F");
     plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
-
-	TH1F* test = new TH1F("nRh3", "nRh3", 6, 1, 7);
 
     //
     // TREE ITERATION
     //
 
-    for(unsigned int i = 0; i < MAX_ENTRY; i++) {
-        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
+    unsigned int nChambersRanOver = 0;
+    unsigned int nChambersMultipleInOneLayer = 0;
+
+	const unsigned int max = t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
+	for(unsigned int i = 0; i < max; i++) {
+        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/max, i);
 
         t->GetEntry(i);
 
@@ -164,7 +169,7 @@ int PatternFinder() {
             chSid = chamberSerial(EC, ST, RI, CH);
 
             segmentX = (*segX)[thisSeg];
-            float segmentSlope = (*segdXdZ)[thisSeg];
+            segmentdXdZ = (*segdXdZ)[thisSeg];
 
             //if(ST != 2 && RI != 2) continue;
 
@@ -303,8 +308,6 @@ int PatternFinder() {
                 nRh++;
             }
 
-			test->Fill(nRh);
-
 
 
             //find which group the current chamber you are looking at belongs to
@@ -333,28 +336,43 @@ int PatternFinder() {
                 nHits = nRh;
             }
 
-            //now run on comparator hits
-            if(DEBUG) cout << "-- Running over old set --" << endl;
-            if(searchForMatch(*testChamber, oldEnvelopes,oldSetMatch)) return -1;
 
-            if(DEBUG) cout << "-- Running over new set --" << endl;
-            if(searchForMatch(*testChamber, newEnvelopes,newSetMatch)) return -1;
+            nChambersRanOver++;
+
+            //now run on comparator hits
+            if(searchForMatch(*testChamber, oldEnvelopes,oldSetMatch) || searchForMatch(*testChamber, newEnvelopes,newSetMatch)) {
+            		delete newSetMatch;
+            		delete oldSetMatch;
+            		nChambersMultipleInOneLayer++;
+            		continue;
+            }
+
+
+            //check if we pass the cut
+            if(oldSetMatch->bestLayerCount() < N_LAYER_REQUIREMENT || newSetMatch->bestLayerCount() < N_LAYER_REQUIREMENT) {
+                delete newSetMatch;
+                delete oldSetMatch;
+            		continue;
+            }
 
 
             // Fill Tree Data
 
             patX = newSetMatch->bestX()/2.;
-            patternId = newSetMatch->bestChargePattern().getPatternId();
+            patternId = newSetMatch->bestChargeComparatorCode().getComparatorCodeId();
             envelopeId = newSetMatch->bestEnvelopeId();
             legacyLctId = oldSetMatch->bestEnvelopeId();
             legacyLctX = oldSetMatch->bestX()/2.;
             plotTree->Fill();
+
 
             delete newSetMatch;
             delete oldSetMatch;
         }
 
     }
+
+	printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
 
     plotTree->Write();
     outF->Close();

@@ -11,7 +11,7 @@
 #include "PatternFinderClasses.h"
 
 void printEnvelope(const ChargeEnvelope &p) {
-	printf("-- Printing Envelope: %i ---\n", p.m_id);
+	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
 			if(p.m_hits[x][y]) printf("X");
@@ -41,10 +41,9 @@ void printChamber(const ChamberHits &c){
 
 bool validComparatorTime(bool isComparator, int time){
 	if(isComparator){
-		float lowTimeLimit = 0.5*MAX_COMP_TIME_BIN - TIME_RANGE;
-		float highTimeLimit = 0.5*MAX_COMP_TIME_BIN + TIME_RANGE;
-
-		return (time -1 > lowTimeLimit) && (time - 1 < highTimeLimit);
+		//numbers are shifted from 0->1 to account for bins without hits (0)
+		if(time == 7 || time == 8 || time == 9) return true;
+		return false;
 	} else return time;
 }
 
@@ -106,7 +105,7 @@ int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int
 			//this accounts for checking patterns along the edges of the chamber that may extend
 			//past the bounds
 			if( (int)horPos+(int)px < 0 ||  horPos+px >= N_MAX_HALF_STRIPS) continue;
-			if((c.hits)[horPos+px][y] && p.m_hits[px][y]) {
+			if(validComparatorTime(c.isComparator, (c.hits)[horPos+px][y]) && p.m_hits[px][y]) {
 				matchedLayers[y] = true;
 			}
 		}
@@ -165,7 +164,7 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 				mi = new SingleEnvelopeMatchInfo(p,x,matchedLayerCount);
 			}else{
 				mi = new SingleEnvelopeMatchInfo(p, x, overlap);
-				if(mi->patternId() < 0) return -1;
+				if(mi->ComparatorCodeId() < 0) return -1;
 			}
 			return matchedLayerCount;
 		}
@@ -186,7 +185,7 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, maxMatchedLayers);
 	}else {
 		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, overlap);
-		if(mi->patternId() < 0) return -1;
+		if(mi->ComparatorCodeId() < 0) return -1;
 	}
 	if(DEBUG > 1){
 		printChamber(c);
@@ -195,7 +194,6 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 	}
 	return maxMatchedLayers;
 }
-
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
 int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, EnvelopeSetMatchInfo *m){
@@ -221,9 +219,6 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, Envel
 	return 0;
 }
 
-
-
-
 //creates the new set of envelopes
 vector<ChargeEnvelope>* createNewEnvelopes(){
 
@@ -243,30 +238,6 @@ vector<ChargeEnvelope>* createNewEnvelopes(){
 
 	return thisVector;
 }
-
-//creates the new set of envelopes TO REMOVE, TESTING
-/*
-vector<ChargeEnvelope>* createNewEnvelopesVERIFICATION(){
-
-	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
-
-	ChargeEnvelope id1("100",ENVELOPE_IDS[0],1,IDSV1_A);
-	ChargeEnvelope id4("400",ENVELOPE_IDS[1],1,IDSV1_C);
-	ChargeEnvelope id5 = id4.returnFlipped("500",ENVELOPE_IDS[2]);
-	ChargeEnvelope id8("800",ENVELOPE_IDS[3], 1, IDSV1_E);
-	ChargeEnvelope id9 = id8.returnFlipped("900",ENVELOPE_IDS[4]);
-
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
-
-	return thisVector;
-}
-*/
-
-
 
 //creates the currently implemented patterns in the TMB, here treated as envelopes
 vector<ChargeEnvelope>* createOldEnvelopes(){
@@ -308,11 +279,8 @@ vector<ChargeEnvelope>* createOldEnvelopes(){
 	thisVector->push_back(id3);
 	thisVector->push_back(id2);
 
-	//ChargeEnvelope id1("100",ENVELOPE_IDS[0],IDSV1_A);
-
 	return thisVector;
 }
-
 
 int chamberSerial( int ec, int st, int ri, int ch ) {
 
