@@ -117,7 +117,7 @@ void ChargeComparatorCode::calculateId(){
 			rowCode = 3;
 			break;
 		default:
-			printf("Error: unknown rowPattern - %i\n", rowPat);
+			std::cout << "Error: unknown rowPattern - " << std::bitset<3>(rowPat) << std::endl;
 			m_ComparatorCodeId = -1;
 			return;
 		}

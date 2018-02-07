@@ -13,7 +13,7 @@
 
 const int DEBUG = 0;
 const int NLAYERS = 6; //6 layers
-const unsigned int MAX_ENTRY = 20000; //how many events you look at (max ~2,000,000 for 2016F)
+//const unsigned int MAX_ENTRY = 20000; //how many events you look at (max ~2,000,000 for 2016F)
 const bool USE_COMP_HITS = 1; //false uses recHits
 const int MAX_PATTERN_WIDTH = 11;
 const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers

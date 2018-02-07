@@ -39,6 +39,7 @@ void printChamber(const ChamberHits &c){
 	}
 }
 
+/*
 bool validComparatorTime(bool isComparator, int time){
 	if(isComparator){
 		//numbers are shifted from 0->1 to account for bins without hits (0)
@@ -46,8 +47,19 @@ bool validComparatorTime(bool isComparator, int time){
 		return false;
 	} else return time;
 }
+*/
 
-int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, bool overlap[NLAYERS][3]){
+bool validComparatorTime(const int time, const int startTimeWindow){
+	//numbers start at 1, so time bins really go 1-16 here
+	for(int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
+		if(time < validTime) return false; //speed up zero case
+		if(time == validTime) return true;
+	}
+	return false;
+}
+
+int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]){
+
 	//for each x position in the chamber, were going to iterate through
 	// the pattern to see how much overlap there is at that position
 	for(unsigned int y = 0; y < NLAYERS; y++) {
@@ -71,7 +83,7 @@ int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, 
 				}
 
 				//check the overlap of the actual chamber distribution
-				if(validComparatorTime(c.isComparator, (c.hits)[horPos+px][y])) {
+				if(validComparatorTime((c.hits)[horPos+px][y], startTimeWindow)) {
 					overlap[y][overlapColumn] = true;
 				} else {
 					overlap[y][overlapColumn] = false;
@@ -87,11 +99,9 @@ int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, 
 	return 0;
 }
 
-
-
 //looks if a chamber "c" contains an envelope "p" at the location horPos returns
 //the number of matched layers
-int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int horPos){
+int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow){
 
 	bool matchedLayers[NLAYERS];
 	for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
@@ -105,7 +115,7 @@ int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int
 			//this accounts for checking patterns along the edges of the chamber that may extend
 			//past the bounds
 			if( (int)horPos+(int)px < 0 ||  horPos+px >= N_MAX_HALF_STRIPS) continue;
-			if(validComparatorTime(c.isComparator, (c.hits)[horPos+px][y]) && p.m_hits[px][y]) {
+			if(validComparatorTime((c.hits)[horPos+px][y],startTimeWindow) && p.m_hits[px][y]) {
 				matchedLayers[y] = true;
 			}
 		}
@@ -131,52 +141,58 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 	}
 
 	unsigned int maxMatchedLayers = 0;
+	unsigned int bestTimeBin = 1; //default as 1
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
 	for(int x = -MAX_PATTERN_WIDTH+1; x < N_MAX_HALF_STRIPS; x++){
-
-		unsigned int matchedLayerCount = 0;
-
-		//legacy code doesnt use overlaps, so we have a slightly different algorithm
-		if(p.m_isLegacy){
-			matchedLayerCount = legacyLayersMatched(c,p,x);
-		} else {
-			if(getOverlap(c,p,x,overlap)){
-				printf("Error: cannot get overlap for pattern\n");
-				return -1;
-			}
-
-			for(int ilay = 0; ilay < NLAYERS; ilay++) {
-				bool inLayer = false;
-				for(int icol = 0; icol< 3; icol++){
-					inLayer |= overlap[ilay][icol]; //bitwise or
-				}
-				matchedLayerCount += inLayer;
-			}
-		}
+		// Cycle through each time window, if comphits, look in all possible windows (1-4 to 13-16).
+		// also ignore bins 1 & 2 if using comp hits, talk with Cameron.
+		for(int time = (USE_COMP_HITS ? 3 : 1); time < (USE_COMP_HITS ? 16 - TIME_CAPTURE_WINDOW + 2 : 2); time++){
 
 
+			unsigned int matchedLayerCount = 0;
 
-		//if we have a better match than we have had before
-		if(matchedLayerCount == NLAYERS){ //optimization
+			//legacy code doesnt use overlaps, so we have a slightly different algorithm
 			if(p.m_isLegacy){
-				mi = new SingleEnvelopeMatchInfo(p,x,matchedLayerCount);
-			}else{
-				mi = new SingleEnvelopeMatchInfo(p, x, overlap);
-				if(mi->ComparatorCodeId() < 0) return -1;
-			}
-			return matchedLayerCount;
-		}
-		if(matchedLayerCount > maxMatchedLayers) {
-			maxMatchedLayers = matchedLayerCount;
-			bestHorizontalIndex = x;
-		}
+				matchedLayerCount = legacyLayersMatched(c,p,x,time);
+			} else {
+				if(getOverlap(c,p,x,time, overlap)){
+					printf("Error: cannot get overlap for pattern\n");
+					return -1;
+				}
 
+				for(int ilay = 0; ilay < NLAYERS; ilay++) {
+					bool inLayer = false;
+					for(int icol = 0; icol< 3; icol++){
+						inLayer |= overlap[ilay][icol]; //bitwise or
+					}
+					matchedLayerCount += inLayer;
+				}
+			}
+
+
+
+			//if we have a better match than we have had before
+			if(matchedLayerCount == NLAYERS){ //optimization
+				if(p.m_isLegacy){
+					mi = new SingleEnvelopeMatchInfo(p,x,matchedLayerCount);
+				}else{
+					mi = new SingleEnvelopeMatchInfo(p, x, overlap);
+					if(mi->ComparatorCodeId() < 0) return -1;
+				}
+				return matchedLayerCount;
+			}
+			if(matchedLayerCount > maxMatchedLayers) {
+				maxMatchedLayers = matchedLayerCount;
+				bestHorizontalIndex = x;
+				bestTimeBin = time;
+			}
+		}
 	}
 
 	//refill the overlap with the best found location
-	if(!p.m_isLegacy && getOverlap(c,p,bestHorizontalIndex,overlap)){
+	if(!p.m_isLegacy && getOverlap(c,p,bestHorizontalIndex,bestTimeBin, overlap)){
 		printf("Error: cannot get overlap for pattern\n");
 		return -1;
 	}
@@ -202,7 +218,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, Envel
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
 		SingleEnvelopeMatchInfo *thisMatch = 0;
 		if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
-			printf("Error: pattern algorithm failed\n");
+			printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip).m_isLegacy);
 			printChamber(c);
 			return -1;
 		}
