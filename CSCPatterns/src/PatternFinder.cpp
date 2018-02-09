@@ -151,7 +151,7 @@ int PatternFinder() {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-	const unsigned int max = t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
+	const unsigned int max = 1000; //t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
 	for(unsigned int i = 0; i < max; i++) {
         if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/max, i);
 
@@ -197,8 +197,9 @@ int PatternFinder() {
             theseCompHits.ring = RI;
             theseRHHits.endcap = EC;
             theseCompHits.endcap = EC;
+            theseRHHits.chamber = CH;
+            theseCompHits.chamber = CH;
 
-            bool compLayers[NLAYERS] = {0,0,0,0,0,0};
 
             for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
                 if(chSid != (*compId)[icomp]) continue; //only look at where we are now
@@ -233,7 +234,7 @@ int PatternFinder() {
 
 
                     if(halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
-                        printf("ERROR: For compId = %i, ST = %i, RI = %i Comp Half Strip Value out of range index = %i - me11b = %i\n",
+                        printf("Error: For compId = %i, ST = %i, RI = %i Comp Half Strip Value out of range index = %i - me11b = %i\n",
                                 chSid,ST,RI, halfStripVal, me11b);
                         return -1;
                     } else {
@@ -242,20 +243,16 @@ int PatternFinder() {
                             return -1;
                         } else {
                             theseCompHits.hits[halfStripVal][thisCompLay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
-                            if(validComparatorTime(theseCompHits.isComparator, theseCompHits.hits[halfStripVal][thisCompLay])){ //only consider a layer to be "on" if it is in our time window
-                                compLayers[thisCompLay] = true;
-                            }
                         }
                     }
 
 
                 }
             }
-            int nCh = 0; //number of comp hits
-            for(int ilay = 0; ilay < NLAYERS; ilay++) nCh += compLayers[ilay];
 
             //lct = local charge track,  alct = anode (wire), clct = cathode (strip)
             //these are all the lct's that were recorded in the run.
+            /*
             unsigned int LCT_ID = 0;
             for(unsigned int ilct = 0; ilct < lctId->size(); ilct++)
             {
@@ -279,10 +276,9 @@ int PatternFinder() {
                 LCT_ID = lctPat->at(ilct).at(bestLCTFit);
                 break;
             }
+			*/
 
 
-
-            unsigned int nRh = 0;
 
             //find out where the reconstructed hits are for this segment
             for(unsigned int thisRh = 0; thisRh < rhId->size(); thisRh++)
@@ -305,7 +301,6 @@ int PatternFinder() {
                 }
 
                 theseRHHits.hits[iRhStrip][iLay] = true;
-                nRh++;
             }
 
 
@@ -317,7 +312,7 @@ int PatternFinder() {
             else if((ST == 2 && RI == 1) || (ST == 2 && RI == 2)) groupIndex = 2; //ME21 || ME22
             else if(ST == 3 || ST == 4) groupIndex = 3; //ME3X || ME4X
             else{
-                printf("ERROR: can find group\n");
+                printf("ERROR: can't find group\n");
                 return -1;
             }
 
@@ -329,11 +324,8 @@ int PatternFinder() {
             unsigned int nHits; //number of hits, counts at max one from each layer
             if(USE_COMP_HITS){
                 testChamber = &theseCompHits;
-                nHits = nCh;
-                //nHits = nRh; //using the number of rec hits here, as they are closest to the true value of actual hits in the chamber
             } else {
                 testChamber = &theseRHHits;
-                nHits = nRh;
             }
 
 
@@ -363,6 +355,8 @@ int PatternFinder() {
             envelopeId = newSetMatch->bestEnvelopeId();
             legacyLctId = oldSetMatch->bestEnvelopeId();
             legacyLctX = oldSetMatch->bestX()/2.;
+
+
             plotTree->Fill();
 
 

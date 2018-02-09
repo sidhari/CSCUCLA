@@ -22,7 +22,7 @@ void printEnvelope(const ChargeEnvelope &p) {
 }
 
 void printChamber(const ChamberHits &c){
-	printf("==== Printing Chamber Distribution ST = %i, RI = %i, EC = %i====\n", c.station, c.ring, c.endcap);
+	printf("==== Printing Chamber Distribution ST = %i, RI = %i, CH = %i, EC = %i====\n", c.station, c.ring, c.chamber, c.endcap);
 	bool me11 = (c.station == 1 &&(c.ring == 1 || c.ring == 4));
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < N_MAX_HALF_STRIPS; x++){
@@ -158,7 +158,7 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 				matchedLayerCount = legacyLayersMatched(c,p,x,time);
 			} else {
 				if(getOverlap(c,p,x,time, overlap)){
-					printf("Error: cannot get overlap for pattern\n");
+					if(DEBUG >= 0) printf("Error: cannot get overlap for pattern\n");
 					return -1;
 				}
 
@@ -217,7 +217,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, Envel
 	//now we have all the rh for this segment, so check if the patterns are there
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
 		SingleEnvelopeMatchInfo *thisMatch = 0;
-		if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
+		if(containsPattern(c,ps->at(ip),thisMatch) < 0 && DEBUG >= 0) {
 			printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip).m_isLegacy);
 			printChamber(c);
 			return -1;
@@ -225,7 +225,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, Envel
 		m->addSingleInfo(thisMatch);
 	}
 
-	if(DEBUG){
+	if(DEBUG > 0){
 		printf("~~~~ BEST MATCH ~~~\n");
 		printChamber(c);
 		printEnvelope(ps->at(m->bestSetIndex()));

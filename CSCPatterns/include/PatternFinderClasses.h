@@ -24,6 +24,7 @@ struct ChamberHits {
 	unsigned int station;
 	unsigned int ring;
 	unsigned int endcap;
+	unsigned int chamber;
 	int hits[N_MAX_HALF_STRIPS][NLAYERS];
 };
 
@@ -83,7 +84,7 @@ private:
 void ChargeComparatorCode::printPattern() {
 	int patCode = getComparatorCodeId();
 	printf("Comparator Code: %#04x, layersMatched: %u\n", patCode,getLayersMatched());
-	if(DEBUG) cout << "ComparatorCode is: "  << bitset<12>(patCode) << endl;
+	if(DEBUG > 0) cout << "ComparatorCode is: "  << bitset<12>(patCode) << endl;
 	for(int i =0; i < NLAYERS; i++){
 		for(int j =0; j < 3; j++){
 			printf("%i", m_hits[i][j]);
@@ -117,9 +118,9 @@ void ChargeComparatorCode::calculateId(){
 			rowCode = 3;
 			break;
 		default:
-			std::cout << "Error: unknown rowPattern - " << std::bitset<3>(rowPat) << std::endl;
-			m_ComparatorCodeId = -1;
-			return;
+			if(DEBUG >= 0) std::cout << "Error: unknown rowPattern - " << std::bitset<3>(rowPat) << " defaulting to rowCode: 0" << std::endl;
+			rowCode = 0;
+			break;
 		}
 		//each column has two bits of information, largest layer is most significant bit
 		m_ComparatorCodeId += (rowCode << 2*column);

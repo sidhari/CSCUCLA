@@ -4,6 +4,10 @@ import numpy as np
 import math as m
 
 useCompHits = 1 # 0 means use recHits
+
+
+nbins = 5000
+hist_range  = 60.
 folder = ""
 if(useCompHits):
     folder = "compHits"
@@ -79,7 +83,7 @@ def createHists(chamber):
             ccSlopeMeans[event.envelopeId] = {}
             unshiftedPosSlopePlots[event.envelopeId] = r.TH1D("unshifted_patSlope%i"%(event.envelopeId),
                                                "unshifted_patSlope%i;Slope [strips/layer]; Events"%(event.envelopeId), 
-                                               600,-1.,1.)
+                                               nbins,-hist_range,hist_range)
             
         if not (event.patternId in ccPosMeans[event.envelopeId]):
             ccPosMeans[event.envelopeId][event.patternId] = []
@@ -90,7 +94,7 @@ def createHists(chamber):
             legacySlopeMeans[event.legacyLctId] = []
             unshiftedLegacySlopePlots[event.legacyLctId] = r.TH1D("unshifted_legSlope%i"%(event.legacyLctId),
                                                "unshifted_legSlope%i;Slope [strips/layer]; Events"%(event.legacyLctId), 
-                                               600,-1.,1.)
+                                               nbins,-hist_range,hist_range)
             
         patternPosMeans[event.envelopeId].append(event.segmentX-event.patX)
         patternSlopeMeans[event.envelopeId].append(event.segmentdXdZ)
@@ -99,7 +103,7 @@ def createHists(chamber):
         legacyPosMeans[event.legacyLctId].append(event.segmentX-event.legacyLctX)
         legacySlopeMeans[event.legacyLctId].append(event.segmentdXdZ)
         unshiftedPosSlopePlots[event.envelopeId].Fill(event.segmentdXdZ)
-        unshiftedLegacySlopePlots[event.legacyLctId].Fill(event.segmentdXdZ) 
+        unshiftedLegacySlopePlots[event.legacyLctId].Fill(event.segmentdXdZ)
         
         
     for env in unshiftedPosSlopePlots:
@@ -136,13 +140,14 @@ def createHists(chamber):
         
         if not (event.envelopeId in calculatedPattPosMeans):
             calculatedPattPosMeans[event.envelopeId] = sum(patternPosMeans[event.envelopeId])/float(len(patternPosMeans[event.envelopeId]))
+            #print("mean for %i is : %f"%(event.envelopeId, calculatedPattPosMeans[event.envelopeId]))
             calculatedPattSlopeMeans[event.envelopeId] = sum(patternSlopeMeans[event.envelopeId])/float(len(patternSlopeMeans[event.envelopeId]))
             pattPosPlots[event.envelopeId]= r.TH1D("patPos%i"%(event.envelopeId),
                                                "patPos%i;Position Difference [strips]; Events"%(event.envelopeId), 
-                                               600,-1.,1.)
+                                               nbins,-hist_range,hist_range)
             pattSlopePlots[event.envelopeId] = r.TH1D("patSlope%i"%(event.envelopeId),
                                                       "patSlope%i;Slope [strips/layer]; Events"%(event.envelopeId),
-                                                      600,-1.,1.)
+                                                      nbins,-hist_range,hist_range)
             calculatedCCPosMeans[event.envelopeId] = {}
             calculatedCCSlopeMeans[event.envelopeId] = {}
             ccPosPlots[event.envelopeId] = {}
@@ -152,16 +157,18 @@ def createHists(chamber):
             calculatedCCSlopeMeans[event.envelopeId][event.patternId] = sum(ccSlopeMeans[event.envelopeId][event.patternId])/float(len(ccSlopeMeans[event.envelopeId][event.patternId]))
             ccPosPlots[event.envelopeId][event.patternId] = r.TH1D("patPos%i_cc%i"%(event.envelopeId, event.patternId),
                                                                   "patPos%i_cc%i;Position Difference [strips]; Events"%(event.envelopeId, event.patternId),
-                                                                  600,-1.,1.)
+                                                                  nbins,-hist_range,hist_range)
             ccSlopePlots[event.envelopeId][event.patternId] = r.TH1D("patSlope%i_cc%i"%(event.envelopeId, event.patternId),
                                                                   "patSlope%i_cc%i;Slope [strips/layer]; Events"%(event.envelopeId, event.patternId),
-                                                                  600,-1.,1.)
+                                                                  nbins,-hist_range,hist_range)
            
         if not (event.legacyLctId in calculatedlegacyPosMeans):
             calculatedlegacyPosMeans[event.legacyLctId] = sum(legacyPosMeans[event.legacyLctId])/float(len(legacyPosMeans[event.legacyLctId]))   
             calculatedlegacySlopeMeans[event.legacyLctId] = sum(legacySlopeMeans[event.legacyLctId])/float(len(legacySlopeMeans[event.legacyLctId]))
-            legacyPosPlots[event.legacyLctId] = r.TH1D("legacyPos%i"%(event.legacyLctId),"legacyPos%i;Position Difference [strips]; Events"%(event.legacyLctId),600,-1.,1.)
-            legacySlopePlots[event.legacyLctId] = r.TH1D("legacySlope%i"%(event.legacyLctId),"legacySlope%i;Slope [strips/layer]; Events"%(event.legacyLctId),600,-1.,1.)
+            legacyPosPlots[event.legacyLctId] = r.TH1D("legacyPos%i"%(event.legacyLctId),"legacyPos%i;Position Difference [strips]; Events"%(event.legacyLctId),
+                                                       nbins,-hist_range,hist_range)
+            legacySlopePlots[event.legacyLctId] = r.TH1D("legacySlope%i"%(event.legacyLctId),"legacySlope%i;Slope [strips/layer]; Events"%(event.legacyLctId),
+                                                         nbins,-hist_range,hist_range)
           
     
         pattPosPlots[event.envelopeId].Fill(event.segmentX-event.patX - calculatedPattPosMeans[event.envelopeId])
@@ -176,12 +183,12 @@ def createHists(chamber):
     
     print("Writing Histograms...")
     
-    cumulativePattPosResolution = r.TH1D("cumPatPosRes", "Cumulative Pattern Position Resolution; Position Difference [strips]; Events", 600,-1., 1.)
-    cumulativePattSlopeResolution = r.TH1D("cumPatSlopeRes", "Cumulative Pattern Slope Resolution; Slope [strips/layer]; Events", 600,-1., 1.)
-    cumulativeCCPosResolution = r.TH1D("cumCCPosRes", "Cumulative CC Position Resolution; Position Difference [strips]; Events", 600,-1.,1.)
-    cumulativeCCSlopeResolution = r.TH1D("cumCCSlopeRes", "Cumulative CC Slope Resolution; Slope [strips/layer]; Events", 600,-1.,1.)
-    cumulativeLegacyPosResolution = r.TH1D("cumLegPosRes","Cumulative Legacy Position Resolution; Position Difference [strips]; Events", 600, -1., 1.)
-    cumulativeLegacySlopeResolution = r.TH1D("cumLegSlopeRes","Cumulative Legacy Slope Resolution; Slope [strips/layer]; Events", 600, -1., 1.)
+    cumulativePattPosResolution = r.TH1D("cumPatPosRes", "Cumulative Pattern Position Resolution; Position Difference [strips]; Events", nbins,-hist_range,hist_range)
+    cumulativePattSlopeResolution = r.TH1D("cumPatSlopeRes", "Cumulative Pattern Slope Resolution; Slope [strips/layer]; Events", nbins,-hist_range,hist_range)
+    cumulativeCCPosResolution = r.TH1D("cumCCPosRes", "Cumulative CC Position Resolution; Position Difference [strips]; Events", nbins,-hist_range,hist_range)
+    cumulativeCCSlopeResolution = r.TH1D("cumCCSlopeRes", "Cumulative CC Slope Resolution; Slope [strips/layer]; Events", nbins,-hist_range,hist_range)
+    cumulativeLegacyPosResolution = r.TH1D("cumLegPosRes","Cumulative Legacy Position Resolution; Position Difference [strips]; Events", nbins,-hist_range,hist_range)
+    cumulativeLegacySlopeResolution = r.TH1D("cumLegSlopeRes","Cumulative Legacy Slope Resolution; Slope [strips/layer]; Events", nbins,-hist_range,hist_range)
 
     
     for pat in pattPosPlots:
@@ -224,7 +231,7 @@ def createHists(chamber):
                           len(sortedccPosPlots), 0, len(sortedccPosPlots)+1)
         
         int = 0.
-        for bin in range(1,ccCutOffDen.GetNbinsX()+1):
+        for bin in range(1,len(sortedccPosPlots)+1):
             int += sortedccPosPlots[bin-1][0].GetEntries()
             ccCutOffNum.SetBinContent(bin, totalEntries - int)
             ccCutOffDen.SetBinContent(bin,totalEntries)
@@ -269,10 +276,10 @@ def createHists(chamber):
     for env in ccPosPlots:
         envFullPosRes = r.TH1D("patPos%i_fullCCRes"%(env),
                          "patPos%i_fullCCRes;Position Difference [strips]; Events"%(env),
-                         600,-1.,1.)
+                         nbins,-hist_range,hist_range)
         envFullSlopeRes = r.TH1D("patSlope%i_fullCCRes"%(env),
                          "patSlope%i_fullCCRes;Slope [strips/layer]; Events"%(env),
-                         600,-1.,1.)
+                         nbins,-hist_range,hist_range)
         for pat in ccPosPlots[env]:
             envFullPosRes.Add(ccPosPlots[env][pat])
             envFullSlopeRes.Add(ccSlopePlots[env][pat])
@@ -303,17 +310,17 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-chambers.append(["All-Chambers", 0, 0])
+#chambers.append(["All-Chambers", 0, 0])
 chambers.append(["ME11B", 1,1])
-chambers.append(["ME11A", 1,4])
-chambers.append(["ME12", 1,2])
-chambers.append(["ME13", 1,3])
-chambers.append(["ME21", 2,1])
-chambers.append(["ME22", 2,2])
-chambers.append(["ME31", 3,1])
-chambers.append(["ME32", 3,2])
-chambers.append(["ME41", 4,1])
-chambers.append(["ME42", 4,2])
+#chambers.append(["ME11A", 1,4])
+#chambers.append(["ME12", 1,2])
+#chambers.append(["ME13", 1,3])
+#chambers.append(["ME21", 2,1])
+#chambers.append(["ME22", 2,2])
+#chambers.append(["ME31", 3,1])
+#chambers.append(["ME32", 3,2])
+#chambers.append(["ME41", 4,1])
+#chambers.append(["ME42", 4,2])
 
 frequencies = []
 
