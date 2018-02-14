@@ -11,7 +11,7 @@
 #include <string>
 
 
-const int DEBUG = -1;
+const int DEBUG = 0;
 const int NLAYERS = 6; //6 layers
 //const unsigned int MAX_ENTRY = 20000; //how many events you look at (max ~2,000,000 for 2016F)
 const bool USE_COMP_HITS = 1; //false uses recHits

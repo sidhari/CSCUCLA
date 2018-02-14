@@ -39,25 +39,6 @@ void printChamber(const ChamberHits &c){
 	}
 }
 
-/*
-bool validComparatorTime(bool isComparator, int time){
-	if(isComparator){
-		//numbers are shifted from 0->1 to account for bins without hits (0)
-		if(time == 7 || time == 8 || time == 9) return true;
-		return false;
-	} else return time;
-}
-*/
-
-bool validComparatorTime(const int time, const int startTimeWindow){
-	//numbers start at 1, so time bins really go 1-16 here
-	for(int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
-		if(time < validTime) return false; //speed up zero case
-		if(time == validTime) return true;
-	}
-	return false;
-}
-
 int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]){
 
 	//for each x position in the chamber, were going to iterate through
@@ -176,10 +157,10 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 			//if we have a better match than we have had before
 			if(matchedLayerCount == NLAYERS){ //optimization
 				if(p.m_isLegacy){
-					mi = new SingleEnvelopeMatchInfo(p,x,matchedLayerCount);
+					mi = new SingleEnvelopeMatchInfo(p,x, time,matchedLayerCount);
 				}else{
-					mi = new SingleEnvelopeMatchInfo(p, x, overlap);
-					if(mi->ComparatorCodeId() < 0) return -1;
+					mi = new SingleEnvelopeMatchInfo(p,x, time,overlap);
+					if(mi->comparatorCodeId() < 0) return -1;
 				}
 				return matchedLayerCount;
 			}
@@ -198,10 +179,10 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 	}
 
 	if(p.m_isLegacy){
-		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, maxMatchedLayers);
+		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, bestTimeBin, maxMatchedLayers);
 	}else {
-		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, overlap);
-		if(mi->ComparatorCodeId() < 0) return -1;
+		mi = new SingleEnvelopeMatchInfo(p, bestHorizontalIndex, bestTimeBin, overlap);
+		if(mi->comparatorCodeId() < 0) return -1;
 	}
 	if(DEBUG > 1){
 		printChamber(c);
@@ -212,7 +193,11 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 }
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
-int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, EnvelopeSetMatchInfo *m){
+int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vector<SingleEnvelopeMatchInfo*>& m){
+
+	ChamberHits shrinkingChamber = c;
+
+	SingleEnvelopeMatchInfo *bestMatch = 0;
 
 	//now we have all the rh for this segment, so check if the patterns are there
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
@@ -222,17 +207,26 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, Envel
 			printChamber(c);
 			return -1;
 		}
-		m->addSingleInfo(thisMatch);
+		if(!bestMatch || bestMatch->layMatCount() < thisMatch->layMatCount()){
+			bestMatch = thisMatch;
+		}else{
+			delete thisMatch;
+		}
 	}
 
-	if(DEBUG > 0){
-		printf("~~~~ BEST MATCH ~~~\n");
-		printChamber(c);
-		printEnvelope(ps->at(m->bestSetIndex()));
-		m->printBest3x6Pattern();
+	//we have a valid best match
+	if(bestMatch->layMatCount() >= N_LAYER_REQUIREMENT){
+		if(DEBUG > 0){
+			printChamber(c);
+			printEnvelope(bestMatch->m_Envelope);
+			//m->printBest3x6Pattern();
+		}
+		m.push_back(bestMatch);
+		shrinkingChamber-=*bestMatch;
+		return searchForMatch(shrinkingChamber, ps, m);
+	}else{
+		return 0;
 	}
-
-	return 0;
 }
 
 //creates the new set of envelopes

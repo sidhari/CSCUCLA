@@ -18,15 +18,15 @@
 
 using namespace std;
 
-
-struct ChamberHits {
-	bool isComparator;
-	unsigned int station;
-	unsigned int ring;
-	unsigned int endcap;
-	unsigned int chamber;
-	int hits[N_MAX_HALF_STRIPS][NLAYERS];
-};
+//need this for ChamberHits, sorry for poor organization...
+bool validComparatorTime(const int time, const int startTimeWindow) {
+	//numbers start at 1, so time bins really go 1-16 here
+	for(int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
+		if(time < validTime) return false; //speed up zero case
+		if(time == validTime) return true;
+	}
+	return false;
+}
 
 //this class tells us what locations within a pattern with id "m_EnvelopeId" matches
 // each of the true booleans within the superchargepattern.
@@ -119,8 +119,10 @@ void ChargeComparatorCode::calculateId(){
 			break;
 		default:
 			if(DEBUG >= 0) std::cout << "Error: unknown rowPattern - " << std::bitset<3>(rowPat) << " defaulting to rowCode: 0" << std::endl;
-			rowCode = 0;
-			break;
+			m_ComparatorCodeId = -1;
+			return;
+			//rowCode = 0; //if we come up with a robust enough algorithm, we can do this eventually
+			//break;
 		}
 		//each column has two bits of information, largest layer is most significant bit
 		m_ComparatorCodeId += (rowCode << 2*column);
@@ -138,6 +140,7 @@ void ChargeComparatorCode::calculateLayersMatched(){
 	}
 }
 
+/*
 //keeps track of the number of occurences of an individual pattern ID
 class ComparatorCodeCount{
 public:
@@ -186,9 +189,6 @@ void ComparatorCodeCount::center(){
     isCentered = true;
 
 }
-
-
-
 
 
 
@@ -287,7 +287,7 @@ void ComparatorCodeList::center(ofstream& f) {
 		f << m_envelopeId << "\t" << m_ComparatorCodes.at(i)->id() << "\t" << m_ComparatorCodes.at(i)->count() << "\t" << m_ComparatorCodes.at(i)->getMeanPos() << endl;
 	}
 }
-
+*/
 
 
 // ChargeEnvelope are scanned over the entire chamber, this class is
@@ -368,7 +368,6 @@ public:
 
 private:
 	string m_name;
-
 };
 
 //given a pattern code, prints out how it looks within a super pattern
@@ -407,16 +406,15 @@ void ChargeEnvelope::printCode(int code){
 class SingleEnvelopeMatchInfo {
 public:
 
-	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, bool overlap[NLAYERS][3]):
-		m_Envelope(p){
-		m_horizontalIndex = horInd;
-		//m_layerMatchCount = -1;
+	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, int startTime,
+			bool overlap[NLAYERS][3]):
+		m_Envelope(p), m_horizontalIndex(horInd), m_startTime(startTime){
 		m_overlap = new ChargeComparatorCode(overlap);
 		m_layerMatchCount = m_overlap->getLayersMatched();
 	}
 
-	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, int layMatCount) : m_Envelope(p){
-		m_horizontalIndex = horInd;
+	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, int startTime,
+			int layMatCount) : m_Envelope(p), m_horizontalIndex(horInd), m_startTime(startTime){
 		m_overlap = 0;
 		m_layerMatchCount = layMatCount;
 	}
@@ -430,18 +428,18 @@ public:
 
 	int envelopeId() {return m_Envelope.m_id;}
 
-	//center position of the track
-	float x(){return 1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1);}
-	int ComparatorCodeId();
+	//center position of the track [strips]
+	float x(){return (1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;}
+	int comparatorCodeId();
 	int layMatCount();
 	const ChargeComparatorCode chargeComparatorCode() {return *m_overlap;}
-
+	const ChargeEnvelope m_Envelope;
+	const int m_horizontalIndex; //half strips, leftmost index of the pattern
+	const int m_startTime;
 
 private:
 
 	ChargeComparatorCode* m_overlap;
-	const ChargeEnvelope m_Envelope;
-	int m_horizontalIndex; //half strips, leftmost index of the pattern
 	int m_layerMatchCount;
 
 };
@@ -476,7 +474,7 @@ int SingleEnvelopeMatchInfo::layMatCount() {
 	return m_layerMatchCount;
 }
 
-int SingleEnvelopeMatchInfo::ComparatorCodeId(){
+int SingleEnvelopeMatchInfo::comparatorCodeId(){
 	if(m_overlap){
 		return m_overlap->getComparatorCodeId();
 	} else {
@@ -484,6 +482,8 @@ int SingleEnvelopeMatchInfo::ComparatorCodeId(){
 	}
 }
 
+
+/*
 class EnvelopeSetMatchInfo {
 public:
 
@@ -549,10 +549,72 @@ void EnvelopeSetMatchInfo::addSingleInfo(SingleEnvelopeMatchInfo* smi) {
 	}
 	m_matches->push_back(smi);
 }
+*/
+
+struct ChamberHits {
+	bool isComparator;
+	unsigned int station;
+	unsigned int ring;
+	unsigned int endcap;
+	unsigned int chamber;
+	int hits[N_MAX_HALF_STRIPS][NLAYERS];
+
+	ChamberHits(bool isComparator_, unsigned int station_, unsigned int ring_,
+			unsigned int endcap_, unsigned int chamber_) {
+		isComparator = isComparator_;
+		station = station_;
+		ring = ring_;
+		endcap = endcap_;
+		chamber = chamber_;
+		for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
+			for(unsigned int j = 0; j < NLAYERS; j++){
+				hits[i][j] = 0;
+			}
+		}
+	}
+
+	ChamberHits(const ChamberHits& c) {
+		isComparator = c.isComparator;
+		station = c.station;
+		ring = c.ring;
+		endcap = c.endcap;
+		chamber = c.chamber;
+		for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
+			for(unsigned int j = 0; j < NLAYERS; j++){
+				hits[i][j] = c.hits[i][j];
+			}
+		}
+	}
 
 
+	struct ChamberHits& operator-=(const SingleEnvelopeMatchInfo& mi) {
+		const ChargeEnvelope p = mi.m_Envelope;
+		int horPos = mi.m_horizontalIndex;
+		int startTimeWindow = mi.m_startTime;
 
 
+		for(unsigned int y = 0; y < NLAYERS; y++) {
+			for(unsigned int px = 0; px < MAX_PATTERN_WIDTH; px++){
+
+				//check if we have a 1 in our Envelope
+				if(p.m_hits[px][y]){
+
+					//this accounts for checking patterns along the edges of the chamber that may extend
+					//past the bounds
+					if( horPos+(int)px < 0 ||  horPos+px >= N_MAX_HALF_STRIPS) {
+						continue;
+					}
+					// if there is an overlap, erase the one in the chamber
+					if(validComparatorTime(hits[horPos+px][y], startTimeWindow)) {
+						hits[horPos+px][y] = 0;
+					}
+				}
+			}
+		}
+		return *this;
+	}
+
+};
 
 
 #endif /* PATTERNFITTER_H_ */

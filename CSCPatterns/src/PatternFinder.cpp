@@ -151,7 +151,7 @@ int PatternFinder() {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-	const unsigned int max = 1000; //t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
+	const unsigned int max = t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
 	for(unsigned int i = 0; i < max; i++) {
         if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/max, i);
 
@@ -168,7 +168,7 @@ int PatternFinder() {
             CH = (*segCh)[thisSeg];
             chSid = chamberSerial(EC, ST, RI, CH);
 
-            segmentX = (*segX)[thisSeg];
+            segmentX = (*segX)[thisSeg]; //strips
             segmentdXdZ = (*segdXdZ)[thisSeg];
 
             //if(ST != 2 && RI != 2) continue;
@@ -177,28 +177,8 @@ int PatternFinder() {
             bool me11b = (ST == 1 && RI == 1);
 
 
-            ChamberHits theseRHHits;
-            ChamberHits theseCompHits;
-            //initialize them to zero
-            for(int x=0; x < N_MAX_HALF_STRIPS; x++){
-                for(int y = 0; y < NLAYERS; y++){
-                    theseRHHits.hits[x][y] = 0;
-                    theseCompHits.hits[x][y] = 0;
-                }
-            }
-
-            theseRHHits.isComparator = false;
-            theseCompHits.isComparator = true;
-
-            //label their station, ring , endcap
-            theseRHHits.station = ST;
-            theseCompHits.station = ST;
-            theseRHHits.ring = RI;
-            theseCompHits.ring = RI;
-            theseRHHits.endcap = EC;
-            theseCompHits.endcap = EC;
-            theseRHHits.chamber = CH;
-            theseCompHits.chamber = CH;
+            ChamberHits theseRHHits(0, ST, RI, EC, CH);
+            ChamberHits theseCompHits(1, ST, RI, EC, CH);
 
 
             for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
@@ -250,34 +230,6 @@ int PatternFinder() {
                 }
             }
 
-            //lct = local charge track,  alct = anode (wire), clct = cathode (strip)
-            //these are all the lct's that were recorded in the run.
-            /*
-            unsigned int LCT_ID = 0;
-            for(unsigned int ilct = 0; ilct < lctId->size(); ilct++)
-            {
-                //skip until we find a match
-                if(lctId->at(ilct) != chSid) continue;
-                if(!lctPat->at(ilct).size()) break; //if its not in this one, it wont be in any
-
-                int bestLCTFit = 0; //index of the best fit lct to the segment
-                float minDiff = 999999;
-                for(unsigned int chLct = 0; chLct < lctKHS->at(ilct).size(); chLct++)
-                {
-                    //lct - 0.5 - 2*N_S + 0.5 , segX - 0 -N_S
-                    float lctStrip = 0.5*(lctKHS->at(ilct).at(chLct)- 0.5);
-
-                    float thisDiff = lctStrip -segX->at(thisSeg);
-                    if(abs(thisDiff) < abs(minDiff)) {
-                        minDiff = thisDiff;
-                        bestLCTFit = chLct; //assign the best index to the one we are on now
-                    }
-                }
-                LCT_ID = lctPat->at(ilct).at(bestLCTFit);
-                break;
-            }
-			*/
-
 
 
             //find out where the reconstructed hits are for this segment
@@ -316,10 +268,11 @@ int PatternFinder() {
                 return -1;
             }
 
+            vector<SingleEnvelopeMatchInfo*> newSetMatch;
+            vector<SingleEnvelopeMatchInfo*> oldSetMatch;
 
-
-            EnvelopeSetMatchInfo* newSetMatch = new EnvelopeSetMatchInfo();
-            EnvelopeSetMatchInfo* oldSetMatch = new EnvelopeSetMatchInfo();
+            //EnvelopeSetMatchInfo* newSetMatch = new EnvelopeSetMatchInfo();
+            //EnvelopeSetMatchInfo* oldSetMatch = new EnvelopeSetMatchInfo();
             ChamberHits* testChamber;
             unsigned int nHits; //number of hits, counts at max one from each layer
             if(USE_COMP_HITS){
@@ -328,40 +281,84 @@ int PatternFinder() {
                 testChamber = &theseRHHits;
             }
 
-
             nChambersRanOver++;
 
             //now run on comparator hits
+            if(DEBUG > 0) printf("~~~~ Matches for Muon: %i,  Segment %i ~~~\n",i,  thisSeg);
             if(searchForMatch(*testChamber, oldEnvelopes,oldSetMatch) || searchForMatch(*testChamber, newEnvelopes,newSetMatch)) {
-            		delete newSetMatch;
-            		delete oldSetMatch;
+            		while(oldSetMatch.size()){
+            			delete oldSetMatch.back();
+            			oldSetMatch.pop_back();
+            		}
+            		while(newSetMatch.size()){
+            			delete newSetMatch.back();
+            			newSetMatch.pop_back();
+            		}
             		nChambersMultipleInOneLayer++;
             		continue;
             }
 
-
-            //check if we pass the cut
-            if(oldSetMatch->bestLayerCount() < N_LAYER_REQUIREMENT || newSetMatch->bestLayerCount() < N_LAYER_REQUIREMENT) {
-                delete newSetMatch;
-                delete oldSetMatch;
+            //TODO: currently no implementation dealing with cases where we find one and not other
+            if(!oldSetMatch.size() || !newSetMatch.size()) {
+            		while(oldSetMatch.size()){
+            			delete oldSetMatch.back();
+            			oldSetMatch.pop_back();
+            		}
+            		while(newSetMatch.size()){
+            			delete newSetMatch.back();
+            			newSetMatch.pop_back();
+            		}
             		continue;
             }
 
+            if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " ---" << endl;
+            if(DEBUG > 0) cout << "Old Match [";
+            //look for the track closest to whatever segment we are currently looking at
+            int closestOldMatchIndex = 0;
+            float closestOldMatchSeperation = 9e9; //arbirarily large distance
+            for(unsigned int imatch = 0; imatch < oldSetMatch.size(); imatch++){
+            		if(DEBUG > 0) cout << oldSetMatch.at(imatch)->x() << (imatch < oldSetMatch.size() -1 ? ", " : "");
+            		float seperation = abs(segmentX - oldSetMatch.at(imatch)->x());
+            		if(seperation < closestOldMatchSeperation){
+            			closestOldMatchIndex = imatch;
+            			closestOldMatchSeperation = seperation;
+            		}
+            }
+            if(DEBUG > 0) cout << "]" << endl;
+
+            int closestNewMatchIndex = 0;
+            float closestNewMatchSeperation = 9e9;
+            if(DEBUG > 0)cout << "New Match [";
+            for(unsigned imatch = 0; imatch < newSetMatch.size(); imatch++){
+            			if(DEBUG > 0) cout << newSetMatch.at(imatch)->x() << (imatch < newSetMatch.size() -1 ? ", " : "");
+					float seperation = abs(segmentX - newSetMatch.at(imatch)->x());
+					if(seperation < closestOldMatchSeperation){
+						closestNewMatchIndex = imatch;
+						closestNewMatchSeperation = seperation;
+					}
+            }
+            if(DEBUG > 0) cout << "]" << endl;
 
             // Fill Tree Data
 
-            patX = newSetMatch->bestX()/2.;
-            patternId = newSetMatch->bestChargeComparatorCode().getComparatorCodeId();
-            envelopeId = newSetMatch->bestEnvelopeId();
-            legacyLctId = oldSetMatch->bestEnvelopeId();
-            legacyLctX = oldSetMatch->bestX()/2.;
+            patX = newSetMatch.at(closestNewMatchIndex)->x();
+            patternId = newSetMatch.at(closestNewMatchIndex)->comparatorCodeId();
+            envelopeId = newSetMatch.at(closestNewMatchIndex)->envelopeId();
+            legacyLctId = oldSetMatch.at(closestOldMatchIndex)->envelopeId();
+            legacyLctX = oldSetMatch.at(closestOldMatchIndex)->x();
 
 
             plotTree->Fill();
 
 
-            delete newSetMatch;
-            delete oldSetMatch;
+            while(oldSetMatch.size()){
+            		delete oldSetMatch.back();
+            		oldSetMatch.pop_back();
+            }
+            while(newSetMatch.size()){
+            		delete newSetMatch.back();
+            		newSetMatch.pop_back();
+            }
         }
 
     }
