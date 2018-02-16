@@ -107,8 +107,7 @@ int PatternFinder() {
 
 
     vector<ChargeEnvelope>* newEnvelopes = createNewEnvelopes();
-
-    vector<ChargeEnvelope>* oldEnvelopes = createOldEnvelopes();//createNewEnvelopesVERIFICATION(); //createOldEnvelopes();
+    vector<ChargeEnvelope>* oldEnvelopes = createOldEnvelopes();
 
 
     //
@@ -151,7 +150,7 @@ int PatternFinder() {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-	const unsigned int max = t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
+	const unsigned int max = 500;//t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
 	for(unsigned int i = 0; i < max; i++) {
         if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/max, i);
 
@@ -170,8 +169,6 @@ int PatternFinder() {
 
             segmentX = (*segX)[thisSeg]; //strips
             segmentdXdZ = (*segdXdZ)[thisSeg];
-
-            //if(ST != 2 && RI != 2) continue;
 
             bool me11a = (ST == 1 && RI == 4);
             bool me11b = (ST == 1 && RI == 1);
@@ -255,24 +252,9 @@ int PatternFinder() {
                 theseRHHits.hits[iRhStrip][iLay] = true;
             }
 
-
-
-            //find which group the current chamber you are looking at belongs to
-            unsigned int groupIndex;
-            if((ST == 1 && RI == 4 )||(ST == 1 && RI == 2)) groupIndex = 0; //ME11a || ME12
-            else if((ST == 1 && RI == 1) || (ST == 1 && RI == 3)) groupIndex = 1; //ME11b || ME13
-            else if((ST == 2 && RI == 1) || (ST == 2 && RI == 2)) groupIndex = 2; //ME21 || ME22
-            else if(ST == 3 || ST == 4) groupIndex = 3; //ME3X || ME4X
-            else{
-                printf("ERROR: can't find group\n");
-                return -1;
-            }
-
             vector<SingleEnvelopeMatchInfo*> newSetMatch;
             vector<SingleEnvelopeMatchInfo*> oldSetMatch;
 
-            //EnvelopeSetMatchInfo* newSetMatch = new EnvelopeSetMatchInfo();
-            //EnvelopeSetMatchInfo* oldSetMatch = new EnvelopeSetMatchInfo();
             ChamberHits* testChamber;
             unsigned int nHits; //number of hits, counts at max one from each layer
             if(USE_COMP_HITS){
@@ -311,33 +293,15 @@ int PatternFinder() {
             		continue;
             }
 
-            if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " ---" << endl;
-            if(DEBUG > 0) cout << "Old Match [";
-            //look for the track closest to whatever segment we are currently looking at
-            int closestOldMatchIndex = 0;
-            float closestOldMatchSeperation = 9e9; //arbirarily large distance
-            for(unsigned int imatch = 0; imatch < oldSetMatch.size(); imatch++){
-            		if(DEBUG > 0) cout << oldSetMatch.at(imatch)->x() << (imatch < oldSetMatch.size() -1 ? ", " : "");
-            		float seperation = abs(segmentX - oldSetMatch.at(imatch)->x());
-            		if(seperation < closestOldMatchSeperation){
-            			closestOldMatchIndex = imatch;
-            			closestOldMatchSeperation = seperation;
-            		}
-            }
-            if(DEBUG > 0) cout << "]" << endl;
+            if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
+            if(DEBUG > 0) cout << "Legacy Match: (";
+            int closestOldMatchIndex = findClosestToSegment(oldSetMatch,segmentX);
+            if(DEBUG > 0) cout << ") [strips]" << endl;
 
-            int closestNewMatchIndex = 0;
-            float closestNewMatchSeperation = 9e9;
-            if(DEBUG > 0)cout << "New Match [";
-            for(unsigned imatch = 0; imatch < newSetMatch.size(); imatch++){
-            			if(DEBUG > 0) cout << newSetMatch.at(imatch)->x() << (imatch < newSetMatch.size() -1 ? ", " : "");
-					float seperation = abs(segmentX - newSetMatch.at(imatch)->x());
-					if(seperation < closestOldMatchSeperation){
-						closestNewMatchIndex = imatch;
-						closestNewMatchSeperation = seperation;
-					}
-            }
-            if(DEBUG > 0) cout << "]" << endl;
+
+            if(DEBUG > 0)cout << "New Match: (";
+            int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
+            if(DEBUG > 0) cout << ") [strips]" << endl;
 
             // Fill Tree Data
 

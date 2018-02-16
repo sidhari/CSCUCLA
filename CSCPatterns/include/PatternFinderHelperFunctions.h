@@ -10,6 +10,21 @@
 
 #include "PatternFinderClasses.h"
 
+
+int findClosestToSegment(vector<SingleEnvelopeMatchInfo*> matches, float segmentX){
+	int closestMatchIndex = 0;
+	float closestMatchSeperation = 9e9; //arbirarily large distance
+	for(unsigned int imatch = 0; imatch < matches.size(); imatch++){
+		if(DEBUG > 0) cout << matches.at(imatch)->x() << (imatch < matches.size() -1 ? ", " : "");
+		float seperation = fabs(segmentX - matches.at(imatch)->x());
+		if(seperation < closestMatchSeperation){
+			closestMatchIndex = imatch;
+			closestMatchSeperation = seperation;
+		}
+	}
+	return closestMatchIndex;
+}
+
 void printEnvelope(const ChargeEnvelope &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
@@ -25,18 +40,20 @@ void printChamber(const ChamberHits &c){
 	printf("==== Printing Chamber Distribution ST = %i, RI = %i, CH = %i, EC = %i====\n", c.station, c.ring, c.chamber, c.endcap);
 	bool me11 = (c.station == 1 &&(c.ring == 1 || c.ring == 4));
 	for(unsigned int y = 0; y < NLAYERS; y++) {
-		for(unsigned int x = 0; x < N_MAX_HALF_STRIPS; x++){
+		if(!me11 && !(y%2)) printf(" ");
+		for(unsigned int x = 0; x < N_MAX_HALF_STRIPS-1; x++){
+			if(!(x%16)) printf("|");
 			if(c.hits[x][y]) printf("%X",c.hits[x][y]-1); //print one less, so we stay in hexadecimal (0-15)
-			else {
-				if(!me11 && !(y%2) && x == 0){ //not me11, even, put a space on the first one
-					printf(" ");
-				}else if(!me11 && y%2 && x == N_MAX_HALF_STRIPS - 1){
-					printf(" ");
-				} else	printf("-");
-			}
+			else printf("-");
 		}
+		if(!me11 && !(y%2)) printf(" ");
 		printf("\n");
 	}
+	for(unsigned int x = 0;x < N_MAX_HALF_STRIPS-1; x++){
+		if(!(x%17)) printf("%i", x/17);
+		else printf(" ");
+	}
+	printf("\n");
 }
 
 int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]){
@@ -199,7 +216,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vecto
 
 	SingleEnvelopeMatchInfo *bestMatch = 0;
 
-	//now we have all the rh for this segment, so check if the patterns are there
+	//loop through all the patterns we have
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
 		SingleEnvelopeMatchInfo *thisMatch = 0;
 		if(containsPattern(c,ps->at(ip),thisMatch) < 0 && DEBUG >= 0) {
@@ -215,17 +232,16 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vecto
 	}
 
 	//we have a valid best match
-	if(bestMatch->layMatCount() >= N_LAYER_REQUIREMENT){
+	if(bestMatch && bestMatch->layMatCount() >= N_LAYER_REQUIREMENT){
 		if(DEBUG > 0){
 			printChamber(c);
 			printEnvelope(bestMatch->m_Envelope);
-			//m->printBest3x6Pattern();
 		}
 		m.push_back(bestMatch);
-		shrinkingChamber-=*bestMatch;
-		return searchForMatch(shrinkingChamber, ps, m);
+		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber
+		return searchForMatch(shrinkingChamber, ps, m); //find the next one
 	}else{
-		return 0;
+		return 0; //add nothing if we don't find anything
 	}
 }
 
