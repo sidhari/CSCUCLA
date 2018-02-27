@@ -5,9 +5,8 @@ import math as m
 
 useCompHits = 0 # 0 means use recHits
 
-
-nbins = 1000
-hist_range  = 2.
+nbins = 200
+hist_range  = 1.
 folder = ""
 if(useCompHits):
     folder = "compHits"
@@ -310,7 +309,7 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-#chambers.append(["All-Chambers", 0, 0])
+chambers.append(["All-Chambers", 0, 0])
 chambers.append(["ME11B", 1,1])
 chambers.append(["ME11A", 1,4])
 chambers.append(["ME12", 1,2])

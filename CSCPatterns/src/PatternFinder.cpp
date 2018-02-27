@@ -16,7 +16,7 @@
 #include <TString.h>
 
 #include <vector>
-#include <map>
+//#include <map>
 #include <stdio.h>
 
 #include "../include/PatternConstants.h"
@@ -32,7 +32,7 @@ using namespace std;
 #endif
 
 
-int PatternFinder() {
+int PatternFinder(const unsigned int start, unsigned int end) {
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
     if(!f)
@@ -150,11 +150,15 @@ int PatternFinder() {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-	const unsigned int max = 500;//t->GetEntries(); //or t->GetEntries() or MAX_ENTRY
-	for(unsigned int i = 0; i < max; i++) {
-        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/max, i);
+
+    if(end > t->GetEntries()) end = t->GetEntries();
+
+	printf("Starting Event = %i, Ending Event = %i\n", start, end);
+	for(unsigned int i = start; i < end; i++) {
+        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
         t->GetEntry(i);
+
 
         if(!os) continue;
 
@@ -166,6 +170,7 @@ int PatternFinder() {
             RI = (*segRi)[thisSeg];
             CH = (*segCh)[thisSeg];
             chSid = chamberSerial(EC, ST, RI, CH);
+
 
             segmentX = (*segX)[thisSeg]; //strips
             segmentdXdZ = (*segdXdZ)[thisSeg];
@@ -186,6 +191,7 @@ int PatternFinder() {
                     //goes from 1-80
                     int compStrip = compStr->at(icomp).at(icompstr);
                     int compHStrip = compHS->at(icomp).at(icompstr);
+                    if(compStrip < 1.0) printf("compStrip = %i, how did that happen?\n", compStrip);
 
                     int timeOn = 0;
 
@@ -211,8 +217,8 @@ int PatternFinder() {
 
 
                     if(halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
-                        printf("Error: For compId = %i, ST = %i, RI = %i Comp Half Strip Value out of range index = %i - me11b = %i\n",
-                                chSid,ST,RI, halfStripVal, me11b);
+                        printf("Error: For compId = %i, ST = %i, RI = %i Comp Half Strip Value out of range index = %i - me11b = %i, compStrip = %i, compHStrip = %i, layer = %i\n",
+                                chSid,ST,RI, halfStripVal, me11b, compStrip, compHStrip, thisCompLay);
                         return -1;
                     } else {
                         if(timeOn < 0 || timeOn >= 16) {
@@ -228,7 +234,6 @@ int PatternFinder() {
             }
 
 
-
             //find out where the reconstructed hits are for this segment
             for(unsigned int thisRh = 0; thisRh < rhId->size(); thisRh++)
             {
@@ -238,8 +243,10 @@ int PatternFinder() {
                 //rhLay goes 1-6
                 unsigned int iLay = rhLay->at(thisRh)-1;
 
+
                 //goes 1-80
                 float thisRhPos = rhPos->at(thisRh);
+
 
                 int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
                 if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
@@ -249,8 +256,10 @@ int PatternFinder() {
                     return -1;
                 }
 
+
                 theseRHHits.hits[iRhStrip][iLay] = true;
             }
+
 
             vector<SingleEnvelopeMatchInfo*> newSetMatch;
             vector<SingleEnvelopeMatchInfo*> oldSetMatch;

@@ -32,6 +32,7 @@ int MomentumDistributions(){
 
     double Pt = 0;
     double eta = 0;
+    bool os = 0;
 
     //segments
     vector<int>     *segEc = 0;
@@ -45,20 +46,31 @@ int MomentumDistributions(){
     t->SetBranchAddress("segSt",&segSt);
     t->SetBranchAddress("segRi", &segRi);
     t->SetBranchAddress("segCh", &segCh);
+    t->SetBranchAddress("os", &os);
 
-    TH1F* momDis = new TH1F("pt","pt", 400, 0, 50);
+    TH1F* momDis = new TH1F("pt","Selected Momentum Distribution from Charmonium 2016F Data", 70, 0, 140);
+    momDis->GetXaxis()->SetTitle("p_{T} [GeV]");
+    momDis->GetXaxis()->CenterTitle();
+    momDis->GetYaxis()->SetTitle("Entries / 2 GeV");
+    momDis->GetYaxis()->CenterTitle();
 
 
-    for(unsigned int i = 0; i < MAX_ENTRY; i++) {
-            if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
+
+
+    for(unsigned int i = 0; i < t->GetEntriesFast(); i++) {
+            if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/t->GetEntries(), i);
             t->GetEntry(i);
 
-            for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
+            if(!os) continue;
+            momDis->Fill(Pt);
 
-                       int EC = (*segEc)[thisSeg];
-                       int ST = (*segSt)[thisSeg];
-                       int RI = (*segRi)[thisSeg];
-                       int CH = (*segCh)[thisSeg];
+
+            //for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
+
+                      // int EC = (*segEc)[thisSeg];
+                       //int ST = (*segSt)[thisSeg];
+                       //int RI = (*segRi)[thisSeg];
+                       //int CH = (*segCh)[thisSeg];
 
                        /* Chamber ID can be deciphered from this
                         *
@@ -69,10 +81,11 @@ int MomentumDistributions(){
                         */
 
                        //here, just take one of the chambers and look at its momentum distribution
-                       if(ST == 2 && RI == 1) { //ME21
-                    	   momDis->Fill(Pt);
-                       }
-            }
+                       //if(ST == 2 && RI == 1) { //ME21
+                    	  // momDis->Fill(Pt);
+                       //}
+            //}
+
 
     }
     momDis->Draw();
