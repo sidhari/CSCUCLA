@@ -47,7 +47,6 @@ def createHists(chamber):
     
     #frequency plots, will be returned
     patList = [100,400,500,800,900]
-    #freakwencies = {100:{},400:{},500:{},800:{},900:{}}
     freakwencies = {}
     for pat in patList:
         freakwencies[pat] = np.zeros(4096) #all the possible comparator codes, initialize their frequency to zero
@@ -119,7 +118,6 @@ def createHists(chamber):
     ccSlopePlots = {}
     legacyPosPlots = {}
     legacySlopePlots = {}
-    
     
     #loop over tree, again
     counter = 0
@@ -310,16 +308,16 @@ def createHists(chamber):
 chambers = []
 #                name, st, ri
 chambers.append(["All-Chambers", 0, 0])
-chambers.append(["ME11B", 1,1])
-chambers.append(["ME11A", 1,4])
-chambers.append(["ME12", 1,2])
-chambers.append(["ME13", 1,3])
-chambers.append(["ME21", 2,1])
-chambers.append(["ME22", 2,2])
-chambers.append(["ME31", 3,1])
-chambers.append(["ME32", 3,2])
-chambers.append(["ME41", 4,1])
-chambers.append(["ME42", 4,2])
+#chambers.append(["ME11B", 1,1])
+#chambers.append(["ME11A", 1,4])
+#chambers.append(["ME12", 1,2])
+#chambers.append(["ME13", 1,3])
+#chambers.append(["ME21", 2,1])
+#chambers.append(["ME22", 2,2])
+#chambers.append(["ME31", 3,1])
+#chambers.append(["ME32", 3,2])
+#chambers.append(["ME41", 4,1])
+#chambers.append(["ME42", 4,2])
 
 frequencies = []
 
