@@ -175,12 +175,18 @@ int PatternFinder(const unsigned int start, unsigned int end) {
             segmentX = (*segX)[thisSeg]; //strips
             segmentdXdZ = (*segdXdZ)[thisSeg];
 
+
+            // IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
+            if(segmentX < 1 || segmentX > 79) continue;
+
             bool me11a = (ST == 1 && RI == 4);
             bool me11b = (ST == 1 && RI == 1);
 
 
             ChamberHits theseRHHits(0, ST, RI, EC, CH);
             ChamberHits theseCompHits(1, ST, RI, EC, CH);
+
+
 
 
             for(unsigned int icomp = 0; icomp < compId->size(); icomp++){

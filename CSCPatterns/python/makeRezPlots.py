@@ -3,7 +3,7 @@ import ROOT as r
 import numpy as np
 import math as m
 
-useCompHits = 0 # 0 means use recHits
+useCompHits = 1 # 0 means use recHits
 
 nbins = 200
 hist_range  = 1.

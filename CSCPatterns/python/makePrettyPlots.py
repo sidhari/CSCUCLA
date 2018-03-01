@@ -1,7 +1,7 @@
 import ROOT as r
 
 
-useCompHits = 0 # 0 means use recHits
+useCompHits = 1 # 0 means use recHits
 chamber = "All-Chambers"
 newPattColor = 9
 legacyColor = 46
