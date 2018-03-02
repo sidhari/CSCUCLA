@@ -3,7 +3,7 @@ import ROOT as r
 import numpy as np
 import math as m
 
-useCompHits = 1 # 0 means use recHits
+useCompHits = 0 # 0 means use recHits
 
 nbins = 200
 hist_range  = 1.
@@ -307,17 +307,17 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-chambers.append(["All-Chambers", 0, 0])
-#chambers.append(["ME11B", 1,1])
-#chambers.append(["ME11A", 1,4])
-#chambers.append(["ME12", 1,2])
-#chambers.append(["ME13", 1,3])
-#chambers.append(["ME21", 2,1])
-#chambers.append(["ME22", 2,2])
-#chambers.append(["ME31", 3,1])
-#chambers.append(["ME32", 3,2])
-#chambers.append(["ME41", 4,1])
-#chambers.append(["ME42", 4,2])
+#chambers.append(["All-Chambers", 0, 0])
+chambers.append(["ME11B", 1,1])
+chambers.append(["ME11A", 1,4])
+chambers.append(["ME12", 1,2])
+chambers.append(["ME13", 1,3])
+chambers.append(["ME21", 2,1])
+chambers.append(["ME22", 2,2])
+chambers.append(["ME31", 3,1])
+chambers.append(["ME32", 3,2])
+chambers.append(["ME41", 4,1])
+chambers.append(["ME42", 4,2])
 
 frequencies = []
 

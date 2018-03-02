@@ -225,6 +225,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vecto
 			return -1;
 		}
 		if(!bestMatch || bestMatch->layMatCount() < thisMatch->layMatCount()){
+			if(bestMatch) delete bestMatch;
 			bestMatch = thisMatch;
 		}else{
 			delete thisMatch;
