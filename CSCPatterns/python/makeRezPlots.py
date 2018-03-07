@@ -3,11 +3,14 @@ import ROOT as r
 import numpy as np
 import math as m
 
-useCompHits = 0 # 0 means use recHits
+from array import array
+
+useCompHits = 1 # 0 means use recHits
 
 nbins = 200
 hist_range  = 1.
 folder = ""
+coverage = 0.99 #look for bounds that give us 99% of the all entries in the histogram
 if(useCompHits):
     folder = "compHits"
 else:
@@ -34,6 +37,71 @@ def getLogFrequency(frequency):
         logFreq = -7.
     return logFreq
 
+#for a given histogram, find the central bounds that give 99% of the events in the histogram
+def findInterval(hist, coverage):
+    entries = hist.GetEntries()
+    if(entries is 0): return [0,0]
+    low = hist.GetMinimum()
+    high = hist.GetMaximum()
+    
+    threshold = (1.-coverage)/2.
+    
+    int = 0.
+    for i in range(-1, hist.GetNbinsX()+1): #includes underflow and overflow
+        int += hist.GetBinContent(i)/entries
+        #print("int is : %f"%int)
+        if int >= threshold :
+            low = hist.GetBinCenter(i)
+            break;
+    
+    #swap direction
+    int = 0.
+    for i  in range(-1, hist.GetNbinsX()+1)[::-1]:
+        int += hist.GetBinContent(i)/entries
+        #print("int is : %f"%int)
+        if int >= threshold :
+            high = hist.GetBinCenter(i)
+            break;
+    #print("returning [ %f, %f]"%(low,high))
+    return [low,high]
+
+def makeSegmentEfficiencyPlot(sortedPlots, chamberName, env):
+    totalEntries = 0.
+    #bad code
+    for pat in sortedPlots:
+        totalEntries += pat[0].GetEntries()
+                
+    x = array('d')
+    y = array('d')
+    
+    sumCount = 0
+    for pat in sortedPlots:
+        thisCount = pat[0].GetEntries()
+        sumCount += thisCount
+        yP = 1.0 - (float(sumCount)/totalEntries)
+        xP = float(thisCount)
+        x.append(xP)
+        y.append(yP)
+        
+
+    segmentGraph = r.TGraph(len(x), x,y)
+    segmentGraph.SetTitle("%s - Pattern %i"%(chamberName, env))
+    segmentGraph.GetXaxis().SetTitle("Minimum Number of Matches to a CC Used")
+    segmentGraph.GetXaxis().CenterTitle()
+    segmentGraph.GetYaxis().SetTitle("1-#epsilon")
+    segmentGraph.GetYaxis().CenterTitle()
+    c = r.TCanvas()
+    c.SetLogx()
+    c.SetTickx()
+    c.SetLogy()
+    c.SetTicky()
+    segmentGraph.Draw("al")
+    c.SaveAs("../img/%s/segmentEff_%s_%i.pdf"%(folder,chamberName, env))
+    
+    
+    
+    
+    
 def createHists(chamber):
     print("=== Running over Chamber %s ==="%(chamber[0]))
     
@@ -202,17 +270,23 @@ def createHists(chamber):
     envOrdering = [900,800,500,400,100]
     for env in envOrdering:
         
-        # [ hist, pat id]
+        # [ hist, pat id] - sorted from highest entry to lowest entry
         sortedccPosPlots = sorted( [[ccPosPlots[env][pat],pat] for pat in ccPosPlots[env]], key=lambda x: -1.*x[0].GetEntries())
+        
         
         totalEntries = 0.
         #bad code
         for pat in sortedccPosPlots:
              totalEntries += pat[0].GetEntries()
              
+             
+        makeSegmentEfficiencyPlot(sortedccPosPlots,chamber[0], env)
+             
         #real bad code lel
         for pat in sortedccPosPlots:
             freakwencies[env][pat[1]] = 1.*pat[0].GetEntries()/totalEntries
+            
+        
              
         #print("For Pattern %i - CC - per - int"%(env))
         ccEnvFrequency  = r.TH1D("percentage_pat%i"%(env), "%s - Pattern %i using %i matches; Percentage; CC Count"%(chamber[0], env, totalEntries), 8,np.logspace(-6,2,9));
@@ -229,6 +303,7 @@ def createHists(chamber):
         
         int = 0.
         for bin in range(1,len(sortedccPosPlots)+1):
+            #print sortedccPosPlots[bin-1][0].GetEntries()
             int += sortedccPosPlots[bin-1][0].GetEntries()
             ccCutOffNum.SetBinContent(bin, totalEntries - int)
             ccCutOffDen.SetBinContent(bin,totalEntries)
@@ -254,8 +329,20 @@ def createHists(chamber):
         mcanvas.Clear()
         mcanvas.SetGridy(0)
         
+        #make efficiency vs segment plot
+        effVsSeg = r.TH1D("effVsSeg_pat%i"%env, "%s - Pattern %i; Segments found matched to a given CC; Comparator Codes"%(chamber[0],env),
+                          60,np.logspace(0,6,61))
         
+        for pat in sortedccPosPlots:
+            effVsSeg.Fill(pat[0].GetEntries())
+            
+        effVsSeg.Draw()
+        mcanvas.SaveAs("../img/%s/patternFreq/effVsSeg_%s_p%i.pdf"%(folder, chamber[0], env))
         
+        mcanvas.Clear()
+        mcanvas.SetGridy(0)
+        
+
         int = 0.
         for pat in sortedccPosPlots:
             int +=pat[0].GetEntries()
@@ -268,8 +355,8 @@ def createHists(chamber):
         ccFrequency.Add(ccEnvFrequency)
         
     ccFrequency.Write()
-        
-    
+
+
     for env in ccPosPlots:
         envFullPosRes = r.TH1D("patPos%i_fullCCRes"%(env),
                          "patPos%i_fullCCRes;Position Difference [strips]; Events"%(env),
@@ -293,6 +380,26 @@ def createHists(chamber):
         legacyPosPlots[id].Write()    
         legacySlopePlots[id].Write()
         
+        
+    legPosInt = findInterval(cumulativeLegacyPosResolution, coverage)
+    legSlopeInt = findInterval(cumulativeLegacySlopeResolution, coverage)
+    pattPosInt = findInterval(cumulativePattPosResolution, coverage)
+    pattSlopeInt = findInterval(cumulativePattSlopeResolution, coverage)
+    ccPosInt = findInterval(cumulativeCCPosResolution, coverage)
+    ccSlopeInt = findInterval(cumulativeCCSlopeResolution, coverage)
+    
+    #Gross hack to print out intervals
+    #intFile = open("intervals_%s.txt"%folder, "a+")
+    intFile.write("%s"%chamber[0])
+    intFile.write("\t %f \t %f \t %f \t %f \t %f \t %f"%(legPosInt[0],legPosInt[1], pattPosInt[0], pattPosInt[1], ccPosInt[0], ccPosInt[1]))
+    intFile.write("\t %f \t %f \t %f \t %f \t %f \t %f\n"%(legSlopeInt[0],legSlopeInt[1], pattSlopeInt[0], pattSlopeInt[1], ccSlopeInt[0], ccSlopeInt[1]))
+    #intFile.write("legacy: [ %0.3f, %0.3f ]\n"%(legInt[0],legInt[1]))
+    #intFile.write("patt: [ %0.3f, %0.3f ]\n"%(pattInt[0],pattInt[1]))
+    #intFile.write("cc: [ %0.3f, %0.3f ]\n"%(ccInt[0],ccInt[1]))
+    #intFile.close()
+    
+    
+        
     cumulativePattPosResolution.Write()
     cumulativePattSlopeResolution.Write()
     cumulativeCCPosResolution.Write()
@@ -307,7 +414,7 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-#chambers.append(["All-Chambers", 0, 0])
+chambers.append(["All-Chambers", 0, 0])
 chambers.append(["ME11B", 1,1])
 chambers.append(["ME11A", 1,4])
 chambers.append(["ME12", 1,2])
@@ -319,10 +426,18 @@ chambers.append(["ME32", 3,2])
 chambers.append(["ME41", 4,1])
 chambers.append(["ME42", 4,2])
 
+
+#interval file
+intFile = open("intervals_%s.txt"%folder, "w")
+intFile.write("Chamber \t legLow[strips] \t legHigh[strips] \t 3low[strips] \t 3high[strips] \t clow[strips] \t chigh[strips]")
+intFile.write("\t legLow[strips/layer] \t legHigh[strips/layer] \t 3low[strips/layer] \t 3high[strips/layer] \t clow[strips/layer] \t chigh[strips/layer]\n")
+
 frequencies = []
 
 for chamber in chambers:
-    frequencies.append([chamber[0], createHists(chamber)])    
+    frequencies.append([chamber[0], createHists(chamber)])   
+    
+intFile.close() 
 
 outF = r.TFile("../data/%s/fullAnalFrequency.root"%(folder),"RECREATE")
  

@@ -20,8 +20,7 @@ for type in types:
     print("== %s =="% type)
     # loop through all the files
     for chamber in chambers:
-        #print("== Looking at Chamber: %s =="%(chamber))
-        #print(chamber, end='')
+
         inF = r.TFile("../data/%s/%s_resolutionPlots.root"%(folder, chamber))
         if not (inF.IsOpen()) :
             print("Missed File")
@@ -40,6 +39,3 @@ for type in types:
         legStd = leg.GetStdDev()
         
         print("%s & %0.3f & %0.3f & %0.3f\\\\"%(chamber, legStd, patStd, ccStd))
-        #print("patStd = %0.3f"%(patStd))
-        
-        # put that mean in a text file, properly formatted 
