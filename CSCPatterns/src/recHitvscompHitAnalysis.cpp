@@ -85,7 +85,6 @@ int decodeID(int id , int (&stationRingEndcap)[3])
 
 int recHitvscompHitAnalysis(){
 
-
 	//
 	// DECLARE ALL NON-HISTOGRAM VARIABLES
 	//
@@ -139,8 +138,6 @@ int recHitvscompHitAnalysis(){
 	rhPositionDiff2D->GetXaxis()->CenterTitle();
 	rhPositionDiff2D->GetYaxis()->SetTitle("Modulo Strip [strips]");
 	rhPositionDiff2D->GetYaxis()->CenterTitle();
-
-
 
 
 	for(Long64_t i = 0; i < 100000; i++){
@@ -212,8 +209,13 @@ int recHitvscompHitAnalysis(){
 		}
 	}
 
-	rhPositionDiff2D->Draw("colz");
+	string folder = (USE_COMP_HITS ? "compHits" : "recHits");
+	TFile * outF = new TFile(string("../data/" + folder + "/recVsComp-ANAL.root").c_str(),"RECREATE");
 
+	rhPositionDiff2D->Draw("colz");
+	rhPositionDiff2D->Write();
+
+	outF->Close();
 
 	return 0;
 }
