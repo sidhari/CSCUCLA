@@ -19,7 +19,7 @@ else:
     
 #get number of entries in tree
 inF = r.TFile("../data/CSCDigiTree161031.root")
-myT = inF.plotTree
+myT = inF.CSCDigiTree
 entries = myT.GetEntries()
 
 #temp
