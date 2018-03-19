@@ -39,6 +39,6 @@ while(covered < entries):
     end = covered
     #start up a new thread
     print("Starting thread: %i - %i"%(start,end))
-    os.system("qsub -N E%i -l h_data=1024M,time=00:05:00 'subScript.sh %i %i' "%(start, start, end))
+    os.system("qsub -N E%i -l h_data=1024M,time=00:05:00 '../sub/sh/subScript.sh %i %i' "%(start, start, end))
     #os.system("root -l -q ../src/PatternFinder.cpp++\(%i,%i\) &"%(start,end))
 
