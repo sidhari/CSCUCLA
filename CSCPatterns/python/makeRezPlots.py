@@ -5,7 +5,7 @@ import math as m
 
 from array import array
 
-useCompHits = 1 # 0 means use recHits
+useCompHits = 0 # 0 means use recHits
 
 nbins = 200
 hist_range  = 1.
@@ -180,9 +180,11 @@ def createHists(chamber):
     
     print("Making Histograms...")
     
+    
     pattPosPlots = {}
     pattSlopePlots = {}
     ccPosPlots = {}
+    unshiftedccPosPlots = {}
     ccSlopePlots = {}
     legacyPosPlots = {}
     legacySlopePlots = {}
@@ -216,12 +218,16 @@ def createHists(chamber):
             calculatedCCPosMeans[event.envelopeId] = {}
             calculatedCCSlopeMeans[event.envelopeId] = {}
             ccPosPlots[event.envelopeId] = {}
+            unshiftedccPosPlots[event.envelopeId] = {}
             ccSlopePlots[event.envelopeId] = {}
         if not (event.patternId in calculatedCCPosMeans[event.envelopeId]):
             calculatedCCPosMeans[event.envelopeId][event.patternId] = sum(ccPosMeans[event.envelopeId][event.patternId])/float(len(ccPosMeans[event.envelopeId][event.patternId]))
             calculatedCCSlopeMeans[event.envelopeId][event.patternId] = sum(ccSlopeMeans[event.envelopeId][event.patternId])/float(len(ccSlopeMeans[event.envelopeId][event.patternId]))
             ccPosPlots[event.envelopeId][event.patternId] = r.TH1D("patPos%i_cc%i"%(event.envelopeId, event.patternId),
                                                                   "patPos%i_cc%i;Position Difference [strips]; Events"%(event.envelopeId, event.patternId),
+                                                                  nbins,-hist_range,hist_range)
+            unshiftedccPosPlots[event.envelopeId][event.patternId]  = r.TH1D("unshiftedPatPos%i_cc%i"%(event.envelopeId, event.patternId),
+                                                                  "unshiftedPatPos%i_cc%i;Position Difference [strips]; Events"%(event.envelopeId, event.patternId),
                                                                   nbins,-hist_range,hist_range)
             ccSlopePlots[event.envelopeId][event.patternId] = r.TH1D("patSlope%i_cc%i"%(event.envelopeId, event.patternId),
                                                                   "patSlope%i_cc%i;Slope [strips/layer]; Events"%(event.envelopeId, event.patternId),
@@ -239,6 +245,7 @@ def createHists(chamber):
         pattPosPlots[event.envelopeId].Fill(event.segmentX-event.patX - calculatedPattPosMeans[event.envelopeId])
         pattSlopePlots[event.envelopeId].Fill(event.segmentdXdZ - calculatedPattSlopeMeans[event.envelopeId])
         ccPosPlots[event.envelopeId][event.patternId].Fill(event.segmentX-event.patX - calculatedCCPosMeans[event.envelopeId][event.patternId])
+        unshiftedccPosPlots[event.envelopeId][event.patternId].Fill(event.segmentX-event.patX)
         ccSlopePlots[event.envelopeId][event.patternId].Fill(event.segmentdXdZ - calculatedCCSlopeMeans[event.envelopeId][event.patternId])
         legacyPosPlots[event.legacyLctId].Fill(event.segmentX-event.legacyLctX - calculatedlegacyPosMeans[event.legacyLctId])
         legacySlopePlots[event.legacyLctId].Fill(event.segmentdXdZ-calculatedlegacySlopeMeans[event.legacyLctId])
@@ -367,7 +374,8 @@ def createHists(chamber):
         for pat in ccPosPlots[env]:
             envFullPosRes.Add(ccPosPlots[env][pat])
             envFullSlopeRes.Add(ccSlopePlots[env][pat])
-            #ccPosPlots[env][pat].Write()
+            ccPosPlots[env][pat].Write()
+            unshiftedccPosPlots[env][pat].Write()
         cumulativeCCPosResolution.Add(envFullPosRes)
         cumulativeCCSlopeResolution.Add(envFullSlopeRes)
         envFullPosRes.Write()
@@ -389,17 +397,11 @@ def createHists(chamber):
     ccSlopeInt = findInterval(cumulativeCCSlopeResolution, coverage)
     
     #Gross hack to print out intervals
-    #intFile = open("intervals_%s.txt"%folder, "a+")
     intFile.write("%s"%chamber[0])
     intFile.write("\t %f \t %f \t %f \t %f \t %f \t %f"%(legPosInt[0],legPosInt[1], pattPosInt[0], pattPosInt[1], ccPosInt[0], ccPosInt[1]))
     intFile.write("\t %f \t %f \t %f \t %f \t %f \t %f\n"%(legSlopeInt[0],legSlopeInt[1], pattSlopeInt[0], pattSlopeInt[1], ccSlopeInt[0], ccSlopeInt[1]))
-    #intFile.write("legacy: [ %0.3f, %0.3f ]\n"%(legInt[0],legInt[1]))
-    #intFile.write("patt: [ %0.3f, %0.3f ]\n"%(pattInt[0],pattInt[1]))
-    #intFile.write("cc: [ %0.3f, %0.3f ]\n"%(ccInt[0],ccInt[1]))
-    #intFile.close()
+
     
-    
-        
     cumulativePattPosResolution.Write()
     cumulativePattSlopeResolution.Write()
     cumulativeCCPosResolution.Write()
@@ -414,17 +416,17 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-chambers.append(["All-Chambers", 0, 0])
+#chambers.append(["All-Chambers", 0, 0])
 chambers.append(["ME11B", 1,1])
-chambers.append(["ME11A", 1,4])
-chambers.append(["ME12", 1,2])
-chambers.append(["ME13", 1,3])
-chambers.append(["ME21", 2,1])
-chambers.append(["ME22", 2,2])
-chambers.append(["ME31", 3,1])
-chambers.append(["ME32", 3,2])
-chambers.append(["ME41", 4,1])
-chambers.append(["ME42", 4,2])
+#chambers.append(["ME11A", 1,4])
+#chambers.append(["ME12", 1,2])
+#chambers.append(["ME13", 1,3])
+#chambers.append(["ME21", 2,1])
+#chambers.append(["ME22", 2,2])
+#chambers.append(["ME31", 3,1])
+#chambers.append(["ME32", 3,2])
+#chambers.append(["ME41", 4,1])
+#chambers.append(["ME42", 4,2])
 
 
 #interval file

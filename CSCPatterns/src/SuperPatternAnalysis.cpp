@@ -244,9 +244,9 @@ int SuperPatternAnalysis() {
 	//
 
 
-
-	for(unsigned int i = 0; i < MAX_ENTRY; i++) {
-		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/MAX_ENTRY, i);
+	unsigned int max = 100000;
+	for(unsigned int i = 0; i < max; i++) {
+		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/max, i);
 		t->GetEntry(i);
 
 		if(!os) continue;
@@ -416,7 +416,7 @@ int SuperPatternAnalysis() {
 			}
 
 
-
+			/*
 			///ALSO NEED TO CHECK TMB DATA, to make sure you use valid data
 			if(MAKE_MATCH_LAYER_COMPARISON){
 
@@ -435,7 +435,7 @@ int SuperPatternAnalysis() {
 				delete compMatchInfo;
 				delete recMatchInfo;
 			}
-
+			*/
 
 
 			SuperPatternSetMatchInfo* thisSetMatch = new SuperPatternSetMatchInfo();

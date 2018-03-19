@@ -83,7 +83,7 @@ private:
 
 void ChargeComparatorCode::printPattern() {
 	int patCode = getComparatorCodeId();
-	printf("Comparator Code: %#04x, layersMatched: %u\n", patCode,getLayersMatched());
+	printf("Comparator Code: %#04x\nLayers matched: %u\n", patCode,getLayersMatched());
 	if(DEBUG > 0) cout << "ComparatorCode is: "  << bitset<12>(patCode) << endl;
 	for(int i =0; i < NLAYERS; i++){
 		for(int j =0; j < 3; j++){

@@ -1,7 +1,7 @@
 import ROOT as r
 
 
-useCompHits = 1 # 0 means use recHits
+useCompHits = 0 # 0 means use recHits
 chamber = "All-Chambers"
 newPattColor = 9
 legacyColor = 46
@@ -151,7 +151,7 @@ for htype in ltypes:
 # COMBINED DISTRIBUTIONS
 r.gStyle.SetOptStat(111111)
 
-ctypes = ['CC', 'Pat','Leg']
+ctypes = ['CC', 'Leg']
 disttypes = ['Slope', 'Pos']
 
 chists = {ctype:{dist:{} for dist in disttypes} for ctype in ctypes}
@@ -165,7 +165,7 @@ for ctype in ctypes:
 for dist in disttypes:
     c = r.TCanvas()
     c.cd() 
-    split = 0.0 #how far apart stat boxes should be     
+    split = 0.2 #how far apart stat boxes should be     
     for ctype in ctypes:
            h = chists[ctype][dist]
            h.GetXaxis().CenterTitle()
@@ -195,13 +195,13 @@ for dist in disttypes:
            elif(ctype == "Leg"):
                h.SetLineColor(legacyColor)
                color = legacyColor
-               h.SetName("Legacy Patterns")
+               h.SetName("Current Patterns")
                h.Draw("sames")
-           else:
-               h.SetLineColor(newPattColor)
-               color = newPattColor
-               h.SetName("3-Wide Patterns")
-               h.Draw("sames")
+           #else:
+           #    h.SetLineColor(newPattColor)
+           #    color = newPattColor
+           #    h.SetName("3-Wide Patterns")
+           #    h.Draw("sames")
            r.gPad.Update()
            sbox = h.FindObject('stats')
            sbox.SetX1NDC(0.67)

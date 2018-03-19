@@ -13,7 +13,7 @@
 
 const int DEBUG = -1;
 const int NLAYERS = 6; //6 layers
-const bool USE_COMP_HITS = 1; //false uses recHits
+const bool USE_COMP_HITS = 0; //false uses recHits
 const int MAX_PATTERN_WIDTH = 11;
 const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
 const int N_LAYER_REQUIREMENT = 3;

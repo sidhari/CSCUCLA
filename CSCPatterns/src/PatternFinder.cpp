@@ -16,7 +16,6 @@
 #include <TString.h>
 
 #include <vector>
-//#include <map>
 #include <stdio.h>
 
 #include "../include/PatternConstants.h"
@@ -30,7 +29,6 @@ using namespace std;
 #pragma link C++ class vector<vector<int> >+;
 #pragma link C++ class vector<vector<vector<int> > >+;
 #endif
-
 
 int PatternFinder(const unsigned int start, unsigned int end) {
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
@@ -128,7 +126,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     float legacyLctX = 0;
 
     string folder = (USE_COMP_HITS ? "compHits" : "recHits");
-    TFile * outF = new TFile(string("../data/" + folder + "/plotTree.root").c_str(),"RECREATE");
+    TFile * outF = new TFile(string("../data/" + folder + "/processedMatches_" + std::to_string(start) + "_" + std::to_string(end) + ".root").c_str(),"RECREATE");
     TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
     plotTree->Branch("EC",&EC,"EC/I");
     plotTree->Branch("ST",&ST,"ST/I");
@@ -331,7 +329,6 @@ int PatternFinder(const unsigned int start, unsigned int end) {
             envelopeId = newSetMatch.at(closestNewMatchIndex)->envelopeId();
             legacyLctId = oldSetMatch.at(closestOldMatchIndex)->envelopeId();
             legacyLctX = oldSetMatch.at(closestOldMatchIndex)->x();
-
 
             plotTree->Fill();
 

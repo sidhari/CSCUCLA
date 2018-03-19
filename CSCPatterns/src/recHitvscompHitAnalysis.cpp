@@ -140,7 +140,7 @@ int recHitvscompHitAnalysis(){
 	rhPositionDiff2D->GetYaxis()->CenterTitle();
 
 
-	for(Long64_t i = 0; i < 100000; i++){
+	for(Long64_t i = 0; i < t->GetEntriesFast(); i++){
 		if(!(i%10000)) printf("%3.2f%% Done --- Processed %lli Events\n", 100.*i/t->GetEntries(), i);
 		t->GetEntry(i);
 
