@@ -18,7 +18,7 @@ else:
     folder= "recHits"
     
 #get number of entries in tree
-inF = r.TFile("../data/CSCDigiTree161031.root"%folder)
+inF = r.TFile("../data/CSCDigiTree161031.root")
 myT = inF.plotTree
 entries = myT.GetEntries()
 
