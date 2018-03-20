@@ -38,6 +38,7 @@ while(covered < entries):
     start = covered
     covered += split +mod if(covered + split+mod == entries) else split
     end = covered
+    
     #start up a new thread
     print("Starting thread: %i - %i"%(start,end))
     
@@ -46,5 +47,5 @@ while(covered < entries):
     os.system("END_INDEX=%i"%end)
     
     #add to queue
-    os.system("qsub -N E%i -l h_data=%s,time=00:05:00 ../sub/sh/subScript.sh "%(start,ram))
+    os.system("qsub -V -N E%i -l h_data=%s,time=00:05:00 ../sub/sh/subScript.sh "%(start,ram))
 
