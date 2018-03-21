@@ -15,8 +15,10 @@
 #include <THStack.h>
 #include <TString.h>
 
+#include <string>
 #include <vector>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
@@ -64,39 +66,62 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     vector<float>	*segdXdZ = 0;
 
     vector<int>* lctId = 0;
-    vector<vector<int>>* lctPat = 0;
-    vector<vector<int>>* lctKHS = 0;
+    vector< vector<int> >* lctPat = 0;
+    vector< vector<int> >* lctKHS = 0;
 
     //comparators
-    vector<vector<int>>* compStr = 0; //comparator strip #
-    vector<vector<int>>* compHS = 0; //comparator half strip #
-    vector<vector<vector<int>>>* compTimeOn = 0;
+    vector< vector<int> >* compStr = 0; //comparator strip #
+    vector< vector<int> >* compHS = 0; //comparator half strip #
+    vector< vector< vector<int> > >* compTimeOn = 0;
     vector<int>* compLay = 0; // y axis
     vector<int>* compId = 0; // index of what ring/station you are on
     vector<int>* tmbId = 0;
 
-    t->SetBranchAddress("segEc", &segEc);
-    t->SetBranchAddress("segSt",&segSt);
-    t->SetBranchAddress("segRi", &segRi);
-    t->SetBranchAddress("segCh", &segCh);
-    t->SetBranchAddress("segX", &segX);
-    t->SetBranchAddress("segdXdZ", &segdXdZ);
-    t->SetBranchAddress("compId",&compId);
-    t->SetBranchAddress("compLay",&compLay);
-    t->SetBranchAddress("compStr",&compStr);
-    t->SetBranchAddress("compHS",&compHS);
-    t->SetBranchAddress("compTimeOn", &compTimeOn);
-    t->SetBranchAddress("Pt", &Pt);
-    t->SetBranchAddress("eta", &eta);
-    t->SetBranchAddress("rhId",&rhId);
-    t->SetBranchAddress("rhLay", &rhLay);
-    t->SetBranchAddress("rhPos", &rhPos);
-    t->SetBranchAddress("rhE", &rhE);
-    t->SetBranchAddress("lctId", &lctId);
-    t->SetBranchAddress("lctPat",&lctPat);
-    t->SetBranchAddress("lctKHS",&lctKHS);
-    t->SetBranchAddress("tmbId",&tmbId);
-    t->SetBranchAddress("os", &os);
+    TBranch *b_Pt;
+    TBranch *b_eta;
+    TBranch *b_os;
+    TBranch *b_rhId; //id/serial
+    TBranch *b_rhLay;
+    TBranch *b_rhPos;
+    TBranch *b_rhE; //energy
+    TBranch *b_segEc;
+    TBranch *b_segSt;
+    TBranch *b_segRi;
+    TBranch *b_segCh;
+    TBranch *b_segX;
+    TBranch *b_segdXdZ;
+    TBranch *b_lctId;
+    TBranch *b_lctPat;
+    TBranch *b_lctKHS;
+    TBranch *b_compStr; //comparator strip #
+    TBranch *b_compHS; //comparator half strip #
+    TBranch *b_compTimeOn;
+    TBranch *b_compLay; // y axis
+    TBranch *b_compId; // index of what ring/station you are on
+    TBranch *b_tmbId;
+
+    t->SetBranchAddress("segEc", &segEc, &b_segEc );
+    t->SetBranchAddress("segSt",&segSt, &b_segSt);
+    t->SetBranchAddress("segRi",      &segRi     , &b_segRi     );
+    t->SetBranchAddress("segCh",      &segCh     , &b_segCh     );
+    t->SetBranchAddress("segX",       &segX      , &b_segX      );
+    t->SetBranchAddress("segdXdZ",    &segdXdZ   , &b_segdXdZ   );
+    t->SetBranchAddress("compId",     &compId    , &b_compId    );
+    t->SetBranchAddress("compLay",    &compLay   , &b_compLay   );
+    t->SetBranchAddress("compStr",    &compStr   , &b_compStr   );
+    t->SetBranchAddress("compHS",     &compHS    , &b_compHS    );
+    t->SetBranchAddress("compTimeOn", &compTimeOn, &b_compTimeOn);
+    t->SetBranchAddress("Pt",         &Pt        , &b_Pt        );
+    t->SetBranchAddress("eta",        &eta       , &b_eta       );
+    t->SetBranchAddress("rhId",       &rhId      , &b_rhId      );
+    t->SetBranchAddress("rhLay",      &rhLay     , &b_rhLay     );
+    t->SetBranchAddress("rhPos",      &rhPos     , &b_rhPos     );
+    t->SetBranchAddress("rhE",        &rhE       , &b_rhE       );
+    t->SetBranchAddress("lctId",      &lctId     , &b_lctId     );
+    t->SetBranchAddress("lctPat",     &lctPat    , &b_lctPat    );
+    t->SetBranchAddress("lctKHS",     &lctKHS    , &b_lctKHS    );
+    t->SetBranchAddress("tmbId",      &tmbId     , &b_tmbId     );
+    t->SetBranchAddress("os",         &os        , &b_os        );
 
 
     //
@@ -126,7 +151,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     float legacyLctX = 0;
 
     string folder = (USE_COMP_HITS ? "compHits" : "recHits");
-    TFile * outF = new TFile(string("../data/" + folder + "/processedMatches_" + std::to_string(start) + "_" + std::to_string(end) + ".root").c_str(),"RECREATE");
+    TFile * outF = new TFile(string("../data/" + folder + "/processedMatches_" + to_string((long long int) start) + "_" + to_string((long long int) end) + ".root").c_str(),"RECREATE");
     TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
     plotTree->Branch("EC",&EC,"EC/I");
     plotTree->Branch("ST",&ST,"ST/I");
@@ -140,6 +165,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     plotTree->Branch("patX", &patX, "patX/F");
     plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
+    //cout << "Tree Loaded, now starting loop" << endl;
 
     //
     // TREE ITERATION
@@ -169,9 +195,10 @@ int PatternFinder(const unsigned int start, unsigned int end) {
             CH = (*segCh)[thisSeg];
             chSid = chamberSerial(EC, ST, RI, CH);
 
+            //cout << "Tree loop" << endl;
 
-            segmentX = (*segX)[thisSeg]; //strips
-            segmentdXdZ = (*segdXdZ)[thisSeg];
+            segmentX = segX->at(thisSeg); //strips
+            segmentdXdZ = segdXdZ->at(thisSeg);
 
 
             // IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
@@ -275,7 +302,6 @@ int PatternFinder(const unsigned int start, unsigned int end) {
             vector<SingleEnvelopeMatchInfo*> oldSetMatch;
 
             ChamberHits* testChamber;
-            unsigned int nHits; //number of hits, counts at max one from each layer
             if(USE_COMP_HITS){
                 testChamber = &theseCompHits;
             } else {
@@ -353,3 +379,17 @@ int PatternFinder(const unsigned int start, unsigned int end) {
 
     return 0;
 }
+
+int main(int argc, char* argv[])
+{
+    if(argc != 3) 
+    {
+        cout << "./patternFinder minEN maxEN" << endl;
+        return -1;
+    }
+    return PatternFinder(atoi(argv[1]), atoi(argv[2]));
+}
+
+
+
+

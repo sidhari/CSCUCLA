@@ -9,6 +9,7 @@
 #define PATTERNFINDERHELPERFUNCTIONS_H_
 
 #include "PatternFinderClasses.h"
+#include <math.h>
 
 
 int findClosestToSegment(vector<SingleEnvelopeMatchInfo*> matches, float segmentX){
