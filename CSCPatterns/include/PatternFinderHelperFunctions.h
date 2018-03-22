@@ -26,7 +26,7 @@ int findClosestToSegment(vector<SingleEnvelopeMatchInfo*> matches, float segment
 	return closestMatchIndex;
 }
 
-void printEnvelope(const ChargeEnvelope &p) {
+void printEnvelope(const ChargePattern &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
@@ -57,7 +57,7 @@ void printChamber(const ChamberHits &c){
 	printf("\n");
 }
 
-int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]){
+int getOverlap(const ChamberHits &c, const ChargePattern &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]){
 
 	//for each x position in the chamber, were going to iterate through
 	// the pattern to see how much overlap there is at that position
@@ -100,7 +100,7 @@ int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, 
 
 //looks if a chamber "c" contains an envelope "p" at the location horPos returns
 //the number of matched layers
-int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow){
+int legacyLayersMatched(const ChamberHits &c, const ChargePattern &p, const int horPos, const int startTimeWindow){
 
 	bool matchedLayers[NLAYERS];
 	for(unsigned int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
@@ -128,7 +128,7 @@ int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int
 
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
-int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelopeMatchInfo *&mi){
+int containsPattern(const ChamberHits &c, const ChargePattern &p,  SingleEnvelopeMatchInfo *&mi){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
@@ -211,7 +211,7 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 }
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
-int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vector<SingleEnvelopeMatchInfo*>& m){
+int searchForMatch(const ChamberHits &c, const vector<ChargePattern>* ps, vector<SingleEnvelopeMatchInfo*>& m){
 
 	ChamberHits shrinkingChamber = c;
 
@@ -248,15 +248,15 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vecto
 }
 
 //creates the new set of envelopes
-vector<ChargeEnvelope>* createNewEnvelopes(){
+vector<ChargePattern>* createNewEnvelopes(){
 
-	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
+	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
 
-	ChargeEnvelope id1("100",ENVELOPE_IDS[0],false,IDSV1_A);
-	ChargeEnvelope id4("400",ENVELOPE_IDS[1],false,IDSV1_C);
-	ChargeEnvelope id5 = id4.returnFlipped("500",ENVELOPE_IDS[2]);
-	ChargeEnvelope id8("800",ENVELOPE_IDS[3], false, IDSV1_E);
-	ChargeEnvelope id9 = id8.returnFlipped("900",ENVELOPE_IDS[4]);
+	ChargePattern id1("100",ENVELOPE_IDS[0],false,IDSV1_A);
+	ChargePattern id4("400",ENVELOPE_IDS[1],false,IDSV1_C);
+	ChargePattern id5 = id4.returnFlipped("500",ENVELOPE_IDS[2]);
+	ChargePattern id8("800",ENVELOPE_IDS[3], false, IDSV1_E);
+	ChargePattern id9 = id8.returnFlipped("900",ENVELOPE_IDS[4]);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);
@@ -268,8 +268,8 @@ vector<ChargeEnvelope>* createNewEnvelopes(){
 }
 
 //creates the currently implemented patterns in the TMB, here treated as envelopes
-vector<ChargeEnvelope>* createOldEnvelopes(){
-	vector<ChargeEnvelope>* thisVector = new vector<ChargeEnvelope>();
+vector<ChargePattern>* createOldEnvelopes(){
+	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
 
 	//fill in the correctly oriented matrices, should change eventually...
 	for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
@@ -287,15 +287,15 @@ vector<ChargeEnvelope>* createOldEnvelopes(){
 	}
 
 
-	ChargeEnvelope id2("ID2",2,true, ID2_BASE);
-	ChargeEnvelope id3("ID3",3,true,ID3_BASE);
-	ChargeEnvelope id4("ID4",4,true,ID4_BASE);
-	ChargeEnvelope id5("ID5",5,true,ID5_BASE);
-	ChargeEnvelope id6("ID6",6,true,ID6_BASE);
-	ChargeEnvelope id7("ID7",7,true,ID7_BASE);
-	ChargeEnvelope id8("ID8",8,true,ID8_BASE);
-	ChargeEnvelope id9("ID9",9,true,ID9_BASE);
-	ChargeEnvelope idA("IDA",10,true,IDA_BASE);
+	ChargePattern id2("ID2",2,true, ID2_BASE);
+	ChargePattern id3("ID3",3,true,ID3_BASE);
+	ChargePattern id4("ID4",4,true,ID4_BASE);
+	ChargePattern id5("ID5",5,true,ID5_BASE);
+	ChargePattern id6("ID6",6,true,ID6_BASE);
+	ChargePattern id7("ID7",7,true,ID7_BASE);
+	ChargePattern id8("ID8",8,true,ID8_BASE);
+	ChargePattern id9("ID9",9,true,ID9_BASE);
+	ChargePattern idA("IDA",10,true,IDA_BASE);
 
 	thisVector->push_back(idA);
 	thisVector->push_back(id9);

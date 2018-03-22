@@ -142,25 +142,25 @@ void ChargeComparatorCode::calculateLayersMatched(){
 }
 
 
-// ChargeEnvelope are scanned over the entire chamber, this class is
+// ChargePattern are scanned over the entire chamber, this class is
 // effectively just a small matrix, each of which (if we have a vector) represent
 // a broadly encompasing general pattern which gives us preliminary information on a pattern.
 
-class ChargeEnvelope {
+class ChargePattern {
 public:
 
 	unsigned int m_id;
 	bool m_isLegacy;
 	bool m_hits[MAX_PATTERN_WIDTH][NLAYERS]; //layers
 
-	ChargeEnvelope(unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy) {
+	ChargePattern(unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
 			}
 		}
 	}
-	ChargeEnvelope(string name, unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy){
+	ChargePattern(string name, unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = pat[j][i];
@@ -169,7 +169,7 @@ public:
 		m_name = name;
 	}
 
-	ChargeEnvelope(const ChargeEnvelope &obj) : m_id(obj.m_id), m_isLegacy(obj.m_isLegacy) {
+	ChargePattern(const ChargePattern &obj) : m_id(obj.m_id), m_isLegacy(obj.m_isLegacy) {
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = obj.m_hits[j][i];
@@ -179,7 +179,7 @@ public:
 	}
 
 
-	ChargeEnvelope() :m_id(-1), m_isLegacy(false){
+	ChargePattern() :m_id(-1), m_isLegacy(false){
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				m_hits[j][i] = 0;
@@ -188,18 +188,18 @@ public:
 		m_name = "";
 	}
 
-	~ChargeEnvelope() {}
-	ChargeEnvelope returnFlipped(unsigned int id){
+	~ChargePattern() {}
+	ChargePattern returnFlipped(unsigned int id){
 		return returnFlipped("", id);
 	}
-	ChargeEnvelope returnFlipped(string name, unsigned int id){
+	ChargePattern returnFlipped(string name, unsigned int id){
 		bool flippedPattern[MAX_PATTERN_WIDTH][NLAYERS];
 		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				flippedPattern[j][i] = m_hits[MAX_PATTERN_WIDTH-1-j][i];
 			}
 		}
-		return ChargeEnvelope(name, id, m_isLegacy, flippedPattern);
+		return ChargePattern(name, id, m_isLegacy, flippedPattern);
 	}
 
 	void printCode(int code);
@@ -223,7 +223,7 @@ private:
 };
 
 //given a pattern code, prints out how it looks within a super pattern
-void ChargeEnvelope::printCode(int code){
+void ChargePattern::printCode(int code){
 	printf("For Envelope: %i - printing code: %i (layer 1->6)\n", m_id,code);
 	if(code >= 4096) {//2^12
 		printf("Error: invalid pattern code\n");
@@ -258,14 +258,14 @@ void ChargeEnvelope::printCode(int code){
 class SingleEnvelopeMatchInfo {
 public:
 
-	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, int startTime,
+	SingleEnvelopeMatchInfo(ChargePattern p, int horInd, int startTime,
 			bool overlap[NLAYERS][3]):
 		m_Envelope(p), m_horizontalIndex(horInd), m_startTime(startTime){
 		m_overlap = new ChargeComparatorCode(overlap);
 		m_layerMatchCount = m_overlap->getLayersMatched();
 	}
 
-	SingleEnvelopeMatchInfo(ChargeEnvelope p, int horInd, int startTime,
+	SingleEnvelopeMatchInfo(ChargePattern p, int horInd, int startTime,
 			int layMatCount) : m_Envelope(p), m_horizontalIndex(horInd), m_startTime(startTime){
 		m_overlap = 0;
 		m_layerMatchCount = layMatCount;
@@ -285,7 +285,7 @@ public:
 	int comparatorCodeId();
 	int layMatCount();
 	const ChargeComparatorCode chargeComparatorCode() {return *m_overlap;}
-	const ChargeEnvelope m_Envelope;
+	const ChargePattern m_Envelope;
 	const int m_horizontalIndex; //half strips, leftmost index of the pattern
 	const int m_startTime;
 
@@ -373,7 +373,7 @@ struct ChamberHits {
 
 
 	struct ChamberHits& operator-=(const SingleEnvelopeMatchInfo& mi) {
-		const ChargeEnvelope p = mi.m_Envelope;
+		const ChargePattern p = mi.m_Envelope;
 		int horPos = mi.m_horizontalIndex;
 		int startTimeWindow = mi.m_startTime;
 

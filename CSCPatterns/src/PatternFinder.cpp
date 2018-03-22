@@ -134,8 +134,8 @@ int PatternFinder(int index) {
     //
 
 
-    vector<ChargeEnvelope>* newEnvelopes = createNewEnvelopes();
-    vector<ChargeEnvelope>* oldEnvelopes = createOldEnvelopes();
+    vector<ChargePattern>* newEnvelopes = createNewEnvelopes();
+    vector<ChargePattern>* oldEnvelopes = createOldEnvelopes();
 
 
     //
