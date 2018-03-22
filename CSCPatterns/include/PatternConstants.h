@@ -12,20 +12,20 @@
 
 
 const int DEBUG = -1;
-const int NLAYERS = 6; //6 layers
+const unsigned int NLAYERS = 6; //6 layers
 const bool USE_COMP_HITS = 0; //false uses recHits
-const int MAX_PATTERN_WIDTH = 11;
-const int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
-const int N_LAYER_REQUIREMENT = 3;
-const int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
+const unsigned int MAX_PATTERN_WIDTH = 11;
+const unsigned int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
+const unsigned int N_LAYER_REQUIREMENT = 3;
+const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 
 const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
 //const std::string INPUT_FILENAME = "toyMCtree.root";
 
 
 //labels of all envelopes
-const int NENVELOPES = 5;
-const int ENVELOPE_IDS[NENVELOPES] = {100,400,500, 800, 900};
+const unsigned int NENVELOPES = 5;
+const unsigned  int ENVELOPE_IDS[NENVELOPES] = {100,400,500, 800, 900};
 
 
 const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {

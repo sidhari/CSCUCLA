@@ -14,6 +14,7 @@
 #include <TStyle.h>
 #include <THStack.h>
 #include <TString.h>
+#include <TROOT.h>
 
 #include <string>
 #include <vector>
@@ -26,13 +27,17 @@
 
 using namespace std;
 
-//secret sauce to make vectors of vectors work in root
+
 #ifdef __MAKECINT__
 #pragma link C++ class vector<vector<int> >+;
 #pragma link C++ class vector<vector<vector<int> > >+;
 #endif
 
-int PatternFinder(const unsigned int start, unsigned int end) {
+#define NEVENTS 10000
+
+int PatternFinder(int index) {
+    int start = index*NEVENTS;
+    int end = index*NEVENTS+NEVENTS;
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
     if(!f)
@@ -151,7 +156,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     float legacyLctX = 0;
 
     string folder = (USE_COMP_HITS ? "compHits" : "recHits");
-    TFile * outF = new TFile(string("../data/" + folder + "/processedMatches_" + to_string((long long int) start) + "_" + to_string((long long int) end) + ".root").c_str(),"RECREATE");
+    TFile * outF = new TFile(string("../data/" + folder + "/processedMatches_" + to_string((long long int) index) + ".root").c_str(),"RECREATE");
     TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
     plotTree->Branch("EC",&EC,"EC/I");
     plotTree->Branch("ST",&ST,"ST/I");
@@ -178,7 +183,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     if(end > t->GetEntries()) end = t->GetEntries();
 
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
-	for(unsigned int i = start; i < end; i++) {
+	for(int i = start; i < end; i++) {
         if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
         t->GetEntry(i);
@@ -245,7 +250,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
                     if((me11a || me11b) && compStrip > 64) compStrip -= 64;
 
 
-                    int halfStripVal;
+                    unsigned int halfStripVal;
                     if(me11a ||me11b || !(thisCompLay%2)){ //if we are in me11 or an even layer (opposite from Cameron's code, since I shift to zero)
                         halfStripVal = 2*(compStrip-1)+compHStrip+1;
                     } else { //odd layers shift down an extra half strip
@@ -285,7 +290,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
                 float thisRhPos = rhPos->at(thisRh);
 
 
-                int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
+                unsigned int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
                 if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
 
                 if(iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
@@ -371,7 +376,7 @@ int PatternFinder(const unsigned int start, unsigned int end) {
 
     }
 
-	printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
+	//printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
 
     plotTree->Write();
     outF->Close();
@@ -380,14 +385,21 @@ int PatternFinder(const unsigned int start, unsigned int end) {
     return 0;
 }
 
+
 int main(int argc, char* argv[])
 {
-    if(argc != 3) 
+    if(argc != 2) 
     {
-        cout << "./patternFinder minEN maxEN" << endl;
+        cout << "Gave %i Arguments, usage is ./PatternFinder jobIndex" << endl;
         return -1;
     }
-    return PatternFinder(atoi(argv[1]), atoi(argv[2]));
+
+    //secret sauce using g++
+    gROOT->ProcessLine("#include <vector>");
+    gROOT->ProcessLine("#pragma link C++ class vector<vector<int> >+;");
+    gROOT->ProcessLine("#pragma link C++ class vector<vector<vector<int> > >+;");
+
+    return PatternFinder(atoi(argv[1])-1);
 }
 
 

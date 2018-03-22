@@ -13,15 +13,16 @@
 #include <algorithm>
 #include <vector>
 #include <bitset>
+#include <string>
 
 #include "PatternConstants.h"
 
 using namespace std;
 
 //need this for ChamberHits, sorry for poor organization...
-bool validComparatorTime(const int time, const int startTimeWindow) {
+bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {
 	//numbers start at 1, so time bins really go 1-16 here
-	for(int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
+	for(unsigned int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
 		if(time < validTime) return false; //speed up zero case
 		if(time == validTime) return true;
 	}
@@ -37,8 +38,8 @@ public:
 	void printPattern();
 
 	ChargeComparatorCode(bool pat[NLAYERS][3]) {
-		for(int i = 0; i < NLAYERS; i++){
-			for(int j = 0; j < 3; j++){
+		for(unsigned int i = 0; i < NLAYERS; i++){
+			for(unsigned int j = 0; j < 3; j++){
 				m_hits[i][j] = pat[i][j];
 			}
 		}
@@ -48,7 +49,7 @@ public:
 	};
 
 	ChargeComparatorCode(const ChargeComparatorCode& c){
-		for(int i = 0; i < NLAYERS; i++){
+		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(int j = 0; j < 3; j++){
 				m_hits[i][j] = c.m_hits[i][j];
 			}
@@ -58,7 +59,7 @@ public:
 
 	}
 	ChargeComparatorCode(){
-		for(int i = 0; i < NLAYERS; i++){
+		for(unsigned int i = 0; i < NLAYERS; i++){
 			for(int j = 0; j < 3; j++){
 				m_hits[i][j] = 0;
 			}
@@ -85,7 +86,7 @@ void ChargeComparatorCode::printPattern() {
 	int patCode = getComparatorCodeId();
 	printf("Comparator Code: %#04x\nLayers matched: %u\n", patCode,getLayersMatched());
 	if(DEBUG > 0) cout << "ComparatorCode is: "  << bitset<12>(patCode) << endl;
-	for(int i =0; i < NLAYERS; i++){
+	for(unsigned int i =0; i < NLAYERS; i++){
 		for(int j =0; j < 3; j++){
 			printf("%i", m_hits[i][j]);
 
@@ -97,7 +98,7 @@ void ChargeComparatorCode::printPattern() {
 void ChargeComparatorCode::calculateId(){
 	//only do this iteration once, to keep things efficient
 	m_ComparatorCodeId = 0;
-	for(int column = 0; column < NLAYERS; column++){
+	for(unsigned int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
 		for(int row = 0; row < 3; row++){
@@ -131,7 +132,7 @@ void ChargeComparatorCode::calculateId(){
 
 void ChargeComparatorCode::calculateLayersMatched(){
 	m_layersMatched = 0;
-	for(int i = 0; i < NLAYERS; i++){
+	for(unsigned int i = 0; i < NLAYERS; i++){
 		bool matched = false;
 		for(int j = 0; j < 3; j++){
 			if(m_hits[i][j]) matched = 1;
@@ -148,8 +149,8 @@ void ChargeComparatorCode::calculateLayersMatched(){
 class ChargeEnvelope {
 public:
 
-	const unsigned int m_id;
-	const bool m_isLegacy;
+	unsigned int m_id;
+	bool m_isLegacy;
 	bool m_hits[MAX_PATTERN_WIDTH][NLAYERS]; //layers
 
 	ChargeEnvelope(unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]) : m_id(id), m_isLegacy(isLegacy) {
@@ -193,8 +194,8 @@ public:
 	}
 	ChargeEnvelope returnFlipped(string name, unsigned int id){
 		bool flippedPattern[MAX_PATTERN_WIDTH][NLAYERS];
-		for(int i = 0; i < NLAYERS; i++){
-			for(int j = 0; j < MAX_PATTERN_WIDTH; j++){
+		for(unsigned int i = 0; i < NLAYERS; i++){
+			for(unsigned int j = 0; j < MAX_PATTERN_WIDTH; j++){
 				flippedPattern[j][i] = m_hits[MAX_PATTERN_WIDTH-1-j][i];
 			}
 		}
@@ -207,7 +208,7 @@ public:
 		if(m_name.size()) return m_name;
 		string name = "";
 		for(unsigned int i = 0; i< MAX_PATTERN_WIDTH; i++){
-			int trueCount = 0;
+			long long int trueCount = 0;
 			for(unsigned int j = 0; j <NLAYERS; j++){
 				if(m_hits[i][j]) trueCount++;
 			}
@@ -232,7 +233,7 @@ void ChargeEnvelope::printCode(int code){
 	//iterator 1
 	int it = 1;
 
-	for(int j=0; j < NLAYERS; j++){
+	for(unsigned int j=0; j < NLAYERS; j++){
 		//0,1,2 or 3
 		int layerPattern = (code & (it | it << 1))/it;
 		if(layerPattern <0 || layerPattern > 3){
@@ -240,7 +241,7 @@ void ChargeEnvelope::printCode(int code){
 			return;
 		}
 		int trueCounter = 3;//for each layer, should only have 3
-		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
+		for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
 			if(!m_hits[i][j]){
 				printf("0");
 			}else{
@@ -306,9 +307,9 @@ void SingleEnvelopeMatchInfo::print3x6Pattern(){
 void SingleEnvelopeMatchInfo::printPatternInChamber(){
 	if(!m_overlap) return;
 	printf("Horizontal index (from left) is %i half strips, position is %f\n", m_horizontalIndex, x());
-	for(int j=0; j < NLAYERS; j++){
+	for(unsigned int j=0; j < NLAYERS; j++){
 		int trueCounter = 0;//for each layer, should only have 3
-		for(int i =0; i < MAX_PATTERN_WIDTH; i++){
+		for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
 			if(!m_Envelope.m_hits[i][j]){
 				printf("0");
 			}else{

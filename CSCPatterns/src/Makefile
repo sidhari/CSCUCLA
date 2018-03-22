@@ -10,9 +10,8 @@ ROOTLIBS='-lRooFit -lHtml -lMinuit -lRooFitCore -lRooStats -lHistFactory'
 all: PatternFinder
 
 clean:
-	rm *.so *.d *.pcm *dict.cxx*
+	rm *.so *.d *.pcm *.cxx*
 
-
-#Makes whatever script you name
+#Makes whatever script you name, add $(ROOTLIBS) after -L$(ROOTSYS)/lib if you need it
 % : %.cpp
-	g++ -g -Wall `root-config --cflags --libs` -L$(ROOTSYS)/lib $(ROOTLIBS) $? -o $@
+	g++ -std=c++0x -g -Wall `root-config --cflags --libs` -L$(ROOTSYS)/lib $? -o $@

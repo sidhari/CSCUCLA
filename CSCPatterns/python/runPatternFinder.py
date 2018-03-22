@@ -5,7 +5,7 @@ import sys
 
 import ROOT as r
 
-cores = 4 #amount of cores we will default to using 
+cores = 1 #amount of cores we will default to using 
 ram = "1024M"
 
 if len(sys.argv) > 1: #second argument is number of cores
@@ -29,9 +29,7 @@ entries = 1003
 split = entries / cores
 mod = entries % cores
 
-
-
-filepath = "../src/PatternFinder.cpp"
+#filepath = "../src/PatternFinder.cpp"
 covered = 0
 while(covered < entries):
     
@@ -47,5 +45,5 @@ while(covered < entries):
     os.system("END_INDEX=%i"%end)
     
     #add to queue
-    os.system("qsub -V -N E%i -l h_data=%s,time=00:05:00 ../sub/sh/subScript.sh "%(start,ram))
+    os.system("qsub -V -N E%i -l h_data=%s,time=00:05:00 ../jobs/sh/subScript.sh "%(start,ram))
 

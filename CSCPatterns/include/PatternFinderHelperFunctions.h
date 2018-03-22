@@ -103,7 +103,7 @@ int getOverlap(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, 
 int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int horPos, const int startTimeWindow){
 
 	bool matchedLayers[NLAYERS];
-	for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
+	for(unsigned int imlc = 0; imlc < NLAYERS; imlc++) matchedLayers[imlc] = false; //initialize
 
 	//for each x position in the chamber, were going to iterate through
 	// the pattern to see how much overlap there is at that position
@@ -121,7 +121,7 @@ int legacyLayersMatched(const ChamberHits &c, const ChargeEnvelope &p, const int
 	}
 
 	unsigned int matchedLayerCount = 0;
-	for(int imlc = 0; imlc < NLAYERS; imlc++) matchedLayerCount += matchedLayers[imlc];
+	for(unsigned int imlc = 0; imlc < NLAYERS; imlc++) matchedLayerCount += matchedLayers[imlc];
 
 	return matchedLayerCount;
 }
@@ -144,10 +144,10 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
-	for(int x = -MAX_PATTERN_WIDTH+1; x < N_MAX_HALF_STRIPS; x++){
+	for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
 		// Cycle through each time window, if comphits, look in all possible windows (1-4 to 13-16).
 		// also ignore bins 1 & 2 if using comp hits, talk with Cameron.
-		for(int time = (USE_COMP_HITS ? 3 : 1); time < (USE_COMP_HITS ? 16 - TIME_CAPTURE_WINDOW + 2 : 2); time++){
+		for(unsigned int time = (USE_COMP_HITS ? 3 : 1); time < (USE_COMP_HITS ? 16 - TIME_CAPTURE_WINDOW + 2 : 2); time++){
 
 
 			unsigned int matchedLayerCount = 0;
@@ -161,7 +161,7 @@ int containsPattern(const ChamberHits &c, const ChargeEnvelope &p,  SingleEnvelo
 					return -1;
 				}
 
-				for(int ilay = 0; ilay < NLAYERS; ilay++) {
+				for(unsigned int ilay = 0; ilay < NLAYERS; ilay++) {
 					bool inLayer = false;
 					for(int icol = 0; icol< 3; icol++){
 						inLayer |= overlap[ilay][icol]; //bitwise or
@@ -234,7 +234,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargeEnvelope>* ps, vecto
 	}
 
 	//we have a valid best match
-	if(bestMatch && bestMatch->layMatCount() >= N_LAYER_REQUIREMENT){
+	if(bestMatch && bestMatch->layMatCount() >=(int) N_LAYER_REQUIREMENT){
 		if(DEBUG > 0){
 			printChamber(c);
 			printEnvelope(bestMatch->m_Envelope);
