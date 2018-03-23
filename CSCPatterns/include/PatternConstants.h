@@ -10,7 +10,7 @@
 
 #include <string>
 
-
+const unsigned int BATCH_EVENTS = 10000; //amount of events to be run over in a single batch job
 const int DEBUG = -1;
 const unsigned int NLAYERS = 6; //6 layers
 const bool USE_COMP_HITS = 0; //false uses recHits

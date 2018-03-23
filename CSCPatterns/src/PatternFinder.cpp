@@ -33,11 +33,10 @@ using namespace std;
 #pragma link C++ class vector<vector<vector<int> > >+;
 #endif
 
-#define NEVENTS 10000
 
 int PatternFinder(int index) {
-    int start = index*NEVENTS;
-    int end = index*NEVENTS+NEVENTS;
+    int start = index*BATCH_EVENTS;
+    int end = (index+1)*BATCH_EVENTS;
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
     if(!f)
@@ -170,7 +169,6 @@ int PatternFinder(int index) {
     plotTree->Branch("patX", &patX, "patX/F");
     plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
-    //cout << "Tree Loaded, now starting loop" << endl;
 
     //
     // TREE ITERATION
