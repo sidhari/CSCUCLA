@@ -12,15 +12,18 @@
 
 
 const int DEBUG = -1;
-const unsigned int NLAYERS = 6; //6 layers
+const int NEVENTS = 10000;
+const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
+//const std::string INPUT_FILENAME = "toyMCtree.root";
 const bool USE_COMP_HITS = 0; //false uses recHits
+
+const unsigned int NLAYERS = 6; //6 layers
 const unsigned int MAX_PATTERN_WIDTH = 11;
 const unsigned int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
 const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 
-const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
-//const std::string INPUT_FILENAME = "toyMCtree.root";
+
 
 
 //labels of all envelopes

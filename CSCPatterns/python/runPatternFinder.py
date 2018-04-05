@@ -5,12 +5,8 @@ import sys
 
 import ROOT as r
 
-cores = 1 #amount of cores we will default to using 
+blocksize = 10000 #warning, this is also defined in PatternConstants.h TODO: reduce duplication in C and python code
 ram = "1024M"
-
-if len(sys.argv) > 1: #second argument is number of cores
-    cores = int(sys.argv[1])
-
 
 useCompHits = 0 # 0 means use recHits
 if(useCompHits):
@@ -18,32 +14,34 @@ if(useCompHits):
 else:
     folder= "recHits"
     
+    
+    
+    
+
+#recompile executable
+print("Compiling executable...")
+os.system("make -C../src")
+
+    
 #get number of entries in tree
 inF = r.TFile("../data/CSCDigiTree161031.root")
 myT = inF.CSCDigiTree
 entries = myT.GetEntries()
 
-#temp
-entries = 1003
+split = entries / blocksize
+mod = entries % blocksize
 
-split = entries / cores
-mod = entries % cores
 
-#filepath = "../src/PatternFinder.cpp"
-covered = 0
-while(covered < entries):
-    
-    start = covered
-    covered += split +mod if(covered + split+mod == entries) else split
-    end = covered
-    
-    #start up a new thread
-    print("Starting thread: %i - %i"%(start,end))
-    
-    #set environment variables
-    os.system("START_INDEX=%i"%start)
-    os.system("END_INDEX=%i"%end)
-    
-    #add to queue
-    os.system("qsub -V -N E%i -l h_data=%s,time=00:05:00 ../jobs/sh/subScript.sh "%(start,ram))
+jobs = split if not mod else split+1
+print("Entries = %i, splitting into %i job(s) of size %i"%(entries,jobs, blocksize))
+
+
+# -V = Exports environment variables
+# -N = Names the job
+# -l = Resource allocation
+# -t = Job array 
+#
+# More here: https://www.ccn.ucla.edu/wiki/index.php/Hoffman2:Submitting_Jobs
+#
+os.system("qsub -V -N pattFinder -l h_data=%s,time=00:05:00 -t 1:%i:1 ../jobs/sh/subScriptTest.sh"%(ram, jobs))
 
