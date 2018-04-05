@@ -26,7 +26,7 @@ int findClosestToSegment(vector<SingleEnvelopeMatchInfo*> matches, float segment
 	return closestMatchIndex;
 }
 
-void printEnvelope(const ChargePattern &p) {
+void printPattern(const ChargePattern &p) {
 	printf("-- Printing Pattern: %i ---\n", p.m_id);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
@@ -204,7 +204,7 @@ int containsPattern(const ChamberHits &c, const ChargePattern &p,  SingleEnvelop
 	}
 	if(DEBUG > 1){
 		printChamber(c);
-		printEnvelope(p);
+		printPattern(p);
 		mi->print3x6Pattern();
 	}
 	return maxMatchedLayers;
@@ -237,7 +237,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargePattern>* ps, vector
 	if(bestMatch && bestMatch->layMatCount() >=(int) N_LAYER_REQUIREMENT){
 		if(DEBUG > 0){
 			printChamber(c);
-			printEnvelope(bestMatch->m_Envelope);
+			printPattern(bestMatch->m_Envelope);
 		}
 		m.push_back(bestMatch);
 		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber

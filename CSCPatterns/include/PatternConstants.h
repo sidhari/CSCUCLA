@@ -10,7 +10,7 @@
 
 #include <string>
 
-
+const unsigned int BATCH_EVENTS = 10000; //amount of events to be run over in a single batch job
 const int DEBUG = -1;
 const int NEVENTS = 10000;
 const std::string INPUT_FILENAME = "CSCDigiTree161031.root";

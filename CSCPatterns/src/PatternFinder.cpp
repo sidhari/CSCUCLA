@@ -38,6 +38,7 @@ using namespace std;
 int PatternFinder(int index) {
     int start = (index-1)*NEVENTS;
     int end = index*NEVENTS;
+
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
     if(!f)
@@ -170,7 +171,6 @@ int PatternFinder(int index) {
     plotTree->Branch("patX", &patX, "patX/F");
     plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
-    //cout << "Tree Loaded, now starting loop" << endl;
 
     //
     // TREE ITERATION
