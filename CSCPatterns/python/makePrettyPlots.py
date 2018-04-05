@@ -1,7 +1,7 @@
 import ROOT as r
 
 
-useCompHits = 0 # 0 means use recHits
+useCompHits = 1 # 0 means use recHits
 chamber = "All-Chambers"
 newPattColor = 9
 legacyColor = 46
@@ -120,7 +120,11 @@ for htype in ltypes:
     for patid in lids:
         c = r.TCanvas()
         c.cd()
+        
+        if not lhists[htype][patid]: continue
+        
         h = lhists[htype][patid]
+        
         h.SetTitle("Legacy Pattern %s"%(patid))
         h.GetXaxis().CenterTitle()
         h.GetYaxis().CenterTitle()

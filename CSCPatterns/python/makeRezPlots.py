@@ -5,7 +5,7 @@ import math as m
 
 from array import array
 
-useCompHits = 0 # 0 means use recHits
+useCompHits = 1 # 0 means use recHits
 
 nbins = 200
 hist_range  = 1.
@@ -106,7 +106,7 @@ def createHists(chamber):
     print("=== Running over Chamber %s ==="%(chamber[0]))
     
     #open file
-    inF = r.TFile("../data/%s/plotTree.root"%folder)
+    inF = r.TFile("../data/%s/processedMatches.root"%folder)
     myT = inF.plotTree
     
     #output file
@@ -277,6 +277,8 @@ def createHists(chamber):
     envOrdering = [900,800,500,400,100]
     for env in envOrdering:
         
+        if not len(ccPosPlots[env]): continue
+        
         # [ hist, pat id] - sorted from highest entry to lowest entry
         sortedccPosPlots = sorted( [[ccPosPlots[env][pat],pat] for pat in ccPosPlots[env]], key=lambda x: -1.*x[0].GetEntries())
         
@@ -416,8 +418,8 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-#chambers.append(["All-Chambers", 0, 0])
-chambers.append(["ME11B", 1,1])
+chambers.append(["All-Chambers", 0, 0])
+#chambers.append(["ME11B", 1,1])
 #chambers.append(["ME11A", 1,4])
 #chambers.append(["ME12", 1,2])
 #chambers.append(["ME13", 1,3])

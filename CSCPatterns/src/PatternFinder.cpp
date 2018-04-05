@@ -35,9 +35,9 @@ using namespace std;
 
 
 
-int PatternFinder(int index) {
-    int start = (index-1)*NEVENTS;
-    int end = index*NEVENTS;
+int PatternFinder(int index, int blocksize) {
+    int start = (index-1)*blocksize;
+    int end = index*blocksize;
 
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
@@ -192,7 +192,7 @@ int PatternFinder(int index) {
         //TEMPRARY PT CUT TO REMOVE LATER!!!!!!!
         ///
 
-        if(Pt < 30) continue;
+        if(Pt < 10) continue;
 
         ///
         ///
@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
     gROOT->ProcessLine("#pragma link C++ class vector<vector<int> >+;");
     gROOT->ProcessLine("#pragma link C++ class vector<vector<vector<int> > >+;");
 
-    return PatternFinder(atoi(argv[1]));
+    return PatternFinder(atoi(argv[1]), BATCH_EVENTS);
 }
 
 

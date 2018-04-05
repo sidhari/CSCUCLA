@@ -274,9 +274,6 @@ int EfficiencyAnalysis_Deprecated() {
 
 
 
-
-
-
 	const unsigned int nMatchGroups = 4;
 
 	PatternIDMatchPlots matchGroups[nMatchGroups] = {
@@ -380,8 +377,8 @@ int EfficiencyAnalysis_Deprecated() {
 	//
 
 	const unsigned int entries = t->GetEntriesFast();
-	//for(unsigned int i = 0; i <10000; i++) {
-	for(unsigned int i = 0; i <entries; i++) {
+	for(unsigned int i = 0; i <10000; i++) {
+	//for(unsigned int i = 0; i <entries; i++) {
 		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/entries, i);
 		t->GetEntry(i);
 
@@ -466,8 +463,6 @@ int EfficiencyAnalysis_Deprecated() {
 
 
 			}
-			//printf("PRINTING COMPARATOR HITS\n");
-			//printChamber(theseCompHits);
 
 
 			unsigned int LCT_ID = 0;
@@ -527,15 +522,6 @@ int EfficiencyAnalysis_Deprecated() {
 			if(nRh >= 3) N_3RH++;
 			if(nRh >= 4) N_4RH++;
 
-
-			//ONLY LOOK AT EVENTS WHICH HAVE >= 4 RH's
-			//if(nRh < N_LAYER_REQUIREMENT) continue;
-
-			//int patternOneMatchCount = 0;
-
-
-
-
 			unsigned int groupIndex;
 			if((ST == 1 && RI == 4 )||(ST == 1 && RI == 2)) groupIndex = 0; //ME11a || ME12
 			else if((ST == 1 && RI == 1) || (ST == 1 && RI == 3)) groupIndex = 1;
@@ -546,25 +532,29 @@ int EfficiencyAnalysis_Deprecated() {
 				return -1;
 			}
 
+			ChamberHits* testChamber;
+			if(USE_COMP_HITS){
+				testChamber = &theseCompHits;
+			} else {
+				testChamber = &theseRHHits;
+			}
+
 			vector<SingleEnvelopeMatchInfo*> thisSetMatch;
-			if(searchForMatch(theseRHHits, matchGroups[groupIndex].m_patterns,thisSetMatch)) return -1;
+			if(searchForMatch(*testChamber, matchGroups[groupIndex].m_patterns,thisSetMatch)) return -1;
+			matchGroups[groupIndex].m_denominator->Fill(Pt);
+			fullSet.m_denominator->Fill(Pt);
+
 
 
 			if(!thisSetMatch.size()) {
 				//missed
 				matchGroups[groupIndex].m_plots.back()->Fill(Pt);
-				fullSet.m_plots.back()->Fill(Pt);;
+				fullSet.m_plots.back()->Fill(Pt);
 			} else {
-
-
-
 				//look at just one of the sets
 				unsigned int maxLayerMatchCount = thisSetMatch.front()->layMatCount();
 				unsigned int maxLayerId = thisSetMatch.front()->envelopeId();
-				//unsigned int maxLayerBaseSetIndex = thisSetMatch.bestSetIndex;
 
-				matchGroups[groupIndex].m_denominator->Fill(Pt);
-				fullSet.m_denominator->Fill(Pt);
 				//fill the correct histogram
 				if(maxLayerMatchCount >= N_LAYER_REQUIREMENT){
 
@@ -774,6 +764,9 @@ int EfficiencyAnalysis_Deprecated() {
 			fullSet.m_name + ")").c_str());
 
 	for(unsigned int ihist = 0; ihist < idMatchPlots2->size(); ihist++){
+		printf("For Pattern %s - contains %i / %i = %f of segments\n", idMatchPlots2->at(ihist)->GetName(),
+				(int)idMatchPlots2->at(ihist)->GetEntries(), (int)fullSet.m_denominator->GetEntries(),
+				1.*idMatchPlots2->at(ihist)->GetEntries()/ fullSet.m_denominator->GetEntries());
 		idMatchPlots2->at(ihist)->Divide(fullSet.m_denominator);
 		stack3->Add(idMatchPlots2->at(ihist));
 	}
