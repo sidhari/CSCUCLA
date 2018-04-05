@@ -408,7 +408,7 @@ int main(int argc, char* argv[])
     gROOT->ProcessLine("#pragma link C++ class vector<vector<int> >+;");
     gROOT->ProcessLine("#pragma link C++ class vector<vector<vector<int> > >+;");
 
-    return PatternFinder(atoi(argv[1])-1);
+    return PatternFinder(atoi(argv[1]));
 }
 
 
