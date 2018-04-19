@@ -183,20 +183,12 @@ int PatternFinder(int index, int blocksize) {
     if(end > t->GetEntries()) end = t->GetEntries();
 
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
+
+
 	for(int i = start; i < end; i++) {
         if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
         t->GetEntry(i);
-
-        ///
-        //TEMPRARY PT CUT TO REMOVE LATER!!!!!!!
-        ///
-
-        if(Pt < 10) continue;
-
-        ///
-        ///
-        ///
 
         if(!os) continue;
 

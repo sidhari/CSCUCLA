@@ -106,7 +106,7 @@ def createHists(chamber):
     print("=== Running over Chamber %s ==="%(chamber[0]))
     
     #open file
-    inF = r.TFile("../data/%s/processedMatches.root"%folder)
+    inF = r.TFile("../data/%s/processedMatches_1.root"%folder)
     myT = inF.plotTree
     
     #output file
@@ -418,17 +418,17 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-chambers.append(["All-Chambers", 0, 0])
+#chambers.append(["All-Chambers", 0, 0])
 #chambers.append(["ME11B", 1,1])
 #chambers.append(["ME11A", 1,4])
-#chambers.append(["ME12", 1,2])
-#chambers.append(["ME13", 1,3])
-#chambers.append(["ME21", 2,1])
-#chambers.append(["ME22", 2,2])
-#chambers.append(["ME31", 3,1])
-#chambers.append(["ME32", 3,2])
-#chambers.append(["ME41", 4,1])
-#chambers.append(["ME42", 4,2])
+chambers.append(["ME12", 1,2])
+chambers.append(["ME13", 1,3])
+chambers.append(["ME21", 2,1])
+chambers.append(["ME22", 2,2])
+chambers.append(["ME31", 3,1])
+chambers.append(["ME32", 3,2])
+chambers.append(["ME41", 4,1])
+chambers.append(["ME42", 4,2])
 
 
 #interval file

@@ -32,8 +32,8 @@ using namespace std;
 
 unsigned int N_3RH = 0;
 unsigned int N_4RH = 0;
-const bool THREE_WIDE = 1; //if we use the three wide patterns or the legacy LCT's,
-const unsigned int TESTING_GROUP_INDEX = 0;
+const bool THREE_WIDE = 0; //if we use the three wide patterns or the legacy LCT's,
+const unsigned int TESTING_GROUP_INDEX = 1;
 
 
 
@@ -230,18 +230,7 @@ int EfficiencyAnalysis_Deprecated() {
 	//
 
 	//const unsigned int setOneSize = 9;
-	vector<ChargePattern>* BaseSet = new vector<ChargePattern>();
-
-	//sort them by straightness
-	BaseSet->push_back(idA);
-	BaseSet->push_back(id9);
-	BaseSet->push_back(id8);
-	BaseSet->push_back(id7);
-	BaseSet->push_back(id6);
-	BaseSet->push_back(id5);
-	BaseSet->push_back(id4);
-	BaseSet->push_back(id3);
-	BaseSet->push_back(id2);
+	vector<ChargePattern>* BaseSet = createOldEnvelopes();
 
 
 	vector<ChargePattern>* testSet = new vector<ChargePattern>();
@@ -377,8 +366,8 @@ int EfficiencyAnalysis_Deprecated() {
 	//
 
 	const unsigned int entries = t->GetEntriesFast();
-	for(unsigned int i = 0; i <10000; i++) {
-	//for(unsigned int i = 0; i <entries; i++) {
+	//for(unsigned int i = 0; i <100000; i++) {
+	for(unsigned int i = 0; i <entries; i++) {
 		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*i/entries, i);
 		t->GetEntry(i);
 
@@ -395,8 +384,21 @@ int EfficiencyAnalysis_Deprecated() {
 
 			//if(ST != 2 && RI != 2) continue;
 
+            float segmentX = segX->at(thisSeg); //strips
+
+		  // IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
+			if(segmentX < 1) continue;
+
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
+			bool me13 = (ST == 1 && RI == 3);
+			if(me11a){
+					if(segmentX > 47) continue;
+			} else if (me11b || me13) {
+					if(segmentX > 63) continue;
+			} else {
+					if(segmentX > 79) continue;
+			}
 
 
 			ChamberHits theseRHHits(0, ST, RI, EC, CH);
@@ -764,7 +766,7 @@ int EfficiencyAnalysis_Deprecated() {
 			fullSet.m_name + ")").c_str());
 
 	for(unsigned int ihist = 0; ihist < idMatchPlots2->size(); ihist++){
-		printf("For Pattern %s - contains %i / %i = %f of segments\n", idMatchPlots2->at(ihist)->GetName(),
+		printf("Pattern %s - contains %i / %i = %f of segments\n", idMatchPlots2->at(ihist)->GetName(),
 				(int)idMatchPlots2->at(ihist)->GetEntries(), (int)fullSet.m_denominator->GetEntries(),
 				1.*idMatchPlots2->at(ihist)->GetEntries()/ fullSet.m_denominator->GetEntries());
 		idMatchPlots2->at(ihist)->Divide(fullSet.m_denominator);

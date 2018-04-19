@@ -11,7 +11,7 @@
 #include <string>
 
 const unsigned int BATCH_EVENTS = 10000; //amount of events to be run over in a single batch job
-const int DEBUG = -1;
+const int DEBUG = 0;
 const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
 //const std::string INPUT_FILENAME = "toyMCtree.root";
 const bool USE_COMP_HITS = 1; //false uses recHits
