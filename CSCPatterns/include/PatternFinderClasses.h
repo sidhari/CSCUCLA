@@ -203,6 +203,7 @@ public:
 	}
 
 	void printCode(int code);
+	int recoverPatternCCCombination(int code, int hits[MAX_PATTERN_WIDTH][NLAYERS]);
 
 	string name() {
 		if(m_name.size()) return m_name;
@@ -255,6 +256,39 @@ void ChargePattern::printCode(int code){
 	}
 }
 
+int ChargePattern::recoverPatternCCCombination(int code, int hits[MAX_PATTERN_WIDTH][NLAYERS]){
+	if(code >= 4096) {//2^12
+		printf("Error: invalid pattern code\n");
+		return -1;
+	}
+
+	//iterator 1
+	int it = 1;
+
+	for(unsigned int j =0; j < NLAYERS; j++){
+		//0,1,2 or 3
+		int layerPattern = (code & (it | it << 1))/it;
+		if(layerPattern <0 || layerPattern > 3){
+			printf("Error: invalid code\n");
+			return -1;
+		}
+		int trueCounter = 3;//for each layer, should only have 3
+		for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
+			if(!m_hits[i][j]){
+				hits[i][j] = 0;
+			}else{
+				if(trueCounter == layerPattern) hits[i][j] = 1;
+				else hits[i][j] = 0;
+				trueCounter--;
+			}
+		}
+		it = it << 2; //bitshift the iterator to look at the next part of the code
+	}
+
+	return 0;
+}
+
+
 class SingleEnvelopeMatchInfo {
 public:
 
@@ -281,7 +315,7 @@ public:
 	int envelopeId() {return m_Envelope.m_id;}
 
 	//center position of the track [strips]
-	float x(){return (1.*m_horizontalIndex + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;}
+	float x(){return (m_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;}
 	int comparatorCodeId();
 	int layMatCount();
 	const ChargeComparatorCode chargeComparatorCode() {return *m_overlap;}

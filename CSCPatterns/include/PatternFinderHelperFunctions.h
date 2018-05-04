@@ -181,7 +181,7 @@ int containsPattern(const ChamberHits &c, const ChargePattern &p,  SingleEnvelop
 				}
 				return matchedLayerCount;
 			}
-			if(matchedLayerCount > maxMatchedLayers) {
+			if(matchedLayerCount > (int)maxMatchedLayers) {
 				maxMatchedLayers = (unsigned int)matchedLayerCount;
 				bestHorizontalIndex = x;
 				bestTimeBin = time;

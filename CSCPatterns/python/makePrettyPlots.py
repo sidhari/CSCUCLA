@@ -263,6 +263,4 @@ sbox.SetTextColor(newPattColor)
 
 
 
-
-
 c.SaveAs(path+"pattAndLegacy.pdf")   

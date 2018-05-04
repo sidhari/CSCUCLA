@@ -9,8 +9,8 @@ useCompHits = 1 # 0 means use recHits
 
 nbins = 200
 hist_range  = 1.
-folder = ""
 coverage = 0.99 #look for bounds that give us 99% of the all entries in the histogram
+folder = ""
 if(useCompHits):
     folder = "compHits"
 else:
@@ -354,7 +354,7 @@ def createHists(chamber):
 
         int = 0.
         for pat in sortedccPosPlots:
-            int +=pat[0].GetEntries()
+            int += pat[0].GetEntries()
             #print("%s \t %i \t %0.3f \t %0.3f"%(pat[0].GetName(), pat[1], 100.*pat[0].GetEntries()/totalEntries, 100.*int/totalEntries))
             ccEnvFrequency.Fill(100.*pat[0].GetEntries()/totalEntries)
             #pat[0].Write()
@@ -419,16 +419,16 @@ def createHists(chamber):
 chambers = []
 #                name, st, ri
 #chambers.append(["All-Chambers", 0, 0])
-#chambers.append(["ME11B", 1,1])
+chambers.append(["ME11B", 1,1])
 #chambers.append(["ME11A", 1,4])
-chambers.append(["ME12", 1,2])
-chambers.append(["ME13", 1,3])
-chambers.append(["ME21", 2,1])
-chambers.append(["ME22", 2,2])
-chambers.append(["ME31", 3,1])
-chambers.append(["ME32", 3,2])
-chambers.append(["ME41", 4,1])
-chambers.append(["ME42", 4,2])
+#chambers.append(["ME12", 1,2])
+#chambers.append(["ME13", 1,3])
+#chambers.append(["ME21", 2,1])
+#chambers.append(["ME22", 2,2])
+#chambers.append(["ME31", 3,1])
+#chambers.append(["ME32", 3,2])
+#chambers.append(["ME41", 4,1])
+#chambers.append(["ME42", 4,2])
 
 
 #interval file

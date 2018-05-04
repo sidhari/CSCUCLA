@@ -11,18 +11,16 @@
 #include <string>
 
 const unsigned int BATCH_EVENTS = 10000; //amount of events to be run over in a single batch job
-const int DEBUG = 0;
+const int DEBUG = -1;
 const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
+//const std::string INPUT_FILENAME = "CSCDigiTree_Charmonium2017.root";
 //const std::string INPUT_FILENAME = "toyMCtree.root";
 const bool USE_COMP_HITS = 1; //false uses recHits
-
 const unsigned int NLAYERS = 6; //6 layers
 const unsigned int MAX_PATTERN_WIDTH = 11;
 const unsigned int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
 const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
-
-
 
 
 //labels of all envelopes

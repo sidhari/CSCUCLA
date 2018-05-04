@@ -13,8 +13,36 @@
 
 //c++
 #include <fstream>
+#include <math.h>
 
 using namespace std;
+
+float HS_ERROR = 0.288675; //uncertainty per layer in half strips 1/sqrt(12)
+
+
+/* get fit parameter errors for y = mx + b fit
+ * see page 188 in Taylor - Error Analysis for derivation
+ */
+int getErrors(const vector<int>& x,const vector<int>& y, float& sigmaM, float& sigmaB) {
+
+	int N = x.size();
+	if(!N) return -1;
+
+	float sumx = 0;
+	float sumx2 = 0;
+	for(int i =0; i < N; i++){
+		sumx += x[i];
+		sumx2 += x[i]*x[i];
+	}
+
+	float delta = N*sumx2 - sumx*sumx;
+
+	sigmaM = HS_ERROR * sqrt(1.*N/delta);
+	sigmaB = HS_ERROR * sqrt(sumx2/delta);
+
+	return 0;
+}
+
 
 int comparatorCodeEmulator(){
 
@@ -24,7 +52,7 @@ int comparatorCodeEmulator(){
 	//output file stream to write the fits
 	ofstream output;
 	output.open("../data/linearFits.txt");
-	output << "Pattern\tCC\tOffset\tSlope\tChi2\tNDF\n";
+	output << "Pattern\tCC\tOffset\tSlope\tChi2\tNDF\tSlopeErr\tOffErr\n";
 
 
 	// for each pattern
@@ -71,13 +99,18 @@ int comparatorCodeEmulator(){
 			double chi2 = fit->GetChisquare();
 			double ndf = fit->GetNDF();
 
+			float sigmaM, sigmaB;
+
+			getErrors(x,y,sigmaM,sigmaB);
+
 			if(DEBUG > 0) cout << "Offset: " << offset<<
 					" Slope: " << slope << endl;
 
 			// record the offset (centered) and slope of the line
 			output << patt->name() << "\t" << code << "\t" <<
 					offset<< "\t" << slope << "\t" <<
-					chi2 << "\t" << ndf << "\n";
+					chi2 << "\t" << ndf << "\t" <<
+					sigmaB << "\t" << sigmaM <<"\n";
 
 			delete gr;
 		}
