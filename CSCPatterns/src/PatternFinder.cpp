@@ -36,8 +36,8 @@ using namespace std;
 
 
 int PatternFinder(int index, int blocksize) {
-    int start = (index-1)*blocksize;
-    int end = index*blocksize;
+    int start = blocksize > 0 ? index*blocksize     :  0;
+    int end   = blocksize > 0 ? (index+1)*blocksize : -1;
 
     TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
 
@@ -178,7 +178,7 @@ int PatternFinder(int index, int blocksize) {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-    if(end > t->GetEntries()) end = t->GetEntries();
+    if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
 
@@ -241,7 +241,7 @@ int PatternFinder(int index, int blocksize) {
                 //goes 1-80
                 float thisRhPos = rhPos->at(thisRh);
 
-                unsigned int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
+                int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
                 if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
 
                 if(iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
@@ -333,6 +333,10 @@ int PatternFinder(int index, int blocksize) {
 
 
     return 0;
+}
+
+int PatternFinder(){
+	return PatternFinder(0, -1);
 }
 
 
