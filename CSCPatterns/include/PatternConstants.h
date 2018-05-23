@@ -11,10 +11,10 @@
 #include <string>
 
 const unsigned int BATCH_EVENTS = 10000; //amount of events to be run over in a single batch job
-const int DEBUG = -1;
+const int DEBUG = 0;
 const std::string INPUT_FILENAME = "CSCDigiTree161031.root";
 //const std::string INPUT_FILENAME = "CSCDigiTree_Charmonium2017.root";
-//const std::string INPUT_FILENAME = "toyMCtree.root";
+//const std::string INPUT_FILENAME = "CSCDigiTree_1.root";
 const bool USE_COMP_HITS = 1; //false uses recHits
 const unsigned int NLAYERS = 6; //6 layers
 const unsigned int MAX_PATTERN_WIDTH = 11;

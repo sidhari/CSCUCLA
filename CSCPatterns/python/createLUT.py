@@ -100,27 +100,27 @@ def createDataLUT(chamber):
     for event in myT:
         printProgress(counter,entries)
         counter +=1
-        if(event.patternId == -1): continue #ignore unmatched cc's
+        if(event.ccId == -1): continue #ignore unmatched cc's
         
         if not validEvent(event, chamber[1], chamber[2]): continue
         
         #######  Now look at the event itself
-        if not (event.envelopeId in offsetSums):
-            offsetSums[event.envelopeId]  = {}
-            slopeSums[event.envelopeId]   = {}
-            offsetMeans[event.envelopeId] = {}
-            slopeMeans[event.envelopeId]  = {}
-            offsetRMS[event.envelopeId]   = {}
-            slopeRMS[event.envelopeId]    = {}
-            N[event.envelopeId]           = {}
+        if not (event.patternId in offsetSums):
+            offsetSums[event.patternId]  = {}
+            slopeSums[event.patternId]   = {}
+            offsetMeans[event.patternId] = {}
+            slopeMeans[event.patternId]  = {}
+            offsetRMS[event.patternId]   = {}
+            slopeRMS[event.patternId]    = {}
+            N[event.patternId]           = {}
             
-        if not(event.patternId in offsetSums[event.envelopeId]):
-            offsetSums[event.envelopeId][event.patternId] = []
-            slopeSums[event.envelopeId][event.patternId] = []
+        if not(event.ccId in offsetSums[event.patternId]):
+            offsetSums[event.patternId][event.ccId] = []
+            slopeSums[event.patternId][event.ccId] = []
 
             
-        offsetSums[event.envelopeId][event.patternId].append(event.segmentX-event.patX)
-        slopeSums[event.envelopeId][event.patternId].append(event.segmentdXdZ)
+        offsetSums[event.patternId][event.ccId].append(event.segmentX-event.patX)
+        slopeSums[event.patternId][event.ccId].append(event.segmentdXdZ)
      
     # total pattern/ccs we have entries for
     totalPatterns = 0
@@ -163,8 +163,8 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     for event in myT:
         printProgress(counter,entries)
         counter +=1
-        patt = event.envelopeId
-        cc = event.patternId
+        patt = event.patternId
+        cc = event.ccId
         
         if(cc == -1): continue #ignore unmatched cc's
            

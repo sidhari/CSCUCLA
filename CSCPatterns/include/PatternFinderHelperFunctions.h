@@ -246,6 +246,7 @@ int searchForMatch(const ChamberHits &c, const vector<ChargePattern>* ps, vector
 	}
 }
 
+
 //creates the new set of envelopes
 vector<ChargePattern>* createNewEnvelopes(){
 
@@ -325,6 +326,68 @@ int chamberSerial( int ec, int st, int ri, int ch ) {
     if (ec == 2) kSerial = kSerial + 300;
 
     return kSerial;
+}
+
+
+int fillCompHits(ChamberHits& theseCompHits,
+		const vector< vector<int> >* compStr, //comparator strip #
+		const vector< vector<int> >* compHS, //comparator half strip #
+		const vector< vector< vector<int> > >* compTimeOn,
+		const vector<int>* compLay,
+		const vector<int>* compId, // index of what ring/station you are on
+		int EC, int ST, int RI, int CH){
+
+	int chSid = chamberSerial(EC, ST, RI, CH);
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
+	for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
+		if(chSid != (*compId)[icomp]) continue; //only look at where we are now
+
+		unsigned int thisCompLay = (*compLay)[icomp]-1;
+		for(unsigned int icompstr = 0; icompstr < (*compStr)[icomp].size(); icompstr++){
+			//goes from 1-80
+			int compStrip = compStr->at(icomp).at(icompstr);
+			int compHStrip = compHS->at(icomp).at(icompstr);
+			if(compStrip < 1.0) printf("compStrip = %i, how did that happen?\n", compStrip);
+
+			int timeOn = 0;
+
+			//look at the time on value, to fill the chamber array
+			if(!compTimeOn->at(icomp)[icompstr].size()){
+				printf("Error dimensions of comparator time on vector are incorrect. size %lu= \n",
+						compTimeOn->at(icomp)[icompstr].size());
+				return -1;
+			} else {
+				timeOn = compTimeOn->at(icomp)[icompstr].front();
+			}
+
+			//account for weird me11a/b
+			if((me11a || me11b) && compStrip > 64) compStrip -= 64;
+
+
+			unsigned int halfStripVal;
+			if(me11a ||me11b || !(thisCompLay%2)){ //if we are in me11 or an even layer (opposite from Cameron's code, since I shift to zero)
+				halfStripVal = 2*(compStrip-1)+compHStrip+1;
+			} else { //odd layers shift down an extra half strip
+				halfStripVal = 2*(compStrip-1)+compHStrip;
+			}
+
+
+			if(halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
+				printf("Error: For compId = %i, Comp Half Strip Value out of range index = %i - me11b = %i, compStrip = %i, compHStrip = %i, layer = %i\n",
+						chSid,ST,RI, halfStripVal, me11b, compStrip, compHStrip, thisCompLay);
+				return -1;
+			} else {
+				if(timeOn < 0 || timeOn >= 16) {
+					printf("Error timeOn is an invalid number: %i\n", timeOn);
+					return -1;
+				} else {
+					theseCompHits.hits[halfStripVal][thisCompLay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+				}
+			}
+		}
+	}
+	return 0;
 }
 
 

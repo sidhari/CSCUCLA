@@ -81,7 +81,7 @@ int PatternFinder(int index, int blocksize) {
     vector< vector< vector<int> > >* compTimeOn = 0;
     vector<int>* compLay = 0; // y axis
     vector<int>* compId = 0; // index of what ring/station you are on
-    vector<int>* tmbId = 0;
+
 
     TBranch *b_Pt;
     TBranch *b_eta;
@@ -104,7 +104,7 @@ int PatternFinder(int index, int blocksize) {
     TBranch *b_compTimeOn;
     TBranch *b_compLay; // y axis
     TBranch *b_compId; // index of what ring/station you are on
-    TBranch *b_tmbId;
+
 
     t->SetBranchAddress("segEc", &segEc, &b_segEc );
     t->SetBranchAddress("segSt",&segSt, &b_segSt);
@@ -126,7 +126,6 @@ int PatternFinder(int index, int blocksize) {
     t->SetBranchAddress("lctId",      &lctId     , &b_lctId     );
     t->SetBranchAddress("lctPat",     &lctPat    , &b_lctPat    );
     t->SetBranchAddress("lctKHS",     &lctKHS    , &b_lctKHS    );
-    t->SetBranchAddress("tmbId",      &tmbId     , &b_tmbId     );
     t->SetBranchAddress("os",         &os        , &b_os        );
 
 
@@ -143,8 +142,8 @@ int PatternFinder(int index, int blocksize) {
     // OUTPUT TREE
     //
 
-    int envelopeId = 0;
     int patternId = 0;
+    int ccId = 0;
     int legacyLctId = 0;
     int EC = 0; // 1-2
     int ST = 0; // 1-4
@@ -163,8 +162,8 @@ int PatternFinder(int index, int blocksize) {
     plotTree->Branch("ST",&ST,"ST/I");
     plotTree->Branch("RI",&RI,"RI/I");
     plotTree->Branch("CH",&CH,"CH/I");
-    plotTree->Branch("envelopeId", &envelopeId, "envelopeId/I");
     plotTree->Branch("patternId", &patternId, "patternId/I");
+    plotTree->Branch("ccId", &ccId, "ccId/I");
     plotTree->Branch("legacyLctId", &legacyLctId, "legacyLctId/I");
     plotTree->Branch("segmentX", &segmentX, "segmentX/F");
     plotTree->Branch("segmentdXdZ", &segmentdXdZ, "segmentdXdZ/F");
@@ -179,7 +178,6 @@ int PatternFinder(int index, int blocksize) {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-
     if(end > t->GetEntries()) end = t->GetEntries();
 
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
@@ -190,7 +188,9 @@ int PatternFinder(int index, int blocksize) {
 
         t->GetEntry(i);
 
-        if(!os) continue;
+        //cout << "got here" << endl;
+        //if(!os) continue;
+
 
         //iterate through segments
         for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
@@ -201,14 +201,13 @@ int PatternFinder(int index, int blocksize) {
             CH = (*segCh)[thisSeg];
             chSid = chamberSerial(EC, ST, RI, CH);
 
-            //cout << "Tree loop" << endl;
-
             segmentX = segX->at(thisSeg); //strips
             segmentdXdZ = segdXdZ->at(thisSeg);
 
 
             // IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
             if(segmentX < 1) continue;
+
 
             bool me11a = (ST == 1 && RI == 4);
             bool me11b = (ST == 1 && RI == 1);
@@ -226,55 +225,8 @@ int PatternFinder(int index, int blocksize) {
             ChamberHits theseCompHits(1, ST, RI, EC, CH);
 
 
-            for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
-                if(chSid != (*compId)[icomp]) continue; //only look at where we are now
-
-                unsigned int thisCompLay = (*compLay)[icomp]-1;
-                for(unsigned int icompstr = 0; icompstr < (*compStr)[icomp].size(); icompstr++){
-                    //goes from 1-80
-                    int compStrip = compStr->at(icomp).at(icompstr);
-                    int compHStrip = compHS->at(icomp).at(icompstr);
-                    if(compStrip < 1.0) printf("compStrip = %i, how did that happen?\n", compStrip);
-
-                    int timeOn = 0;
-
-                    //look at the time on value, to fill the chamber array
-                    if(!compTimeOn->at(icomp)[icompstr].size()){
-                        printf("Error dimensions of comparator time on vector are incorrect. size %lu= \n",
-                                compTimeOn->at(icomp)[icompstr].size());
-                        return -1;
-                    } else {
-                        timeOn = compTimeOn->at(icomp)[icompstr].front();
-                    }
-
-                    //account for weird me11a/b
-                    if((me11a || me11b) && compStrip > 64) compStrip -= 64;
-
-
-                    unsigned int halfStripVal;
-                    if(me11a ||me11b || !(thisCompLay%2)){ //if we are in me11 or an even layer (opposite from Cameron's code, since I shift to zero)
-                        halfStripVal = 2*(compStrip-1)+compHStrip+1;
-                    } else { //odd layers shift down an extra half strip
-                        halfStripVal = 2*(compStrip-1)+compHStrip;
-                    }
-
-
-                    if(halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
-                        printf("Error: For compId = %i, ST = %i, RI = %i Comp Half Strip Value out of range index = %i - me11b = %i, compStrip = %i, compHStrip = %i, layer = %i\n",
-                                chSid,ST,RI, halfStripVal, me11b, compStrip, compHStrip, thisCompLay);
-                        return -1;
-                    } else {
-                        if(timeOn < 0 || timeOn >= 16) {
-                            printf("Error timeOn is an invalid number: %i\n", timeOn);
-                            return -1;
-                        } else {
-                            theseCompHits.hits[halfStripVal][thisCompLay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
-                        }
-                    }
-
-
-                }
-            }
+            if(fillCompHits(theseCompHits, compStr,compHS,compTimeOn, compLay,compId,
+            					EC,ST,RI,CH)) return -1;
 
 
             //find out where the reconstructed hits are for this segment
@@ -286,10 +238,8 @@ int PatternFinder(int index, int blocksize) {
                 //rhLay goes 1-6
                 unsigned int iLay = rhLay->at(thisRh)-1;
 
-
                 //goes 1-80
                 float thisRhPos = rhPos->at(thisRh);
-
 
                 unsigned int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
                 if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
@@ -298,7 +248,6 @@ int PatternFinder(int index, int blocksize) {
                     printf("ERROR: recHit index %i invalid\n", iRhStrip);
                     return -1;
                 }
-
 
                 theseRHHits.hits[iRhStrip][iLay] = true;
             }
@@ -357,9 +306,9 @@ int PatternFinder(int index, int blocksize) {
             // Fill Tree Data
 
             patX = newSetMatch.at(closestNewMatchIndex)->x();
-            patternId = newSetMatch.at(closestNewMatchIndex)->comparatorCodeId();
-            envelopeId = newSetMatch.at(closestNewMatchIndex)->envelopeId();
-            legacyLctId = oldSetMatch.at(closestOldMatchIndex)->envelopeId();
+            ccId = newSetMatch.at(closestNewMatchIndex)->comparatorCodeId();
+            patternId = newSetMatch.at(closestNewMatchIndex)->patternId();
+            legacyLctId = oldSetMatch.at(closestOldMatchIndex)->patternId();
             legacyLctX = oldSetMatch.at(closestOldMatchIndex)->x();
 
             plotTree->Fill();

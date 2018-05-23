@@ -29,7 +29,7 @@ bool validComparatorTime(const unsigned int time, const unsigned int startTimeWi
 	return false;
 }
 
-//this class tells us what locations within a pattern with id "m_EnvelopeId" matches
+//this class tells us what locations within a pattern with id "m_patternId" matches
 // each of the true booleans within the superchargepattern.
 class ChargeComparatorCode {
 public:
@@ -312,7 +312,7 @@ public:
 		if(m_overlap) delete m_overlap;
 	}
 
-	int envelopeId() {return m_Envelope.m_id;}
+	int patternId() {return m_Envelope.m_id;}
 
 	//center position of the track [strips]
 	float x(){return (m_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;}
