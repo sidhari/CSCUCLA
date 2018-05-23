@@ -253,10 +253,10 @@ vector<ChargePattern>* createNewEnvelopes(){
 	vector<ChargePattern>* thisVector = new vector<ChargePattern>();
 
 	ChargePattern id1("100",ENVELOPE_IDS[0],false,IDSV1_A);
-	ChargePattern id4("400",ENVELOPE_IDS[1],false,IDSV1_C);
-	ChargePattern id5 = id4.returnFlipped("500",ENVELOPE_IDS[2]);
-	ChargePattern id8("800",ENVELOPE_IDS[3], false, IDSV1_E);
-	ChargePattern id9 = id8.returnFlipped("900",ENVELOPE_IDS[4]);
+	ChargePattern id4("90",ENVELOPE_IDS[1],false,IDSV1_C);
+	ChargePattern id5 = id4.returnFlipped("80",ENVELOPE_IDS[2]);
+	ChargePattern id8("70",ENVELOPE_IDS[3], false, IDSV1_E);
+	ChargePattern id9 = id8.returnFlipped("60",ENVELOPE_IDS[4]);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);

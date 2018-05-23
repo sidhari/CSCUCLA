@@ -25,7 +25,7 @@ const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins 
 
 //labels of all envelopes
 const unsigned int NENVELOPES = 5;
-const unsigned  int ENVELOPE_IDS[NENVELOPES] = {100,400,500, 800, 900};
+const unsigned  int ENVELOPE_IDS[NENVELOPES] = {100,90,80, 70, 60};
 
 
 const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {
