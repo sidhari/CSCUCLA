@@ -188,9 +188,7 @@ int PatternFinder(int index, int blocksize) {
 
         t->GetEntry(i);
 
-        //cout << "got here" << endl;
-        //if(!os) continue;
-
+        if(!os) continue;
 
         //iterate through segments
         for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
@@ -244,7 +242,7 @@ int PatternFinder(int index, int blocksize) {
                 int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
                 if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
 
-                if(iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
+                if((unsigned int)iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
                     printf("ERROR: recHit index %i invalid\n", iRhStrip);
                     return -1;
                 }
@@ -326,11 +324,10 @@ int PatternFinder(int index, int blocksize) {
 
     }
 
-	//printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
+	printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
 
     plotTree->Write();
     outF->Close();
-
 
     return 0;
 }
