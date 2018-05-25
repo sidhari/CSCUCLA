@@ -76,8 +76,7 @@ def createLineFitLUT(filepath):
             linefitSlopeErr[int(elements[0])][int(elements[1])] = 0.5*float(elements[7])
             
     return linefitOffset, linefitSlope, linefitChi2, linefitNDF, linefitOffsetErr, linefitSlopeErr
-    
-    
+       
 def createDataLUT(chamber):
     print("\033[94m=== Creating Data LUT for %s===\033[0m"%(chamber[0]))
     #open file
@@ -137,14 +136,14 @@ def createDataLUT(chamber):
     print("Found Entries for %i / 20480 possible patterns"%totalPatterns)
     return offsetMeans, slopeMeans, offsetRMS, slopeRMS, N
 
-
 def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):  
     print("\033[94m=== Running Test on LUT for %s ===\033[0m"%(chamber[0])) 
      
 
     
     #array of all of the N threshold we should use, uses linefits for everything UNDER the threshold
-    N_threshold = [1, 2, 5, 10, 20, 100]
+    N_threshold = array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 100, 1000])
+    rmsAtN_threshold = array('d')
     
     h_differences = []
     for N in N_threshold:
@@ -181,8 +180,16 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
             h_differences[i].Fill(linefitDiff if dataN[patt][cc] < N else dataDiff)
     
     for h in h_differences:
+        rmsAtN_threshold.append(h.GetRMS())
         h.Write()
         
+    
+    rmsVsNThreshold = r.TGraph(len(N_threshold),N_threshold,rmsAtN_threshold)
+    rmsVsNThreshold.SetTitle("Test RMS vs LUT N_{t}")
+    rmsVsNThreshold.GetXaxis().SetTitle("N_{t}")
+    rmsVsNThreshold.GetYaxis().SetTitle("#sigma_x [strips]")
+    rmsVsNThreshold.Write()
+    
     outF.Close()
     
     print("Finished running code: missed %i / %i = %f events"%(missedEvents,entries,1.*missedEvents/entries))
