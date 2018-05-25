@@ -44,7 +44,7 @@ def createLineFitLUT(filepath):
     linefitNDF = {}
     linefitOffsetErr = {}
     linefitSlopeErr = {}
-    patList = [100,400,500,800,900]
+    patList = [100,90,80,70,60]
     
     for pat in patList:
         linefitOffset[pat] = {}
@@ -139,7 +139,7 @@ def createDataLUT(chamber):
 
 
 def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):  
-    print("\033[94m=== Running test on  LUT for %s ===\033[0m"%(chamber[0])) 
+    print("\033[94m=== Running Test on LUT for %s ===\033[0m"%(chamber[0])) 
      
 
     
@@ -162,7 +162,6 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     entries = myT.GetEntries()
     for counter, event in enumerate(myT):
         printProgress(counter,entries)
-        counter +=1
         patt = event.patternId
         cc = event.ccId
         
@@ -171,8 +170,10 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         #check if we should look at this event    
         if not validEvent(event, chamber[1], chamber[2]): continue
     
-        if not dataOffset.has_key(patt) or dataOffset[patt].has_key(cc): 
+        if not dataOffset.has_key(patt) or not dataOffset[patt].has_key(cc): 
             missedEvents += 1
+            continue
+
         linefitDiff = event.segmentX - (linefitOffset[patt][cc] + event.patX)
         dataDiff    = event.segmentX -    (dataOffset[patt][cc] + event.patX)
     

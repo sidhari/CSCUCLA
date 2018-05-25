@@ -184,7 +184,7 @@ int PatternFinder(int index, int blocksize) {
 
 
 	for(int i = start; i < end; i++) {
-        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+        if(!(i%10)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
         t->GetEntry(i);
 
