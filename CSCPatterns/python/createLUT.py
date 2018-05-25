@@ -14,10 +14,10 @@ USECOMPHITS = 1 # 0 means use recHits
 HIT_FOLDER = "compHits" if USECOMPHITS else "recHits"
     
     #file used to train the data LUT
-TRAININGFILE = "../data/%s/processedMatches_FULLSET.root"%HIT_FOLDER
+TRAININGFILE = "../data/%s/processedMatches_2016F.root"%HIT_FOLDER
 
     #file used to test the data LUT
-TESTFILE     = "../data/%s/processedMatches_FULLSET.root"%HIT_FOLDER    
+TESTFILE     = "../data/%s/processedMatches_2017D-1.root"%HIT_FOLDER    
 
 def printProgress(counter, entries):
     if((counter % 1000000) == 0) : print("Finished %0.2f%% of events"%(100.*counter/entries))
@@ -158,9 +158,9 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     #output file
     outF = r.TFile("../data/%s/%s_LUT-Test.root"%(HIT_FOLDER,chamber[0]),"RECREATE")
     
-    counter = 0
+    missedEvents = 0
     entries = myT.GetEntries()
-    for event in myT:
+    for counter, event in enumerate(myT):
         printProgress(counter,entries)
         counter +=1
         patt = event.patternId
@@ -171,6 +171,8 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         #check if we should look at this event    
         if not validEvent(event, chamber[1], chamber[2]): continue
     
+        if not dataOffset.has_key(patt) or dataOffset[patt].has_key(cc): 
+            missedEvents += 1
         linefitDiff = event.segmentX - (linefitOffset[patt][cc] + event.patX)
         dataDiff    = event.segmentX -    (dataOffset[patt][cc] + event.patX)
     
@@ -181,6 +183,9 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         h.Write()
         
     outF.Close()
+    
+    print("Finished running code: missed %i / %i = %f events"%(missedEvents,entries,1.*missedEvents/entries))
+    
     return
   
 
