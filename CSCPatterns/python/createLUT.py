@@ -142,8 +142,18 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
 
     
     #array of all of the N threshold we should use, uses linefits for everything UNDER the threshold
-    N_threshold = array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 100, 1000])
+    N_threshold      = array('d')
     rmsAtN_threshold = array('d')
+
+    for N in range(1,15):
+	N_threshold.append(N)
+    N_threshold.append(20)
+    N_threshold.append(30)
+    N_threshold.append(50)
+    N_threshold.append(100)
+    N_threshold.append(500)
+    N_threshold.append(1000)
+
     
     h_differences = []
     for N in N_threshold:
@@ -158,6 +168,7 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     outF = r.TFile("../data/%s/%s_LUT-Test.root"%(HIT_FOLDER,chamber[0]),"RECREATE")
     
     missedEvents = 0
+    validEvents = 0
     entries = myT.GetEntries()
     for counter, event in enumerate(myT):
         printProgress(counter,entries)
@@ -169,6 +180,7 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         #check if we should look at this event    
         if not validEvent(event, chamber[1], chamber[2]): continue
     
+	validEvents += 1
         if not dataOffset.has_key(patt) or not dataOffset[patt].has_key(cc): 
             missedEvents += 1
             continue
@@ -187,12 +199,12 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     rmsVsNThreshold = r.TGraph(len(N_threshold),N_threshold,rmsAtN_threshold)
     rmsVsNThreshold.SetTitle("Test RMS vs LUT N_{t}")
     rmsVsNThreshold.GetXaxis().SetTitle("N_{t}")
-    rmsVsNThreshold.GetYaxis().SetTitle("#sigma_x [strips]")
+    rmsVsNThreshold.GetYaxis().SetTitle("#sigma_{x} [strips]")
     rmsVsNThreshold.Write()
     
     outF.Close()
     
-    print("Finished running code: missed %i / %i = %f events"%(missedEvents,entries,1.*missedEvents/entries))
+    print("Finished running code: missed %i / %i = %f events"%(missedEvents,validEvents,1.*missedEvents/validEvents))
     
     return
   
