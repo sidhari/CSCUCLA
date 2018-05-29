@@ -2,6 +2,7 @@
 import ROOT as r
 import numpy as np
 import math
+import os
 
 from array import array
 
@@ -146,16 +147,30 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     rmsAtN_threshold = array('d')
     
     h_differences = []
+    h_lineDiff    = []
+    h_dataDiff    = []
     for N in N_threshold:
-        h_differences.append(r.TH1F("h_%i"%N, "h_%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
+        h_differences.append(r.TH1F("h_%i"%N,     "h_%i;     Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
+        h_lineDiff   .append(r.TH1F("h_line%i"%N, "h_line%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
+        h_dataDiff   .append(r.TH1F("h_data%i"%N, "h_data%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
     
     
     #open file
     inF = r.TFile(TESTFILE)
     myT = inF.plotTree
     
+    #
+    # make folder, if we don't have one, for the outputs
+    #
+    
+    outputFolder = "../data/%s/%s"%(HIT_FOLDER, chamber[0])
+    
+    if not os.path.isdir(outputFolder):
+        os.system("mkdir %s"%outputFolder)
+    
     #output file
-    outF = r.TFile("../data/%s/%s_LUT-Test.root"%(HIT_FOLDER,chamber[0]),"RECREATE")
+    outF = r.TFile("%s/%s_LUT-Test.root"%(outputFolder,chamber[0]),"RECREATE")
+    
     
     missedEvents = 0
     entries = myT.GetEntries()
@@ -177,12 +192,18 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         dataDiff    = event.segmentX -    (dataOffset[patt][cc] + event.patX)
     
         for i, N in enumerate(N_threshold):
-            h_differences[i].Fill(linefitDiff if dataN[patt][cc] < N else dataDiff)
+            belowThreshold = dataN[patt][cc] < N
+            h_differences[i].Fill(linefitDiff if belowThreshold else dataDiff)
+            if belowThreshold:
+                h_lineDiff[i].Fill(linefitDiff)
+            else:
+                h_dataDiff[i].Fill(dataDiff)
     
-    for h in h_differences:
+    for i, h in enumerate(h_differences):
         rmsAtN_threshold.append(h.GetRMS())
-        h.Write()
-        
+        h_differences[i].Write()
+        h_lineDiff[i].Write()
+        h_dataDiff[i].Write()
     
     rmsVsNThreshold = r.TGraph(len(N_threshold),N_threshold,rmsAtN_threshold)
     rmsVsNThreshold.SetTitle("Test RMS vs LUT N_{t}")
