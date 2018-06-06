@@ -1,6 +1,4 @@
 #!/bin/bash
-pwd
-ls
 
 CMSVERS=CMSSW_9_2_8
 
@@ -14,9 +12,6 @@ eval `scramv1 project CMSSW ${CMSVERS}`
 cp {${1},${2}} $CMSVERS/src/
 cd $CMSVERS/src/
 eval `scramv1 runtime -sh` # cmsenv is an alias not on the workers
-
-pwd
-ls -R
 
 #executable, inputfile, outputfile
 ./${1} ${2} ${3}

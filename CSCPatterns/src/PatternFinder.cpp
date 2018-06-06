@@ -163,12 +163,11 @@ int PatternFinder(string inputfile, string outputfile, int start, int end) {
 
 
 	for(int i = start; i < end; i++) {
-        if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+        if(!(i%10)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
         t->GetEntry(i);
 
         if(!os) continue;
-
 
         //iterate through segments
         for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
@@ -320,8 +319,6 @@ int PatternFinder(string inputfile, string outputfile, int events){
 int PatternFinder(string inputfile, string outputfile){
 	return PatternFinder(inputfile, outputfile, 0, -1);
 }
-
-
 
 int main(int argc, char* argv[])
 {

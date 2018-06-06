@@ -8,11 +8,11 @@ import ROOT as r
 blocksize = 10000 #warning, this is also defined in PatternConstants.h TODO: reduce duplication in C and python code
 ram = "1024M"
 
-useCompHits = 0 # 0 means use recHits
-if(useCompHits):
-    folder = "compHits"
-else:
-    folder= "recHits"
+#useCompHits = 1 # 0 means use recHits
+#if(useCompHits):
+#    folder = "compHits"
+#else:
+#    folder= "recHits"
     
     
     
@@ -24,7 +24,7 @@ os.system("make -C../src")
 
     
 #get number of entries in tree
-inF = r.TFile("../data/CSCDigiTree161031.root")
+inF = r.TFile("../data/CSCDigiTree-2016F.root")
 myT = inF.CSCDigiTree
 entries = myT.GetEntries()
 
@@ -43,5 +43,5 @@ print("Entries = %i, splitting into %i job(s) of size %i"%(entries,jobs, blocksi
 #
 # More here: https://www.ccn.ucla.edu/wiki/index.php/Hoffman2:Submitting_Jobs
 #
-os.system("qsub -V -N pattFinder -l h_data=%s,time=00:05:00 -t 1:%i:1 ../jobs/sh/subScriptTest.sh"%(ram, jobs))
+os.system("qsub -V -N pattFinder -l h_data=%s,time=00:05:00 -t 1:%i:1 ../jobs/sh/subScript.sh"%(ram, jobs))
 

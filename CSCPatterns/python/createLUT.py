@@ -159,12 +159,14 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     h_differences = []
     h_lineDiff    = []
     h_dataDiff    = []
+    
     for i, N in enumerate(N_threshold):
         h_differences.append(r.TH1F("h_%i"%N,     "h_%i;     Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_lineDiff   .append(r.TH1F("h_line%i"%N, "h_line%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_lineDiff[i].SetFillColor(r.kRed)
         h_dataDiff   .append(r.TH1F("h_data%i"%N, "h_data%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_dataDiff[i].SetFillColor(r.kBlue)
+    
     
     #open file
     inF = r.TFile(TESTFILE)
@@ -183,7 +185,6 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     #output file
     outFName = "%s/%s_LUT-Test.root"%(outputFolder,chamber[0])
     outF = r.TFile(outFName,"RECREATE")
-    
     
     missedEvents = 0
     validEvents = 0
@@ -247,6 +248,7 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     rmsVsNThreshold.Write()
     
     print "Finished Writing data to ROOT file: %s"%outFName
+   
     outF.Close()
     
     print("Finished running code: missed %i / %i = %f events"%(missedEvents,validEvents,1.*missedEvents/validEvents))
