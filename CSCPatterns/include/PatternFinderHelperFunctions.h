@@ -365,7 +365,7 @@ int fillCompHits(ChamberHits& theseCompHits,
 			if((me11a || me11b) && compStrip > 64) compStrip -= 64;
 
 
-			unsigned int halfStripVal;
+			int halfStripVal;
 			if(me11a ||me11b || !(thisCompLay%2)){ //if we are in me11 or an even layer (opposite from Cameron's code, since I shift to zero)
 				halfStripVal = 2*(compStrip-1)+compHStrip+1;
 			} else { //odd layers shift down an extra half strip
@@ -373,9 +373,9 @@ int fillCompHits(ChamberHits& theseCompHits,
 			}
 
 
-			if(halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
-				printf("Error: For compId = %i, Comp Half Strip Value out of range index = %i - me11b = %i, compStrip = %i, compHStrip = %i, layer = %i\n",
-						chSid,ST,RI, halfStripVal, me11b, compStrip, compHStrip, thisCompLay);
+			if((unsigned int)halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
+				printf("Error: For compId = %i, ST=%i, RI=%i, Comp Half Strip Value out of range index = %i --- compStrip = %i, compHStrip = %i, layer = %i\n",
+						chSid,ST,RI, halfStripVal, compStrip, compHStrip, thisCompLay);
 				return -1;
 			} else {
 				if(timeOn < 0 || timeOn >= 16) {

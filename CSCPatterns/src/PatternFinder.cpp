@@ -18,6 +18,8 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -34,12 +36,10 @@ using namespace std;
 #endif
 
 
+int PatternFinder(string inputfile, string outputfile, int start, int end) {
 
-int PatternFinder(int index, int blocksize) {
-    int start = (index-1)*blocksize;
-    int end = index*blocksize;
-
-    TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
+    printf("Running over file: %s\n", inputfile.c_str());
+    TFile* f = TFile::Open(inputfile.c_str());
 
     if(!f)
     {
@@ -76,57 +76,33 @@ int PatternFinder(int index, int blocksize) {
     vector< vector<int> >* lctKHS = 0;
 
     //comparators
+    vector<int>* compLay = 0; // y axis
+    vector<int>* compId = 0; // index of what ring/station you are on
     vector< vector<int> >* compStr = 0; //comparator strip #
     vector< vector<int> >* compHS = 0; //comparator half strip #
     vector< vector< vector<int> > >* compTimeOn = 0;
-    vector<int>* compLay = 0; // y axis
-    vector<int>* compId = 0; // index of what ring/station you are on
 
-
-    TBranch *b_Pt;
-    TBranch *b_eta;
-    TBranch *b_os;
-    TBranch *b_rhId; //id/serial
-    TBranch *b_rhLay;
-    TBranch *b_rhPos;
-    TBranch *b_rhE; //energy
-    TBranch *b_segEc;
-    TBranch *b_segSt;
-    TBranch *b_segRi;
-    TBranch *b_segCh;
-    TBranch *b_segX;
-    TBranch *b_segdXdZ;
-    TBranch *b_lctId;
-    TBranch *b_lctPat;
-    TBranch *b_lctKHS;
-    TBranch *b_compStr; //comparator strip #
-    TBranch *b_compHS; //comparator half strip #
-    TBranch *b_compTimeOn;
-    TBranch *b_compLay; // y axis
-    TBranch *b_compId; // index of what ring/station you are on
-
-
-    t->SetBranchAddress("segEc", &segEc, &b_segEc );
-    t->SetBranchAddress("segSt",&segSt, &b_segSt);
-    t->SetBranchAddress("segRi",      &segRi     , &b_segRi     );
-    t->SetBranchAddress("segCh",      &segCh     , &b_segCh     );
-    t->SetBranchAddress("segX",       &segX      , &b_segX      );
-    t->SetBranchAddress("segdXdZ",    &segdXdZ   , &b_segdXdZ   );
-    t->SetBranchAddress("compId",     &compId    , &b_compId    );
-    t->SetBranchAddress("compLay",    &compLay   , &b_compLay   );
-    t->SetBranchAddress("compStr",    &compStr   , &b_compStr   );
-    t->SetBranchAddress("compHS",     &compHS    , &b_compHS    );
-    t->SetBranchAddress("compTimeOn", &compTimeOn, &b_compTimeOn);
-    t->SetBranchAddress("Pt",         &Pt        , &b_Pt        );
-    t->SetBranchAddress("eta",        &eta       , &b_eta       );
-    t->SetBranchAddress("rhId",       &rhId      , &b_rhId      );
-    t->SetBranchAddress("rhLay",      &rhLay     , &b_rhLay     );
-    t->SetBranchAddress("rhPos",      &rhPos     , &b_rhPos     );
-    t->SetBranchAddress("rhE",        &rhE       , &b_rhE       );
-    t->SetBranchAddress("lctId",      &lctId     , &b_lctId     );
-    t->SetBranchAddress("lctPat",     &lctPat    , &b_lctPat    );
-    t->SetBranchAddress("lctKHS",     &lctKHS    , &b_lctKHS    );
-    t->SetBranchAddress("os",         &os        , &b_os        );
+    t->SetBranchAddress("Pt",         &Pt);
+    t->SetBranchAddress("eta",        &eta);
+    t->SetBranchAddress("os",         &os);
+    t->SetBranchAddress("rhId",       &rhId);
+    t->SetBranchAddress("rhLay",      &rhLay);
+    t->SetBranchAddress("rhPos",      &rhPos);
+    t->SetBranchAddress("rhE",        &rhE);
+    t->SetBranchAddress("segEc",      &segEc);
+    t->SetBranchAddress("segSt",      &segSt);
+    t->SetBranchAddress("segRi",      &segRi);
+    t->SetBranchAddress("segCh",      &segCh);
+    t->SetBranchAddress("segX",       &segX);
+    t->SetBranchAddress("segdXdZ",    &segdXdZ);
+    t->SetBranchAddress("lctId",      &lctId);
+    t->SetBranchAddress("lctPat",     &lctPat);
+    t->SetBranchAddress("lctKHS",     &lctKHS);
+    t->SetBranchAddress("compId",     &compId);
+    t->SetBranchAddress("compLay",    &compLay);
+    t->SetBranchAddress("compStr",    &compStr);
+    t->SetBranchAddress("compHS",     &compHS);
+    t->SetBranchAddress("compTimeOn", &compTimeOn);
 
 
     //
@@ -136,7 +112,6 @@ int PatternFinder(int index, int blocksize) {
 
     vector<ChargePattern>* newEnvelopes = createNewEnvelopes();
     vector<ChargePattern>* oldEnvelopes = createOldEnvelopes();
-
 
     //
     // OUTPUT TREE
@@ -155,8 +130,12 @@ int PatternFinder(int index, int blocksize) {
     float patX = 0;
     float legacyLctX = 0;
 
-    string folder = (USE_COMP_HITS ? "compHits" : "recHits");
-    TFile * outF = new TFile(string("../data/" + folder + "/processedMatches_" + to_string((long long int) index) + ".root").c_str(),"RECREATE");
+    TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
+    if(!outF){
+    	printf("Failed to open output file: %s\n", outputfile.c_str());
+    	return -1;
+    }
+
     TTree * plotTree = new TTree("plotTree","TTree holding processed info for CSCPatterns studies");
     plotTree->Branch("EC",&EC,"EC/I");
     plotTree->Branch("ST",&ST,"ST/I");
@@ -178,7 +157,7 @@ int PatternFinder(int index, int blocksize) {
     unsigned int nChambersRanOver = 0;
     unsigned int nChambersMultipleInOneLayer = 0;
 
-    if(end > t->GetEntries()) end = t->GetEntries();
+    if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
 
@@ -188,12 +167,12 @@ int PatternFinder(int index, int blocksize) {
 
         t->GetEntry(i);
 
-        //cout << "got here" << endl;
-        //if(!os) continue;
+        if(!os) continue;
 
 
         //iterate through segments
         for(unsigned int thisSeg = 0; thisSeg < segCh->size(); thisSeg++){
+
 
             EC = (*segEc)[thisSeg];
             ST = (*segSt)[thisSeg];
@@ -241,10 +220,10 @@ int PatternFinder(int index, int blocksize) {
                 //goes 1-80
                 float thisRhPos = rhPos->at(thisRh);
 
-                unsigned int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
+                int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
                 if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
 
-                if(iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
+                if((unsigned int)iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
                     printf("ERROR: recHit index %i invalid\n", iRhStrip);
                     return -1;
                 }
@@ -326,30 +305,45 @@ int PatternFinder(int index, int blocksize) {
 
     }
 
-	//printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
+	printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
 
     plotTree->Write();
     outF->Close();
 
-
     return 0;
 }
+
+int PatternFinder(string inputfile, string outputfile, int events){
+	return PatternFinder(inputfile,outputfile, 0,-1);
+}
+
+int PatternFinder(string inputfile, string outputfile){
+	return PatternFinder(inputfile, outputfile, 0, -1);
+}
+
 
 
 int main(int argc, char* argv[])
 {
-    if(argc != 2) 
-    {
-        cout << "Gave %i Arguments, usage is ./PatternFinder jobIndex" << endl;
-        return -1;
-    }
 
     //secret sauce using g++
     gROOT->ProcessLine("#include <vector>");
     gROOT->ProcessLine("#pragma link C++ class vector<vector<int> >+;");
     gROOT->ProcessLine("#pragma link C++ class vector<vector<vector<int> > >+;");
 
-    return PatternFinder(atoi(argv[1]), BATCH_EVENTS);
+	switch(argc){
+		case 3:
+			return PatternFinder(string(argv[1]), string(argv[2]));
+		case 4:
+			return PatternFinder(string(argv[1]), string(argv[2]),atoi(argv[3]));
+		case 5:
+			return PatternFinder(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
+		default:
+			cout << "Gave %i Arguments, usage is:" << endl;
+			cout << "./PatternFinder inputFile outputFile (events)" << endl;
+			return -1;
+	}
+
 }
 
 
