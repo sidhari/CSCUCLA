@@ -2,7 +2,11 @@ import glob
 import os
 
 EOS = '/uscms/home/wnash/eos/'
+<<<<<<< HEAD
+SAMPLE_DIR = 'Charmonium/charmonium2017D/'
+=======
 SAMPLE_DIR = 'Charmonium/charmonium2017C/'
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
 TOP_DIR = EOS+SAMPLE_DIR
 SRC_DIR = '../src/'
 TEMPLATE_RUN_FOLDER = 'run/'
@@ -20,7 +24,11 @@ def makeDir(rootpath, folderpath):
     foldertocreate = folders[fcount]
      
     while(fcount != len(folders)-1): #recursively create folders until we don't need to anymore
+<<<<<<< HEAD
+        if not os.path.isdir(rootpath+foldertocreate):
+=======
         if not os.path.isdir(foldertocreate):
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
             path = rootpath+foldertocreate
             print("Making directory: %s"%path)
             os.system("mkdir %s"%path)
