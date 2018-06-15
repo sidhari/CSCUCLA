@@ -8,16 +8,6 @@ import ROOT as r
 blocksize = 10000 #warning, this is also defined in PatternConstants.h TODO: reduce duplication in C and python code
 ram = "1024M"
 
-#useCompHits = 1 # 0 means use recHits
-#if(useCompHits):
-#    folder = "compHits"
-#else:
-#    folder= "recHits"
-    
-    
-    
-    
-
 #recompile executable
 print("Compiling executable...")
 os.system("make -C../src")
