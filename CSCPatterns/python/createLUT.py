@@ -236,7 +236,7 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         stack_stats = h_stack.GetHistogram().FindObject('stats')
         stack_stats.Draw()
         
-        c.SaveAs("%s/%s-%i.pdf"%(outputFolder, chamber[0], N_threshold[i]))
+        #c.SaveAs("%s/%s-%i.pdf"%(outputFolder, chamber[0], N_threshold[i]))
         
         h_lineDiff[i].Write()
         h_dataDiff[i].Write()
@@ -253,7 +253,7 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     
     print("Finished running code: missed %i / %i = %f events"%(missedEvents,validEvents,1.*missedEvents/validEvents))
     
-    return
+    return rmsVsNThreshold
   
 
 
@@ -265,18 +265,28 @@ linefitOffset, linefitSlope, _, _, _, _ = createLineFitLUT("../data/linearFits.t
 #divide everything into chambers and run that way
 chambers = []
 #                name, st, ri
-#chambers.append(["All-Chambers", 0, 0])
-#chambers.append(["ME11B", 1,1])
-chambers.append(["ME11A", 1,4])
-#chambers.append(["ME12", 1,2])
-#chambers.append(["ME13", 1,3])
-#chambers.append(["ME21", 2,1])
-#chambers.append(["ME22", 2,2])
-#chambers.append(["ME31", 3,1])
-#chambers.append(["ME32", 3,2])
-#chambers.append(["ME41", 4,1])
-#chambers.append(["ME42", 4,2])
+#chambers.append(["All-Chambers", 0, 0,r.kBlack])
+#chambers.append(["ME11B", 1,1, r.kRed-4])
+chambers.append(["ME11A", 1,4, r.kGreen+1])
+#chambers.append(["ME12", 1,2, r.kBlue+1])
+#chambers.append(["ME13", 1,3, r.kMagenta-4])
+#chambers.append(["ME21", 2,1, r.kYellow-3])
+#chambers.append(["ME22", 2,2, r.kCyan-3])
+#chambers.append(["ME31", 3,1, r.kBlue+3])
+#chambers.append(["ME32", 3,2, r.kRed+2])
+#chambers.append(["ME41", 4,1, r.kOrange+7])
+#chambers.append(["ME42", 4,2, r.kBlue-8])
+
+cT = r.TCanvas()
+legT = r.TLegend(0.03,0.05, 0.30, 0.25)
 
 for chamber in chambers:
     dataOffset, dataSlope, _, _, dataN = createDataLUT(chamber)
-    runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope)
+    rmsVsThres = runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope)
+    rmsVsThres.SetLineColor(color[3])
+    cT.cd()
+    legT.AddEntry(rmsVsThres, chamber[0])
+    rmsVsThres.Draw("al")
+    
+legT.Draw()
+cT.Print("../data/%s/compiledrmsVsNGraph.pdf"%HIT_FOLDER)
