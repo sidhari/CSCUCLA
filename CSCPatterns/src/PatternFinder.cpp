@@ -320,8 +320,11 @@ int PatternFinder(string inputfile, string outputfile, int events){
 int PatternFinder(string inputfile, string outputfile){
 	return PatternFinder(inputfile, outputfile, 0, -1);
 }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
 
 int main(int argc, char* argv[])
 {

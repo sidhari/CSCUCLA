@@ -176,12 +176,20 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     h_differences = []
     h_lineDiff    = []
     h_dataDiff    = []
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
     for i, N in enumerate(N_threshold):
         h_differences.append(r.TH1F("h_%i"%N,     "h_%i;     Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_lineDiff   .append(r.TH1F("h_line%i"%N, "h_line%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_lineDiff[i].SetFillColor(r.kRed)
         h_dataDiff   .append(r.TH1F("h_data%i"%N, "h_data%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_dataDiff[i].SetFillColor(r.kBlue)
+<<<<<<< HEAD
+=======
+    
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
     
     #open file
     inF = r.TFile(TESTFILE)
@@ -191,10 +199,22 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     # make folder, if we don't have one, for the outputs
     #
     
+<<<<<<< HEAD
     #output file
     outFName = "%s/%s_LUT-Results.root"%(TESTWRITEDIR,chamber[0])
     outF = r.TFile(outFName,"RECREATE")
     
+=======
+    outputFolder = "../data/%s/%s"%(HIT_FOLDER, chamber[0])
+    
+    if not os.path.isdir(outputFolder):
+        print("Making directory: %s"%outputFolder)
+        os.system("mkdir %s"%outputFolder)
+    
+    #output file
+    outFName = "%s/%s_LUT-Test.root"%(outputFolder,chamber[0])
+    outF = r.TFile(outFName,"RECREATE")
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
     
     missedEvents = 0
     validEvents = 0
@@ -243,10 +263,17 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
         
         #stats boxs
         c.Update()
+<<<<<<< HEAD
         #stack_stats = h_stack.GetHistogram().FindObject('stats')
         #stack_stats.Draw()
         
         c.SaveAs("%s/%s-%i.pdf"%(TESTWRITEDIR, chamber[0], N_threshold[i]))
+=======
+        stack_stats = h_stack.GetHistogram().FindObject('stats')
+        stack_stats.Draw()
+        
+        c.SaveAs("%s/%s-%i.pdf"%(outputFolder, chamber[0], N_threshold[i]))
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
         
         h_lineDiff[i].Write()
         h_dataDiff[i].Write()
@@ -258,6 +285,10 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     rmsVsNThreshold.Write()
     
     print "Finished Writing data to ROOT file: %s"%outFName
+<<<<<<< HEAD
+=======
+   
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
     outF.Close()
     
     print("Finished running code: missed %i / %i = %f events"%(missedEvents,validEvents,1.*missedEvents/validEvents))
@@ -280,6 +311,7 @@ linefitOffset, linefitSlope, _, _, _, _ = createLineFitLUT("../data/linearFits.t
 chambers = []
 #                name, st, ri
 #chambers.append(["All-Chambers", 0, 0])
+<<<<<<< HEAD
 chambers.append(["ME11B", 1,1])
 chambers.append(["ME11A", 1,4])
 chambers.append(["ME12", 1,2])
@@ -290,6 +322,18 @@ chambers.append(["ME31", 3,1])
 chambers.append(["ME32", 3,2])
 chambers.append(["ME41", 4,1])
 chambers.append(["ME42", 4,2])
+=======
+#chambers.append(["ME11B", 1,1])
+chambers.append(["ME11A", 1,4])
+#chambers.append(["ME12", 1,2])
+#chambers.append(["ME13", 1,3])
+#chambers.append(["ME21", 2,1])
+#chambers.append(["ME22", 2,2])
+#chambers.append(["ME31", 3,1])
+#chambers.append(["ME32", 3,2])
+#chambers.append(["ME41", 4,1])
+#chambers.append(["ME42", 4,2])
+>>>>>>> 18f560fd475591f4f30e7b921638cb923e52a396
 
 for chamber in chambers:
     dataOffset, dataSlope, _, _, dataN = createDataLUT(chamber)
