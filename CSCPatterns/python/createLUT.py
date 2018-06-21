@@ -3,6 +3,7 @@ import ROOT as r
 import numpy as np
 import math
 import os
+import common
 
 from array import array
 
@@ -12,11 +13,13 @@ from array import array
 
 
 SAMPLEDIR       = "/uscms/home/wnash/eos/Charmonium/"
+#TRAININGFOLDER = "charmonium2017C/"
 TRAININGFOLDER = "charmonium2017C/"
 TESTFOLDER     = "charmonium2017D/"
 DATAFILE       = "CLCTMatch-Full.root"
 
 LUTWRITEDIR = "../data/" + TRAININGFOLDER
+LUTFILE = "LUT.root" #prefaced with chamber, e.g. ME11A-LUT.root
 TESTWRITEDIR = LUTWRITEDIR+TESTFOLDER
     
     #file used to train the data LUT
@@ -51,46 +54,6 @@ def getStats(nums, patt, cc):
     
     return mean, rms, N
 
-def createLineFitLUT(filepath):
-    print("\033[94m=== Reading Line Fit LUT ===\033[0m")
-    
-    linefitOffset = {} #will hold an entry for every possible pat / cc combination
-    linefitSlope = {}
-    linefitChi2 = {}
-    linefitNDF = {}
-    linefitOffsetErr = {}
-    linefitSlopeErr = {}
-    patList = [100,90,80,70,60]
-    
-    for pat in patList:
-        linefitOffset[pat] = {}
-        linefitSlope[pat] = {}
-        linefitChi2[pat] = {}
-        linefitNDF[pat] ={}
-        linefitOffsetErr[pat] = {}
-        linefitSlopeErr[pat] = {}
-    
-    with open(filepath, "r") as f:
-        for l,line in enumerate(f):
-            if (l == 0): continue #skip first line
-            
-            #should be pat, cc, offset, slope, chi2, ndf
-            elements = line.strip('\n').split('\t')
-
-            #
-            # Some funky sign issues, slope is opposite the expected sign,
-            # and offset is off by 0.5 strips, and need to convert to strips
-            #
-            
-            linefitOffset[int(elements[0])][int(elements[1])] = 0.5*float(elements[2])  + 0.25 #offset between the two
-            linefitSlope[int(elements[0])][int(elements[1])] = -0.5*float(elements[3])
-            linefitChi2[int(elements[0])][int(elements[1])] = float(elements[4])
-            linefitNDF[int(elements[0])][int(elements[1])] = float(elements[5])
-            linefitOffsetErr[int(elements[0])][int(elements[1])] = 0.5*float(elements[6])
-            linefitSlopeErr[int(elements[0])][int(elements[1])] = 0.5*float(elements[7])
-            
-    return linefitOffset, linefitSlope, linefitChi2, linefitNDF, linefitOffsetErr, linefitSlopeErr
-       
 def createDataLUT(chamber):
     print("\033[94m=== Creating Data LUT for %s===\033[0m"%(chamber[0]))
     #open file
@@ -109,6 +72,16 @@ def createDataLUT(chamber):
     slopeRMS = {}
     N = {} #array of how many matching segments were found for each pattern/cc
     
+    
+    # for unique cc count vs segments ran over plot
+    ccCountVsSegmentsY         = array('d')
+    ccCountVsSegmentsX         = array('d')
+
+    # total pattern/ccs we have entries for
+    totalPatterns = 0
+    #valid segments we have looked at
+    validSegments = 0
+    
     counter = 0
     entries = myT.GetEntries()
     for event in myT:
@@ -117,6 +90,7 @@ def createDataLUT(chamber):
         if(event.ccId == -1): continue #ignore unmatched cc's
         
         if not validEvent(event, chamber[1], chamber[2]): continue
+        validSegments+=1
         
         #######  Now look at the event itself
         if not (event.patternId in offsetSums):
@@ -131,60 +105,91 @@ def createDataLUT(chamber):
         if not(event.ccId in offsetSums[event.patternId]):
             offsetSums[event.patternId][event.ccId] = []
             slopeSums[event.patternId][event.ccId] = []
+            totalPatterns +=1
+
+        if not validSegments % 10000:
+            ccCountVsSegmentsX.append(validSegments)
+            ccCountVsSegmentsY.append(totalPatterns)
 
             
         offsetSums[event.patternId][event.ccId].append(event.segmentX-event.patX)
         slopeSums[event.patternId][event.ccId].append(event.segmentdXdZ)
      
-    # total pattern/ccs we have entries for
-    totalPatterns = 0
     
     #now loop over all the patterns we found    
     for patt in offsetSums.keys(): 
         for cc in offsetSums[patt].keys():
-            totalPatterns +=1
             offsetMeans[patt][cc], offsetRMS[patt][cc] ,N[patt][cc] = getStats(offsetSums, patt, cc)
             slopeMeans[patt][cc], slopeRMS[patt][cc], _ = getStats(slopeSums, patt, cc)
             
     inF.Close()
     
     #TODO: Make it so we write the LUT to a file, so we don't ahve to calculate each time
+    print("\033[94m=== Writing Data LUT for %s===\033[0m"%(chamber[0]))
+    outF = r.TFile(LUTWRITEDIR+chamber[0]+"-"+LUTFILE,"RECREATE")
+    g = r.TGraph(len(ccCountVsSegmentsX),ccCountVsSegmentsX,ccCountVsSegmentsY)
+    g.Write()
+    outF.Close()
 
     
     print("Found Entries for %i / 20480 possible patterns"%totalPatterns)
     return offsetMeans, slopeMeans, offsetRMS, slopeRMS, N
 
-def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):  
+
+#TODO:
+# write new function
+# - should create an LUT, one with all line fits, one with all data differences, noting how many
+#  segments were used
+# - for different values of N, look at the RMS of the distribution obtained using linefits
+#   compared to that using the data distribution
+# - if things work like you expect, the width of the low N segments should be large in data 
+#   for small N, but shrink (quadratically?) with more N
+#   whereas the line fits should stay roughly the same as we move
+# - Plot the distributions against each other, and find intersection, this is the best N
+
+def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope, linefitChi2, linefitNDF):  
     print("\033[94m=== Running Test on LUT for %s ===\033[0m"%(chamber[0])) 
     print "Testing with: %s"%TESTFILE
 
-    
-    #array of all of the N threshold we should use, uses linefits for everything UNDER the threshold
-    N_threshold      = array('d')
-    rmsAtN_threshold = array('d')
 
-    for N in range(1,15):
-	N_threshold.append(N)
-    N_threshold.append(20)
-    N_threshold.append(30)
-    N_threshold.append(50)
-    N_threshold.append(100)
-    N_threshold.append(500)
-    N_threshold.append(1000)
-
+    #array of the values of N we will look at, for each value, we look at the rms 
+    # using entries in the LUT that were created using exactly the value in the array
     
+    nSegmentsUsedInLUTCreation = array('d')
+    DataRMSatN = array('d')
+    LineRMSatN = array('d')
+    
+    for N in range(1,10):
+        nSegmentsUsedInLUTCreation.append(N)
+    nSegmentsUsedInLUTCreation.append(15)
+    nSegmentsUsedInLUTCreation.append(20)
+    nSegmentsUsedInLUTCreation.append(30)
+    nSegmentsUsedInLUTCreation.append(50)
+    nSegmentsUsedInLUTCreation.append(100)
+    nSegmentsUsedInLUTCreation.append(500)
+    nSegmentsUsedInLUTCreation.append(1000)
+    nSegmentsUsedInLUTCreation.append(10000)
+    nSegmentsUsedInLUTCreation.append(100000)
+    
+    #set up different histograms    
+        
+    h_chi2s       = []
+    
+    
+    for i in range(3,7):
+        h_chi2s.append(r.TH1F("h_chi2-%ilays"%i, "h_chi2-%ilays; #chi^2; Segments"%i,100, 0.,5.))
+        
     h_differences = []
     h_lineDiff    = []
     h_dataDiff    = []
 
-    for i, N in enumerate(N_threshold):
-        h_differences.append(r.TH1F("h_%i"%N,     "h_%i;     Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
+
+    for i, N in enumerate(nSegmentsUsedInLUTCreation):
         h_lineDiff   .append(r.TH1F("h_line%i"%N, "h_line%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_lineDiff[i].SetFillColor(r.kRed)
         h_dataDiff   .append(r.TH1F("h_data%i"%N, "h_data%i; Segment - LUT [strips]; Segments"%N, 200,-1.,1.))
         h_dataDiff[i].SetFillColor(r.kBlue)
-
-    
+        
     #open file
     inF = r.TFile(TESTFILE)
     myT = inF.plotTree
@@ -194,7 +199,7 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
     #
     
 
-    outputFolder = "../data/%s/%s"%(HIT_FOLDER, chamber[0])
+    outputFolder = "%s/%s"%(TESTWRITEDIR, chamber[0])
     
     if not os.path.isdir(outputFolder):
         print("Making directory: %s"%outputFolder)
@@ -216,101 +221,86 @@ def runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope):
            
         #check if we should look at this event    
         if not validEvent(event, chamber[1], chamber[2]): continue
+        
+        
+        
     
         validEvents += 1
         if not dataOffset.has_key(patt) or not dataOffset[patt].has_key(cc): 
             missedEvents += 1
             continue
-
+        
+        ccLayers = int(linefitNDF[patt][cc]+2)
+        
+        h_chi2s[ccLayers-3].Fill(linefitChi2[patt][cc])
         linefitDiff = event.segmentX - (linefitOffset[patt][cc] + event.patX)
         dataDiff    = event.segmentX -    (dataOffset[patt][cc] + event.patX)
     
-        for i, N in enumerate(N_threshold):
-            belowThreshold = dataN[patt][cc] < N
-            h_differences[i].Fill(linefitDiff if belowThreshold else dataDiff)
-            if belowThreshold:
+        for i, N in enumerate(nSegmentsUsedInLUTCreation):   
+            if dataN[patt][cc]  == N:
                 h_lineDiff[i].Fill(linefitDiff)
-            else:
                 h_dataDiff[i].Fill(dataDiff)
+            elif i and dataN[patt][cc] > nSegmentsUsedInLUTCreation[i-1] and dataN[patt][cc] < N:
+                h_lineDiff[i].Fill(linefitDiff)
+                h_dataDiff[i].Fill(dataDiff)
+                
     
-    for i, h in enumerate(h_differences):
-        rmsAtN_threshold.append(h.GetRMS())
-        h_differences[i].Write()
-        h_stack = r.THStack(h_differences[i].GetName(), h_differences[i].GetName())
-        h_stack.Add(h_lineDiff[i])
-        h_stack.Add(h_dataDiff[i])
-        c = r.TCanvas()
-        c.cd()
-        c.SetLogy()
-        h_stack.Draw()
-        
-        leg = r.TLegend(0.03,0.05, 0.30, 0.25)
-        leg.AddEntry(h_lineDiff[i], "Line Fit")
-        leg.AddEntry(h_dataDiff[i], "Data")
-        leg.Draw()
-        
-        #stats boxs
-        c.Update()
-        
-        stack_stats = h_stack.GetHistogram().FindObject('stats')
-        stack_stats.Draw()
-        
-        #c.SaveAs("%s/%s-%i.pdf"%(outputFolder, chamber[0], N_threshold[i]))
-
+    for i, h in enumerate(h_lineDiff):
+        LineRMSatN.append(h_lineDiff[i].GetRMS())
+        DataRMSatN.append(h_dataDiff[i].GetRMS())
         
         h_lineDiff[i].Write()
         h_dataDiff[i].Write()
+        
+    for h in h_chi2s:
+        h.Write()
     
-    rmsVsNThreshold = r.TGraph(len(N_threshold),N_threshold,rmsAtN_threshold)
-    rmsVsNThreshold.SetTitle("Test RMS vs LUT N_{t}")
-    rmsVsNThreshold.GetXaxis().SetTitle("N_{t}")
-    rmsVsNThreshold.GetYaxis().SetTitle("#sigma_{x} [strips]")
-    rmsVsNThreshold.Write()
+    g_LineRMSatN = r.TGraph(len(nSegmentsUsedInLUTCreation),nSegmentsUsedInLUTCreation,LineRMSatN)
+    g_LineRMSatN.GetXaxis().SetTitle("N_{t}")
+    g_LineRMSatN.GetYaxis().SetTitle("#sigma_{x} [strips]")
+    g_LineRMSatN.Write()
+    
+    g_DataRMSatN = r.TGraph(len(nSegmentsUsedInLUTCreation),nSegmentsUsedInLUTCreation,DataRMSatN)
+    g_DataRMSatN.GetXaxis().SetTitle("N_{t}")
+    g_DataRMSatN.GetYaxis().SetTitle("#sigma_{x} [strips]")    
+    g_DataRMSatN.Write()
     
     print "Finished Writing data to ROOT file: %s"%outFName
 
     outF.Close()
+
     
     print("Finished running code: missed %i / %i = %f events"%(missedEvents,validEvents,1.*missedEvents/validEvents))
     
-    return rmsVsNThreshold
+    return 
   
 
 
 #
 #     Read in linear fit data
 #    
-linefitOffset, linefitSlope, _, _, _, _ = createLineFitLUT("../data/linearFits.txt")
+linefitOffset, linefitSlope, linefitChi2, linefitNDF, _, _ = common.createLineFitLUT("../data/linearFits.txt")
 
 
 
-
-cT = r.TCanvas()
-legT = r.TLegend(0.03,0.05, 0.30, 0.25)
 
 #divide everything into chambers and run that way
 chambers = []
 #                name, st, ri
-#chambers.append(["All-Chambers", 0, 0,r.kBlack])
-#chambers.append(["ME11B", 1,1, r.kRed-4])
-chambers.append(["ME11A", 1,4, r.kGreen+1])
-#chambers.append(["ME12", 1,2, r.kBlue+1])
-#chambers.append(["ME13", 1,3, r.kMagenta-4])
-#chambers.append(["ME21", 2,1, r.kYellow-3])
-#chambers.append(["ME22", 2,2, r.kCyan-3])
-#chambers.append(["ME31", 3,1, r.kBlue+3])
-#chambers.append(["ME32", 3,2, r.kRed+2])
-#chambers.append(["ME41", 4,1, r.kOrange+7])
-#chambers.append(["ME42", 4,2, r.kBlue-8])
+#chambers.append(["All-Chambers", 0, 0])
+#chambers.append(["ME11B", 1,1])
+#chambers.append(["ME11A", 1,4])
+chambers.append(["ME12", 1,2])
+#chambers.append(["ME13", 1,3])
+#chambers.append(["ME21", 2,1])
+#chambers.append(["ME22", 2,2])
+#chambers.append(["ME31", 3,1])
+#chambers.append(["ME32", 3,2])
+#chambers.append(["ME41", 4,1])
+#chambers.append(["ME42", 4,2])
 
 
 for chamber in chambers:
     dataOffset, dataSlope, _, _, dataN = createDataLUT(chamber)
-    rmsVsThres = runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope)
-    rmsVsThres.SetLineColor(color[3])
-    cT.cd()
-    legT.AddEntry(rmsVsThres, chamber[0])
-    rmsVsThres.Draw("al")
-    
-legT.Draw()
-cT.Print("../data/%s/compiledrmsVsNGraph.pdf"%HIT_FOLDER)
+    runTest(chamber, dataOffset, dataSlope, dataN, linefitOffset, linefitSlope, linefitChi2, linefitNDF)
+
