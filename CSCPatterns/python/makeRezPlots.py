@@ -106,7 +106,8 @@ def createHists(chamber):
     print("=== Running over Chamber %s ==="%(chamber[0]))
     
     #open file
-    inF = r.TFile("../data/%s/processedMatches_1.root"%folder)
+    #inF = r.TFile("../data/%s/processedMatches_1.root"%folder)
+    inF = r.TFile("/uscms/home/wnash/eos/Charmonium/charmonium2017D/CLCTMatch-Full.root")
     myT = inF.plotTree
     
     #output file
@@ -114,7 +115,7 @@ def createHists(chamber):
     
     
     #frequency plots, will be returned
-    patList = [100,400,500,800,900]
+    patList = [100,90,80,70,60]
     freakwencies = {}
     for pat in patList:
         freakwencies[pat] = np.zeros(4096) #all the possible comparator codes, initialize their frequency to zero
@@ -142,18 +143,18 @@ def createHists(chamber):
         if not validEvent(event, chamber[1], chamber[2]): continue
         
         #fill stuff we dont have yet
-        if not (event.envelopeId in patternPosMeans):
-            patternPosMeans[event.envelopeId] = []
-            patternSlopeMeans[event.envelopeId] = []
-            ccPosMeans[event.envelopeId] = {}
-            ccSlopeMeans[event.envelopeId] = {}
-            unshiftedPosSlopePlots[event.envelopeId] = r.TH1D("unshifted_patSlope%i"%(event.envelopeId),
-                                               "unshifted_patSlope%i;Slope [strips/layer]; Events"%(event.envelopeId), 
+        if not (event.patternId in patternPosMeans):
+            patternPosMeans[event.patternId] = []
+            patternSlopeMeans[event.patternId] = []
+            ccPosMeans[event.patternId] = {}
+            ccSlopeMeans[event.patternId] = {}
+            unshiftedPosSlopePlots[event.patternId] = r.TH1D("unshifted_patSlope%i"%(event.patternId),
+                                               "unshifted_patSlope%i;Slope [strips/layer]; Events"%(event.patternId), 
                                                nbins,-hist_range,hist_range)
             
-        if not (event.patternId in ccPosMeans[event.envelopeId]):
-            ccPosMeans[event.envelopeId][event.patternId] = []
-            ccSlopeMeans[event.envelopeId][event.patternId] = []
+        if not (event.ccId in ccPosMeans[event.patternId]):
+            ccPosMeans[event.patternId][event.ccId] = []
+            ccSlopeMeans[event.patternId][event.ccId] = []
             
         if not (event.legacyLctId in legacyPosMeans) :
             legacyPosMeans[event.legacyLctId] = []
@@ -162,13 +163,13 @@ def createHists(chamber):
                                                "unshifted_legSlope%i;Slope [strips/layer]; Events"%(event.legacyLctId), 
                                                nbins,-hist_range,hist_range)
             
-        patternPosMeans[event.envelopeId].append(event.segmentX-event.patX)
-        patternSlopeMeans[event.envelopeId].append(event.segmentdXdZ)
-        ccPosMeans[event.envelopeId][event.patternId].append(event.segmentX-event.patX)
-        ccSlopeMeans[event.envelopeId][event.patternId].append(event.segmentdXdZ)
+        patternPosMeans[event.patternId].append(event.segmentX-event.patX)
+        patternSlopeMeans[event.patternId].append(event.segmentdXdZ)
+        ccPosMeans[event.patternId][event.ccId].append(event.segmentX-event.patX)
+        ccSlopeMeans[event.patternId][event.ccId].append(event.segmentdXdZ)
         legacyPosMeans[event.legacyLctId].append(event.segmentX-event.legacyLctX)
         legacySlopeMeans[event.legacyLctId].append(event.segmentdXdZ)
-        unshiftedPosSlopePlots[event.envelopeId].Fill(event.segmentdXdZ)
+        unshiftedPosSlopePlots[event.patternId].Fill(event.segmentdXdZ)
         unshiftedLegacySlopePlots[event.legacyLctId].Fill(event.segmentdXdZ)
         
         
@@ -205,32 +206,32 @@ def createHists(chamber):
         #check if we shuold look at this event    
         if not validEvent(event, chamber[1], chamber[2]): continue
         
-        if not (event.envelopeId in calculatedPattPosMeans):
-            calculatedPattPosMeans[event.envelopeId] = sum(patternPosMeans[event.envelopeId])/float(len(patternPosMeans[event.envelopeId]))
-            #print("mean for %i is : %f"%(event.envelopeId, calculatedPattPosMeans[event.envelopeId]))
-            calculatedPattSlopeMeans[event.envelopeId] = sum(patternSlopeMeans[event.envelopeId])/float(len(patternSlopeMeans[event.envelopeId]))
-            pattPosPlots[event.envelopeId]= r.TH1D("patPos%i"%(event.envelopeId),
-                                               "patPos%i;Position Difference [strips]; Events"%(event.envelopeId), 
+        if not (event.patternId in calculatedPattPosMeans):
+            calculatedPattPosMeans[event.patternId] = sum(patternPosMeans[event.patternId])/float(len(patternPosMeans[event.patternId]))
+            #print("mean for %i is : %f"%(event.patternId, calculatedPattPosMeans[event.patternId]))
+            calculatedPattSlopeMeans[event.patternId] = sum(patternSlopeMeans[event.patternId])/float(len(patternSlopeMeans[event.patternId]))
+            pattPosPlots[event.patternId]= r.TH1D("patPos%i"%(event.patternId),
+                                               "patPos%i;Position Difference [strips]; Events"%(event.patternId), 
                                                nbins,-hist_range,hist_range)
-            pattSlopePlots[event.envelopeId] = r.TH1D("patSlope%i"%(event.envelopeId),
-                                                      "patSlope%i;Slope [strips/layer]; Events"%(event.envelopeId),
+            pattSlopePlots[event.patternId] = r.TH1D("patSlope%i"%(event.patternId),
+                                                      "patSlope%i;Slope [strips/layer]; Events"%(event.patternId),
                                                       nbins,-hist_range,hist_range)
-            calculatedCCPosMeans[event.envelopeId] = {}
-            calculatedCCSlopeMeans[event.envelopeId] = {}
-            ccPosPlots[event.envelopeId] = {}
-            unshiftedccPosPlots[event.envelopeId] = {}
-            ccSlopePlots[event.envelopeId] = {}
-        if not (event.patternId in calculatedCCPosMeans[event.envelopeId]):
-            calculatedCCPosMeans[event.envelopeId][event.patternId] = sum(ccPosMeans[event.envelopeId][event.patternId])/float(len(ccPosMeans[event.envelopeId][event.patternId]))
-            calculatedCCSlopeMeans[event.envelopeId][event.patternId] = sum(ccSlopeMeans[event.envelopeId][event.patternId])/float(len(ccSlopeMeans[event.envelopeId][event.patternId]))
-            ccPosPlots[event.envelopeId][event.patternId] = r.TH1D("patPos%i_cc%i"%(event.envelopeId, event.patternId),
-                                                                  "patPos%i_cc%i;Position Difference [strips]; Events"%(event.envelopeId, event.patternId),
+            calculatedCCPosMeans[event.patternId] = {}
+            calculatedCCSlopeMeans[event.patternId] = {}
+            ccPosPlots[event.patternId] = {}
+            unshiftedccPosPlots[event.patternId] = {}
+            ccSlopePlots[event.patternId] = {}
+        if not (event.ccId in calculatedCCPosMeans[event.patternId]):
+            calculatedCCPosMeans[event.patternId][event.ccId] = sum(ccPosMeans[event.patternId][event.ccId])/float(len(ccPosMeans[event.patternId][event.ccId]))
+            calculatedCCSlopeMeans[event.patternId][event.ccId] = sum(ccSlopeMeans[event.patternId][event.ccId])/float(len(ccSlopeMeans[event.patternId][event.ccId]))
+            ccPosPlots[event.patternId][event.ccId] = r.TH1D("patPos%i_cc%i"%(event.patternId, event.ccId),
+                                                                  "patPos%i_cc%i;Position Difference [strips]; Events"%(event.patternId, event.ccId),
                                                                   nbins,-hist_range,hist_range)
-            unshiftedccPosPlots[event.envelopeId][event.patternId]  = r.TH1D("unshiftedPatPos%i_cc%i"%(event.envelopeId, event.patternId),
-                                                                  "unshiftedPatPos%i_cc%i;Position Difference [strips]; Events"%(event.envelopeId, event.patternId),
+            unshiftedccPosPlots[event.patternId][event.ccId]  = r.TH1D("unshiftedPatPos%i_cc%i"%(event.patternId, event.ccId),
+                                                                  "unshiftedPatPos%i_cc%i;Position Difference [strips]; Events"%(event.patternId, event.ccId),
                                                                   nbins,-hist_range,hist_range)
-            ccSlopePlots[event.envelopeId][event.patternId] = r.TH1D("patSlope%i_cc%i"%(event.envelopeId, event.patternId),
-                                                                  "patSlope%i_cc%i;Slope [strips/layer]; Events"%(event.envelopeId, event.patternId),
+            ccSlopePlots[event.patternId][event.ccId] = r.TH1D("patSlope%i_cc%i"%(event.patternId, event.ccId),
+                                                                  "patSlope%i_cc%i;Slope [strips/layer]; Events"%(event.patternId, event.ccId),
                                                                   nbins,-hist_range,hist_range)
            
         if not (event.legacyLctId in calculatedlegacyPosMeans):
@@ -242,11 +243,11 @@ def createHists(chamber):
                                                          nbins,-hist_range,hist_range)
           
     
-        pattPosPlots[event.envelopeId].Fill(event.segmentX-event.patX - calculatedPattPosMeans[event.envelopeId])
-        pattSlopePlots[event.envelopeId].Fill(event.segmentdXdZ - calculatedPattSlopeMeans[event.envelopeId])
-        ccPosPlots[event.envelopeId][event.patternId].Fill(event.segmentX-event.patX - calculatedCCPosMeans[event.envelopeId][event.patternId])
-        unshiftedccPosPlots[event.envelopeId][event.patternId].Fill(event.segmentX-event.patX)
-        ccSlopePlots[event.envelopeId][event.patternId].Fill(event.segmentdXdZ - calculatedCCSlopeMeans[event.envelopeId][event.patternId])
+        pattPosPlots[event.patternId].Fill(event.segmentX-event.patX - calculatedPattPosMeans[event.patternId])
+        pattSlopePlots[event.patternId].Fill(event.segmentdXdZ - calculatedPattSlopeMeans[event.patternId])
+        ccPosPlots[event.patternId][event.ccId].Fill(event.segmentX-event.patX - calculatedCCPosMeans[event.patternId][event.ccId])
+        unshiftedccPosPlots[event.patternId][event.ccId].Fill(event.segmentX-event.patX)
+        ccSlopePlots[event.patternId][event.ccId].Fill(event.segmentdXdZ - calculatedCCSlopeMeans[event.patternId][event.ccId])
         legacyPosPlots[event.legacyLctId].Fill(event.segmentX-event.legacyLctX - calculatedlegacyPosMeans[event.legacyLctId])
         legacySlopePlots[event.legacyLctId].Fill(event.segmentdXdZ-calculatedlegacySlopeMeans[event.legacyLctId])
     
@@ -274,7 +275,7 @@ def createHists(chamber):
 
     colors = [r.kBlue, r.kMagenta+1, r.kRed, r.kOrange+1, r.kBlack]
     ccounter = 0
-    envOrdering = [900,800,500,400,100]
+    envOrdering = [90,80,70,60,100]
     for env in envOrdering:
         
         if not len(ccPosPlots[env]): continue
@@ -445,7 +446,7 @@ intFile.close()
 
 outF = r.TFile("../data/%s/fullAnalFrequency.root"%(folder),"RECREATE")
  
-patList = [100,400,500,800,900]
+patList = [100,70,60,80,90]
 
 #iterate over all combinations of chambers
 for chamber1 in range(0,len(frequencies)):

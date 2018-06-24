@@ -10,13 +10,17 @@
 
 using namespace std;
 
-int patternDrawer(unsigned int pattID,unsigned int cc){
+int patternDrawer(unsigned int pattID,int cc){
 
 	//all the new patterns
 	vector<ChargePattern>* newPatterns = createNewEnvelopes();
 
 	for(auto patt = newPatterns->begin(); patt != newPatterns->end(); ++patt){
 		if(patt->m_id == pattID){
+			printf("Pattern: %i\n", pattID);
+			if(cc > 0) printf("     CC:%i\n", cc);
+
+
 			int hits [MAX_PATTERN_WIDTH][NLAYERS];
 			if(patt->recoverPatternCCCombination(cc, hits)){
 				cout << "Error: CC evaluation has failed" << endl;
@@ -24,7 +28,7 @@ int patternDrawer(unsigned int pattID,unsigned int cc){
 			}
 			for(unsigned int i =0; i < NLAYERS; i++){
 				for(unsigned int j=0; j < MAX_PATTERN_WIDTH; j++){
-					cout << hits[j][i];
+					cout << (hits[j][i] ? "X" : "~");
 				}
 				cout << endl;
 			}

@@ -51,8 +51,8 @@ int comparatorCodeEmulator(){
 
 	//output file stream to write the fits
 	ofstream output;
-	output.open("../data/linearFits.txt");
-	output << "Pattern\tCC\tOffset\tSlope\tChi2\tNDF\tSlopeErr\tOffErr\n";
+	output.open("../data/linearFits.lut");
+	//output << "Pattern\tCC\tOffset\tSlope\tChi2\tNDF\tSlopeErr\tOffErr\n";
 
 
 	// for each pattern
@@ -106,11 +106,29 @@ int comparatorCodeEmulator(){
 			if(DEBUG > 0) cout << "Offset: " << offset<<
 					" Slope: " << slope << endl;
 
+
+            // formatted as: pattern (cc) - position slope nsegments (quality layers chi2)
+
+			int layers = ndf+2;
+			int nsegments = 0; //set default
+			float quality = -1.; //set default
+
 			// record the offset (centered) and slope of the line
-			output << patt->name() << "\t" << code << "\t" <<
-					offset<< "\t" << slope << "\t" <<
-					chi2 << "\t" << ndf << "\t" <<
-					sigmaB << "\t" << sigmaM <<"\n";
+
+//
+// Some funky sign issues, slope is opposite the expected sign,
+// and offset is off by 0.5 strips, and need to convert to strips
+//
+			offset = 0.5*offset+0.25;
+			slope = -0.5*slope;
+			sigmaB = 0.5*sigmaB;
+			sigmaM = 0.5*sigmaM;
+
+			output << patt->name() << " " << code << " ~ " <<
+					offset << " " << slope << " " <<
+					nsegments << " " << quality << " " <<
+					layers << " " << chi2 << "\n";
+					//sigmaB << "\t" << sigmaM <<"\n";
 
 			delete gr;
 		}
