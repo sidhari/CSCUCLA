@@ -419,8 +419,8 @@ def createHists(chamber):
 #actually run the code, not particularly efficient
 chambers = []
 #                name, st, ri
-#chambers.append(["All-Chambers", 0, 0])
-chambers.append(["ME11B", 1,1])
+chambers.append(["All-Chambers", 0, 0])
+#chambers.append(["ME11B", 1,1])
 #chambers.append(["ME11A", 1,4])
 #chambers.append(["ME12", 1,2])
 #chambers.append(["ME13", 1,3])

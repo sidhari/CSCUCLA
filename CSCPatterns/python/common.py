@@ -1,6 +1,6 @@
 import ROOT as r
 
-colors = [r.kRed-4, r.kGreen+1, r.kBlue+1, r.kMagenta-4, r.kYellow-3, r.kCyan-3, r.kBlue+3, r.kRed+2, r.kOrange+7, r.kBlue-8]
+colors = [r.kBlack, r.kRed-4, r.kGreen+1, r.kBlue+1, r.kMagenta-4, r.kYellow-3, r.kCyan-3, r.kBlue+3, r.kRed+2, r.kOrange+7, r.kBlue-8, 30, 50, 20, r.kYellow, 38]
 
   
 class LUT:
@@ -71,3 +71,57 @@ def createLineFitLUT(filepath):
             
     return lut
        
+       
+
+def loadLUT(filepath):
+    
+    with open(filepath, 'r') as f:
+        line = f.readline() #just look at the first like to determine shape of LUT
+        [identifiers, lutquantities] = line.split('~')
+        identifiers = identifiers.split()
+        lutquantities = lutquantities.split()
+        print "Loading LUT: %s"%filepath
+        print "Sample line: " 
+        print  identifiers 
+        print  lutquantities
+            
+        lut = LUT() if len(identifiers) == 2 else LUT(True)
+        
+        f.seek(0) #reset to top
+        for line in f:
+            #should be formatted as 
+            # pattern (cc) - position slope (quality layers chi2)
+            
+            [identifiers, lutquantities] = line.split('~')
+            identifiers = identifiers.split()
+            lutquantities = lutquantities.split()
+            
+            extras = len(lutquantities) > 3 # if we have the extras elements in our LUT
+            
+            patt = int(identifiers[0])
+                
+            if(len(identifiers)) == 1:
+                positions = float(lutquantities[0])
+                slopes    = float(lutquantities[1])
+                nsegments = int(lutquantities[2])
+                lut.addLegacyEntry(patt,positions, slopes, nsegments)
+                                
+            elif len(identifiers) == 2:
+                cc = int(identifiers[1])
+                position = float(lutquantities[0])
+                slope   = float(lutquantities[1])
+                nsegments = int(lutquantities[2])
+                if extras == True:
+                    quality = float(lutquantities[3])
+                    layers  = int(lutquantities[4])
+                    chi2    = float(lutquantities[5])
+                    lut.addEntry(patt, cc, position, slope, nsegments, quality, layers, chi2)
+                else:
+                    lut.addEntry(patt, cc, position, slope, nsegments)
+                       
+            else:
+                print("Error: lut file format incorrect")
+                return 
+                
+    return lut
+         
