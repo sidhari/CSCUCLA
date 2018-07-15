@@ -14,7 +14,7 @@ from array import array
 
 SAMPLEDIR       = "/uscms/home/wnash/eos/Charmonium/"
 #TRAININGFOLDER = "charmonium2017C/"
-TRAININGFOLDER = "charmonium2016F/"
+TRAININGFOLDER = "charmonium2016F+2017BCEF/"
 TESTFOLDER     = "charmonium2017D/"
 DATAFILE       = "CLCTMatch-Full.root"
 
@@ -445,7 +445,7 @@ def runTest(chamber, newLUT, legacyLUT, linefitLUT):
   
 
 
-#
+#2ff
 #     Read in linear fit data
 #    
 linefitLUT = common.loadLUT("../data/linearFits.lut")
@@ -457,16 +457,16 @@ linefitLUT = common.loadLUT("../data/linearFits.lut")
 chambers = []
 #                name, st, ri
 #chambers.append(["All-Chambers", 0, 0])
-chambers.append(["ME11B", 1,1])
+#chambers.append(["ME11B", 1,1])
 #chambers.append(["ME11A", 1,4])
 #chambers.append(["ME12", 1,2])
 #chambers.append(["ME13", 1,3])
-#chambers.append(["ME21", 2,1])
-#chambers.append(["ME22", 2,2])
-#chambers.append(["ME31", 3,1])
-#chambers.append(["ME32", 3,2])
-#chambers.append(["ME41", 4,1])
-#chambers.append(["ME42", 4,2])
+chambers.append(["ME21", 2,1])
+chambers.append(["ME22", 2,2])
+chambers.append(["ME31", 3,1])
+chambers.append(["ME32", 3,2])
+chambers.append(["ME41", 4,1])
+chambers.append(["ME42", 4,2])
 
 
 for chamber in chambers:

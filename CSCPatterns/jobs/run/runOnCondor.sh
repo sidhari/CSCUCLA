@@ -1,6 +1,6 @@
 #!/bin/bash
 
-CMSVERS=CMSSW_9_2_8
+CMSVERS=CMSSW_8_0_31
 
 #sets up environment so c++ executable knows where libraries are
 echo "Starting job on " `date` #Date/time of start of job

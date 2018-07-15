@@ -2,7 +2,7 @@ import glob
 import os
 
 EOS = '/uscms/home/wnash/eos/'
-SAMPLE_DIR = 'Charmonium/charmonium2016F/'
+SAMPLE_DIR = 'Charmonium/charmonium2017F/'
 TOP_DIR = EOS+SAMPLE_DIR
 SRC_DIR = '../src/'
 TEMPLATE_RUN_FOLDER = 'run/'
@@ -75,7 +75,7 @@ if os.path.isfile(SRC_DIR+EXECUTABLE):
     os.system('mv '+SRC_DIR+EXECUTABLE+' '+runFolder)
 else:
     print "Failed to compile executable"
-    exit
+    exit()
 
 print "Copying Condor "
 if os.path.isfile(TEMPLATE_RUN_FOLDER+RUN_ON_CONDOR_SCRIPT):
