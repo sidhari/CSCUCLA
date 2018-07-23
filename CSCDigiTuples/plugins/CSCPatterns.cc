@@ -215,6 +215,8 @@ CSCPatterns::~CSCPatterns()
     ptmuon->Write();
     ptmu1->Write();
     ptmu2->Write();
+
+    // Could get rid of some of these
     dimuonMos->Write();
     dimuonMss->Write();
     dimuon3M->Write();
@@ -314,6 +316,10 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     vector<bool> muTracker;
     TLorentzVector sp4(0.0,0.0,0.0,0.0);
 
+    //
+    //selection starts here
+    //
+
     for (reco::MuonCollection::const_iterator muon = muons->begin(); muon!= muons->end(); muon++) 
     {
         Nmuon++;
@@ -410,6 +416,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     cout << "Event " << evN << " Processed!" << endl;
     cout << "inMos: " << inMos << " inMss: " << inMss << " mu1Ios: " << mu1Ios << " mu2Ios: " << mu2Ios << " mu1Iss: " << mu1Iss << " mu2Iss: " << mu2Iss << endl;
 
+
     int ind = -1;
     //Loop over muons applying the selection used for the timing analysis
     for (reco::MuonCollection::const_iterator muon = muons->begin(); muon!= muons->end(); muon++) 
@@ -423,7 +430,13 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         if (!muon->standAloneMuon()) continue;
         if (muon->pt()<minPt) continue;
+
+        //isGoodMuon in src/MuonQualityCuts.cc
         //if (!muonQualityCuts->isGoodMuon(iEvent, muon, beamSpotHandle)) continue;
+
+        //
+        //selection ends here
+        //
 
         segEc.clear();
         segSt.clear();

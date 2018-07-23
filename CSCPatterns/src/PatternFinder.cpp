@@ -8,33 +8,18 @@
 
 #include <TTree.h>
 #include <TFile.h>
-#include <TH1F.h>
-#include <TH2F.h>
-#include <TLegend.h>
-#include <TStyle.h>
-#include <THStack.h>
-#include <TString.h>
-#include <TROOT.h>
+
 
 #include <string>
 #include <vector>
 #include <iostream>
-#include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
 #include "../include/PatternFinderHelperFunctions.h"
 
 using namespace std;
-
-
-#ifdef __MAKECINT__
-#pragma link C++ class vector<vector<int> >+;
-#pragma link C++ class vector<vector<vector<int> > >+;
-#endif
-
 
 int PatternFinder(string inputfile, string outputfile, int start, int end) {
 
@@ -106,12 +91,12 @@ int PatternFinder(string inputfile, string outputfile, int start, int end) {
 
 
     //
-    // SET ALL OUR CHARGE ENVELOPES
+    // MAKE ALL THE PATTERNS
     //
 
 
-    vector<ChargePattern>* newEnvelopes = createNewEnvelopes();
-    vector<ChargePattern>* oldEnvelopes = createOldEnvelopes();
+    vector<CSCPattern>* newEnvelopes = createNewPatterns();
+    vector<CSCPattern>* oldEnvelopes = createOldPatterns();
 
     //
     // OUTPUT TREE
@@ -204,8 +189,7 @@ int PatternFinder(string inputfile, string outputfile, int start, int end) {
             ChamberHits theseCompHits(1, ST, RI, EC, CH);
 
 
-            if(fillCompHits(theseCompHits, compStr,compHS,compTimeOn, compLay,compId,
-            					EC,ST,RI,CH)) return -1;
+            if(fillCompHits(theseCompHits, compStr,compHS,compTimeOn, compLay,compId)) return -1;
 
 
             //find out where the reconstructed hits are for this segment
@@ -228,12 +212,12 @@ int PatternFinder(string inputfile, string outputfile, int start, int end) {
                     return -1;
                 }
 
-                theseRHHits.hits[iRhStrip][iLay] = true;
+                theseRHHits._hits[iRhStrip][iLay] = true;
             }
 
 
-            vector<SingleEnvelopeMatchInfo*> newSetMatch;
-            vector<SingleEnvelopeMatchInfo*> oldSetMatch;
+            vector<CLCTCandidate*> newSetMatch;
+            vector<CLCTCandidate*> oldSetMatch;
 
             ChamberHits* testChamber;
             if(USE_COMP_HITS){
@@ -314,21 +298,16 @@ int PatternFinder(string inputfile, string outputfile, int start, int end) {
 }
 
 int PatternFinder(string inputfile, string outputfile, int events){
-	return PatternFinder(inputfile,outputfile, 0,-1);
+	return PatternFinder(inputfile,outputfile, 0,events);
 }
 
 int PatternFinder(string inputfile, string outputfile){
 	return PatternFinder(inputfile, outputfile, 0, -1);
 }
 
+
 int main(int argc, char* argv[])
 {
-
-    //secret sauce using g++
-    gROOT->ProcessLine("#include <vector>");
-    gROOT->ProcessLine("#pragma link C++ class vector<vector<int> >+;");
-    gROOT->ProcessLine("#pragma link C++ class vector<vector<vector<int> > >+;");
-
 	switch(argc){
 		case 3:
 			return PatternFinder(string(argv[1]), string(argv[2]));
@@ -337,12 +316,15 @@ int main(int argc, char* argv[])
 		case 5:
 			return PatternFinder(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
 		default:
-			cout << "Gave %i Arguments, usage is:" << endl;
+			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
 			cout << "./PatternFinder inputFile outputFile (events)" << endl;
 			return -1;
 	}
-
 }
+
+
+
+
 
 
 
