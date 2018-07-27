@@ -8,8 +8,13 @@
 #ifndef PATTERNFINDERHELPERFUNCTIONS_H_
 #define PATTERNFINDERHELPERFUNCTIONS_H_
 
-#include "PatternFinderClasses.h"
 #include <math.h>
+
+#include "TTree.h"
+
+#include "PatternFinderClasses.h"
+#include "LUTClasses.h"
+
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow);
 
@@ -33,6 +38,8 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 //look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m);
 
+//makes a LUT out of a properly formatted TTree
+int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs);
 
 //creates the new set of patterns
 vector<CSCPattern>* createNewPatterns();
@@ -49,6 +56,9 @@ int fillCompHits(ChamberHits& theseCompHits,
 		const vector<int>* compLay,
 		const vector<int>* compId); // index of what ring/station you are on
 
-
+int fillRecHits(ChamberHits& theseRecHits,
+		const vector<int>* rhId,
+		const vector<int>* rhLay,
+		const vector<float>* rhPos);
 
 #endif /* PATTERNFINDERHELPERFUNCTIONS_H_ */

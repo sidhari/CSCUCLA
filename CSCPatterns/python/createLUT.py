@@ -85,7 +85,7 @@ def writeLUT(chamber, filepath, lut):
         if not lut.isLegacy:
             for cc in lut.positions[patt].keys():
                 #extra things we add to the line, if they exist, not great error checking!!
-                extras = '' if cc not in lut.quality[patt].keys() else ' %s %s %s'%(lut.quality[patt][cc], lut.layers[patt][cc], lut.chi2[patt][cc])
+                extras = ' 0. 0 0.' if cc not in lut.quality[patt].keys() else ' %s %s %s'%(lut.quality[patt][cc], lut.layers[patt][cc], lut.chi2[patt][cc])
                 
                 outline = '%s %s ~ %s %s %s'%(patt, cc, lut.positions[patt][cc], lut.slopes[patt][cc], lut.nsegments[patt][cc])
                 outline += extras

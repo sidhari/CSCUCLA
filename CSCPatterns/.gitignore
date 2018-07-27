@@ -1,1 +1,6 @@
 .DS_Store
+*.lut
+*.root
+*.txt
+plots/*
+../papers

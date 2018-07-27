@@ -10,6 +10,7 @@
 //root
 #include <TGraph.h>
 #include <TF1.h>
+#include <TSystem.h>
 
 //c++
 #include <fstream>
@@ -45,13 +46,19 @@ int getErrors(const vector<int>& x,const vector<int>& y, float& sigmaM, float& s
 
 
 int comparatorCodeEmulator(){
+	gSystem->Load("/home/wnash/workspace/CSCUCLA/CSCPatterns/lib/PatternFinderClasses_cpp");
+	gSystem->Load("/home/wnash/workspace/CSCUCLA/CSCPatterns/lib/PatternFinderHelperFunctions_cpp");
+
 
 	//all the patterns we will fit
-	vector<ChargePattern>* newPatterns = createNewEnvelopes();
+	vector<CSCPattern>* newPatterns = createNewPatterns();
 
 	//output file stream to write the fits
 	ofstream output;
-	output.open("../data/linearFits.lut");
+	output.open("/home/wnash/workspace/CSCUCLA/CSCPatterns/data/linearFits.lut");
+	if(!output.is_open()){
+		cout << "can't open file:" << endl;
+	}
 	//output << "Pattern\tCC\tOffset\tSlope\tChi2\tNDF\tSlopeErr\tOffErr\n";
 
 
@@ -62,7 +69,7 @@ int comparatorCodeEmulator(){
 
 
 			if(DEBUG >0) {
-				cout << "Evaluating Pattern: " << patt->name() << " CC: " << code << endl;
+				cout << "Evaluating Pattern: " << patt->getName() << " CC: " << code << endl;
 			}
 			int hits [MAX_PATTERN_WIDTH][NLAYERS];
 
@@ -94,14 +101,25 @@ int comparatorCodeEmulator(){
 
 			TF1* fit = new TF1("fit", "[0]+[1]*x", -3, 4);
 			gr->Fit("fit");
-			double offset = fit->GetParameter(0);
-			double slope = fit->GetParameter(1);
+
+			//
+			// Some funky sign issues, slope is opposite the expected sign,
+			// and offset is off by 0.5 strips, and need to convert to strips
+			//
+
+			double offset = 0.5*fit->GetParameter(0) + 0.25; //offset between the two
+			double slope = -0.5*fit->GetParameter(1);
 			double chi2 = fit->GetChisquare();
 			double ndf = fit->GetNDF();
+
+
 
 			float sigmaM, sigmaB;
 
 			getErrors(x,y,sigmaM,sigmaB);
+
+			sigmaM +=0.5; //hs to strips
+			sigmaB *=0.5;
 
 			if(DEBUG > 0) cout << "Offset: " << offset<<
 					" Slope: " << slope << endl;
@@ -124,7 +142,7 @@ int comparatorCodeEmulator(){
 			sigmaB = 0.5*sigmaB;
 			sigmaM = 0.5*sigmaM;
 
-			output << patt->name() << " " << code << " ~ " <<
+			output << patt->getName() << " " << code << " ~ " <<
 					offset << " " << slope << " " <<
 					nsegments << " " << quality << " " <<
 					layers << " " << chi2 << "\n";

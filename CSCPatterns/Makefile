@@ -5,7 +5,7 @@ ROOTFLAGS=`root-config --cflags --libs` -L$(ROOTSYS)/lib
 LIBDIR=$(CURDIR)/lib
 SRCDIR=$(CURDIR)/src
 INCDIR=$(CURDIR)/include
-PROJLIBS=$(LIBDIR)/PatternFinderClasses_cpp.so $(LIBDIR)/PatternFinderHelperFunctions_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
+PROJLIBS=$(LIBDIR)/PatternFinderClasses_cpp.so $(LIBDIR)/PatternFinderHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
 all: $(PROJLIBS) $(SRCDIR)/PatternFinder
@@ -20,18 +20,18 @@ all: $(PROJLIBS) $(SRCDIR)/PatternFinder
 #
 #  >> ROOT.<function>(<args>)
 #
-$(LIBDIR)/%_cpp.so : $(SRCDIR)/%.cpp $(INCDIR)/%.h
+$(LIBDIR)/%_cpp.so : $(SRCDIR)/%.cpp $(INCDIR)/%.h $(INCDIR)/PatternConstants.h
 	##### Making shared library #####
 	echo ".L $<++" | root -b -l #make the shared library using ACLiC
 	mv $(SRCDIR)/*_cpp* $(LIBDIR) #move it to the libs dir
-
+	
 clean:
 	rm $(LIBDIR)/*.so $(LIBDIR)/*.pcm $(LIBDIR)/*.d
 
 #Makes whatever script you name, add $(ROOTLIBS) after -L$(ROOTSYS)/lib if you need it
-$(SRCDIR)/%: $(SRCDIR)/%.cpp $(PROJLIBS)
+$(SRCDIR)/%: $(SRCDIR)/%.cpp $(PROJLIBS) $(INCDIR)/PatternConstants.h
 	##### Making executable #####
-	$(shell export LD_LIBRARY_PATH=$(PWD)/$(LIB):${LD_LIBRARY_PATH})
+	$(shell export LD_LIBRARY_PATH=$(LIBDIR):${LD_LIBRARY_PATH})
 	g++ $(FLAGS) $(ROOTFLAGS) -L$(LIBDIR) $(PROJLIBS) $< -o $@ 
 
 

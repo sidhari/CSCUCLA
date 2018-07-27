@@ -128,10 +128,11 @@ public:
 	const unsigned int _chamber;
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
 
-
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 
 };
+
+
 
 
 #endif /* PATTERNFITTER_H_ */

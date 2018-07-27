@@ -13,10 +13,10 @@ using namespace std;
 int patternDrawer(unsigned int pattID,int cc){
 
 	//all the new patterns
-	vector<ChargePattern>* newPatterns = createNewEnvelopes();
+	vector<CSCPattern>* newPatterns = createNewPatterns();
 
 	for(auto patt = newPatterns->begin(); patt != newPatterns->end(); ++patt){
-		if(patt->m_id == pattID){
+		if(patt->_id == pattID){
 			printf("Pattern: %i\n", pattID);
 			if(cc > 0) printf("     CC:%i\n", cc);
 

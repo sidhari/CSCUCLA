@@ -8,6 +8,8 @@
 
 #include "../include/PatternFinderHelperFunctions.h"
 
+
+
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {
 	//numbers start at 1, so time bins really go 1-16 here
 	for(unsigned int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
@@ -215,7 +217,7 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 }
 
 /* TODO:
- * - Refactor code to use make files and not have code in header
+ * - Add stuff like pattern drawer to libraries
  * - Enable loading of LUT from here (can just used the ProcessLine trick?)
  * - Redo searching to account for DCFEBS (32 half strip windows)
  * 		1. search within each DCFEB, using old algorithm (layers, straightness of pattern, leftmost)
@@ -267,6 +269,94 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber
 		return searchForMatch(shrinkingChamber, ps, m); //find the next one
 	}else return 0; //add nothing if we don't find anything
+}
+
+
+int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
+    int patternId = 0;
+    int ccId = 0;
+    int legacyLctId = 0;
+    int EC = 0; // 1-2
+    int ST = 0; // 1-4
+    int RI = 0; // 1-4
+    int CH = 0;
+    float segmentX = 0;
+    float segmentdXdZ = 0;
+    float patX = 0;
+    float legacyLctX = 0;
+
+    t->SetBranchAddress("patternId", &patternId);
+    t->SetBranchAddress("ccId", &ccId);
+    t->SetBranchAddress("legacyLctId", &legacyLctId);
+    t->SetBranchAddress("EC", &EC);
+    t->SetBranchAddress("ST", &ST);
+    t->SetBranchAddress("RI", &RI);
+    t->SetBranchAddress("CH", &CH);
+    t->SetBranchAddress("segmentX", &segmentX);
+    t->SetBranchAddress("segmentdXdZ", &segmentdXdZ);
+    t->SetBranchAddress("patX", &patX);
+    t->SetBranchAddress("legacyLctX", &legacyLctX);
+
+    newLUTs.addEntry("ME11B", 1,1);
+    newLUTs.addEntry("ME11A", 1,4);
+    newLUTs.addEntry("ME12", 1,2);
+    newLUTs.addEntry("ME13", 1,3);
+    newLUTs.addEntry("ME21", 2,1);
+    newLUTs.addEntry("ME22", 2,2);
+    newLUTs.addEntry("ME31", 3,1);
+    newLUTs.addEntry("ME32", 3,2);
+    newLUTs.addEntry("ME41", 4,1);
+    newLUTs.addEntry("ME42", 4,2);
+
+
+    legacyLUTs.addEntry("ME11B", 1,1);
+    legacyLUTs.addEntry("ME11A", 1,4);
+    legacyLUTs.addEntry("ME12", 1,2);
+    legacyLUTs.addEntry("ME13", 1,3);
+    legacyLUTs.addEntry("ME21", 2,1);
+    legacyLUTs.addEntry("ME22", 2,2);
+    legacyLUTs.addEntry("ME31", 3,1);
+    legacyLUTs.addEntry("ME32", 3,2);
+    legacyLUTs.addEntry("ME41", 4,1);
+    legacyLUTs.addEntry("ME42", 4,2);
+
+    //pointers to whatever LUT were looking at
+    LUT* newLUT = 0;
+    LUT* legacyLUT = 0;
+
+    for(int i =0; i < t->GetEntriesFast(); i++){
+    	t->GetEntry(i);
+
+    	if(newLUTs.getLUT(ST,RI, newLUT) ||
+    			legacyLUTs.getLUT(ST,RI,legacyLUT)){
+    		cout << "Error: can't find chamber in lut" << endl;
+    		return -1;
+    	}
+
+    	LUTKey newKey    = LUTKey(patternId, ccId);
+    	LUTKey legacyKey = LUTKey(legacyLctId);
+
+    	LUTEntry* newEntry = 0;
+    	LUTEntry* legacyEntry = 0;
+
+    	if(newLUT->editEntry(newKey, newEntry) ||
+    			legacyLUT->editEntry(legacyKey, legacyEntry)){
+    		cout << "Error: can't get entry in LUT" << endl;
+    		return -1;
+    	}
+
+
+    	float newPosDiff   = segmentX - patX;
+    	float newSlopeDiff = segmentdXdZ;
+
+    	float legacyPosDiff   = segmentX - legacyLctX;
+    	float legacySlopeDiff = segmentdXdZ;
+
+    	newEntry->addSegment(newPosDiff, newSlopeDiff);
+    	legacyEntry->addSegment(legacyPosDiff, legacySlopeDiff);
+
+    }
+    return 0;
 }
 
 
@@ -416,3 +506,44 @@ int fillCompHits(ChamberHits& theseCompHits,
 	}
 	return 0;
 }
+
+int fillRecHits(ChamberHits& theseRecHits,
+		const vector<int>* rhId,
+		const vector<int>* rhLay,
+		const vector<float>* rhPos){
+	int EC = (int)theseRecHits._endcap;
+	int ST = (int)theseRecHits._station;
+	int RI = (int)theseRecHits._ring;
+	int CH = (int)theseRecHits._chamber;
+
+	int chSid = chamberSerial(EC, ST, RI, CH);
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
+	for(unsigned int thisRh = 0; thisRh < rhId->size(); thisRh++)
+	{
+		int thisId = rhId->at(thisRh);
+
+		if(chSid != thisId) continue; //just look at matches
+		//rhLay goes 1-6
+		unsigned int iLay = rhLay->at(thisRh)-1;
+
+		//goes 1-80
+		float thisRhPos = rhPos->at(thisRh);
+
+		int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
+		if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
+
+		if((unsigned int)iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
+			printf("ERROR: recHit index %i invalid\n", iRhStrip);
+			return -1;
+		}
+
+		theseRecHits._hits[iRhStrip][iLay] = true;
+	}
+	return 0;
+}
+
+
+
+
+
