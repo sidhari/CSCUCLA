@@ -16,6 +16,8 @@
 #include <functional>
 #include <algorithm>
 
+#include "../include/PatternFinderClasses.h"
+
 
 using namespace std;
 
@@ -32,6 +34,7 @@ public:
 
 	//necessary for maps!
 	bool operator<(const LUTKey& l) const;
+	bool operator==(const LUTKey& l) const;
 
 	int _pattern;
 	int _code; //comparator code
@@ -59,6 +62,7 @@ public:
 	unsigned int nsegments() const; //amount of segments used to construct LUT entry
 	float quality() const;
 	int calculateMeans();
+	int calculateQuality();
 
 
 	const unsigned int _layers; //layers in code
@@ -72,18 +76,18 @@ private:
 	float _position;
 	float _slope;
 	unsigned int _nsegments; //amount of segments used to construct LUT entry
-	const float _quality; //quality parameter used choose between CLCTs
+	float _quality; //quality parameter used choose between CLCTs
 
 };
 
-/* @brief Lambda function used to sort LUTEntrys
- *
+/* @brief Lambda function used to optimize LUTEntrys in the set,
+ * mostly for printing
  */
 typedef function<bool(pair<LUTKey,LUTEntry>, pair<LUTKey,LUTEntry>)> LUTLambda;
 LUTLambda LUT_FUNT =
 		[](pair<LUTKey,LUTEntry> l1, pair<LUTKey,LUTEntry> l2)
 		{
-		return l1 .second < l2.second;
+		return l1.second < l2.second;
 		};
 
 
@@ -102,18 +106,19 @@ public:
 
 	const string _name;
 
-	void setEntry(const LUTKey& k,const LUTEntry& e);
+	int setEntry(const LUTKey& k,const LUTEntry& e);
 	int editEntry(const LUTKey& k, LUTEntry*& e);
-	int getEntry(const LUTKey&k, const LUTEntry*& e);
+	int getEntry(const LUTKey&k, const LUTEntry*& e) const;
+	int getEntry(CLCTCandidate*& c, const LUTEntry*& e) const;
 	void print(unsigned int minSegments=0);
 	int write(const string& filename);
+	int makeFinal();
 
 private:
 	bool _isFinal;
 	set<pair<LUTKey, LUTEntry>, LUTLambda> _orderedLUT;
 	map<LUTKey,LUTEntry> _lut;
 
-	int finalize();
 
 };
 
@@ -126,6 +131,7 @@ public:
 
 	int addEntry(const string& name, int station, int ring);
 	int getLUT(int station, int ring, LUT*& lut);
+	int makeFinal();
 
 private:
 	//the look up table for each ST, RI

@@ -65,6 +65,23 @@ void printChamber(const ChamberHits &c){
 }
 
 
+//only has new patterns now
+int printPatternCC(unsigned int pattID,int cc){
+
+	//all the new patterns
+	vector<CSCPattern>* newPatterns = createNewPatterns();
+
+	for(auto patt = newPatterns->begin(); patt != newPatterns->end(); ++patt){
+		if(patt->_id == pattID)	{
+			patt->printCode(cc);
+			break;
+		}
+	}
+
+	return 0;
+}
+
+
 //calculates the overlap of a pattern on a chamber at a given position and time bin window, returns layers matched
 int getOverlap(const ChamberHits &c, const CSCPattern &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]){
 
@@ -356,6 +373,11 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     	legacyEntry->addSegment(legacyPosDiff, legacySlopeDiff);
 
     }
+
+    //set the LUTs so they can't be changed
+    newLUTs.makeFinal();
+    legacyLUTs.makeFinal();
+
     return 0;
 }
 

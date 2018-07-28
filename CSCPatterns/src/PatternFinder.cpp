@@ -8,12 +8,13 @@
 
 #include <TTree.h>
 #include <TFile.h>
-
+#include <TH1F.h>
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <algorithm>
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
@@ -137,6 +138,44 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     plotTree->Branch("patX", &patX, "patX/F");
     plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
+    TH1F* lutSegmentPosDiff = new TH1F("lutSegmentPosDiff", "lutSegmentPosDiff", 100, -1, 1);
+    TH1F* lutSegmentSlopeDiff = new TH1F("lutSegmentSlopeDiff", "lutSegmentSlopeDiff", 100, -1, 1);
+    TH1F* segEffNum = new TH1F("segEffNum", "segEffNum", 100, 0, 100);
+    TH1F* segEffDen = new TH1F("segEffDen", "segEffDen", 100, 0, 100);
+
+    //
+    // MAKE LUT
+    //
+
+    string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/data/charmonium2016F+2017BCEF/CLCTMatch-Full.root";
+    TFile* lutFile = new TFile(lutFilepath.c_str());
+    if(!lutFile){
+    	printf("Failed to open lut file: %s\n", lutFilepath.c_str());
+    	return -1;
+    }
+
+    //TODO: change the name of the tree!
+    TTree* lutTree = (TTree*)lutFile->Get("plotTree");
+    if(!lutTree){
+    	printf("Can't find lutTree\n");
+    	return -1;
+    }
+
+    DetectorLUTs newLUTs;
+    DetectorLUTs legacyLUTs;
+    if(makeLUT(plotTree, newLUTs, legacyLUTs)){
+    	cout << "Error: couldn't create LUT" << endl;
+    	return -1;
+    }
+
+
+    //pointers used to look at different LUT's
+	LUT* thisLUT = 0;
+	const LUTEntry* thisEntry = 0;
+
+	//newLUTs.getLUT(1,2, thisLUT);
+
+    //cout << "luts final: " << thisLUT->makeFinal() << endl;
 
     //
     // TREE ITERATION
@@ -214,6 +253,52 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     			continue;
     		}
 
+    		/*TODO:
+    		 * - make quality class?
+    		 * - as you iterate through CLCTCandidates, assign quality class
+    		 * 		(which has all values that might be necessary)
+    		 *
+    		 */
+
+    		//Now compare with LUT data
+
+    		if(newLUTs.getLUT(ST,RI,thisLUT)) {
+    			printf("Error: can't access LUT for: %i %i\n", ST,RI);
+    			return -1;
+    		}
+    		//TODO: make debug printout of this stuff
+    		for(auto & clct: newSetMatch){
+        		if(thisLUT->getEntry(clct, thisEntry)){
+        			printf("Error: unable to get entry for clct\n");
+        			return -1;
+        		}
+    		}
+
+    		//TODO: make quality class, which is what is compared here
+
+    		sort(newSetMatch.begin(), newSetMatch.end(), CLCT_FUNT);
+
+
+
+    		//TODO: make classes reflect how this should actually be done
+    		if(thisLUT->getEntry(newSetMatch.front(), thisEntry)){
+    			printf("Error: unable to get entry for clct\n");
+    			return -1;
+    		}
+    		float lutX = newSetMatch.front()->x() + thisEntry->position();
+    		float lutdXdZ = thisEntry->slope();
+
+    		//always fill the denominator for each valid segment
+    		segEffDen->Fill(Pt);
+    		// fill the numerator if it is within our capture window
+    		float posCaptureWindow = 0.25; //strips
+    		float slopeCaptureWindow = 0.25; //strips/layer
+    		if(abs(lutX - segmentX) < posCaptureWindow &&
+    				abs(lutdXdZ -segmentdXdZ) < slopeCaptureWindow){
+    			segEffNum->Fill(Pt);
+    		}
+
+
     		if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
     		if(DEBUG > 0) cout << "Legacy Match: (";
     		int closestOldMatchIndex = findClosestToSegment(oldSetMatch,segmentX);
@@ -223,6 +308,23 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     		if(DEBUG > 0)cout << "New Match: (";
     		int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
     		if(DEBUG > 0) cout << ") [strips]" << endl;
+
+
+    		//TO REMOVE LATER
+    		/*
+    		if(thisLUT->getEntry(*newSetMatch.at(closestNewMatchIndex), thisEntry)){
+    			printf("Error: unable to get entry for clct\n");
+    			return -1;
+    		}
+    		float lutX = newSetMatch.at(closestNewMatchIndex)->x() + thisEntry->position();
+    		float lutdXdZ = thisEntry->slope();
+    		printf("\t LUTentries = %i - LUTpos = %f - LUTslope = %f\n", thisEntry->nsegments(),lutX, lutdXdZ);
+
+    		lutSegmentPosDiff->Fill(lutX-segmentX);
+    		lutSegmentSlopeDiff->Fill(lutdXdZ -segmentdXdZ);
+			*/
+
+    		//^TO REMOVE
 
     		// Fill Tree Data
 
@@ -235,34 +337,30 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     		plotTree->Fill();
 
 
+    		//Clear everything
+
     		oldSetMatch.clear();
     		newSetMatch.clear();
     	}
 
     }
 
+
+
     printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
 
-
-    /*Put LUT creator here, so you only need one script,
-     * - write it in PatternFinderHelperFunctions
-     * - takes tree as argument, returns LUT
-     * - can have python scripts that use function too if needed
-     * - needs to open up linearfit lut to compare and get chi2, etc
-     *
-     */
-
-    DetectorLUTs newLUTs;
-    DetectorLUTs legacyLUTs;
-    if(makeLUT(plotTree, newLUTs, legacyLUTs)){
-    	cout << "Error: couldn't create LUT" << endl;
-    }
-
-    LUT* test= 0;
-    if(newLUTs.getLUT(1,1,test)) return -1;
-    test->print(1);
-
+    outF->cd();
     plotTree->Write();
+	lutSegmentPosDiff->Write();
+	lutSegmentSlopeDiff->Write();
+	TH1F* segEff = (TH1F*)segEffNum->Clone("segEff");
+	segEff->Divide(segEffDen);
+
+	segEff->Write();
+	segEffNum->Write();
+	segEffDen->Write();
+
+
     outF->Close();
 
     printf("Finished writing to file: %s\n",outputfile.c_str());
@@ -270,24 +368,9 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     return 0;
 }
 
-/*
-int PatternFinder(string inputfile, string outputfile, int events){
-	return PatternFinder(inputfile,outputfile, 0,events);
-}
-
-int PatternFinder(string inputfile, string outputfile){
-	return PatternFinder(inputfile, outputfile, 0, -1);
-}
-*/
 
 int main(int argc, char* argv[])
 {
-	//LUT l =  LUT("/home/wnash/workspace/CSCUCLA/CSCPatterns/data/linearFits.lut");
-	//LUT l =  LUT("babytest.lut");
-
-	//l.print();
-
-	//l.write("babytest2.lut");
 
 	switch(argc){
 		case 3:

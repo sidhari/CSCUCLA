@@ -72,6 +72,18 @@ void ComparatorCode::printCode() const{
 	}
 }
 
+
+string ComparatorCode::getStringInBase4(int code){
+	if(code > 4095) return "";
+	if(code < 4){
+		return to_string(code);
+	}
+	int rem = code % 4;
+	int div = code / 4;
+	return getStringInBase4(div) + to_string(rem);
+}
+
+
 //calculates the id based on location of hits
 void ComparatorCode::calculateId(){
 	//only do this iteration once, to keep things efficient
@@ -200,7 +212,7 @@ void CSCPattern::printCode(int code) const{
 	for(unsigned int j=0; j < NLAYERS; j++){
 		if(code < 0)
 			for(unsigned int i=0; i < MAX_PATTERN_WIDTH; i++){
-				_pat[i][j] ? printf("1") : printf("0");
+				_pat[i][j] ? printf("x") : printf("-");
 			}
 		else {
 			//0,1,2 or 3
@@ -212,10 +224,10 @@ void CSCPattern::printCode(int code) const{
 			int trueCounter = 3;//for each layer, should only have 3
 			for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
 				if(!_pat[i][j]){
-					printf("0");
+					printf("-");
 				}else{
-					if(trueCounter == layerPattern) printf("1");
-					else printf("0");
+					if(trueCounter == layerPattern) printf("X");
+					else printf("_");
 					trueCounter--;
 				}
 			}
@@ -288,6 +300,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[
 				_startTime(startTime) {
 	_code = new ComparatorCode(hits);
 	_layerMatchCount = _code->getLayersMatched();
+	_quality = -1;
 }
 
 CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
@@ -297,6 +310,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 				_startTime(startTime){
 	_code = 0;
 	_layerMatchCount = layMatCount;
+	_quality = -1;
 }
 
 CLCTCandidate::~CLCTCandidate() {
@@ -360,6 +374,19 @@ const ComparatorCode CLCTCandidate::getComparatorCode() const {
 
 int CLCTCandidate::patternId() const{
 	return _pattern._id;
+}
+
+int CLCTCandidate::setQuality(float quality){
+	_quality = quality;
+	return 0;
+}
+
+float CLCTCandidate::quality() const{
+	return _quality;
+}
+
+bool CLCTCandidate::operator()(const CLCTCandidate& c) const{
+	return quality() < c.quality();
 }
 
 

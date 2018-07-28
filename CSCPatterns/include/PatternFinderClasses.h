@@ -15,6 +15,9 @@
 #include <bitset>
 #include <string>
 
+//lambda
+#include <functional>
+
 #include "PatternConstants.h"
 
 using namespace std;
@@ -39,6 +42,7 @@ public:
 	unsigned int getLayersMatched() const;
 	int getId() const;
 	void printCode() const;
+	static string getStringInBase4(int code);
 
 private:
 	int _id;
@@ -102,12 +106,27 @@ public:
 	int layerCount() const;
 	const ComparatorCode getComparatorCode() const;
 	int patternId() const;
+	int setQuality(float quality);
+	float quality()  const;
+
+	bool operator()(const CLCTCandidate& c) const;
 
 private:
 	ComparatorCode* _code;
 	int _layerMatchCount;
+	float _quality;
 
 };
+
+/* @brief Lambda function used to optimize LUTEntrys in the set,
+ * mostly for printing
+ */
+typedef function<bool(CLCTCandidate*, CLCTCandidate*)> CLCTLambda;
+CLCTLambda CLCT_FUNT =
+		[](CLCTCandidate* c1, CLCTCandidate* c2)
+		{
+		return c1->quality() < c2->quality();
+		};
 
 
 /* @brief Encapsulates hit information for recorded event

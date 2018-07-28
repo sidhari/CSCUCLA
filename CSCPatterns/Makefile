@@ -8,7 +8,7 @@ INCDIR=$(CURDIR)/include
 PROJLIBS=$(LIBDIR)/PatternFinderClasses_cpp.so $(LIBDIR)/PatternFinderHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
-all: $(PROJLIBS) $(SRCDIR)/PatternFinder
+all: $(PROJLIBS) $(SRCDIR)/PatternFinder $(SRCDIR)/printPatternCC
 
 
 # Make shared libraries to minimize code compilation, but primarily to

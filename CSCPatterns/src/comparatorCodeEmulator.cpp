@@ -118,7 +118,7 @@ int comparatorCodeEmulator(){
 
 			getErrors(x,y,sigmaM,sigmaB);
 
-			sigmaM +=0.5; //hs to strips
+			sigmaM *=0.5; //hs to strips
 			sigmaB *=0.5;
 
 			if(DEBUG > 0) cout << "Offset: " << offset<<
@@ -133,6 +133,7 @@ int comparatorCodeEmulator(){
 
 			// record the offset (centered) and slope of the line
 
+			/*
 //
 // Some funky sign issues, slope is opposite the expected sign,
 // and offset is off by 0.5 strips, and need to convert to strips
@@ -142,6 +143,7 @@ int comparatorCodeEmulator(){
 			sigmaB = 0.5*sigmaB;
 			sigmaM = 0.5*sigmaM;
 
+*/
 			output << patt->getName() << " " << code << " ~ " <<
 					offset << " " << slope << " " <<
 					nsegments << " " << quality << " " <<

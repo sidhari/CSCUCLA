@@ -12,6 +12,7 @@
 
 
 #include "../include/PatternConstants.h"
+#include "../include/PatternFinderClasses.h"
 #include "../include/LUTClasses.h"
 
 using namespace std;
@@ -47,6 +48,12 @@ bool LUTKey::operator<(const LUTKey& l) const{
 		if(_code > l._code) return true;
 	}
 	return false;
+}
+
+bool LUTKey::operator==(const LUTKey& l) const{
+	return (_pattern == l._pattern &&
+			_code == l._code &&
+			_isLegacy == l._isLegacy);
 }
 
 
@@ -85,6 +92,11 @@ int LUTEntry::addSegment(float positionOffset, float slopeOffset){
 	return 0;
 }
 
+/*@brief
+ *  Sort the LUT using nsegments, since it will make searching
+ *  the LUT faster. This is not the same thing as quality sorting
+ *  at present (July 28th, 2018).
+ */
 bool LUTEntry::operator<(const LUTEntry& l) const{
 	return nsegments() < l.nsegments() ? false : true;
 }
@@ -136,6 +148,17 @@ int LUTEntry::calculateMeans(){
 	return 0;
 }
 
+/*@brief Reassigns quality parameter
+ *
+ */
+
+int LUTEntry::calculateQuality(){
+	_quality = _layers;
+	return 0;
+}
+
+
+
 //
 // LUT
 //
@@ -152,8 +175,8 @@ LUT::LUT(const string& name, const string& filepath):
 {
 	_isFinal = false;
 	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(LUT_FUNT);
-	cout << "\033[94m=== Loading LUT ===\033[0m" << endl;
-	cout << "Loading from file: " << filepath << endl;
+	//cout << "\033[94m=== Loading LUT ===\033[0m" << endl;
+	//cout << "Loading from file: " << filepath << endl;
 	//this = LUT();
 	string line;
 	ifstream myfile(filepath.c_str());
@@ -198,20 +221,37 @@ LUT::LUT(const string& name, const string& filepath):
 			unsigned int layers     = stoul(elements[counter++]);
 			float chi2              = stof(elements[counter++]);
 
+
+			if(DEBUG >2){
+				cout << line << endl;
+				cout << "patt: " << key._pattern<<
+						" cc: " << key._code <<
+						" pos: " << position <<
+						" slope: " << slope <<
+						" nseg: " << nsegments <<
+						" quality: " << quality <<
+						" layers: " << layers <<
+						" chi2: " << chi2 << endl;
+			}
+
 			LUTEntry entry = LUTEntry(position, slope, nsegments,
 					quality, layers, chi2);
 			setEntry(key,entry);
 		}
 		myfile.close();
-		cout << "Completed loading of line fit table" << endl;
+		//cout << "Completed loading of line fit table" << endl;
 	} else {
 		cout << "Error: unable to open file:" << filepath << endl;
 	}
 
 }
 
-void LUT::setEntry(const LUTKey& k,const LUTEntry& e){
+int LUT::setEntry(const LUTKey& k,const LUTEntry& e){
+	if(_isFinal) {
+		return -1;
+	}
 	_lut.insert(make_pair(k,e));
+	return 0;
 }
 
 /* @brief Takes a key "k" and a reference to an entry "e", which
@@ -233,37 +273,66 @@ int LUT::editEntry(const LUTKey& k, LUTEntry*& e) {
 	}
 }
 
+int LUT::getEntry(const LUTKey& k, const LUTEntry*& e) const{
+	if(!_isFinal) {
+		cout << "Need to finalize LUT to access entries" <<endl;
+		return -1;
+	}
+	for(auto& x: _orderedLUT){
+		if(k == x.first){
+			e = &(x.second);
+			return 0;
+		}
+	}
+	return -1;
+}
+
+/*@brief Looks in the LUT for the entry associated with the
+ * CLCTCandidate. If successful, sets the quality parameter
+ * of the CLCTCandidate
+ */
+int LUT::getEntry(CLCTCandidate*& c, const LUTEntry*& e) const{
+	if(getEntry(LUTKey(c->_pattern._id,c->comparatorCodeId()), e)){
+		cout << "Error: can't find entry for CLCTCandidate" << endl;
+		return -1;
+	}
+	return c->setQuality(e->quality());
+}
+
+
 /*@brief Prints the tree, up until the entries
  * are less than the min segments
  *
  */
 void LUT::print(unsigned int minSegments){
 	printf("\033[94m=== Printing LUT - Chamber: %s ===\033[0m\n", _name.c_str());
-	printf("[%4s,%5s] -> [%8s,%8s,%6s,%6s,%5s,%5s]\n",
+	printf("[%4s,%5s,%7s] -> [%8s,%6s,%5s,%5s,%8s,%8s]\n",
 			"patt",
 			"cc",
-			"pos(s)",
-			"slp(s/l)",
+			"cc(b4)",
 			"nseg",
 			"qual",
 			"lays",
-			"chi2");
+			"chi2",
+			"pos(s)",
+			"slp(s/l)");
 
-	if(!_isFinal)finalize();
+	if(!_isFinal) makeFinal();
 
 	for(auto& x: _orderedLUT){
 		const LUTKey& k = x.first;
 		const LUTEntry& e = x.second;
 		if(e.nsegments() < minSegments) break;
-		printf("[%4i,%5i] -> [%8.3f,%8.3f,%6.2e,%6.2f,%5i,%5.2f]\n",
+		printf("[%4i,%5i,%7s] -> [%8.1e,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
 				k._pattern,
 				k._code,
-				e.position(),
-				e.slope(),
+				ComparatorCode::getStringInBase4(k._code).c_str(),
 				(double)e.nsegments(),
 				e.quality(),
 				e._layers,
-				e._chi2);
+				e._chi2,
+				e.position(),
+				e.slope());
 	}
 }
 
@@ -276,7 +345,7 @@ int LUT::write(const string& filename) {
 			cout << "Error: can't write file" << endl;
 			return -1;
 		}
-		if(!_isFinal)finalize();
+		if(!_isFinal)makeFinal();
 
 		for(auto& it : _orderedLUT){
 			// pat code - pos slope nseg qual layers chi2
@@ -300,10 +369,11 @@ int LUT::write(const string& filename) {
  * this recalculates the positions / slopes and puts them
  * all in order
  */
-int LUT::finalize(){
+int LUT::makeFinal(){
 	if(_isFinal) return 0;
 	for(auto& x: _lut) {
 		x.second.calculateMeans();
+		x.second.calculateQuality();
 		_orderedLUT.insert(x);
 	}
 	_isFinal = true;
@@ -336,6 +406,10 @@ int DetectorLUTs::getLUT(int station, int ring, LUT*& lut){
 	}else return -1;
 }
 
+int DetectorLUTs::makeFinal(){
+	for(auto& l: _luts) l.second.makeFinal();
+	return 0;
+}
 
 
 

@@ -24,6 +24,9 @@ void printPattern(const CSCPattern &p);
 
 void printChamber(const ChamberHits &c);
 
+//TODO: these functions could be put together in a better way
+int printPatternCC(unsigned int pattID,int cc=-1);
+
 //calculates the overlap of a pattern on a chamber at a given position and time bin window, returns layers matched
 int getOverlap(const ChamberHits &c, const CSCPattern &p, const int horPos, const int startTimeWindow, bool overlap[NLAYERS][3]);
 
