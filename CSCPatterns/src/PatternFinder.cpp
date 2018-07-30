@@ -254,10 +254,16 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     		}
 
     		/*TODO:
-    		 * - make quality class?
-    		 * - as you iterate through CLCTCandidates, assign quality class
-    		 * 		(which has all values that might be necessary)
+    		 * - make LCTEntry a member variable of CLCTCandidate,
+    		 *   assigned after lookup
+    		 * - make LCTEntry have a function pointer for sorting,
+    		 *   use that for sorting the CLCTCandidates
+    		 * - function should prioritize quality as
     		 *
+    		 *    nlayers, chi2, slope
+    		 *
+    		 * - make new executable that takes premade CLCTMatch.root files,
+    		 *   which should go much quicker than this
     		 */
 
     		//Now compare with LUT data

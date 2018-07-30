@@ -292,7 +292,7 @@ int LUT::getEntry(const LUTKey& k, const LUTEntry*& e) const{
  * of the CLCTCandidate
  */
 int LUT::getEntry(CLCTCandidate*& c, const LUTEntry*& e) const{
-	if(getEntry(LUTKey(c->_pattern._id,c->comparatorCodeId()), e)){
+	if(getEntry(LUTKey(c->patternId(),c->comparatorCodeId()), e)){
 		cout << "Error: can't find entry for CLCTCandidate" << endl;
 		return -1;
 	}

@@ -118,6 +118,7 @@ private:
 
 };
 
+//TODO: move this to member variable in cpp
 /* @brief Lambda function used to optimize LUTEntrys in the set,
  * mostly for printing
  */
