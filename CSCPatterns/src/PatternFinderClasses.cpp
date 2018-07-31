@@ -6,12 +6,10 @@
  */
 
 
-
+#include <stdlib.h>
 
 #include "../include/PatternFinderClasses.h"
 #include "../include/PatternFinderHelperFunctions.h"
-
-
 
 //
 // ComparatorCode
@@ -300,7 +298,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[
 				_startTime(startTime) {
 	_code = new ComparatorCode(hits);
 	_layerMatchCount = _code->getLayersMatched();
-	_quality = -1;
+	_lutEntry = 0;
 }
 
 CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
@@ -310,7 +308,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 				_startTime(startTime){
 	_code = 0;
 	_layerMatchCount = layMatCount;
-	_quality = -1;
+	_lutEntry = 0;
 }
 
 CLCTCandidate::~CLCTCandidate() {
@@ -319,7 +317,7 @@ CLCTCandidate::~CLCTCandidate() {
 
 
 //center position of the track [strips]
-float CLCTCandidate::x() const{
+float CLCTCandidate::keyStrip() const{
 	return (_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;
 }
 
@@ -334,7 +332,7 @@ void CLCTCandidate::print3x6Pattern() const{
 
 void CLCTCandidate::printCodeInPattern() const{
 	if(!_code) return;
-	printf("Horizontal index (from left) is %i half strips, position is %f\n", _horizontalIndex, x());
+	printf("Horizontal index (from left) is %i half strips, position is %f\n", _horizontalIndex, keyStrip());
 	for(unsigned int j=0; j < NLAYERS; j++){
 		int trueCounter = 0;//for each layer, should only have 3
 		for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
@@ -376,19 +374,43 @@ int CLCTCandidate::patternId() const{
 	return _pattern._id;
 }
 
-int CLCTCandidate::setQuality(float quality){
-	_quality = quality;
-	return 0;
+const LUTKey CLCTCandidate::key() const {
+	return LUTKey(patternId(),comparatorCodeId());
 }
 
-float CLCTCandidate::quality() const{
-	return _quality;
-}
+CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
+		[](CLCTCandidate* c1, CLCTCandidate* c2){
 
-bool CLCTCandidate::operator()(const CLCTCandidate& c) const{
-	return quality() < c.quality();
-}
+	const LUTEntry* l1 = c1->_lutEntry;
+	const LUTEntry* l2 = c2->_lutEntry;
 
+	/*We want this function to sort the CLCT's
+	 * in a way that puts the best quality candidate
+	 * the lowest in the list, i.e. return true
+	 * if the parameters associated with c1 are
+	 * better than those of c2
+	 */
+
+
+	// we don't have an entry for c2,
+	// so take c1 as being better
+	if(!l2) return true;
+
+	// we know we have something for c2,
+	// which should be by default better than nothing
+	if(!l1) return false;
+
+
+	//priority (layers, chi2, slope)
+	if (l1->_layers > l2->_layers) return true;
+	else if(l1->_layers == l2->_layers){
+		if(l1->_chi2 < l2->_chi2) return true;
+		else if (l1->_chi2 == l2->_chi2){
+			if(abs(l1->slope()) < abs(l2->slope())) return true;
+		}
+	}
+	return false;
+};
 
 //
 // ChamberHits

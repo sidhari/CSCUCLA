@@ -23,8 +23,8 @@ int findClosestToSegment(vector<CLCTCandidate*> matches, float segmentX){
 	int closestMatchIndex = 0;
 	float closestMatchSeperation = 9e9; //arbirarily large distance
 	for(unsigned int imatch = 0; imatch < matches.size(); imatch++){
-		if(DEBUG > 0) cout << matches.at(imatch)->x() << (imatch < matches.size() -1 ? ", " : "");
-		float seperation = fabs(segmentX - matches.at(imatch)->x());
+		if(DEBUG > 0) cout << matches.at(imatch)->keyStrip() << (imatch < matches.size() -1 ? ", " : "");
+		float seperation = fabs(segmentX - matches.at(imatch)->keyStrip());
 		if(seperation < closestMatchSeperation){
 			closestMatchIndex = imatch;
 			closestMatchSeperation = seperation;
@@ -232,24 +232,6 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	}
 	return maxMatchedLayers;
 }
-
-/* TODO:
- * - Add stuff like pattern drawer to libraries
- * - Enable loading of LUT from here (can just used the ProcessLine trick?)
- * - Redo searching to account for DCFEBS (32 half strip windows)
- * 		1. search within each DCFEB, using old algorithm (layers, straightness of pattern, leftmost)
- * 		2. come up with up to 7 candidates from each DCFEB
- * 		3. For each candidate, use LUT, evaluate quality
- * 		4. Pick highest quality candidate, store
- * 		5. Remove hits associated with it from chamber
- * 		6. Repeat step (1.)
- *
- * 	- Now have vector of top two CLCT-Candidates
- * 	- Look if either of the candidates are within the LUT position width from the segment
- *  - Calculate segment matching efficiency this way
- *
- */
-
 
 //look for the best matched pattern, when we have a set of them, and fill the set match info
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m){

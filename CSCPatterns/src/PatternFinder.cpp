@@ -19,9 +19,6 @@
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
 #include "../include/PatternFinderHelperFunctions.h"
-
-
-//temp
 #include "../include/LUTClasses.h"
 
 using namespace std;
@@ -138,10 +135,23 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     plotTree->Branch("patX", &patX, "patX/F");
     plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
+
     TH1F* lutSegmentPosDiff = new TH1F("lutSegmentPosDiff", "lutSegmentPosDiff", 100, -1, 1);
     TH1F* lutSegmentSlopeDiff = new TH1F("lutSegmentSlopeDiff", "lutSegmentSlopeDiff", 100, -1, 1);
-    TH1F* segEffNum = new TH1F("segEffNum", "segEffNum", 100, 0, 100);
-    TH1F* segEffDen = new TH1F("segEffDen", "segEffDen", 100, 0, 100);
+
+    vector<TH1F*> segEffNums;  //segment efficiency histograms, based on ranking of LUT Entry
+    vector<TH1F*> segEffDens;
+    for(unsigned int clctRank = 0; clctRank < 4; clctRank++){
+    	segEffNums.push_back(new TH1F(("segEffNum"+to_string(clctRank)).c_str(),
+    			string("segEffNum"+to_string(clctRank)).c_str(), 20, 0, 100));
+    	segEffNums.back()->GetXaxis()->SetTitle("Pt [GeV]");
+    	segEffNums.back()->GetYaxis()->SetTitle("Count / 5 GeV");
+
+    	segEffDens.push_back(new TH1F(("segEffDen"+to_string(clctRank)).c_str(),
+    			("segEffDen"+to_string(clctRank)).c_str(), 20, 0, 100));
+    	segEffDens.back()->GetXaxis()->SetTitle("Pt [GeV]");
+    	segEffDens.back()->GetYaxis()->SetTitle("Count / 5 GeV");
+    }
 
     //
     // MAKE LUT
@@ -172,10 +182,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     //pointers used to look at different LUT's
 	LUT* thisLUT = 0;
 	const LUTEntry* thisEntry = 0;
-
-	//newLUTs.getLUT(1,2, thisLUT);
-
-    //cout << "luts final: " << thisLUT->makeFinal() << endl;
 
     //
     // TREE ITERATION
@@ -253,56 +259,75 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     			continue;
     		}
 
-    		/*TODO:
-    		 * - make LCTEntry a member variable of CLCTCandidate,
-    		 *   assigned after lookup
-    		 * - make LCTEntry have a function pointer for sorting,
-    		 *   use that for sorting the CLCTCandidates
-    		 * - function should prioritize quality as
-    		 *
-    		 *    nlayers, chi2, slope
-    		 *
-    		 * - make new executable that takes premade CLCTMatch.root files,
-    		 *   which should go much quicker than this
-    		 */
-
     		//Now compare with LUT data
 
     		if(newLUTs.getLUT(ST,RI,thisLUT)) {
     			printf("Error: can't access LUT for: %i %i\n", ST,RI);
     			return -1;
     		}
+
     		//TODO: make debug printout of this stuff
     		for(auto & clct: newSetMatch){
-        		if(thisLUT->getEntry(clct, thisEntry)){
+        		if(thisLUT->getEntry(clct->key(), thisEntry)){
         			printf("Error: unable to get entry for clct\n");
         			return -1;
         		}
+        		//assign the clct the LUT entry we found to be associated with it
+        		clct->_lutEntry = thisEntry;
     		}
 
-    		//TODO: make quality class, which is what is compared here
 
-    		sort(newSetMatch.begin(), newSetMatch.end(), CLCT_FUNT);
-
-
-
-    		//TODO: make classes reflect how this should actually be done
-    		if(thisLUT->getEntry(newSetMatch.front(), thisEntry)){
-    			printf("Error: unable to get entry for clct\n");
-    			return -1;
+    		if(newSetMatch.size() > 1){
+    			sort(newSetMatch.begin(), newSetMatch.end(), CLCTCandidate::quality);
     		}
-    		float lutX = newSetMatch.front()->x() + thisEntry->position();
-    		float lutdXdZ = thisEntry->slope();
 
-    		//always fill the denominator for each valid segment
-    		segEffDen->Fill(Pt);
+    		if(DEBUG > 0){
+    			printf("segmentX: %f - segmentdXdZ: %f\n", segmentX,segmentdXdZ);
+    			for(auto & clct : newSetMatch){
+    				thisEntry = clct->_lutEntry;
+
+    				float thisLutX = clct->keyStrip() + thisEntry->position();
+    				float thisLutSlope = thisEntry->slope();
+    				printf("\t\tlutx: %f, lut dxdz: %f layers: %i, chi2: %f, slope: %f\n",
+    						thisLutX, thisLutSlope, thisEntry->_layers, thisEntry->_chi2, thisEntry->slope());
+    			}
+    		}
+
     		// fill the numerator if it is within our capture window
-    		float posCaptureWindow = 0.25; //strips
+    		float posCaptureWindow = 0.30; //strips
     		float slopeCaptureWindow = 0.25; //strips/layer
-    		if(abs(lutX - segmentX) < posCaptureWindow &&
-    				abs(lutdXdZ -segmentdXdZ) < slopeCaptureWindow){
-    			segEffNum->Fill(Pt);
+    		for(unsigned int isegeff = 0; isegeff < segEffDens.size(); isegeff++){
+    			bool wasFilled = false;
+        		//always fill the denominator for each valid segment
+				segEffDens.at(isegeff)->Fill(Pt);
+    			for(unsigned int iclct = 0; !wasFilled && iclct < isegeff+1 && iclct < newSetMatch.size();
+    					iclct++){
+    	    		//depending on how many clcts were allowed to look at,
+    				// look until we find one
+    				const LUTEntry* iEntry = newSetMatch.at(iclct)->_lutEntry;
+
+
+    	    		float lutX = newSetMatch.at(iclct)->keyStrip() + iEntry->position();
+    	    		float lutdXdZ =iEntry->slope();
+
+    	    		//only fill the best candidate
+    	    		if(isegeff == 0){
+    	    			lutSegmentPosDiff->Fill(lutX - segmentX);
+    	    			lutSegmentSlopeDiff->Fill(lutdXdZ - segmentdXdZ);
+    	    		}
+
+
+    				if(abs(lutX - segmentX) < posCaptureWindow &&
+    	    				abs(lutdXdZ -segmentdXdZ) < slopeCaptureWindow){
+    	    			segEffNums.at(isegeff)->Fill(Pt);
+    	    			wasFilled = true;
+    	    		}
+    			}
     		}
+
+
+
+
 
 
     		if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
@@ -315,30 +340,13 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     		int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
     		if(DEBUG > 0) cout << ") [strips]" << endl;
 
-
-    		//TO REMOVE LATER
-    		/*
-    		if(thisLUT->getEntry(*newSetMatch.at(closestNewMatchIndex), thisEntry)){
-    			printf("Error: unable to get entry for clct\n");
-    			return -1;
-    		}
-    		float lutX = newSetMatch.at(closestNewMatchIndex)->x() + thisEntry->position();
-    		float lutdXdZ = thisEntry->slope();
-    		printf("\t LUTentries = %i - LUTpos = %f - LUTslope = %f\n", thisEntry->nsegments(),lutX, lutdXdZ);
-
-    		lutSegmentPosDiff->Fill(lutX-segmentX);
-    		lutSegmentSlopeDiff->Fill(lutdXdZ -segmentdXdZ);
-			*/
-
-    		//^TO REMOVE
-
     		// Fill Tree Data
 
-    		patX = newSetMatch.at(closestNewMatchIndex)->x();
+    		patX = newSetMatch.at(closestNewMatchIndex)->keyStrip();
     		ccId = newSetMatch.at(closestNewMatchIndex)->comparatorCodeId();
     		patternId = newSetMatch.at(closestNewMatchIndex)->patternId();
     		legacyLctId = oldSetMatch.at(closestOldMatchIndex)->patternId();
-    		legacyLctX = oldSetMatch.at(closestOldMatchIndex)->x();
+    		legacyLctX = oldSetMatch.at(closestOldMatchIndex)->keyStrip();
 
     		plotTree->Fill();
 
@@ -359,13 +367,16 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     plotTree->Write();
 	lutSegmentPosDiff->Write();
 	lutSegmentSlopeDiff->Write();
-	TH1F* segEff = (TH1F*)segEffNum->Clone("segEff");
-	segEff->Divide(segEffDen);
 
-	segEff->Write();
-	segEffNum->Write();
-	segEffDen->Write();
-
+	for(unsigned int isegeff = 0; isegeff < segEffDens.size(); isegeff++){
+		TH1F* segEff = (TH1F*)segEffNums.at(isegeff)->Clone(("segEff_"+to_string(isegeff)).c_str());
+		segEff->Divide(segEffDens.at(isegeff));
+		segEff->GetYaxis()->SetTitle("Segment Efficiency / 5 GeV");
+		segEff->SetTitle("CLCT Segment Efficiency");
+		segEff->Write();
+		segEffNums.at(isegeff)->Write();
+		segEffDens.at(isegeff)->Write();
+	}
 
     outF->Close();
 

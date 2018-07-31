@@ -291,13 +291,16 @@ int LUT::getEntry(const LUTKey& k, const LUTEntry*& e) const{
  * CLCTCandidate. If successful, sets the quality parameter
  * of the CLCTCandidate
  */
+/*
 int LUT::getEntry(CLCTCandidate*& c, const LUTEntry*& e) const{
 	if(getEntry(LUTKey(c->patternId(),c->comparatorCodeId()), e)){
 		cout << "Error: can't find entry for CLCTCandidate" << endl;
 		return -1;
 	}
-	return c->setQuality(e->quality());
+	//return c->setQuality(e->quality());
+	return 0;
 }
+*/
 
 
 /*@brief Prints the tree, up until the entries

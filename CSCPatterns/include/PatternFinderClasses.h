@@ -19,6 +19,7 @@
 #include <functional>
 
 #include "PatternConstants.h"
+#include "../include/LUTClasses.h"
 
 using namespace std;
 
@@ -98,36 +99,28 @@ public:
 	const CSCPattern _pattern;
 	const int _horizontalIndex; //half strips, leftmost index of the pattern
 	const int _startTime;
+	//pointer to whatever LUT Entry is associated with this candidate
+	const LUTEntry* _lutEntry;
 
-	float x() const;
+	float keyStrip() const;
 	void print3x6Pattern() const;
 	void printCodeInPattern() const;
 	int comparatorCodeId() const;
 	int layerCount() const;
 	const ComparatorCode getComparatorCode() const;
 	int patternId() const;
-	int setQuality(float quality);
-	float quality()  const;
+	const LUTKey key() const;
 
-	bool operator()(const CLCTCandidate& c) const;
+	//declare a function pointer used to sort the CLCT Candidates
+	typedef function<bool(CLCTCandidate*, CLCTCandidate*)> QUALITY_SORT;
+	static QUALITY_SORT quality;
 
 private:
 	ComparatorCode* _code;
 	int _layerMatchCount;
-	float _quality;
+	//float _quality;
 
 };
-
-//TODO: move this to member variable in cpp
-/* @brief Lambda function used to optimize LUTEntrys in the set,
- * mostly for printing
- */
-typedef function<bool(CLCTCandidate*, CLCTCandidate*)> CLCTLambda;
-CLCTLambda CLCT_FUNT =
-		[](CLCTCandidate* c1, CLCTCandidate* c2)
-		{
-		return c1->quality() < c2->quality();
-		};
 
 
 /* @brief Encapsulates hit information for recorded event
