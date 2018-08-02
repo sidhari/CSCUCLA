@@ -62,7 +62,6 @@ public:
 	unsigned int nsegments() const; //amount of segments used to construct LUT entry
 	float quality() const;
 	int calculateMeans();
-	int calculateQuality();
 
 
 	const unsigned int _layers; //layers in code
@@ -100,6 +99,7 @@ LUTLambda LUT_FUNT =
 class LUT {
 public:
 	LUT();
+	LUT(const string& name);
 	LUT(const string& name, const string& filename);
 
 	~LUT() {};
@@ -124,15 +124,20 @@ private:
 class DetectorLUTs {
 
 public:
-	DetectorLUTs() {};
+	DetectorLUTs(bool isLegacy=false);
 
 	~DetectorLUTs(){};
 
-	int addEntry(const string& name, int station, int ring);
+	int addEntry(const string& name, int station, int ring,
+			const string& lutpath = LINEFIT_LUT_PATH);
 	int getLUT(int station, int ring, LUT*& lut);
 	int makeFinal();
+	int writeAll(const string& path);
+	int loadAll(const string& path);
+	unsigned int size() const;
 
 private:
+	const bool _isLegacy;
 	//the look up table for each ST, RI
 	map<const pair<int,int>, LUT> _luts;
 };

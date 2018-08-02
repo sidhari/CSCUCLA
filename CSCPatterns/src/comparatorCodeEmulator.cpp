@@ -46,8 +46,8 @@ int getErrors(const vector<int>& x,const vector<int>& y, float& sigmaM, float& s
 
 
 int comparatorCodeEmulator(){
-	gSystem->Load("/home/wnash/workspace/CSCUCLA/CSCPatterns/lib/PatternFinderClasses_cpp");
-	gSystem->Load("/home/wnash/workspace/CSCUCLA/CSCPatterns/lib/PatternFinderHelperFunctions_cpp");
+	gSystem->Load("../lib/PatternFinderClasses_cpp");
+	gSystem->Load("../lib/PatternFinderHelperFunctions_cpp");
 
 
 	//all the patterns we will fit
@@ -55,7 +55,7 @@ int comparatorCodeEmulator(){
 
 	//output file stream to write the fits
 	ofstream output;
-	output.open("/home/wnash/workspace/CSCUCLA/CSCPatterns/data/linearFits.lut");
+	output.open("../data/linearFits.lut");
 	if(!output.is_open()){
 		cout << "can't open file:" << endl;
 	}

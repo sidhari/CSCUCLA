@@ -20,11 +20,41 @@ const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 
 
-const std::string LINEFIT_LUT_PATH = "/home/wnash/workspace/CSCUCLA/CSCPatterns/data/linearFits.lut";
+const std::string LINEFIT_LUT_PATH = "data/linearFits.lut";
 
 //labels of all envelopes
 const unsigned int NENVELOPES = 5;
 const unsigned  int ENVELOPE_IDS[NENVELOPES] = {100,90,80, 70, 60};
+
+const unsigned int NCHAMBERS = 10;
+const std::string CHAMBER_NAMES[NCHAMBERS] = {
+		"ME11B",
+		"ME11A",
+		"ME12",
+		"ME13",
+		"ME21",
+		"ME22",
+		"ME31",
+		"ME32",
+		"ME41",
+		"ME42"
+};
+
+//to denote if we are using a legacy chamber or not
+const std::string LEGACY_SUFFIX = "-Legacy";
+
+const unsigned int CHAMBER_ST_RI[NCHAMBERS][2] = {
+		{1,1,},
+		{1,4},
+		{1,2},
+		{1,3},
+		{2,1},
+		{2,2},
+		{3,1},
+		{3,2},
+		{4,1},
+		{4,2}
+};
 
 
 const bool IDSV1_A[MAX_PATTERN_WIDTH][NLAYERS] = {

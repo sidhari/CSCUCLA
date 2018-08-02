@@ -2,9 +2,9 @@ FLAGS=-std=c++11 -g -Wall -fPIC
 #flags necessary to compile an executable which contains access to root libraries
 ROOTFLAGS=`root-config --cflags --libs` -L$(ROOTSYS)/lib
 
-LIBDIR=$(CURDIR)/lib
-SRCDIR=$(CURDIR)/src
-INCDIR=$(CURDIR)/include
+LIBDIR=lib
+SRCDIR=src
+INCDIR=include
 PROJLIBS=$(LIBDIR)/PatternFinderClasses_cpp.so $(LIBDIR)/PatternFinderHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
@@ -24,6 +24,7 @@ $(LIBDIR)/%_cpp.so : $(SRCDIR)/%.cpp $(INCDIR)/%.h $(INCDIR)/PatternConstants.h
 	##### Making shared library #####
 	echo ".L $<++" | root -b -l #make the shared library using ACLiC
 	mv $(SRCDIR)/*_cpp* $(LIBDIR) #move it to the libs dir
+	$(shell export PROJLIBS="$(PROJLIBS)")
 	
 clean:
 	rm $(LIBDIR)/*.so $(LIBDIR)/*.pcm $(LIBDIR)/*.d

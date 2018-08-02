@@ -143,12 +143,12 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     vector<TH1F*> segEffDens;
     for(unsigned int clctRank = 0; clctRank < 4; clctRank++){
     	segEffNums.push_back(new TH1F(("segEffNum"+to_string(clctRank)).c_str(),
-    			string("segEffNum"+to_string(clctRank)).c_str(), 20, 0, 100));
+    			string("segEffNum"+to_string(clctRank)).c_str(), 30, 0, 150));
     	segEffNums.back()->GetXaxis()->SetTitle("Pt [GeV]");
     	segEffNums.back()->GetYaxis()->SetTitle("Count / 5 GeV");
 
     	segEffDens.push_back(new TH1F(("segEffDen"+to_string(clctRank)).c_str(),
-    			("segEffDen"+to_string(clctRank)).c_str(), 20, 0, 100));
+    			("segEffDen"+to_string(clctRank)).c_str(), 30, 0, 150));
     	segEffDens.back()->GetXaxis()->SetTitle("Pt [GeV]");
     	segEffDens.back()->GetYaxis()->SetTitle("Count / 5 GeV");
     }
@@ -157,7 +157,9 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     // MAKE LUT
     //
 
-    string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/data/charmonium2016F+2017BCEF/CLCTMatch-Full.root";
+    string dataset = "charmonium2016F+2017BCEF";
+
+    string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/data/"+dataset+"/CLCTMatch-Full.root";
     TFile* lutFile = new TFile(lutFilepath.c_str());
     if(!lutFile){
     	printf("Failed to open lut file: %s\n", lutFilepath.c_str());
@@ -172,11 +174,23 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
     }
 
     DetectorLUTs newLUTs;
-    DetectorLUTs legacyLUTs;
-    if(makeLUT(plotTree, newLUTs, legacyLUTs)){
+    DetectorLUTs legacyLUTs(true);
+
+    /*
+    if(makeLUT(lutTree, newLUTs, legacyLUTs)){
     	cout << "Error: couldn't create LUT" << endl;
     	return -1;
     }
+
+    newLUTs.writeAll("data/"+dataset+"/luts/");
+    legacyLUTs.writeAll("data/"+dataset+"/luts/");
+	*/
+
+    newLUTs.loadAll("data/"+dataset+"/luts/");
+    legacyLUTs.loadAll("data/"+dataset+"/luts/");
+
+
+    newLUTs.writeAll("data/"+dataset+"/templuts/");
 
 
     //pointers used to look at different LUT's

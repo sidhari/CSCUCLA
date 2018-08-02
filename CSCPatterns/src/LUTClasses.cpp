@@ -129,6 +129,7 @@ float LUTEntry::quality() const{
  */
 int LUTEntry::calculateMeans(){
 	unsigned int entries = _positionOffsets.size();
+	//cout << "entries = " << entries << endl;
 	if(!entries) return 0;
 	if(_slopeOffsets.size() != entries){
 		cout << "Error: position and slope vector different lengths" << endl;
@@ -145,18 +146,9 @@ int LUTEntry::calculateMeans(){
 	_slope = slopeSum/entries;
 	_nsegments = entries;
 	_calculatedMeans = true;
+	//cout << "calculated means! nseg = " << _nsegments<< endl;
 	return 0;
 }
-
-/*@brief Reassigns quality parameter
- *
- */
-
-int LUTEntry::calculateQuality(){
-	_quality = _layers;
-	return 0;
-}
-
 
 
 //
@@ -165,6 +157,13 @@ int LUTEntry::calculateQuality(){
 
 LUT::LUT():
 	_name("Default")
+{
+	_isFinal = false;
+	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(LUT_FUNT);
+}
+
+LUT::LUT(const string& name):
+	_name(name)
 {
 	_isFinal = false;
 	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(LUT_FUNT);
@@ -287,21 +286,6 @@ int LUT::getEntry(const LUTKey& k, const LUTEntry*& e) const{
 	return -1;
 }
 
-/*@brief Looks in the LUT for the entry associated with the
- * CLCTCandidate. If successful, sets the quality parameter
- * of the CLCTCandidate
- */
-/*
-int LUT::getEntry(CLCTCandidate*& c, const LUTEntry*& e) const{
-	if(getEntry(LUTKey(c->patternId(),c->comparatorCodeId()), e)){
-		cout << "Error: can't find entry for CLCTCandidate" << endl;
-		return -1;
-	}
-	//return c->setQuality(e->quality());
-	return 0;
-}
-*/
-
 
 /*@brief Prints the tree, up until the entries
  * are less than the min segments
@@ -351,6 +335,7 @@ int LUT::write(const string& filename) {
 		if(!_isFinal)makeFinal();
 
 		for(auto& it : _orderedLUT){
+
 			// pat code - pos slope nseg qual layers chi2
 			myfile << it.first._pattern << " ";
 			if(!it.first._isLegacy) myfile << it.first._code << " ";
@@ -376,7 +361,6 @@ int LUT::makeFinal(){
 	if(_isFinal) return 0;
 	for(auto& x: _lut) {
 		x.second.calculateMeans();
-		x.second.calculateQuality();
 		_orderedLUT.insert(x);
 	}
 	_isFinal = true;
@@ -388,7 +372,30 @@ int LUT::makeFinal(){
 // DetectorLUTs
 //
 
-int DetectorLUTs::addEntry(const string& name, int station, int ring){
+DetectorLUTs::DetectorLUTs(bool isLegacy):
+	_isLegacy(isLegacy){
+}
+
+/*@brief Takes a path that contains all the necessary LUTs needed
+ * to create the LUTs
+ *
+ */
+int DetectorLUTs::loadAll(const string& path){
+	for(unsigned int i = 0; i < NCHAMBERS; i++){
+		string filepath = path+CHAMBER_NAMES[i];
+		if(_isLegacy) filepath += LEGACY_SUFFIX;
+		filepath += ".lut";
+		if(addEntry(CHAMBER_NAMES[i],
+				CHAMBER_ST_RI[i][0],CHAMBER_ST_RI[i][1],
+				filepath)) {
+			cout << "Error can't add file:" << filepath << endl;
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int DetectorLUTs::addEntry(const string& name, int station, int ring, const string& lutpath){
 	auto key = make_pair(station, ring);
 	auto it = _luts.find(key);
 	if(it != _luts.end()){
@@ -396,7 +403,12 @@ int DetectorLUTs::addEntry(const string& name, int station, int ring){
 				" " << ring << " , overwriting" <<endl;
 
 	}
-	_luts.insert(make_pair(key, LUT(name, LINEFIT_LUT_PATH)));
+	//default to line fits if not legacy
+	if(!_isLegacy){
+		_luts.insert(make_pair(key, LUT(name, lutpath)));
+	} else {
+		_luts.insert(make_pair(key, LUT(name)));
+	}
 	return 0;
 }
 
@@ -415,6 +427,18 @@ int DetectorLUTs::makeFinal(){
 }
 
 
+unsigned int DetectorLUTs::size() const {
+	return _luts.size();
+}
+
+int DetectorLUTs::writeAll(const string& path) {
+	//TODO: make it so we have a bool that keeps track of if its final
+	makeFinal();
+	for(auto& l : _luts){
+		l.second.write(path+l.second._name+".lut");
+	}
+	return 0;
+}
 
 
 

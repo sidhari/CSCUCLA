@@ -296,35 +296,23 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     t->SetBranchAddress("patX", &patX);
     t->SetBranchAddress("legacyLctX", &legacyLctX);
 
-    newLUTs.addEntry("ME11B", 1,1);
-    newLUTs.addEntry("ME11A", 1,4);
-    newLUTs.addEntry("ME12", 1,2);
-    newLUTs.addEntry("ME13", 1,3);
-    newLUTs.addEntry("ME21", 2,1);
-    newLUTs.addEntry("ME22", 2,2);
-    newLUTs.addEntry("ME31", 3,1);
-    newLUTs.addEntry("ME32", 3,2);
-    newLUTs.addEntry("ME41", 4,1);
-    newLUTs.addEntry("ME42", 4,2);
-
-
-    legacyLUTs.addEntry("ME11B", 1,1);
-    legacyLUTs.addEntry("ME11A", 1,4);
-    legacyLUTs.addEntry("ME12", 1,2);
-    legacyLUTs.addEntry("ME13", 1,3);
-    legacyLUTs.addEntry("ME21", 2,1);
-    legacyLUTs.addEntry("ME22", 2,2);
-    legacyLUTs.addEntry("ME31", 3,1);
-    legacyLUTs.addEntry("ME32", 3,2);
-    legacyLUTs.addEntry("ME41", 4,1);
-    legacyLUTs.addEntry("ME42", 4,2);
+    for(unsigned int i = 0; i < NCHAMBERS; i++){
+    	newLUTs.addEntry(CHAMBER_NAMES[i],
+    			CHAMBER_ST_RI[i][0], CHAMBER_ST_RI[i][1]);
+    	legacyLUTs.addEntry(CHAMBER_NAMES[i]+LEGACY_SUFFIX,
+    			CHAMBER_ST_RI[i][0], CHAMBER_ST_RI[i][1]);
+    }
 
     //pointers to whatever LUT were looking at
     LUT* newLUT = 0;
     LUT* legacyLUT = 0;
 
+
     for(int i =0; i < t->GetEntriesFast(); i++){
     	t->GetEntry(i);
+
+    	//skip bad patterns TODO: verify everything works correctly here!
+    	if (ccId == -1) continue;
 
     	if(newLUTs.getLUT(ST,RI, newLUT) ||
     			legacyLUTs.getLUT(ST,RI,legacyLUT)){
@@ -338,9 +326,11 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     	LUTEntry* newEntry = 0;
     	LUTEntry* legacyEntry = 0;
 
+
     	if(newLUT->editEntry(newKey, newEntry) ||
     			legacyLUT->editEntry(legacyKey, legacyEntry)){
     		cout << "Error: can't get entry in LUT" << endl;
+    		cout << "patt: "<<patternId << " cc: " << ccId << " legacy: " << legacyLctId << endl;
     		return -1;
     	}
 
@@ -351,8 +341,10 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     	float legacyPosDiff   = segmentX - legacyLctX;
     	float legacySlopeDiff = segmentdXdZ;
 
-    	newEntry->addSegment(newPosDiff, newSlopeDiff);
-    	legacyEntry->addSegment(legacyPosDiff, legacySlopeDiff);
+    	if(newEntry->addSegment(newPosDiff, newSlopeDiff) ||
+    	legacyEntry->addSegment(legacyPosDiff, legacySlopeDiff)){
+    		return -1;
+    	}
 
     }
 
