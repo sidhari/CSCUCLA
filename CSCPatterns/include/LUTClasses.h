@@ -108,7 +108,7 @@ public:
 
 	int setEntry(const LUTKey& k,const LUTEntry& e);
 	int editEntry(const LUTKey& k, LUTEntry*& e);
-	int getEntry(const LUTKey&k, const LUTEntry*& e) const;
+	int getEntry(const LUTKey&k, const LUTEntry*& e, bool debug=false) const;
 	void print(unsigned int minSegments=0);
 	int write(const string& filename);
 	int makeFinal();

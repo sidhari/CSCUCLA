@@ -2,6 +2,10 @@ import ROOT as r
 
 colors = [r.kBlack, r.kRed-4, r.kGreen+1, r.kBlue+1, r.kMagenta-4, r.kYellow-3, r.kCyan-3, r.kBlue+3, r.kRed+2, r.kOrange+7, r.kBlue-8, 30, 50, 20, r.kYellow, 38]
 
+
+def printProgress(counter, entries):
+    if((counter % 10000) == 0) : print("Finished %0.2f%% of events"%(100.*counter/entries))
+
   
 class LUT:
     def __init__(self, isLegacy_=False):

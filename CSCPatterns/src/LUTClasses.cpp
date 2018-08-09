@@ -272,12 +272,16 @@ int LUT::editEntry(const LUTKey& k, LUTEntry*& e) {
 	}
 }
 
-int LUT::getEntry(const LUTKey& k, const LUTEntry*& e) const{
+int LUT::getEntry(const LUTKey& k, const LUTEntry*& e, bool debug) const{
 	if(!_isFinal) {
 		cout << "Need to finalize LUT to access entries" <<endl;
 		return -1;
 	}
+	if(debug) cout << "Looking for [ " << k._pattern << ", " << k._code << "]" << endl;
 	for(auto& x: _orderedLUT){
+		if(debug) cout << "[" << x.first._pattern << ", " << x.first._code << "]: " <<
+				"[qual = " << x.second.quality() << "]" << endl;
+
 		if(k == x.first){
 			e = &(x.second);
 			return 0;

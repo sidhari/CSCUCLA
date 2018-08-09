@@ -2,10 +2,11 @@ import glob
 import os
 
 EOS = '/uscms/home/wnash/eos/'
-SAMPLE_DIR = 'Charmonium/charmonium2017D/'
+SAMPLE_DIR = 'Charmonium/charmonium2017C/'
 TOP_DIR = EOS+SAMPLE_DIR
 SRC_DIR = '../src/'
 LIB_DIR = '../lib/'
+LUT_DIR = 'data/Charmonium/charmonium2016F+2017BCEF/luts/' #TODO: clean this up...
 MAKE_DIR = '..'
 TEMPLATE_RUN_FOLDER = 'run/'
 
@@ -43,10 +44,10 @@ def makeTarball(tarFile, runFolder):
     libsToTar = libDir + '*.so ' + libDir + '*.d ' + libDir+ '*.pcm'
     srcsToTar = srcDir + '*.cpp'
     incsToTar = incDir + '*.h'
-    
+    lutsToTar = LUT_DIR +'*.lut'
     
     # executable, libs, cpp, h
-    tarLines ='%s %s %s %s'%(makefileToTar, libsToTar, srcsToTar, incsToTar)
+    tarLines ='%s %s %s %s %s'%(makefileToTar, libsToTar, srcsToTar, incsToTar,lutsToTar)
     os.system('pushd %s; tar czf %s %s;popd; mv %s/%s %s'%(MAKE_DIR,tarFile, tarLines, MAKE_DIR,tarFile, runFolder)) #tar and change back
     return runFolder+tarFile #return the tarFile path
 
@@ -126,8 +127,9 @@ else:
 # Run over all the files in the directory we want and send them to condor
 #
 
-#for inputfilePath in glob.glob(TOP_DIR + '/*/*/CSCDigiTree_*.root'):
-for inputfilePath in [ TOP_DIR+ '180518_214403/0000/CSCDigiTree_420.root']:
+for inputfilePath in glob.glob(TOP_DIR + '/*/*/CSCDigiTree_*.root'):
+#for inputfilePath in glob.glob(TOP_DIR + '/*/*/CSCDigiTree_948.root'):
+#for inputfilePath in [ TOP_DIR+ '180518_214403/0000/CSCDigiTree_420.root']:
     print "Making condor script for %s"%inputfilePath
     
     #pulls out the number associated with the input file
