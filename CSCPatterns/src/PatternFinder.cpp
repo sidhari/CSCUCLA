@@ -9,12 +9,16 @@
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
+#include <TH2F.h>
+#include <TROOT.h>
 
 #include <string>
 #include <vector>
 #include <iostream>
 #include <stdio.h>
 #include <algorithm>
+#include <time.h>
+
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
@@ -23,8 +27,24 @@
 
 using namespace std;
 
+
+/* TODO: Multithreading
+ *
+ * - open files in main thread
+ * - make histograms in main thread (following recipe here: https://root.cern.ch/doc/v612/imt101__parTreeProcessing_8C.html)
+ * - make tree in main thread, using same recipe book
+ * - pass tree to new function PatternFinderThread(ttree*(?)), should return a ttree as well
+ * - join threads
+ * - combine output trees, and write output file: https://root-forum.cern.ch/t/merging-ttrees-on-the-fly/1833
+ *
+ */
+
 int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) {
 
+	//ROOT::EnableImplicitMT();
+
+	//TODO: change everythign printf -> cout
+	clock_t c_start = clock();
 	printf("Running over file: %s\n", inputfile.c_str());
 	TFile* f = TFile::Open(inputfile.c_str());
 
@@ -145,7 +165,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	segEffDen->GetXaxis()->SetTitle("Pt [GeV]");
 	segEffDen->GetYaxis()->SetTitle("Count / 5 GeV");
-	// vector<TH1F*> segEffDens;
 	for(unsigned int clctRank = 0; clctRank < 6; clctRank++){
 		segEffNums.push_back(new TH1F(("segEffNum"+to_string(clctRank)).c_str(),
 				string("segEffNum"+to_string(clctRank)).c_str(), 30, 0, 150));
@@ -161,6 +180,32 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	foundOneMatchEffDen->GetXaxis()->SetTitle("Pt [GeV]");
 	foundOneMatchEffDen->GetXaxis()->SetTitle("Count / 5 GeV");
+
+
+	vector<TH1F*> chi2Distributions; // Sum_layers [ (comparator half strip - segment position extrapolated to layer)^2 / (expected error)^2 ]
+	vector<TH2F*> chi2VsSlope;
+	for(unsigned int i = N_LAYER_REQUIREMENT; i < NLAYERS+1; i++){
+		chi2Distributions.push_back(new TH1F(("h_"+to_string(i)+"layer_Chi2").c_str(),
+				("h_"+to_string(i)+"layer_Chi2").c_str(),100, 0, 30));
+		chi2Distributions.back()->GetXaxis()->SetTitle("#chi^2");
+		chi2Distributions.back()->GetYaxis()->SetTitle("Counts");
+		chi2VsSlope.push_back(new TH2F(("chi2VsSlope_"+to_string(i)).c_str(),
+				("chi2VsSlope"+to_string(i)).c_str(),100, -1, 1, 100, 0, 30));
+		chi2VsSlope.back()->GetXaxis()->SetTitle("Segment Slope [strip / layer]");
+		chi2VsSlope.back()->GetYaxis()->SetTitle("#chi^{2}");
+
+
+	}
+
+	//temp - TO REMOVE
+	vector<TH1F*> chi2PosDiffs;
+	for(int i =0; i < 6; i++){
+		chi2PosDiffs.push_back(new TH1F(("chi2posdiff_"+to_string(i)).c_str(),
+				("chi2posdiff_"+to_string(i)).c_str(), 100, -5, 5));
+	}
+	//vector<TH2F*> chi2VsSlope = new TH2F("chi2VsSlope", "chi2VsSlope",100, -1, 1, 100, 0, 30);
+	//TH1F* chi2PosDiff = new TH1F("chi2posdiff", "chi2posdiff", 100, -5, 5);
+
 
 	//
 	// MAKE LUT
@@ -249,6 +294,10 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			} else {
 				if(segmentX > 79) continue;
 			}
+
+
+			//TODO: REMOVE THISSSSSSSSSSSSSS
+			if(!me11b) continue;
 
 
 			ChamberHits theseRHHits(0, ST, RI, EC, CH);
@@ -373,11 +422,64 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			plotTree->Fill();
 
+			CLCTCandidate* bestCLCT = newSetMatch.at(closestNewMatchIndex);
+
+
+			unsigned int layers = bestCLCT->_lutEntry->_layers;
+
+
+			int code_hits [MAX_PATTERN_WIDTH][NLAYERS];
+			if(bestCLCT->getHits(code_hits)){
+				printf("Error: can't recover hits\n");
+				return -1;
+			}
+
+			float hs_clctkeyhs = 2*bestCLCT->keyStrip();
+
+
+
+			//if(patternId != 100 || ccId != 1365) continue;
+			//if(!me11b) continue;
+			//printf("new segment\n");
+			//calculate chi^2
+			float clctChi2 = 0;
+			for(int ilay = 0; ilay < (int)NLAYERS; ilay++){
+				float hs_segPosOnThisLayer = 2.*(segmentX + segmentdXdZ*(2-ilay));
+				//if(me11a || me11b) hs_segPosOnThisLayer += 1.;
+				//printf("hs_segPos: %3.2f segX: %3.2f segdXdZ: %3.2f: ilay: %i\n",hs_segPosOnThisLayer, segmentX, segmentdXdZ, ilay);
+				for(unsigned int hs = 0; hs < MAX_PATTERN_WIDTH; hs++){
+					//printf("%i", code_hits[hs][ilay]);
+					if(code_hits[hs][ilay]){
+						float pattMinusSeg = (hs-0.5*(MAX_PATTERN_WIDTH)+1) + hs_clctkeyhs -hs_segPosOnThisLayer;
+						chi2PosDiffs.at(ilay)->Fill(pattMinusSeg);
+						float width = 1./sqrt(12);
+						//float width = 1.;
+						float thisChi2 = pow(pattMinusSeg/width, 2);
+						//if(DEBUG){
+							//printf("\tkeyhs - segpos: %3.2f   hs_in_pat = %f\n",hs_clctkeyhs -hs_segPosOnThisLayer,hs-0.5*(MAX_PATTERN_WIDTH)+1);
+							//printf("\tthisChi2: %3.2f hs: %u hs_clctkeyhs: %3.2f  hs_segpos: %3.2f, patt-seg = %3.2f\n", thisChi2,hs, hs_clctkeyhs, hs_segPosOnThisLayer,pattMinusSeg);
+						//}
+						clctChi2 += thisChi2;
+						break; //only one comp hit per layer
+					}
+				}
+			}
+			if(layers >= N_LAYER_REQUIREMENT) {
+				chi2Distributions.at(layers-(N_LAYER_REQUIREMENT))->Fill(clctChi2);
+				chi2VsSlope.at(layers-N_LAYER_REQUIREMENT)->Fill(segmentdXdZ,clctChi2);
+			}
+			//bestCLCT->printCodeInPattern();
+
+
+
 
 			//Clear everything
 
 			oldSetMatch.clear();
 			newSetMatch.clear();
+
+			//temp
+			//return 0;
 		}
 
 	}
@@ -400,9 +502,16 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	foundOneMatchEffNum->Write();
 	foundOneMatchEffDen->Write();
 
+	for(auto hist : chi2PosDiffs) hist->Write();
+	for(auto hist : chi2Distributions) hist->Write();
+	for(auto hist : chi2VsSlope) hist->Write();
+
 	outF->Close();
 
-	printf("Finished writing to file: %s\n",outputfile.c_str());
+	printf("Wrote to file: %s\n",outputfile.c_str());
+
+	// print program timing information
+	cout << "Time elapsed: " << float(clock()- c_start) / CLOCKS_PER_SEC << " s" << endl;
 
 	return 0;
 }
@@ -424,7 +533,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 }
-
 
 
 

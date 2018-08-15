@@ -102,6 +102,7 @@ public:
 	//pointer to whatever LUT Entry is associated with this candidate
 	const LUTEntry* _lutEntry;
 
+	int getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const;
 	float keyStrip() const;
 	void print3x6Pattern() const;
 	void printCodeInPattern() const;

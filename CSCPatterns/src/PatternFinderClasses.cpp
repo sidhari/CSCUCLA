@@ -316,6 +316,12 @@ CLCTCandidate::~CLCTCandidate() {
 }
 
 
+//gets the comparator hits associated with this candidate, returns 0 if successful
+int CLCTCandidate::getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const{
+	return _pattern.recoverPatternCCCombination(_code->getId(),code_hits);
+}
+
+
 //center position of the track [strips]
 float CLCTCandidate::keyStrip() const{
 	return (_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;
