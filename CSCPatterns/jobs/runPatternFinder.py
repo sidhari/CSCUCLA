@@ -1,9 +1,13 @@
 import glob
 import os
 
-EOS = '/uscms/home/wnash/eos/'
-SAMPLE_DIR = 'Charmonium/charmonium2017C/'
-TOP_DIR = EOS+SAMPLE_DIR
+#EOS = '/uscms/home/wnash/eos/'
+READ_EOS = '/eos/uscms/store/user/bravo/'
+WRITE_EOS = '/uscms/home/wnash/eos/'
+#SAMPLE_DIR = 'Charmonium/charmonium2017C/'
+SAMPLE_DIR = 'SingleMuon/singleMuon2018D/'
+TOP_READ_DIR = READ_EOS+SAMPLE_DIR
+TOP_WRITE_DIR = WRITE_EOS+SAMPLE_DIR
 SRC_DIR = '../src/'
 LIB_DIR = '../lib/'
 LUT_DIR = 'data/Charmonium/charmonium2016F+2017BCEF/luts/' #TODO: clean this up...
@@ -69,7 +73,7 @@ def writeSubmitScript(scriptfile, runFolder, runOnCondor, tarPath, inputfilePath
     scriptfile.write("should_transfer_files  =YES\n")
     scriptfile.write("transfer_input_files   ="+(runFolder+runOnCondor)+","+tarPath+","+inputfilePath+"\n")
     scriptfile.write("transfer_output_files  ="+outputfile+"\n")
-    scriptfile.write("transfer_output_remaps =\"%s=%s\"\n"%(outputfile, TOP_DIR+OUTPUT_FOLDER+outputfile))
+    scriptfile.write("transfer_output_remaps =\"%s=%s\"\n"%(outputfile, TOP_WRITE_DIR+OUTPUT_FOLDER+outputfile))
     scriptfile.write("whentotransferoutput   =ON_EXIT\n")
     scriptfile.write("queue                  1\n")
 
@@ -78,8 +82,10 @@ def writeSubmitScript(scriptfile, runFolder, runOnCondor, tarPath, inputfilePath
 # Make folders for holding all the things we will make
 #
 
+
+
 #make output directory
-outputFolder = makeDir(TOP_DIR, OUTPUT_FOLDER)
+outputFolder = makeDir(WRITE_EOS, SAMPLE_DIR+OUTPUT_FOLDER)
 #make condor shell script directory
 shellFolder  = makeDir('',SAMPLE_DIR)
 #where we will keep all the executables
@@ -127,7 +133,7 @@ else:
 # Run over all the files in the directory we want and send them to condor
 #
 
-for inputfilePath in glob.glob(TOP_DIR + '/*/*/CSCDigiTree_*.root'):
+for inputfilePath in glob.glob(TOP_READ_DIR + '/*/*/CSCDigiTree_*.root'):
 #for inputfilePath in glob.glob(TOP_DIR + '/*/*/CSCDigiTree_948.root'):
 #for inputfilePath in [ TOP_DIR+ '180518_214403/0000/CSCDigiTree_420.root']:
     print "Making condor script for %s"%inputfilePath

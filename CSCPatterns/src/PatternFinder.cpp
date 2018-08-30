@@ -175,6 +175,12 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	TH1F* foundOneMatchEffNum = new TH1F("foundOneMatchEffNum", "foundOneMatchEffNum", 30,0,150);
 	TH1F* foundOneMatchEffDen = new TH1F("foundOneMatchEffDen", "foundOneMatchEffDen", 30,0,150);
 
+	TH1F* clctLayerCount_me_p_1_1_11 = new TH1F("clctLayerCount_me_p_1_1_11", "clctLayerCount_me_p_1_1_11",7, 0, 7);
+	TH1F* clctLayerCount_me_m_1_1_11 = new TH1F("clctLayerCount_me_m_1_1_11", "clctLayerCount_me_m_1_1_11",7, 0, 7);
+	TH1F* clctLayerCount_me11a = new TH1F("clctLayerCount_me11a", "clctLayerCount_me11a",7, 0, 7);
+	TH1F* clctLayerCount_me11b = new TH1F("clctLayerCount_me11b", "clctLayerCount_me11b",7, 0, 7);
+
+
 	foundOneMatchEffNum->GetXaxis()->SetTitle("Pt [GeV]");
 	foundOneMatchEffNum->GetYaxis()->SetTitle("Count / 5 Gev");
 
@@ -297,7 +303,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 
 			//TODO: REMOVE THISSSSSSSSSSSSSS
-			if(!me11b) continue;
+			if(!(me11b || me11a)) continue;
 
 
 			ChamberHits theseRHHits(0, ST, RI, EC, CH);
@@ -327,6 +333,14 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			//TODO: currently no implementation dealing with cases where we find one and not other
 			if(!oldSetMatch.size() || !newSetMatch.size()) {
+				if(!oldSetMatch.size()) {
+					if(me11a) clctLayerCount_me11a->Fill(0);
+					else if(me11b) clctLayerCount_me11b->Fill(0);
+
+					//EC = 1 = +, 2 = -
+					if(EC == 1 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_p_1_1_11->Fill(0);
+					if(EC == 2 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_m_1_1_11->Fill(0);
+				}
 				oldSetMatch.clear();
 				newSetMatch.clear();
 				continue;
@@ -412,6 +426,17 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
 			if(DEBUG > 0) cout << ") [strips]" << endl;
 
+			unsigned int legacyLayerCount = oldSetMatch.at(closestOldMatchIndex)->layerCount();
+
+			//clctLayerCount->Fill(oldSetMatch.at(closestOldMatchIndex)->layerCount());
+
+			if(me11a) clctLayerCount_me11a->Fill(legacyLayerCount);
+			else if(me11b) clctLayerCount_me11b->Fill(legacyLayerCount);
+
+			//EC = 1 = +, 2 = -
+			if(EC == 1 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_p_1_1_11->Fill(legacyLayerCount);
+			if(EC == 2 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_m_1_1_11->Fill(legacyLayerCount);
+
 			// Fill Tree Data
 
 			patX = newSetMatch.at(closestNewMatchIndex)->keyStrip();
@@ -490,6 +515,10 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	outF->cd();
 	plotTree->Write();
+	clctLayerCount_me11a->Write();
+	clctLayerCount_me11b->Write();
+	clctLayerCount_me_p_1_1_11->Write();
+	clctLayerCount_me_m_1_1_11->Write();
 	lutSegmentPosDiff->Write();
 	lutSegmentSlopeDiff->Write();
 
