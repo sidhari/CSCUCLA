@@ -43,7 +43,6 @@ Implementation:
 
 
 CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
-
 {
     //now do what ever initialization is needed
     mc_token = consumes<reco::MuonCollection>( iConfig.getParameter<edm::InputTag>("muonCollection") );
@@ -59,6 +58,8 @@ CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
     ddu_token = consumes<CSCDDUStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dduDigiTag"));
     dmb_token = consumes<CSCDMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dmbDigiTag"));
     tmb_token = consumes<CSCTMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("tmbDigiTag"));
+
+    theCSC = 0;
 
     minPt     = iConfig.getParameter<double>("minPt");
 
@@ -320,6 +321,27 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //selection starts here
     //
 
+    /* Single Muon:
+     * - Can remove the loop immediately below this, and only check we need is
+     * 		isGoodMuon (currently commented out)
+     *
+     * 	Min-Bias:
+     * 	- Biggest changes, no loop over muons
+     * 	- Just store all the data in the event
+     *
+     *
+     * 	Monte Carlo:
+     * 	- General idea is with monte carlo sample, match generated to reconstructed
+     * 	- Take all the hits associated with the reconstructed muon, store that in the tree
+     * 	- deltaR seems like a good thing to use to cut
+     *
+     *
+     * 	Would be good to factorize code to run over: singlemu, j/spi, minbias, monte carlo.
+     * 	Can check CMSSW tutorial here: https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookWriteFrameworkModule
+     * 	Good in general to go over entire workbook
+     *
+     */
+
     for (reco::MuonCollection::const_iterator muon = muons->begin(); muon!= muons->end(); muon++) 
     {
         Nmuon++;
@@ -424,6 +446,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         ind++;
         os = false;
         ss = false;
+        //W.NASH - TODO: what happens if we find a pair of opposite sign muons (1,2) and pair of same sign (2,3), then we will skip?
         if( !((inMos && (ind==mu1Ios || ind==mu2Ios)) || (inMss && (ind==mu1Iss || ind==mu2Iss))) ) continue;
         if(ind==mu1Ios || ind==mu2Ios) os = true;
         if(ind==mu1Iss || ind==mu2Iss) ss = true;
@@ -433,6 +456,11 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         //isGoodMuon in src/MuonQualityCuts.cc
         //if (!muonQualityCuts->isGoodMuon(iEvent, muon, beamSpotHandle)) continue;
+        /*
+         * All this function does is quality checks to make sure that it
+         * is indeed a good muon, not used for J/Psi since one of cuts
+         * uses Pt
+         */
 
         //
         //selection ends here

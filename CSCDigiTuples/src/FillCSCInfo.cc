@@ -3,13 +3,13 @@
 
 void FillEventInfo::fill(const edm::Event& iEvent){
   reset();
-  Event_EventNumber     = iEvent.id().event();
-  Event_RunNumber       = iEvent.id().run();
-  Event_LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
-  Event_BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
+  EventNumber     = iEvent.id().event();
+  RunNumber       = iEvent.id().run();
+  LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
+  BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
 }
 
-
+/*
 void FillRecHitInfo::fill(const CSCRecHit2DCollection& recHits){
   reset();
   for (CSCRecHit2DCollection::const_iterator hiti=recHits.begin(); hiti!=recHits.end(); hiti++)
@@ -216,3 +216,4 @@ void FillALCTInfo::fill(const CSCALCTDigiCollection& alcts){
 
 }
 }
+*/

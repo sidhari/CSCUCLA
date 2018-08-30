@@ -23,8 +23,9 @@ const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins 
 const std::string LINEFIT_LUT_PATH = "data/linearFits.lut";
 
 //labels of all envelopes
-const unsigned int NENVELOPES = 5;
-const unsigned  int ENVELOPE_IDS[NENVELOPES] = {100,90,80, 70, 60};
+const unsigned int NPATTERNS = 5;
+const unsigned  int PATTERN_IDS[NPATTERNS] = {100,90,80, 70, 60};
+const unsigned int NCOMPARATOR_CODES = 4096; //codes per pattern 2^12, without accounting for degeneracy, etc
 
 const unsigned int NCHAMBERS = 10;
 const std::string CHAMBER_NAMES[NCHAMBERS] = {

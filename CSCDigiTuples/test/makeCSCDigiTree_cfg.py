@@ -62,7 +62,7 @@ process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
 #process.load("EventFilter.CSCRawToDigi.cscUnpacker_cfi")
 #process.load("RecoLocalMuon.Configuration.RecoLocalMuon_cff")
 
-process.MakeNtuple = cms.EDAnalyzer("CSCPatterns",
+process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         NtupleFileName       = cms.untracked.string('CSCDigiTree.root'),
         muonCollection = cms.InputTag("muons"),
         wireDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCWireDigi"),

@@ -9,6 +9,13 @@
 #include <fstream>
 #include <vector>
 #include <set>
+#include <math.h>
+
+
+//TEMP
+#include "TFile.h"
+#include "TH1F.h"
+#include "../include/PatternFinderHelperFunctions.h"
 
 
 #include "../include/PatternConstants.h"
@@ -99,6 +106,16 @@ int LUTEntry::addSegment(float positionOffset, float slopeOffset){
  */
 bool LUTEntry::operator<(const LUTEntry& l) const{
 	return nsegments() < l.nsegments() ? false : true;
+}
+
+bool LUTEntry::operator==(const LUTEntry& l) const{
+	return (_position == l._position &&
+			_slope == l._slope &&
+			_nsegments == l._nsegments &&
+			_quality == l._quality &&
+			_layers == l._layers &&
+			_chi2 == l._chi2 &&
+			_calculatedMeans == l._calculatedMeans);
 }
 
 
@@ -225,8 +242,8 @@ LUT::LUT(const string& name, const string& filepath):
 				cout << line << endl;
 				cout << "patt: " << key._pattern<<
 						" cc: " << key._code <<
-						" pos: " << position <<
-						" slope: " << slope <<
+						" pos: " << position << //strips
+						" slope: " << slope << //strip /layer
 						" nseg: " << nsegments <<
 						" quality: " << quality <<
 						" layers: " << layers <<
@@ -357,6 +374,66 @@ int LUT::write(const string& filename) {
 
 }
 
+/* @brief Writes pattern Specific LUTs (PSLs),
+ * readable by the OTMB. One for each pattern
+ */
+int LUT::writePSLs(const string& fileprefix){
+	cout << "\033[94m=== Writing PSL ===\033[0m" << endl;
+	if(!_isFinal)makeFinal();
+
+	/* Stored if we every need these plots later...
+	cout << "writing test.root file" << endl;
+	TFile * outF = new TFile("temp.root","RECREATE");
+	TH1F* h_poffsets = new TH1F("pos_offsets","Linear Fit Position Offsets", 200, -2, 2);
+	h_poffsets->GetXaxis()->SetTitle("Centered Segment Offset [half-strips]");
+	h_poffsets->GetYaxis()->SetTitle("Comparator Codes");
+
+	TH1F* h_soffsets = new TH1F("slope_offsets", "Linear Fit Slope Offsets", 200, -2, 2);
+	h_soffsets->GetXaxis()->SetTitle("Segment Slope Offset [ hs / layer]");
+	h_soffsets->GetYaxis()->SetTitle("Comparator Codes");
+	 */
+
+
+	for(unsigned int i = 0; i < NPATTERNS; i++){
+		unsigned int pattern = PATTERN_IDS[i];
+		string thisPattFilename = fileprefix + "-" + to_string(pattern) + ".psl";
+		cout << "Writing to file: " << thisPattFilename << endl;
+		ofstream outfile;
+		outfile.open(thisPattFilename);
+		if(!outfile){
+			cerr << "Error: can't write file" << endl;
+			return -1;
+		}
+
+		for(unsigned int ccode = 0; ccode < NCOMPARATOR_CODES; ccode++){
+			unsigned int outnum = 0;
+			const LUTEntry* e = 0;
+			if(getEntry(LUTKey(pattern,ccode), e) || (e && e->_layers < 3)){
+				//we couldn't find the key in the LUT
+				outnum = convertToPSLLine(LUTEntry());
+			}else {
+				outnum = convertToPSLLine(*e);
+				/*
+				h_poffsets->Fill(2.*e->position()-0.5);
+				h_soffsets->Fill(2.*e->slope());
+				if(abs(2.*e->position()-0.5) > 2){
+					printPatternCC(pattern, (int) ccode);
+				}
+				*/
+			}
+
+			outfile << hex << setw(5) << setfill('0')  << outnum << endl;
+		}
+		outfile.close();
+	}
+	/*
+	h_poffsets->Write();
+	h_soffsets->Write();
+	outF->Close();
+	*/
+	return 0;
+}
+
 /* @brief Once all segments have been put into the LUT,
  * this recalculates the positions / slopes and puts them
  * all in order
@@ -369,6 +446,70 @@ int LUT::makeFinal(){
 	}
 	_isFinal = true;
 	return 0;
+}
+
+int LUT::convertToPSLLine(const LUTEntry& e){
+	if(e == LUTEntry()){ //we just have the default constructor
+		return 0;
+	}
+
+
+	const unsigned int nOutBits = 18; //amount of bits we can write to
+
+	// See email "CLCT output to Track Finder"
+	// Need position offset range of [-2,2] hs, and 0.25 half-strip resolution to make proper use of our new scheme
+	// [2 - (-2)]/ 0.25 = 16 -> 4 bits
+	const unsigned int positionRange = 2;
+	const unsigned int nPositionBits = 4;
+	float epsilon = 0.00001; // for putting quantities just below maxmimum
+	//const unsigned int positionBins = (2*positionRange)*(nPositionBits);
+
+	//convert to halfstrips, and center distribution in positive region (don't have to worry about signs) for shipping
+	float centeredHsPosition = 2.*e.position()-0.5 + positionRange;
+	if(centeredHsPosition < 0) centeredHsPosition = 0; //cut things outside bounds, shouldn't be many
+	else if(centeredHsPosition >= 2.*positionRange) centeredHsPosition = 2.*positionRange-epsilon;
+	//make it fit within 4 bits, this expression seems a bit shaky... only works for even ranges?
+	unsigned int positionBits = (unsigned int)floor(centeredHsPosition*pow(2, nPositionBits-positionRange));
+
+	//
+	//Need slope offset range of [-2,2] hs/layer and 0.125 hs/layer resolution
+	// [2- (-2)] / 0.125 = 32 -> 5 bits
+
+	const unsigned int slopeRange = 2;
+	const unsigned int nSlopeBits = 5;
+	float centeredHsSlope = 2.*e.slope() + slopeRange;
+	if(centeredHsSlope < 0) {
+		//cout << centeredHsSlope << endl;
+		centeredHsSlope = 0;
+	}
+	else if(centeredHsSlope >=2.*slopeRange) {
+		centeredHsSlope = 2.*slopeRange-epsilon;
+	}
+
+	unsigned int slopeBits = (unsigned int)floor(centeredHsSlope*pow(2,nSlopeBits-slopeRange));
+
+
+	//
+	// use 9 bits to store quality
+	// temporarily just the number of layers in the code
+	//
+	const unsigned int nQualityBits = nOutBits - nSlopeBits - nPositionBits;
+	unsigned int qualityBits = e._layers;
+
+	//bits we will eventually convert to the string we write
+	unsigned int outBits = (positionBits << (nOutBits-nPositionBits)) | (slopeBits << (nOutBits-nPositionBits-nSlopeBits)) | qualityBits;
+	//if(DEBUG > 3){
+	if(outBits > 262143){
+		bitset<nPositionBits> p(positionBits);
+		bitset<nSlopeBits> s(slopeBits);
+		bitset<nQualityBits> q(qualityBits);
+		cout << "pos: " << p << " slope: " << s << " qual: "<< q << endl;
+		bitset<nOutBits> o(outBits);
+		cout << "out: " << o << endl;
+		cout << outBits << endl;
+	}
+
+	return outBits;
 }
 
 
@@ -416,14 +557,26 @@ int DetectorLUTs::addEntry(const string& name, int station, int ring, const stri
 	return 0;
 }
 
-int DetectorLUTs::getLUT(int station, int ring, LUT*& lut){
+
+int DetectorLUTs::editLUT(int station, int ring, LUT*& lut){
 	auto k = make_pair(station,ring);
 	auto it = _luts.find(k);
 	if(it != _luts.end()) {
+		it->second.makeFinal();
 		lut = &(it->second);
 		return 0;
 	}else return -1;
 }
+
+int DetectorLUTs::getLUT(int station, int ring, const LUT*& lut){
+	LUT* unconstLUT = 0;
+	if(editLUT(station,ring, unconstLUT)){
+		return -1;
+	}
+	lut = (const LUT*&)unconstLUT;
+	return 0;
+}
+
 
 int DetectorLUTs::makeFinal(){
 	for(auto& l: _luts) l.second.makeFinal();

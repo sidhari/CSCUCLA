@@ -4,3 +4,5 @@
 *.so
 *__init__.py
 *.o
+*.pdf
+*.root

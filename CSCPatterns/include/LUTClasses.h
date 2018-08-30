@@ -57,6 +57,7 @@ public:
 
 	int addSegment(float positionOffset, float slopeOffset);
 	bool operator<(const LUTEntry& l) const;
+	bool operator==(const LUTEntry& l) const;
 	float position() const;
 	float slope() const;
 	unsigned int nsegments() const; //amount of segments used to construct LUT entry
@@ -111,6 +112,7 @@ public:
 	int getEntry(const LUTKey&k, const LUTEntry*& e, bool debug=false) const;
 	void print(unsigned int minSegments=0);
 	int write(const string& filename);
+	int writePSLs(const string& fileprefix);
 	int makeFinal();
 
 private:
@@ -118,6 +120,7 @@ private:
 	set<pair<LUTKey, LUTEntry>, LUTLambda> _orderedLUT;
 	map<LUTKey,LUTEntry> _lut;
 
+	static int convertToPSLLine(const LUTEntry& e);
 
 };
 
@@ -130,7 +133,8 @@ public:
 
 	int addEntry(const string& name, int station, int ring,
 			const string& lutpath = LINEFIT_LUT_PATH);
-	int getLUT(int station, int ring, LUT*& lut);
+	int editLUT(int station, int ring, LUT*& lut);
+	int getLUT(int station, int ring, const LUT*& lut);
 	int makeFinal();
 	int writeAll(const string& path);
 	int loadAll(const string& path);

@@ -314,8 +314,8 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     	//skip bad patterns TODO: verify everything works correctly here!
     	if (ccId == -1) continue;
 
-    	if(newLUTs.getLUT(ST,RI, newLUT) ||
-    			legacyLUTs.getLUT(ST,RI,legacyLUT)){
+    	if(newLUTs.editLUT(ST,RI, newLUT) ||
+    			legacyLUTs.editLUT(ST,RI,legacyLUT)){
     		cout << "Error: can't find chamber in lut" << endl;
     		return -1;
     	}
@@ -335,8 +335,8 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     	}
 
 
-    	float newPosDiff   = segmentX - patX;
-    	float newSlopeDiff = segmentdXdZ;
+    	float newPosDiff   = segmentX - patX; //strips
+    	float newSlopeDiff = segmentdXdZ; //strips / layer
 
     	float legacyPosDiff   = segmentX - legacyLctX;
     	float legacySlopeDiff = segmentdXdZ;
@@ -361,11 +361,11 @@ vector<CSCPattern>* createNewPatterns(){
 
 	vector<CSCPattern>* thisVector = new vector<CSCPattern>();
 
-	CSCPattern id1("100",ENVELOPE_IDS[0],false,IDSV1_A);
-	CSCPattern id4("90",ENVELOPE_IDS[1],false,IDSV1_C);
-	CSCPattern id5 = id4.makeFlipped("80",ENVELOPE_IDS[2]);
-	CSCPattern id8("70",ENVELOPE_IDS[3], false, IDSV1_E);
-	CSCPattern id9 = id8.makeFlipped("60",ENVELOPE_IDS[4]);
+	CSCPattern id1("100",PATTERN_IDS[0],false,IDSV1_A);
+	CSCPattern id4("90",PATTERN_IDS[1],false,IDSV1_C);
+	CSCPattern id5 = id4.makeFlipped("80",PATTERN_IDS[2]);
+	CSCPattern id8("70",PATTERN_IDS[3], false, IDSV1_E);
+	CSCPattern id9 = id8.makeFlipped("60",PATTERN_IDS[4]);
 
 	thisVector->push_back(id1);
 	thisVector->push_back(id4);
