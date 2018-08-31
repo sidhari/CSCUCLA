@@ -175,10 +175,19 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	TH1F* foundOneMatchEffNum = new TH1F("foundOneMatchEffNum", "foundOneMatchEffNum", 30,0,150);
 	TH1F* foundOneMatchEffDen = new TH1F("foundOneMatchEffDen", "foundOneMatchEffDen", 30,0,150);
 
-	TH1F* clctLayerCount_me_p_1_1_11 = new TH1F("clctLayerCount_me_p_1_1_11", "clctLayerCount_me_p_1_1_11",7, 0, 7);
+	vector<TH1F*> clctLayerCount_mePlus;
+	vector<TH1F*> clctLayerCount_meMinus;
+
+	for(unsigned int i =1; i <=36; i++){
+		clctLayerCount_mePlus.push_back(new TH1F(("h_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
+		clctLayerCount_meMinus.push_back(new TH1F(("h_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
+	}
+
+	/*TH1F* clctLayerCount_me_p_1_1_11 = new TH1F("clctLayerCount_me_p_1_1_11", "clctLayerCount_me_p_1_1_11",7, 0, 7);
 	TH1F* clctLayerCount_me_m_1_1_11 = new TH1F("clctLayerCount_me_m_1_1_11", "clctLayerCount_me_m_1_1_11",7, 0, 7);
 	TH1F* clctLayerCount_me11a = new TH1F("clctLayerCount_me11a", "clctLayerCount_me11a",7, 0, 7);
 	TH1F* clctLayerCount_me11b = new TH1F("clctLayerCount_me11b", "clctLayerCount_me11b",7, 0, 7);
+	*/
 
 
 	foundOneMatchEffNum->GetXaxis()->SetTitle("Pt [GeV]");
@@ -311,7 +320,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			if(fillCompHits(theseCompHits, compStr,compHS,compTimeOn, compLay,compId)) return -1;
 
-			if (!USE_COMP_HITS || DEBUG) if(fillRecHits(theseRHHits,rhId, rhLay,rhPos)) return -1;
+			//if (!USE_COMP_HITS || DEBUG) if(fillRecHits(theseRHHits,rhId, rhLay,rhPos)) return -1;
+			if(fillRecHits(theseRHHits,rhId, rhLay,rhPos)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;
@@ -334,12 +344,20 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			//TODO: currently no implementation dealing with cases where we find one and not other
 			if(!oldSetMatch.size() || !newSetMatch.size()) {
 				if(!oldSetMatch.size()) {
-					if(me11a) clctLayerCount_me11a->Fill(0);
-					else if(me11b) clctLayerCount_me11b->Fill(0);
+					//if(me11a) clctLayerCount_me11a->Fill(0);
+					//else if(me11b) clctLayerCount_me11b->Fill(0);
 
 					//EC = 1 = +, 2 = -
-					if(EC == 1 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_p_1_1_11->Fill(0);
-					if(EC == 2 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_m_1_1_11->Fill(0);
+					if(EC == 1 && ST == 1 && RI == 1){
+						clctLayerCount_mePlus.at(CH-1)->Fill(0);
+					}
+					if(EC == 2 && ST == 1 && RI == 1){
+						clctLayerCount_meMinus.at(CH-1)->Fill(0);
+					}
+
+
+					//if(EC == 1 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_p_1_1_11->Fill(0);
+					//if(EC == 2 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_m_1_1_11->Fill(0);
 				}
 				oldSetMatch.clear();
 				newSetMatch.clear();
@@ -430,12 +448,47 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			//clctLayerCount->Fill(oldSetMatch.at(closestOldMatchIndex)->layerCount());
 
-			if(me11a) clctLayerCount_me11a->Fill(legacyLayerCount);
-			else if(me11b) clctLayerCount_me11b->Fill(legacyLayerCount);
+			//if(me11a) clctLayerCount_me11a->Fill(legacyLayerCount);
+			//else if(me11b) clctLayerCount_me11b->Fill(legacyLayerCount);
 
 			//EC = 1 = +, 2 = -
-			if(EC == 1 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_p_1_1_11->Fill(legacyLayerCount);
-			if(EC == 2 && ST == 1 && RI == 1 && CH == 11) clctLayerCount_me_m_1_1_11->Fill(legacyLayerCount);
+
+			if(EC == 1 && ST == 1 && RI == 1){
+				clctLayerCount_mePlus.at(CH-1)->Fill(legacyLayerCount);
+				if(CH == 11) {
+					//clctLayerCount_me_p_1_1_11->Fill(legacyLayerCount);
+
+					if(legacyLayerCount == 3){
+						printf("~~~~~ ME+1/1/11 ~~~~\n");
+						printChamber(*testChamber);
+						printChamber(theseRHHits);
+						//cout << "--- Segment Position: " << segmentX << " [strips]  = CFEB : " <<floor(segmentX/(16)) << " and " <<(int)(segmentX)%16 <<" [hs]" << endl;
+						//cout <<"closest to segment: " << endl;
+						printPattern( oldSetMatch.at(closestOldMatchIndex)->_pattern);
+						/*
+						cout << "matches, in layer, slope, left order" << endl;
+						for(auto cand : oldSetMatch){
+							printPattern(cand->_pattern);
+						}
+						*/
+					}
+				}
+			}
+			if(EC == 2 && ST == 1 && RI == 1){
+				clctLayerCount_meMinus.at(CH-1)->Fill(legacyLayerCount);
+				if(CH == 11) {
+					//clctLayerCount_me_m_1_1_11->Fill(legacyLayerCount);
+					if(legacyLayerCount == 3){
+						printf("~~~~~ ME-1/1/11 ~~~~\n");
+						printChamber(*testChamber);
+						printChamber(theseRHHits);
+						//cout << "--- Segment Position: " << segmentX << " [strips]  = CFEB : " <<floor(segmentX/(16)) << " and " <<(int)(segmentX)%16 <<" [hs]" << endl;
+						printPattern( oldSetMatch.at(closestOldMatchIndex)->_pattern);
+					}
+				}
+			}
+
+
 
 			// Fill Tree Data
 
@@ -515,10 +568,30 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	outF->cd();
 	plotTree->Write();
-	clctLayerCount_me11a->Write();
-	clctLayerCount_me11b->Write();
-	clctLayerCount_me_p_1_1_11->Write();
-	clctLayerCount_me_m_1_1_11->Write();
+	//clctLayerCount_me11a->Write();
+	//clctLayerCount_me11b->Write();
+	TH1F* me_plus_11_3lay_clct_mult = new TH1F("h_me_plus_11_3lay_clct_mult","h_me_plus_11_3lay_clct_mult; Chamber; Matched 3Layer CLCTs", 36, 1,37);
+	TH1F* me_minus_11_3lay_clct_mult = new TH1F("h_me_minus_11_3lay_clct_mult","h_me_minus_11_3lay_clct_mult; Chamber; Matched 3Layer CLCTs", 36, 1,37);
+
+	unsigned int p_entries = 0;
+	unsigned int m_entries = 0;
+	for(unsigned int i = 1; i <= 36; i++) {
+		TH1F* p_hist = clctLayerCount_mePlus.at(i-1);
+		p_hist->Write();
+		p_entries +=p_hist->GetBinContent(4);
+		me_plus_11_3lay_clct_mult->SetBinContent(i,p_hist->GetBinContent(4));
+		TH1F* m_hist = clctLayerCount_meMinus.at(i-1);
+		m_hist->Write();
+		m_entries +=m_hist->GetBinContent(4);
+		me_minus_11_3lay_clct_mult->SetBinContent(i, m_hist->GetBinContent(4));
+	}
+	me_plus_11_3lay_clct_mult->SetEntries(p_entries);
+	me_plus_11_3lay_clct_mult->Write();
+	me_minus_11_3lay_clct_mult->SetEntries(m_entries);
+	me_minus_11_3lay_clct_mult->Write();
+	//for(auto hist : clctLayerCount_meMinus) hist->Write();
+	//clctLayerCount_me_p_1_1_11->Write();
+	//clctLayerCount_me_m_1_1_11->Write();
 	lutSegmentPosDiff->Write();
 	lutSegmentSlopeDiff->Write();
 
