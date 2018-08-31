@@ -80,8 +80,13 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         //template <class T>
         //int extractDigis(MuonDigiCollection<CSCDetId,T> collection, int chamberId);
 
-        int chamberSerial( CSCDetId id );
-        double FindAnodeTime(std::vector<CSCRecHit2D>::const_iterator  hiti,  const edm::Handle<CSCWireDigiCollection> cscWireDigi, double local_t0);
+        const vector<reco::MuonCollection> (*selectMuons)(const vector<reco::MuonCollection>& m);
+        static const vector<reco::MuonCollection> selectSingleMuMuons(const vector<reco::MuonCollection>& m);
+        static const vector<reco::MuonCollection> selectJPsiMuons(const vector<reco::MuonCollection>& m);
+        static const vector<reco::MuonCollection> selectDisplacedMuons(const vector<reco::MuonCollection>& m);
+
+        //int chamberSerial( CSCDetId id );
+        //double FindAnodeTime(std::vector<CSCRecHit2D>::const_iterator  hiti,  const edm::Handle<CSCWireDigiCollection> cscWireDigi, double local_t0);
 
     private:
 
@@ -105,10 +110,6 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         MuonQualityCuts *muonQualityCuts;
         double minPt;
         string dataType;
-        vector<reco::MuonCollection> (*selectMuons)(const vector<reco::MuonCollection>& m);
-        static vector<reco::MuonCollection> selectSingleMuMuons(const vector<reco::MuonCollection>& m);
-        static vector<reco::MuonCollection> selectJPsiMuons(const vector<reco::MuonCollection>& m);
-        static vector<reco::MuonCollection> selectDisplacedMuons(const vector<reco::MuonCollection>& m);
         edm::InputTag CSCSegmentTags_;
 
         int evN;

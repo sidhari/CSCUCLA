@@ -769,5 +769,17 @@ int CSCPatternExtractor::extractNonSegmentSpecificDigis(const edm::Event& iEvent
 }
 */
 
+const vector<reco::MuonCollection> CSCPatternExtractor::selectSingleMuMuons(const vector<reco::MuonCollection>& m){
+	return m;
+}
+
+const vector<reco::MuonCollection> CSCPatternExtractor::selectJPsiMuons(const vector<reco::MuonCollection>& m) {
+	return m;
+}
+
+const vector<reco::MuonCollection> CSCPatternExtractor::selectDisplacedMuons(const vector<reco::MuonCollection>& m) {
+	return m;
+}
+
 //define this as a plug-in
 DEFINE_FWK_MODULE(CSCPatternExtractor);

@@ -52,8 +52,8 @@ public:
 class FillInfo {
 public:
   FillInfo(const TString prfx, TreeContainer& tree) :
-	  fTree(&tree),
-	  prefix(prfx)
+	  prefix(prfx),
+	  fTree(&tree)
 {reset();};
 
   virtual ~FillInfo() {};
