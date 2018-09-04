@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <vector>
 #include <set>
@@ -69,23 +70,24 @@ bool LUTKey::operator==(const LUTKey& l) const{
 //
 
 LUTEntry::LUTEntry():
-		_position(0.),
-		_slope(0.),
-		_nsegments(0),
-		_quality(-1),
-		_layers(0),
-		_chi2(0){
+						_layers(0),
+						_chi2(0),
+						_position(0.),
+						_slope(0.),
+						_nsegments(0),
+						_quality(-1)
+{
 	_calculatedMeans = false;
 }
 
 LUTEntry::LUTEntry(float position, float slope, unsigned int nsegments,
-			float quality, unsigned int layers, float chi2) :
-		_position(position),
-		_slope(slope),
-		_nsegments(nsegments),
-		_quality(quality),
-		_layers(layers),
-		_chi2(chi2){
+		float quality, unsigned int layers, float chi2) :
+						_layers(layers),
+						_chi2(chi2),
+						_position(position),
+						_slope(slope),
+						_nsegments(nsegments),
+						_quality(quality){
 	_calculatedMeans = false;
 }
 

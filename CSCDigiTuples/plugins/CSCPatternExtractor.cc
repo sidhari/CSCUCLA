@@ -65,15 +65,20 @@ eventInfo(tree) //set branches you want in the tree
 
 	dataType = iConfig.getParameter<std::string>("dataType");
 	if (dataType == "minBias"){
+		cout <<  "--- Running as minBias sample --- " << endl;
 		selectMuons = 0;
 	}else{
 		if (dataType == "singleMu"){
+			cout <<  "--- Running as singleMu sample --- " << endl;
 			selectMuons = &selectSingleMuMuons;
 		} else if (dataType == "jPsi") {
+			cout <<  "--- Running as jPsi sample --- " << endl;
 			selectMuons = &selectJPsiMuons;
 		}else if(dataType == "displacedMuon") {
+			cout <<  "--- Running as DisplacedMuon sample --- " << endl;
 			selectMuons = &selectDisplacedMuons;
 		} else { //default to single muon selection
+			cout <<  "--- Defaulting as singleMu sample --- " << endl;
 			selectMuons = &selectSingleMuMuons;
 		}
 	}
@@ -769,15 +774,15 @@ int CSCPatternExtractor::extractNonSegmentSpecificDigis(const edm::Event& iEvent
 }
 */
 
-const vector<reco::MuonCollection> CSCPatternExtractor::selectSingleMuMuons(const vector<reco::MuonCollection>& m){
+const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::MuonCollection& m){
 	return m;
 }
 
-const vector<reco::MuonCollection> CSCPatternExtractor::selectJPsiMuons(const vector<reco::MuonCollection>& m) {
+const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::MuonCollection& m) {
 	return m;
 }
 
-const vector<reco::MuonCollection> CSCPatternExtractor::selectDisplacedMuons(const vector<reco::MuonCollection>& m) {
+const reco::MuonCollection CSCPatternExtractor::selectDisplacedMuons(const reco::MuonCollection& m) {
 	return m;
 }
 

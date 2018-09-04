@@ -102,7 +102,7 @@ int recHitvscompHitAnalysis(){
 	vector<float>* rhPos = 0;
 	vector<float>* rhE = 0; //energy
 
-	TFile* f = TFile::Open((string("/Users/williamnash/CSCPatterns/data/") + INPUT_FILENAME).c_str());
+	TFile* f = TFile::Open((string("/Users/williamnash/CSCPatterns/data/fix-me")).c_str());
 	if(!f)
 	{
 		printf("Can't open file\n");
@@ -155,13 +155,13 @@ int recHitvscompHitAnalysis(){
 			//keep track of their ID and Layer
 			int thisRhId = rhId->at(j);
 			int thisRhLay = rhLay->at(j);
-			float thisRhE = rhE->at(j);
+			//float thisRhE = rhE->at(j);
 			float thisRhPos = rhPos->at(j);
 
 			if (thisRhPos < 1 || thisRhPos > 79) continue;
 
 			bool me11b = false;
-			bool me11a = false;
+			//bool me11a = false;
 
 			bool foundMatchingCompHit = false;
 			float minDiff = 10e9; //arbirartily large, larger than any value the detectors can possibly have

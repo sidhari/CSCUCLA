@@ -43,12 +43,12 @@ public:
 	vector<vector<int>> m_matchIds; //tells us what pattern ids are contained in each respective plot
 	const string m_name;
 	TH1F* m_denominator;
-	vector<ChargePattern>* m_patterns; //patterns used to test against
+	vector<CSCPattern>* m_patterns; //patterns used to test against
 
-	PatternIDMatchPlots(string name, vector<ChargePattern>* patterns) : m_name(name){
+	PatternIDMatchPlots(string name, vector<CSCPattern>* patterns) : m_name(name){
 		//m_patterns = patterns;
 
-		m_patterns = new vector<ChargePattern>();
+		m_patterns = new vector<CSCPattern>();
 		for(unsigned int i =0; i < patterns->size(); i++){
 			m_patterns->push_back(patterns->at(i));
 		}
@@ -209,19 +209,19 @@ int EfficiencyAnalysis_Deprecated() {
 	}
 
 
-	const int nStations = 4;
-	const int nRings = 3;
-	const int nEndcaps = 2;
+	//const int nStations = 4;
+	//const int nRings = 3;
+	//const int nEndcaps = 2;
 
-	ChargePattern id2("ID2",2,1,ID2_BASE);
-	ChargePattern id3("ID3",3,1,ID3_BASE);
-	ChargePattern id4("ID4",4,1,ID4_BASE);
-	ChargePattern id5("ID5",5,1,ID5_BASE);
-	ChargePattern id6("ID6",6,1,ID6_BASE);
-	ChargePattern id7("ID7",7,1,ID7_BASE);
-	ChargePattern id8("ID8",8,1,ID8_BASE);
-	ChargePattern id9("ID9",9,1,ID9_BASE);
-	ChargePattern idA("IDA",10,1,IDA_BASE);
+	CSCPattern id2("ID2",2,1,ID2_BASE);
+	CSCPattern id3("ID3",3,1,ID3_BASE);
+	CSCPattern id4("ID4",4,1,ID4_BASE);
+	CSCPattern id5("ID5",5,1,ID5_BASE);
+	CSCPattern id6("ID6",6,1,ID6_BASE);
+	CSCPattern id7("ID7",7,1,ID7_BASE);
+	CSCPattern id8("ID8",8,1,ID8_BASE);
+	CSCPattern id9("ID9",9,1,ID9_BASE);
+	CSCPattern idA("IDA",10,1,IDA_BASE);
 
 
 
@@ -230,10 +230,10 @@ int EfficiencyAnalysis_Deprecated() {
 	//
 
 	//const unsigned int setOneSize = 9;
-	vector<ChargePattern>* BaseSet = createOldEnvelopes();
+	vector<CSCPattern>* BaseSet = createOldPatterns();
 
 
-	vector<ChargePattern>* testSet = new vector<ChargePattern>();
+	vector<CSCPattern>* testSet = new vector<CSCPattern>();
 	testSet->push_back(idA);
 	testSet->push_back(id7);
 	testSet->push_back(id6);
@@ -243,8 +243,8 @@ int EfficiencyAnalysis_Deprecated() {
 
 
 
-	vector<ChargePattern>* firstNewSet = createNewEnvelopes();
-	vector<ChargePattern>* setOne = 0;
+	vector<CSCPattern>* firstNewSet = createNewPatterns();
+	vector<CSCPattern>* setOne = 0;
 	string matchPlotTitle = "";
 	//vector<ChargePattern>* setOne = BaseSet;
 	if(THREE_WIDE){
@@ -266,37 +266,37 @@ int EfficiencyAnalysis_Deprecated() {
 	const unsigned int nMatchGroups = 4;
 
 	PatternIDMatchPlots matchGroups[nMatchGroups] = {
-			PatternIDMatchPlots("ME11A & ME12", (THREE_WIDE ? createNewEnvelopes() : BaseSet)),
-			PatternIDMatchPlots("ME11B & ME13",(THREE_WIDE ? createNewEnvelopes() : BaseSet)),
-			PatternIDMatchPlots("ME21 & ME22",(THREE_WIDE ? createNewEnvelopes() : BaseSet)),
-			PatternIDMatchPlots("ME31 & ME32 & ME41 & ME42",(THREE_WIDE ? createNewEnvelopes() : BaseSet))};
+			PatternIDMatchPlots("ME11A & ME12", (THREE_WIDE ? createNewPatterns() : BaseSet)),
+			PatternIDMatchPlots("ME11B & ME13",(THREE_WIDE ? createNewPatterns() : BaseSet)),
+			PatternIDMatchPlots("ME21 & ME22",(THREE_WIDE ? createNewPatterns() : BaseSet)),
+			PatternIDMatchPlots("ME31 & ME32 & ME41 & ME42",(THREE_WIDE ? createNewPatterns() : BaseSet))};
 
 
-	PatternIDMatchPlots fullSet = PatternIDMatchPlots("All Chambers", (THREE_WIDE ? createNewEnvelopes(): BaseSet));
+	PatternIDMatchPlots fullSet = PatternIDMatchPlots("All Chambers", (THREE_WIDE ? createNewPatterns(): BaseSet));
 
 	int idColors[18] = {kRed+1,kGreen+1,4,kBlue,6,kOrange+1,8,kMagenta+1,40,41,42,43,44,45,30,31,32,33};
 
 
 	for(unsigned int igroup = 0; igroup < nMatchGroups; igroup++){
-		vector<ChargePattern>* thisPatternSet = matchGroups[igroup].m_patterns;
+		vector<CSCPattern>* thisPatternSet = matchGroups[igroup].m_patterns;
 		for(unsigned int i = 0; i < thisPatternSet->size(); i++){
 			TH1F* thisHist;
 			vector<int> thisHistIds;
 
 			//if we just have 1 ida
 			if(i ==0 || i+1 == thisPatternSet->size()){ //if its the first one, or if the next one doesnt exist
-				thisHist = new TH1F(string(thisPatternSet->at(i).name() + to_string(igroup)).c_str(),
-						thisPatternSet->at(i).name().c_str(), 2*maxPt, 0, maxPt);
+				thisHist = new TH1F(string(thisPatternSet->at(i).getName() + to_string(igroup)).c_str(),
+						thisPatternSet->at(i).getName().c_str(), 2*maxPt, 0, maxPt);
 				thisHist->SetFillColor(idColors[i]);
 				thisHist->SetLineColor(idColors[i]);
-				thisHistIds.push_back(thisPatternSet->at(i).m_id);
+				thisHistIds.push_back(thisPatternSet->at(i)._id);
 			}else{ //if we have at least two left
-				thisHist = new TH1F(string(thisPatternSet->at(i).name() + to_string(igroup)).c_str(),
-						string(thisPatternSet->at(i).name()+" "+thisPatternSet->at(i+1).name()).c_str(),2*maxPt,0,maxPt);
+				thisHist = new TH1F(string(thisPatternSet->at(i).getName() + to_string(igroup)).c_str(),
+						string(thisPatternSet->at(i).getName()+" "+thisPatternSet->at(i+1).getName()).c_str(),2*maxPt,0,maxPt);
 				thisHist->SetFillColor(idColors[i]);
 				thisHist->SetLineColor(idColors[i]);
-				thisHistIds.push_back(thisPatternSet->at(i).m_id);
-				thisHistIds.push_back(thisPatternSet->at(i+1).m_id);
+				thisHistIds.push_back(thisPatternSet->at(i)._id);
+				thisHistIds.push_back(thisPatternSet->at(i+1)._id);
 				i++; //skip the next one
 			}
 			matchGroups[igroup].m_plots.push_back(thisHist);
@@ -312,25 +312,25 @@ int EfficiencyAnalysis_Deprecated() {
 		matchGroups[igroup].m_denominator = thisDenom;
 	}
 	if(true) {
-		vector<ChargePattern>* thisPatternSet = fullSet.m_patterns;
+		vector<CSCPattern>* thisPatternSet = fullSet.m_patterns;
 			for(unsigned int i = 0; i < thisPatternSet->size(); i++){
 				TH1F* thisHist;
 				vector<int> thisHistIds;
 
 				//if we just have 1 ida
 				if(i ==0 || i+1 == thisPatternSet->size()){ //if its the first one, or if the next one doesnt exist
-					thisHist = new TH1F(string(thisPatternSet->at(i).name() + to_string(1234)).c_str(),
-							thisPatternSet->at(i).name().c_str(), 2*maxPt, 0, maxPt);
+					thisHist = new TH1F(string(thisPatternSet->at(i).getName() + to_string(1234)).c_str(),
+							thisPatternSet->at(i).getName().c_str(), 2*maxPt, 0, maxPt);
 					thisHist->SetFillColor(idColors[i]);
 					thisHist->SetLineColor(idColors[i]);
-					thisHistIds.push_back(thisPatternSet->at(i).m_id);
+					thisHistIds.push_back(thisPatternSet->at(i)._id);
 				}else{ //if we have at least two left
-					thisHist = new TH1F(string(thisPatternSet->at(i).name() + to_string(1234)).c_str(),
-							string(thisPatternSet->at(i).name()+" "+thisPatternSet->at(i+1).name()).c_str(),2*maxPt,0,maxPt);
+					thisHist = new TH1F(string(thisPatternSet->at(i).getName() + to_string(1234)).c_str(),
+							string(thisPatternSet->at(i).getName()+" "+thisPatternSet->at(i+1).getName()).c_str(),2*maxPt,0,maxPt);
 					thisHist->SetFillColor(idColors[i]);
 					thisHist->SetLineColor(idColors[i]);
-					thisHistIds.push_back(thisPatternSet->at(i).m_id);
-					thisHistIds.push_back(thisPatternSet->at(i+1).m_id);
+					thisHistIds.push_back(thisPatternSet->at(i)._id);
+					thisHistIds.push_back(thisPatternSet->at(i+1)._id);
 					i++; //skip the next one
 				}
 				fullSet.m_plots.push_back(thisHist);
@@ -356,8 +356,8 @@ int EfficiencyAnalysis_Deprecated() {
 				matchGroups[TESTING_GROUP_INDEX].m_patterns->size(), -0.5, matchGroups[TESTING_GROUP_INDEX].m_patterns->size() - 0.5,
 				matchGroups[TESTING_GROUP_INDEX].m_patterns->size(), -0.5, matchGroups[TESTING_GROUP_INDEX].m_patterns->size() - 0.5);
 		for(unsigned int i = 0; i < matchGroups[TESTING_GROUP_INDEX].m_patterns->size(); i++){
-			patternOverlap->GetXaxis()->SetBinLabel(i+1, matchGroups[TESTING_GROUP_INDEX].m_patterns->at(i).name().c_str());
-			patternOverlap->GetYaxis()->SetBinLabel(i+1, matchGroups[TESTING_GROUP_INDEX].m_patterns->at(i).name().c_str());
+			patternOverlap->GetXaxis()->SetBinLabel(i+1, matchGroups[TESTING_GROUP_INDEX].m_patterns->at(i).getName().c_str());
+			patternOverlap->GetYaxis()->SetBinLabel(i+1, matchGroups[TESTING_GROUP_INDEX].m_patterns->at(i).getName().c_str());
 		}
 
 
@@ -406,8 +406,8 @@ int EfficiencyAnalysis_Deprecated() {
 			//initialize them to zero
 			for(unsigned int x=0; x < N_MAX_HALF_STRIPS; x++){
 				for(unsigned int y = 0; y < NLAYERS; y++){
-					theseRHHits.hits[x][y] = 0;
-					theseCompHits.hits[x][y] = 0;
+					theseRHHits._hits[x][y] = 0;
+					theseCompHits._hits[x][y] = 0;
 				}
 			}
 
@@ -457,7 +457,7 @@ int EfficiencyAnalysis_Deprecated() {
 							printf("Error timeOn is an invalid number: %i\n", timeOn);
 							return -1;
 						} else {
-							theseCompHits.hits[halfStripVal][thisCompLay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+							theseCompHits._hits[halfStripVal][thisCompLay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
 						}
 						//theseCompHits.hits[halfStripVal][thisCompLay] = 1;
 					}
@@ -515,7 +515,7 @@ int EfficiencyAnalysis_Deprecated() {
 					return -1;
 				}
 
-				theseRHHits.hits[iRhStrip][iLay] = true;
+				theseRHHits._hits[iRhStrip][iLay] = true;
 				nRh++;
 			}
 
@@ -541,7 +541,7 @@ int EfficiencyAnalysis_Deprecated() {
 				testChamber = &theseRHHits;
 			}
 
-			vector<SingleEnvelopeMatchInfo*> thisSetMatch;
+			vector<CLCTCandidate*> thisSetMatch;
 			if(searchForMatch(*testChamber, matchGroups[groupIndex].m_patterns,thisSetMatch)) return -1;
 			matchGroups[groupIndex].m_denominator->Fill(Pt);
 			fullSet.m_denominator->Fill(Pt);
@@ -554,8 +554,8 @@ int EfficiencyAnalysis_Deprecated() {
 				fullSet.m_plots.back()->Fill(Pt);
 			} else {
 				//look at just one of the sets
-				unsigned int maxLayerMatchCount = thisSetMatch.front()->layMatCount();
-				unsigned int maxLayerId = thisSetMatch.front()->envelopeId();
+				unsigned int maxLayerMatchCount = thisSetMatch.front()->layerCount();
+				unsigned int maxLayerId = thisSetMatch.front()->patternId();
 
 				//fill the correct histogram
 				if(maxLayerMatchCount >= N_LAYER_REQUIREMENT){

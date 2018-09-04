@@ -80,10 +80,12 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         //template <class T>
         //int extractDigis(MuonDigiCollection<CSCDetId,T> collection, int chamberId);
 
-        const vector<reco::MuonCollection> (*selectMuons)(const vector<reco::MuonCollection>& m);
-        static const vector<reco::MuonCollection> selectSingleMuMuons(const vector<reco::MuonCollection>& m);
-        static const vector<reco::MuonCollection> selectJPsiMuons(const vector<reco::MuonCollection>& m);
-        static const vector<reco::MuonCollection> selectDisplacedMuons(const vector<reco::MuonCollection>& m);
+        const reco::MuonCollection (*selectMuons)(const reco::MuonCollection& m);
+
+
+        static const reco::MuonCollection selectSingleMuMuons(const reco::MuonCollection& m);
+        static const reco::MuonCollection selectJPsiMuons(const reco::MuonCollection& m);
+        static const reco::MuonCollection selectDisplacedMuons(const reco::MuonCollection& m);
 
         //int chamberSerial( CSCDetId id );
         //double FindAnodeTime(std::vector<CSCRecHit2D>::const_iterator  hiti,  const edm::Handle<CSCWireDigiCollection> cscWireDigi, double local_t0);
