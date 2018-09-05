@@ -11,6 +11,9 @@
 #include <TH1F.h>
 #include <TH2F.h>
 #include <TROOT.h>
+#include <TCanvas.h>
+#include <TLegend.h>
+#include <TStyle.h>
 
 #include <string>
 #include <vector>
@@ -204,11 +207,17 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	vector<TH1F*> real_clctLayerCount_meMinus;
 
 	for(unsigned int i =1; i <=36; i++){
-		real_clctLayerCount_mePlus.push_back(new TH1F(("h_real_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_real_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
+		real_clctLayerCount_mePlus.push_back(new TH1F(("h_real_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("ME+1/1/"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
 		clctLayerCount_mePlus.push_back(new TH1F(("h_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
-		real_clctLayerCount_meMinus.push_back(new TH1F(("h_real_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_real_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
+		real_clctLayerCount_meMinus.push_back(new TH1F(("h_real_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("ME-1/1/"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
 		clctLayerCount_meMinus.push_back(new TH1F(("h_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
 	}
+
+	TH1F* pt_plus_allMatchedCLCT = new TH1F("h_pt_plus_allMatchedCLCT", "ME+1/1/11 All Matched CLCTs;p_{T} [GeV]; Segments / 2 GeV", 100,0, 200);
+	TH1F* pt_minus_allMatchedCLCT = new TH1F("h_pt_minus_allMatchedCLCT", "ME-1/1/11 All Matched CLCTs;p_{T} [GeV]; Segments / 2 GeV", 100,0, 200);
+	TH1F* pt_plus_3layMatchedCLCT = new TH1F("h_pt_plus_3layMatchedCLCT", "ME+1/1/11 3 Layers Matched CLCTs;p_{T} [GeV]; Segments / 2 GeV", 100,0, 200);
+	TH1F* pt_minus_3layMatchedCLCT = new TH1F("h_pt_minus_3layMatchedCLCT", "ME-1/1/11 3 Layers Matched CLCTs;p_{T} [GeV]; Segments / 2 GeV", 100,0, 200);
+
 
 	/*TH1F* clctLayerCount_me_p_1_1_11 = new TH1F("clctLayerCount_me_p_1_1_11", "clctLayerCount_me_p_1_1_11",7, 0, 7);
 	TH1F* clctLayerCount_me_m_1_1_11 = new TH1F("clctLayerCount_me_m_1_1_11", "clctLayerCount_me_m_1_1_11",7, 0, 7);
@@ -391,6 +400,16 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 								real_clctLayerCount_mePlus.at(CH-1)->Fill(clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
 						}else if (EC == 2){
 								real_clctLayerCount_meMinus.at(CH-1)->Fill(clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
+						}
+						if(ST == 1 && RI == 1 && CH == 11){
+							if(EC == 1) {
+								pt_plus_allMatchedCLCT->Fill(Pt);
+								if(clctQ->at(iclct).at(closestCLCTtoSegmentIndex) == 3) pt_plus_3layMatchedCLCT->Fill(Pt);
+							}
+							else if(EC == 2) {
+								pt_minus_allMatchedCLCT->Fill(Pt);
+								if(clctQ->at(iclct).at(closestCLCTtoSegmentIndex) == 3) pt_minus_3layMatchedCLCT->Fill(Pt);
+							}
 						}
 					}
 				}
@@ -653,6 +672,45 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	unsigned int r_p_entries = 0;
 	unsigned int m_entries = 0;
 	unsigned int r_m_entries = 0;
+
+
+	pt_plus_allMatchedCLCT->Write();
+	pt_plus_3layMatchedCLCT->Write();
+	pt_minus_allMatchedCLCT->Write();
+	pt_minus_3layMatchedCLCT->Write();
+
+
+	TCanvas* cPlus = new TCanvas();
+	cPlus->cd();
+	pt_plus_allMatchedCLCT->SetFillColor(kBlue+1);
+	pt_plus_allMatchedCLCT->SetLineColor(kBlue+1);
+	pt_plus_3layMatchedCLCT->SetLineColor(kRed+1);
+	pt_plus_3layMatchedCLCT->SetFillColor(kRed+1);
+
+	TLegend* tPlus = new TLegend(0.65,0.83, 0.97, 0.95);
+	tPlus->AddEntry(pt_plus_allMatchedCLCT);
+	tPlus->AddEntry(pt_plus_3layMatchedCLCT);
+	gStyle->SetOptStat(111111);
+
+	pt_plus_allMatchedCLCT->Draw();
+	pt_plus_3layMatchedCLCT->Draw("sames");
+	tPlus->Draw();
+	cPlus->Write();
+
+	TCanvas* cMinus = new TCanvas();
+	cMinus->cd();
+	pt_minus_allMatchedCLCT->SetFillColor(kBlue+1);
+	pt_minus_allMatchedCLCT->SetLineColor(kBlue+1);
+	pt_minus_3layMatchedCLCT->SetFillColor(kRed+1);
+	pt_minus_3layMatchedCLCT->SetLineColor(kRed+1);
+
+	TLegend* tMinus = new TLegend(0.65, 0.83, 0.97, 0.95);
+	tMinus->AddEntry(pt_minus_allMatchedCLCT);
+	tMinus->AddEntry(pt_minus_3layMatchedCLCT);
+	pt_minus_allMatchedCLCT->Draw();
+	pt_minus_3layMatchedCLCT->Draw("sames");
+	tMinus->Draw();
+	cMinus->Write();
 
 	for(unsigned int i = 1; i <= 36; i++) {
 		TH1F* p_hist = clctLayerCount_mePlus.at(i-1);

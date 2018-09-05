@@ -14,8 +14,10 @@
 
 #include "../include/PatternConstants.h"
 
+using namespace std;
+
 int MomentumDistributions(){
-	TFile* f = TFile::Open(("../data/"+INPUT_FILENAME).c_str());
+	TFile* f = TFile::Open("../data/you-need-to-fix-this");
 
 	if(!f)
 	{
