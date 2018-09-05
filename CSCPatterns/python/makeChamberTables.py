@@ -39,3 +39,8 @@ for type in types:
         legStd = leg.GetStdDev()
         
         print("%s & %0.3f & %0.3f & %0.3f\\\\"%(chamber, legStd, patStd, ccStd))
+        
+        
+        
+        
+        

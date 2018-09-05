@@ -54,16 +54,16 @@ eventInfo(tree) //set branches you want in the tree
 	tmb_token = consumes<CSCTMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("tmbDigiTag"));
 
 
-
-	/* Want to have parameter in Config which selects how the analysis is
-	 * done based on type of dataset you are running on
-	 */
-
 	theCSC = 0;
 
 	minPt     = iConfig.getParameter<double>("minPt");
 
-	dataType = iConfig.getParameter<std::string>("dataType");
+
+	/* Choose if we are going to write data by selecting muons,
+	 * and if so, which selector to use
+	 */
+
+	dataType = iConfig.getUntrackedParameter<std::string>("dataType");
 	if (dataType == "minBias"){
 		cout <<  "--- Running as minBias sample --- " << endl;
 		selectMuons = 0;
@@ -400,6 +400,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 
 // ------------ method called once each job just after ending the event loop  ------------
 void CSCPatternExtractor::endJob() {
+	cout << "Finished running CSCPatternExtractor.cc" << endl;
 }
 
 /*
