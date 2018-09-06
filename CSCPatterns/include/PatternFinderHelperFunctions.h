@@ -11,6 +11,8 @@
 #include <math.h>
 
 #include "TTree.h"
+#include "TCanvas.h"
+#include "TH1F.h"
 
 #include "PatternFinderClasses.h"
 #include "LUTClasses.h"
@@ -63,5 +65,8 @@ int fillRecHits(ChamberHits& theseRecHits,
 		const vector<int>* rhId,
 		const vector<int>* rhLay,
 		const vector<float>* rhPos);
+
+
+TCanvas* makeCLCTCountPlot(string descriptor, vector<TH1F*> clctCounts);
 
 #endif /* PATTERNFINDERHELPERFUNCTIONS_H_ */

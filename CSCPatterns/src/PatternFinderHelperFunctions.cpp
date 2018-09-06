@@ -5,6 +5,9 @@
  *      Author: wnash
  */
 
+#include "THStack.h"
+#include "TLegend.h"
+
 
 #include "../include/PatternFinderHelperFunctions.h"
 
@@ -50,7 +53,8 @@ void printChamber(const ChamberHits &c){
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		if(!me11 && !(y%2)) printf(" ");
 		for(unsigned int x = 0; x < N_MAX_HALF_STRIPS-1; x++){
-			if(!(x%16)) printf("|");
+			//if(!(x%16)) printf("|");
+			if(!(x%32)) printf("|");
 			if(c._hits[x][y]) printf("%X",c._hits[x][y]-1); //print one less, so we stay in hexadecimal (0-15)
 			else printf("-");
 		}
@@ -58,7 +62,8 @@ void printChamber(const ChamberHits &c){
 		printf("\n");
 	}
 	for(unsigned int x = 0;x < N_MAX_HALF_STRIPS-1; x++){
-		if(!(x%17)) printf("%i", x/17);
+		//if(!(x%17)) printf("%i", x/17);
+		if(!(x%33)) printf("%i", x/33);
 		else printf(" ");
 	}
 	printf("\n");
@@ -540,6 +545,35 @@ int fillRecHits(ChamberHits& theseRecHits,
 }
 
 
+TCanvas* makeCLCTCountPlot(string descriptor, vector<TH1F*> clctCounts){
+	TCanvas* c = new TCanvas();
+	c->cd();
+	TLegend* l = new TLegend(0.65,0.83, 0.97, 0.95);
+	THStack* s = new THStack("clctCountStack", (descriptor + "; Number of CLCTs; Segments").c_str());
 
+	unsigned int clctHistCounter = 0;
+
+	for( auto hist: clctCounts){
+		hist->GetYaxis()->SetRangeUser(1,1400);
+		hist->Write();
+		hist->SetLineColor(clctHistCounter+1);
+		hist->SetFillColor(clctHistCounter+1);
+		s->Add(hist);
+		//clctHistCounter ?  hist->Draw() : hist->Draw("same");
+		l->AddEntry(hist, (to_string(clctHistCounter+3) +" Layer CLCT").c_str());
+
+		clctHistCounter++;
+
+	}
+
+	s->Draw();
+	s->SetMinimum(3);
+	s->Draw();
+	l->Draw("same");
+	c->SetLogy();
+	c->Modified();
+	return c;
+
+}
 
 

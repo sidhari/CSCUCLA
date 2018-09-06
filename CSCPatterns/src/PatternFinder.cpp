@@ -14,6 +14,7 @@
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TStyle.h>
+#include <THStack.h>
 
 #include <string>
 #include <vector>
@@ -104,6 +105,15 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	vector<vector<int>>* clctBX = 0;
 	vector<vector<int>>* clctFBX = 0;
 
+    //ALCT data
+    vector<int>* alctId;
+    vector<vector<int>>* alctQ;
+    vector<vector<int>>* alctKWG;
+    vector<vector<int>>* alctAc;
+    vector<vector<int>>* alctPB;
+    vector<vector<int>>* alctBX;
+    vector<vector<int>>* alctFBX;
+
 	t->SetBranchAddress("Event_RunNumber",         &Event_RunNumber);
 	t->SetBranchAddress("Pt",         &Pt);
 	t->SetBranchAddress("eta",        &eta);
@@ -136,6 +146,14 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	t->SetBranchAddress("clctBend", &clctBend);
 	t->SetBranchAddress("clctBX", &clctBX);
 	t->SetBranchAddress("clctFBX", &clctFBX);
+
+	t->SetBranchAddress("alctId", &alctId);
+	t->SetBranchAddress("alctQ", &alctQ);
+	t->SetBranchAddress("alctKWG", &alctKWG);
+	t->SetBranchAddress("alctAc", &alctAc);
+	t->SetBranchAddress("alctPB", &alctPB);
+	t->SetBranchAddress("alctBX", &alctBX);
+	t->SetBranchAddress("alctFBX", &alctFBX);
 
 
 	//
@@ -218,6 +236,28 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	TH1F* pt_plus_3layMatchedCLCT = new TH1F("h_pt_plus_3layMatchedCLCT", "ME+1/1/11 3 Layers Matched CLCTs;p_{T} [GeV]; Segments / 2 GeV", 100,0, 200);
 	TH1F* pt_minus_3layMatchedCLCT = new TH1F("h_pt_minus_3layMatchedCLCT", "ME-1/1/11 3 Layers Matched CLCTs;p_{T} [GeV]; Segments / 2 GeV", 100,0, 200);
 
+	vector<TH1F*> clctsInChamber_matchedCLCTs;// how many clcts in the chamber with a given matched clct, split by layer count
+	vector<TH1F*> clctsInChamber_matchedCLCTs_me11a;// how many clcts in the chamber with a given matched clct, split by layer count
+	vector<TH1F*> clctsInChamber_matchedCLCTs_me11b;// how many clcts in the chamber with a given matched clct, split by layer count
+	for(unsigned int i =3; i <= 6; i++){
+		clctsInChamber_matchedCLCTs.push_back(new TH1F(
+				("h_clctsInChamber_"+to_string(i)+"layersCLCTs").c_str(),
+				("h_clctsInChamber_"+to_string(i)+"layersCLCTs; CLCTs in Chamber; Segment Matched CLCTs").c_str(),
+				2, 1, 3));
+		clctsInChamber_matchedCLCTs_me11a.push_back(new TH1F(
+						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11a").c_str(),
+						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11a; CLCTs in Chamber; Segment Matched CLCTs").c_str(),
+						2, 1, 3));
+		clctsInChamber_matchedCLCTs_me11b.push_back(new TH1F(
+						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11b").c_str(),
+						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11b; CLCTs in Chamber; Segment Matched CLCTs").c_str(),
+						2, 1, 3));
+	}
+
+
+	TH1F* isInME11A = new TH1F("h_isInME11A", "h_isInME11A; isInME11A?; Matched 3layer CLCTs", 2,0,2);
+
+	//TH1F* clctCount_chambersWith3LayerCLCT = new TH1F("h_clctCount_chambersWith3LayerCLCT", "h_clctCount_chambersWith3LayerCLCT; CLCTs in Chamber; 3 Layer CLCTs", 2, 1,3);
 
 	/*TH1F* clctLayerCount_me_p_1_1_11 = new TH1F("clctLayerCount_me_p_1_1_11", "clctLayerCount_me_p_1_1_11",7, 0, 7);
 	TH1F* clctLayerCount_me_m_1_1_11 = new TH1F("clctLayerCount_me_m_1_1_11", "clctLayerCount_me_m_1_1_11",7, 0, 7);
@@ -233,29 +273,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	foundOneMatchEffDen->GetXaxis()->SetTitle("Count / 5 GeV");
 
 
-	vector<TH1F*> chi2Distributions; // Sum_layers [ (comparator half strip - segment position extrapolated to layer)^2 / (expected error)^2 ]
-	vector<TH2F*> chi2VsSlope;
-	for(unsigned int i = N_LAYER_REQUIREMENT; i < NLAYERS+1; i++){
-		chi2Distributions.push_back(new TH1F(("h_"+to_string(i)+"layer_Chi2").c_str(),
-				("h_"+to_string(i)+"layer_Chi2").c_str(),100, 0, 30));
-		chi2Distributions.back()->GetXaxis()->SetTitle("#chi^2");
-		chi2Distributions.back()->GetYaxis()->SetTitle("Counts");
-		chi2VsSlope.push_back(new TH2F(("chi2VsSlope_"+to_string(i)).c_str(),
-				("chi2VsSlope"+to_string(i)).c_str(),100, -1, 1, 100, 0, 30));
-		chi2VsSlope.back()->GetXaxis()->SetTitle("Segment Slope [strip / layer]");
-		chi2VsSlope.back()->GetYaxis()->SetTitle("#chi^{2}");
-
-
-	}
-
-	//temp - TO REMOVE
-	vector<TH1F*> chi2PosDiffs;
-	for(int i =0; i < 6; i++){
-		chi2PosDiffs.push_back(new TH1F(("chi2posdiff_"+to_string(i)).c_str(),
-				("chi2posdiff_"+to_string(i)).c_str(), 100, -5, 5));
-	}
-	//vector<TH2F*> chi2VsSlope = new TH2F("chi2VsSlope", "chi2VsSlope",100, -1, 1, 100, 0, 30);
-	//TH1F* chi2PosDiff = new TH1F("chi2posdiff", "chi2posdiff", 100, -5, 5);
 
 
 	//
@@ -372,7 +389,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 
 
-			if(ST == 1 && RI == 1){
+			if(ST == 1 && (RI == 1 || RI == 4)){
 				//printf("segmentX = %f\n",segmentX);
 				for(unsigned int iclct =0; iclct < clctId->size(); iclct++){
 					unsigned int thisClctId = clctId->at(iclct);
@@ -387,6 +404,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 						if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), make_pair(thisClctId, icclct)) != matchedCLCTs.end()) continue;
 
 						float clctStripPos = clctKHS->at(iclct).at(icclct) / 2. + 16*clctCFEB->at(iclct).at(icclct);
+						if(me11a) clctStripPos -= 16*4;
 						if(abs(clctStripPos - segmentX) < minDistanceSegmentToClosestCLCT) {
 							minDistanceSegmentToClosestCLCT = abs(clctStripPos - segmentX);
 							closestCLCTtoSegmentIndex = icclct;
@@ -395,16 +413,34 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 					}
 					if(closestCLCTtoSegmentIndex != -1){ //if we found one
 						//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
-						matchedCLCTs.push_back(make_pair(thisClctId, closestCLCTtoSegmentIndex));
+						matchedCLCTs.push_back(make_pair(thisClctId, (unsigned int)closestCLCTtoSegmentIndex));
 						if(EC == 1){
 								real_clctLayerCount_mePlus.at(CH-1)->Fill(clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
 						}else if (EC == 2){
 								real_clctLayerCount_meMinus.at(CH-1)->Fill(clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
 						}
-						if(ST == 1 && RI == 1 && CH == 11){
+
+						if(ST == 1 && (RI == 1  || RI == 4)&& CH == 11){
+						//if(ST == 1 && RI == 1&& CH == 11){
 							if(EC == 1) {
 								pt_plus_allMatchedCLCT->Fill(Pt);
-								if(clctQ->at(iclct).at(closestCLCTtoSegmentIndex) == 3) pt_plus_3layMatchedCLCT->Fill(Pt);
+								unsigned int ilayers = clctQ->at(iclct).at(closestCLCTtoSegmentIndex);
+								clctsInChamber_matchedCLCTs.at(ilayers - 3)->Fill(clctQ->at(iclct).size());
+								if(me11a)clctsInChamber_matchedCLCTs_me11a.at(ilayers-3)->Fill(clctQ->at(iclct).size());
+								if(me11b)clctsInChamber_matchedCLCTs_me11b.at(ilayers-3)->Fill(clctQ->at(iclct).size());
+								if(ilayers == 3) {
+								//if(RI == 4) {
+									printf("segPos: %f clcts in chamber: %lu\n",segmentX,  clctQ->at(iclct).size());
+									for(unsigned int a = 0; a < clctKHS->at(iclct).size(); a++){
+										float clctStripPos = clctKHS->at(iclct).at(a) / 2. + 16*clctCFEB->at(iclct).at(a);
+										if(me11a) clctStripPos -= 16*4;
+										printf(" --  clctPos: %f\n",clctStripPos);
+									}
+									printChamber(theseCompHits);
+									printChamber(theseRHHits);
+									pt_plus_3layMatchedCLCT->Fill(Pt);
+									isInME11A->Fill(me11a);
+								}
 							}
 							else if(EC == 2) {
 								pt_minus_allMatchedCLCT->Fill(Pt);
@@ -673,6 +709,33 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	unsigned int m_entries = 0;
 	unsigned int r_m_entries = 0;
 
+	/*
+	TCanvas* cclctCount = new TCanvas();
+	cclctCount->cd();
+	TLegend* tclctCount = new TLegend(0.65,0.83, 0.97, 0.95);
+	THStack* clctStack = new THStack("clctCountStack", "CLCTs in Chamber of Matched Segment; Number of CLCTs; Segments");
+
+	unsigned int clctHistCounter = 0;
+
+	for( auto hist: clctsInChamber_matchedCLCTs){
+		hist->GetYaxis()->SetRangeUser(1,1400);
+		hist->Write();
+		hist->SetLineColor(clctHistCounter+1);
+		hist->SetFillColor(clctHistCounter+1);
+		clctStack->Add(hist);
+		//clctHistCounter ?  hist->Draw() : hist->Draw("same");
+		tclctCount->AddEntry(hist, (to_string(clctHistCounter+3) +" Layer CLCT").c_str());
+
+		clctHistCounter++;
+
+	}
+	*/
+	makeCLCTCountPlot("", clctsInChamber_matchedCLCTs)->Write();
+	makeCLCTCountPlot("ME11A", clctsInChamber_matchedCLCTs_me11a)->Write();
+	makeCLCTCountPlot("ME11B", clctsInChamber_matchedCLCTs_me11b)->Write();
+
+
+	isInME11A->Write();
 
 	pt_plus_allMatchedCLCT->Write();
 	pt_plus_3layMatchedCLCT->Write();
@@ -756,10 +819,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	//defined as : for every segment, we have at least one clct matched within the range
 	foundOneMatchEffNum->Write();
 	foundOneMatchEffDen->Write();
-
-	for(auto hist : chi2PosDiffs) hist->Write();
-	for(auto hist : chi2Distributions) hist->Write();
-	for(auto hist : chi2VsSlope) hist->Write();
 
 	outF->Close();
 
