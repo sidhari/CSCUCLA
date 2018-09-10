@@ -1,34 +1,116 @@
 #include "CSCUCLA/CSCDigiTuples/include/FillCSCInfo.h"
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
 
+#include "DataFormats/MuonReco/interface/Muon.h"
+
 void FillEventInfo::fill(const edm::Event& iEvent){
-  reset();
   EventNumber     = iEvent.id().event();
   RunNumber       = iEvent.id().run();
   LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
   BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
 }
 
-/*
-void FillRecHitInfo::fill(const CSCRecHit2DCollection& recHits){
-  reset();
+
+void FillMuonInfo::fill(const reco::MuonCollection& m){
+	for(const auto& muon: m){
+		pt.push_back(muon.pt());
+		eta.push_back(muon.eta());
+		phi.push_back(muon.phi());
+		q.push_back(muon.charge());
+		isGlobal.push_back(muon.isGlobalMuon());
+		isTracker.push_back(muon.isTrackerMuon());
+	}
+}
+
+size16 FillSegmentInfo::findRecHitIdx(const CSCRecHit2D& hit, const CSCRecHit2DCollection* allRecHits){
+  int idx = -1;
+  int foundIDX = -1;
+  for (CSCRecHit2DCollection::const_iterator hiti=allRecHits->begin(); hiti!=allRecHits->end(); hiti++)
+  {
+    idx++;
+    if(!hit.sharesInput(&(*hiti),CSCRecHit2D::all)) continue;
+    foundIDX = idx;
+    break;
+  }
+  if(foundIDX < 0) throw std::invalid_argument("FillSegmentInfo::findRecHitIdx -> Could not find rechit");
+  return CSCHelper::convertTo<size16,int>(foundIDX,"foundIDX");
+}
+
+
+void FillSegmentInfo::fill(std::vector<const CSCSegment*>& segments, const CSCGeometry* theCSC, int mu_index){
+  for(auto dSiter=segments.begin(); dSiter != segments.end(); dSiter++) {
+	 fill(**dSiter, theCSC, mu_index);
+
+  }
+}
+
+void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC, int mu_index){
+
+	DetId id  = segment.geographicalId();
+	CSCDetId chamberId(id.rawId());
+
+	const auto& segmentHits = segment.specificRecHits();
+	//const auto& segmentHits = dSiter->specificRecHits();
+	//inherited from C. Bravo - translates [cm] -> [strips]
+	const CSCChamber *segChamber = theCSC->chamber(chamberId);
+	const CSCLayer *segLay3 = segChamber->layer(3);
+	const CSCLayer *segLay4 = segChamber->layer(4);
+	const CSCLayerGeometry *segLay3Geo = segLay3->geometry();
+	LocalPoint segLPlayer = segLay3->toLocal(segChamber->toGlobal(segment.localPosition()));
+	LocalVector segLVlayer = segLay3->toLocal(segChamber->toGlobal(segment.localDirection()));
+	float scale = -1.0*segLPlayer.z()/segLVlayer.z();
+	LocalVector tV = scale*segLVlayer;
+	LocalPoint tP = segLPlayer + tV;
+	float segStr = segLay3Geo->strip(tP);
+	int strI = floor(segStr);
+	float cm2strip = fabs( segLay3Geo->xOfStrip(strI,tP.y()) - segLay3Geo->xOfStrip(strI+1,tP.y()) );
+
+	LocalPoint lzero(0.0,0.0,0.0);
+	GlobalPoint lay4zero = segLay4->toGlobal(lzero);
+	LocalPoint lay4zeroIn3 = segLay3->toLocal(lay4zero);
+	float cm2lay = fabs(lay4zeroIn3.z());
+
+
+	//fill everything
+	mu_id.push_back(mu_index);
+	ch_id.push_back(CSCHelper::serialize(id));
+	pos_x.push_back(segLay3Geo->strip(tP));
+	pos_y.push_back(segment.localPosition().y());
+	dxdz.push_back(segment.localDirection().x() / cm2strip / ( segment.localDirection().z() / cm2lay));
+	dydz.push_back(segment.localDirection().y() / segment.localDirection().z());
+	chisq.push_back(segment.chi2());
+	nHits.push_back(CSCHelper::convertTo<size8>(segmentHits.size(), "segment_nHits"));
+
+}
+
+
+
+void FillRecHitInfo::fill(const std::vector<CSCRecHit2D>& recHits, int mu_index){
+  //reset();
   for (CSCRecHit2DCollection::const_iterator hiti=recHits.begin(); hiti!=recHits.end(); hiti++)
   {
       DetId idd = (hiti)->geographicalId();
       CSCDetId hitID(idd.rawId());
-      rh_id          .push_back(CSCHelper::chamberSerial(hitID));
-      rh_lay         .push_back(CSCHelper::convertTo<size8>(hitID.layer(),"rh_lay"));
-      rh_pos_x       .push_back(hiti->localPosition().x());
-      rh_pos_y       .push_back(hiti->localPosition().y());
-      rh_strip_1 .push_back(CSCHelper::convertTo<size8>(hiti->channels(0),"rh_strip_1"));
-      rh_strip_2 .push_back(CSCHelper::convertTo<size8>(hiti->channels(1),"rh_strip_2"));
-      rh_strip_3 .push_back(CSCHelper::convertTo<size8>(hiti->channels(2),"rh_strip_3"));
-      rh_pos_strip   .push_back(hiti->positionWithinStrip());
-      rh_n_wiregroups.push_back(CSCHelper::convertTo<size8>(hiti->nWireGroups(),"rh_n_wiregroups"));
-      rh_wireGrp.push_back(CSCHelper::convertTo<size8>(hiti->hitWire(),"rh_wireGrp"));
+
+      int centerID = hiti->nStrips()/2;
+      int centerStr = hiti->channels(centerID);
+
+      float rhMaxBuf = -999.0;
+      for(int tI = 0; tI < int(hiti->nTimeBins()); tI++)
+      {
+    	  if(hiti->adcs(centerID,tI) > rhMaxBuf) rhMaxBuf = hiti->adcs(centerID,tI);
+      }
+
+      mu_id.push_back(mu_index);
+      ch_id.push_back(CSCHelper::serialize(hitID));
+      lay.push_back(CSCHelper::convertTo<size8>(hitID.layer(),"rh_lay"));
+      pos_x.push_back(float(centerStr) + hiti->positionWithinStrip());
+      pos_y.push_back(-1); //NOT IMPLEMENTED
+      e.push_back(hiti->energyDepositedInLayer());
+      max_adc.push_back(rhMaxBuf);
   }
 }
-
+/*
 void FillStripInfo::fill(const CSCStripDigiCollection& strips){
   reset();
   for (CSCStripDigiCollection::DigiRangeIterator dSDiter=strips.begin(); dSDiter!=strips.end(); dSDiter++) {
@@ -114,60 +196,6 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
   }
 }
 
-
-size16 FillSegmentInfo::findRecHitIdx(const CSCRecHit2D& hit, const CSCRecHit2DCollection* allRecHits){
-  int idx = -1;
-  int foundIDX = -1;
-  for (CSCRecHit2DCollection::const_iterator hiti=allRecHits->begin(); hiti!=allRecHits->end(); hiti++)
-  {
-    idx++;
-    if(!hit.sharesInput(&(*hiti),CSCRecHit2D::all)) continue;
-    foundIDX = idx;
-    break;
-  }
-  if(foundIDX < 0) throw std::invalid_argument("FillSegmentInfo::findRecHitIdx -> Could not find rechit");
-  return CSCHelper::convertTo<size16,int>(foundIDX,"foundIDX");
-}
-
-void FillSegmentInfo::fill(const CSCSegmentCollection& segments, const CSCRecHit2DCollection* recHits){
-  reset();
-
-  for(CSCSegmentCollection::const_iterator dSiter=segments.begin(); dSiter != segments.end(); dSiter++) {
-    CSCDetId id  = (CSCDetId)(*dSiter).cscDetId();
-
-    LocalPoint localPos = (*dSiter).localPosition();
-    float segX     = localPos.x();
-    float segY     = localPos.y();
-    LocalVector segDir = (*dSiter).localDirection();
-    AlgebraicSymMatrix covMatrix = (*dSiter).parametersError();
-    const auto& segmentHits = dSiter->specificRecHits();
-
-    segment_id   .push_back(CSCHelper::chamberSerial(id));
-    segment_pos_x.push_back(segX);
-    segment_pos_y.push_back(segY);
-    segment_dxdz.push_back(segDir.x()/segDir.z());
-    segment_dydz.push_back(segDir.y()/segDir.z());
-    segment_cov_dxdz       .push_back(float(covMatrix[0][0]));
-    segment_cov_dxdz_dydz  .push_back(float(covMatrix[0][1]));
-    segment_cov_dxdz_x     .push_back(float(covMatrix[0][2]));
-    segment_cov_dxdz_y     .push_back(float(covMatrix[0][3]));
-    segment_cov_dydz       .push_back(float(covMatrix[1][1]));
-    segment_cov_dydz_x     .push_back(float(covMatrix[1][2]));
-    segment_cov_dydz_y     .push_back(float(covMatrix[1][3]));
-    segment_cov_x          .push_back(float(covMatrix[2][2]));
-    segment_cov_x_y        .push_back(float(covMatrix[2][3]));
-    segment_cov_y          .push_back(float(covMatrix[3][3]));
-    segment_chisq.push_back((*dSiter).chi2());
-    segment_nHits.push_back(CSCHelper::convertTo<size8>(segmentHits.size()  ,"segment_nHits"));
-    segment_recHitIdx_1 .push_back((recHits && segmentHits.size() > 0) ?findRecHitIdx(segmentHits[0],recHits) : 0);
-    segment_recHitIdx_2 .push_back((recHits && segmentHits.size() > 1) ?findRecHitIdx(segmentHits[1],recHits) : 0);
-    segment_recHitIdx_3 .push_back((recHits && segmentHits.size() > 2) ?findRecHitIdx(segmentHits[2],recHits) : 0);
-    segment_recHitIdx_4 .push_back((recHits && segmentHits.size() > 3) ?findRecHitIdx(segmentHits[3],recHits) : 0);
-    segment_recHitIdx_5 .push_back((recHits && segmentHits.size() > 4) ?findRecHitIdx(segmentHits[4],recHits) : 0);
-    segment_recHitIdx_6 .push_back((recHits && segmentHits.size() > 5) ?findRecHitIdx(segmentHits[5],recHits) : 0);
-
-}
-}
 
 void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts){
   reset();

@@ -87,6 +87,11 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         static const reco::MuonCollection selectJPsiMuons(const reco::MuonCollection& m);
         static const reco::MuonCollection selectDisplacedMuons(const reco::MuonCollection& m);
 
+        void resetFillInfo();
+
+        vector<const CSCSegment*> matchCSC(const reco::Track& muon, edm::Handle<CSCSegmentCollection> allSegmentsCSC);
+        bool cscTightMatch;
+
         //int chamberSerial( CSCDetId id );
         //double FindAnodeTime(std::vector<CSCRecHit2D>::const_iterator  hiti,  const edm::Handle<CSCWireDigiCollection> cscWireDigi, double local_t0);
 
@@ -108,7 +113,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
 
         const CSCGeometry *theCSC;
         MuonServiceProxy *theService;
-        MuonSegmentMatcher *theMatcher;
+        //MuonSegmentMatcher *theMatcher;
         MuonQualityCuts *muonQualityCuts;
         double minPt;
         string dataType;
@@ -132,6 +137,9 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
 
         TreeContainer tree;
         FillEventInfo eventInfo;
+        FillMuonInfo muonInfo;
+        FillSegmentInfo segmentInfo;
+        FillRecHitInfo recHitInfo;
 
         /*
         SegmentData segs;
@@ -151,6 +159,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
 
         string filename;
         edm::EDGetTokenT<CSCSegmentCollection> allSegmentsCSCToken;
+
         /*
 
         TTree *tree;

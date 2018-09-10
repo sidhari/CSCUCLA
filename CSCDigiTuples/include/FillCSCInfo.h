@@ -21,6 +21,13 @@
 #include <DataFormats/CSCDigi/interface/CSCALCTDigiCollection.h>
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
 
+//muon
+#include "DataFormats/MuonReco/interface/MuonFwd.h"
+
+//segments
+#include "Geometry/CSCGeometry/interface/CSCGeometry.h"
+
+
 #include "TFile.h"
 #include "TTree.h"
 #include "TString.h"
@@ -57,8 +64,8 @@ public:
 {reset();};
 
   virtual ~FillInfo() {};
-protected:
   virtual void reset() {};
+protected:
   const TString prefix; //prefix before each tree branch associated with this object
 
 
@@ -71,7 +78,9 @@ protected:
 
   //Book vector
   template<class T>
-  void    book(const char *name, std::vector<T>& varv)   { fTree->tree->Branch(name, &varv); }
+  void    book(const char *name, std::vector<T>& varv)   { fTree->tree->Branch(
+		  TString(prefix).Append('_').Append(name).Data(),
+		  &varv); }
 
   TreeContainer * fTree;
 
@@ -84,18 +93,12 @@ public:
   FillEventInfo(TreeContainer& tree) :
 	  FillInfo("Event",tree)
 {
-    book("EventNumber",EventNumber,"I");
-    book("RunNumber"  ,RunNumber  ,"I");
+    book("EventNumber",EventNumber,"l");
+    book("RunNumber"  ,RunNumber  ,"l");
     book("LumiSection",LumiSection,"I");
     book("BXCrossing" ,BXCrossing ,"I");
   }
   virtual ~FillEventInfo() {};
-
-private:
-  int EventNumber;
-  int RunNumber  ;
-  int LumiSection;
-  int BXCrossing ;
 
   virtual void reset(){
     EventNumber  = -1;
@@ -104,56 +107,102 @@ private:
     BXCrossing   = -1;
   }
 
+private:
+  unsigned long EventNumber;
+  unsigned long RunNumber  ;
+  int LumiSection;
+  int BXCrossing ;
+
+
+
   public:
 
   void fill(const edm::Event& iEvent);
 
 };
 
-/*
+class FillMuonInfo : public FillInfo {
+public:
+	FillMuonInfo(TreeContainer& tree) :
+		FillInfo("muon",tree)
+{
+		book("pt"		,pt			);
+		book("eta"		,eta		);
+		book("phi"		,phi		);
+		book("q"		,q			);
+		book("isGlobal"	,isGlobal	);
+		book("isTracker",isTracker	);
+}
+	virtual ~FillMuonInfo() {};
+
+	virtual void reset() {
+		pt.clear();
+		eta.clear();
+		phi.clear();
+		q.clear();
+		isGlobal.clear();
+		isTracker.clear();
+	}
+private:
+	std::vector<float> pt;
+	std::vector<float> eta;
+	std::vector<float> phi;
+	std::vector<int> 	q; //charge
+	std::vector<bool>  isGlobal;
+	std::vector<bool>  isTracker;
+
+public:
+
+	void fill(const reco::MuonCollection& m);
+};
+
+
 class FillSegmentInfo : public FillInfo {
 public:
 
-  FillSegmentInfo(TreeContainer& tree) :FillInfo(tree) {
+  FillSegmentInfo(TreeContainer& tree) :
+	  FillInfo("segment",tree) {
 
-    book("segment_mu_id"       ,segment_mu_id      );
-    book("segment_ch_id"       ,segment_ch_id      );
-    book("segment_pos_x"       ,segment_pos_x      );
-    book("segment_pos_y"       ,segment_pos_y      );
-    book("segment_dxdz"        ,segment_dxdz       );
-    book("segment_dydz"        ,segment_dydz       );
-    book("segment_chisq"       ,segment_chisq      );
-    book("segment_nHits"       ,segment_nHits      );
+    book("mu_id"       ,mu_id      );
+    book("ch_id"       ,ch_id      );
+    book("pos_x"       ,pos_x      );
+    book("pos_y"       ,pos_y      );
+    book("dxdz"        ,dxdz       );
+    book("dydz"        ,dydz       );
+    book("chisq"       ,chisq      );
+    book("nHits"       ,nHits      );
 
   }
   virtual ~FillSegmentInfo() {};
 
-private:
-     std::vector<int>     segment_mu_id          ; //id associated with the muon
-     std::vector<size16>  segment_ch_id          ; //id associated with chamber
-     std::vector<float>   segment_pos_x          ;
-     std::vector<float>   segment_pos_y          ;
-     std::vector<float>   segment_dxdz           ;
-     std::vector<float>   segment_dydz           ;
-     std::vector<float>   segment_chisq          ;
-     std::vector<size8>   segment_nHits          ;
-
-
   virtual void reset(){
-    segment_mu_id       .clear();
-    segment_ch_id       .clear();
-    segment_pos_x       .clear();
-    segment_pos_y       .clear();
-    segment_dxdz        .clear();
-    segment_dydz        .clear();
-    segment_chisq       .clear();
-    segment_nHits       .clear();
-
+    mu_id       .clear();
+    ch_id       .clear();
+    pos_x       .clear();
+    pos_y       .clear();
+    dxdz        .clear();
+    dydz        .clear();
+    chisq       .clear();
+    nHits       .clear();
   }
+
+
+private:
+     std::vector<int>     mu_id          ; //id associated with the muon
+     std::vector<int>     ch_id          ; //id associated with chamber
+     std::vector<float>   pos_x          ; // [strips]
+     std::vector<float>   pos_y          ;
+     std::vector<float>   dxdz           ; // [strips / layer]
+     std::vector<float>   dydz           ;
+     std::vector<float>   chisq          ;
+     std::vector<size8>   nHits          ;
+
 
   public:
 
-  void fill(const CSCSegmentCollection& segments, const CSCRecHit2DCollection * recHits = 0);
+  //void fill(const CSCSegmentCollection& segments, const CSCRecHit2DCollection * recHits = 0);
+  void fill(std::vector<const CSCSegment*>& segments, const CSCGeometry* theCSC, int mu_index = -1);
+  void fill(const CSCSegment& segment, const CSCGeometry* theCSC, int mu_index);
   size16 findRecHitIdx(const CSCRecHit2D& hit, const CSCRecHit2DCollection* allRecHits);
 
 };
@@ -161,44 +210,48 @@ private:
 class FillRecHitInfo : public FillInfo {
 public:
 
-  FillRecHitInfo(TreeContainer& tree) :FillInfo(tree) {
-    book("rh_id"          ,rh_id          );
-    book("rh_lay"         ,rh_lay         );
-    book("rh_pos_x"       ,rh_pos_x       );
-    book("rh_pos_y"       ,rh_pos_y       );
-    book("rh_e"           ,rh_e           );
-    book("rh_max_adc"     ,rh_max_adc     );
+	FillRecHitInfo(TreeContainer& tree) :
+			FillInfo("rh", tree) {
+		book("mu_id", mu_id);
+		book("ch_id", ch_id);
+		book("lay", lay);
+		book("pos_x", pos_x);
+		book("pos_y", pos_y);
+		book("e", e);
+		book("max_adc", max_adc);
 
-
-
-  }
-  virtual ~FillRecHitInfo() {};
+	}
+	virtual ~FillRecHitInfo() {
+	}
+	;
 
 private:
-  std::vector<size16>   rh_id          ;
-  std::vector<size8>    rh_lay         ;
-  std::vector<float>    rh_pos_x       ;
-  std::vector<float>    rh_pos_y       ;
-  std::vector<float>	rh_e; //energy
-  std::vector<float>	rh_max_adc; // time bin with the max ADCs
+	std::vector<int> mu_id;
+	std::vector<int> ch_id;
+	std::vector<size8> lay;
+	std::vector<float> pos_x;
+	std::vector<float> pos_y;
+	std::vector<float> e; //energy
+	std::vector<float> max_adc; // time bin with the max ADCs
 
+	virtual void reset() {
+		mu_id.clear();
+		ch_id.clear();
+		lay.clear();
+		pos_x.clear();
+		pos_y.clear();
+		e.clear();
+		max_adc.clear();
+	}
 
-  virtual void reset(){
-    rh_id          .clear();
-    rh_lay         .clear();
-    rh_pos_x       .clear();
-    rh_pos_y       .clear();
-    rh_e           .clear();
-    rh_max_adc     .clear();
-  }
+public:
 
-  public:
-
-  void fill(const CSCRecHit2DCollection& recHits);
+  //void fill(const CSCRecHit2DCollection& recHits);
+  void fill(const vector<CSCRecHit2D>& recHits, int mu_index);
 
 };
 
-
+/*
 class FillLCTInfo : public FillInfo {
 public:
 

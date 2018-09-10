@@ -25,7 +25,7 @@ cms.untracked.vstring('ProductNotFound') )
 
 process.source = cms.Source ("PoolSource",
         fileNames = cms.untracked.vstring(
-             #'/store/data/Run2018C/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/320/065/00000/FAA985D6-FD8F-E811-9ACE-02163E019F9F.root'
+             '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
             )
 
 )
@@ -37,7 +37,7 @@ process.MessageLogger = cms.Service("MessageLogger",
     categories = cms.untracked.vstring('FwkJob'),
     destinations = cms.untracked.vstring('cout'),
      debugModules = cms.untracked.vstring('*'),
-     threshold = cms.untracked.string('DEBUG') 
+     threshold = cms.untracked.string('ERROR') 
 )
 
 
@@ -76,7 +76,7 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         dmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDMBStatusDigi"),
         tmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCTMBStatusDigi"),
         minPt = cms.double(20.),
-        dataType = cms.untracked.string('jPsi'),
+        dataType = cms.untracked.string('minBias'),
         MatchParameters = cms.PSet(
             DTsegments = cms.InputTag("dt4DSegments"),
             DTradius = cms.double(0.1),

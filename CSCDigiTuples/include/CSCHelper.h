@@ -41,7 +41,7 @@ Target convertTo(Source source, const char name[], bool lenient = false, bool* g
   return converted;
 }
 
-
+/*
 unsigned short int chamberSerial( CSCDetId id ) {
     int st = id.station();
     int ri = id.ring();
@@ -60,6 +60,29 @@ unsigned short int chamberSerial( CSCDetId id ) {
     if (st == 4 && ri == 2) kSerial = ch + 234;  // one day...
     if (ec == 2) kSerial = kSerial + 300;
     return convertTo<unsigned short int>(kSerial,"chamberSerial");
+}
+*/
+
+//written to remove ambiguity between ME11A and ME11B
+unsigned int serialize(CSCDetId id){
+    unsigned int st = id.station();
+    unsigned int ri = id.ring();
+    unsigned int ch = id.chamber();
+    unsigned int ec = id.endcap();
+
+    //sanity check
+    if(ec > 2 || st > 4 || ri > 4 || ch > 36) return 0xffffffff;
+
+	/* EC = 1 -> 2  [1 bit]
+	 * ST = 1 -> 4  [2 bits]
+	 * RI = 1 -> 4  [2 bits]
+	 * CH = 1 -> 36 [6 bits]
+	 *
+	 * -> need 1+2+2+6 = 11 bits = 2 bytes -> unsigned int
+	 *
+	 * least significant is channel, goes up to endcap as most significant
+	 */
+    return  (ec << 10)|(st << 8)|(ri << 6)| ch;
 }
 
 }

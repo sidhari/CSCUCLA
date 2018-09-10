@@ -278,6 +278,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     hist->Fill(allSegmentsCSC->size());
     if(allSegmentsCSC->size()>14) return;
 
+    //allSegmentsCSC->
+
     edm::Handle<CSCALCTDigiCollection> cscALCTDigi;
     iEvent.getByToken(ad_token, cscALCTDigi);
 

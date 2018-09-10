@@ -28,15 +28,12 @@ Description: Pulls CSC digis associated with different types of events,
 
 
 
-/*TODO:
- * - find / write something that converts from channelId -> ec, ri, st, ch
- *
- */
-
-
 CSCPatternExtractor::CSCPatternExtractor(const ParameterSet &iConfig):
 tree(iConfig.getUntrackedParameter<std::string>("NtupleFileName"),"CSCDigiTree","Tree holding CSCDigis"), //set up the tree
-eventInfo(tree) //set branches you want in the tree
+eventInfo(tree), //set branches you want in the tree
+muonInfo(tree),
+segmentInfo(tree),
+recHitInfo(tree)
 {
 	//now do what ever initialization is needed
 	mc_token = consumes<reco::MuonCollection>( iConfig.getParameter<edm::InputTag>("muonCollection") );
@@ -91,11 +88,18 @@ eventInfo(tree) //set branches you want in the tree
 	theService = new MuonServiceProxy(serviceParameters);
 
 	edm::ParameterSet matchParameters = iConfig.getParameter<edm::ParameterSet>("MatchParameters");
+
 	edm::ConsumesCollector iC  = consumesCollector();
-	theMatcher = new MuonSegmentMatcher(matchParameters, iC);
+	//theMatcher = new MuonSegmentMatcher(matchParameters, iC);
 
 
 	CSCSegmentTags_=matchParameters.getParameter<edm::InputTag>("CSCsegments");
+	cscTightMatch = matchParameters.getParameter<bool>("TightMatchCSC");
+
+
+	edm::ConsumesCollector iC  = consumesCollector();
+
+
 	//CSCSegmentTags_ = iConfig.getParameter<edm::InputTag>("CSCsegments");
 	allSegmentsCSCToken = iC.consumes<CSCSegmentCollection>(CSCSegmentTags_) ;
 
@@ -237,6 +241,7 @@ eventInfo(tree) //set branches you want in the tree
 	tree->Branch("tmbTrailer",&tmbs.trailer);
 	*/
 
+
 }
 
 CSCPatternExtractor::~CSCPatternExtractor(){
@@ -285,13 +290,50 @@ void CSCPatternExtractor::beginJob() {
 
 // ------------ method called to for each event  ------------
 void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup& iSetup){
+	resetFillInfo();
+
 	eventInfo.fill(iEvent);
 
+
+
+    // Get the CSC Geometry :
+    ESHandle<CSCGeometry> cscGeom;
+    iSetup.get<MuonGeometryRecord>().get(cscGeom);
+    theCSC = cscGeom.product();
+
+    //Get all the segments
+    edm::Handle<CSCSegmentCollection> allSegmentsCSC;
+    iEvent.getByToken(allSegmentsCSCToken, allSegmentsCSC);
+
+    if(selectMuons){
+    	Handle<reco::MuonCollection> muons;
+    	iEvent.getByToken(mc_token, muons);
+
+    	const reco::MuonCollection selected_muons = selectMuons(*muons);
+    	muonInfo.fill(selected_muons);
+
+    	for(unsigned int mu_index = 0; mu_index < selected_muons.size(); mu_index++){
+    		auto muon = selected_muons.at(mu_index);
+
+
+    		//vector<const CSCSegment*> matchedSegments = theMatcher->matchCSC(*muon.standAloneMuon(), iEvent);
+    		vector<const CSCSegment*> matchedSegments = matchCSC(*muon.standAloneMuon(), allSegmentsCSC);
+    		for(const auto& segment: matchedSegments){
+    			segmentInfo.fill(*segment, theCSC, mu_index);
+    			recHitInfo.fill(segment->specificRecHits(), mu_index);
+    		}
+    		//segmentInfo.fill(matchedSegments, theCSC, mu_index);
+
+    	}
+    } else { //TODO: can make it so all unmatched segments are written out as well in selected case
+    	for(const auto& segment: *allSegmentsCSC){
+    		//TODO: might need to do some selection here
+    		segmentInfo.fill(segment, theCSC, -1); //default unmatched to -1
+    		recHitInfo.fill(segment.specificRecHits(), -1);
+    	}
+    }
+
 	/*
-    Event_EventNumber     = iEvent.id().event();
-    Event_RunNumber       = iEvent.id().run();
-    Event_LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
-    Event_BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
 
     evN++;
     int Nmuon = 0;
@@ -307,12 +349,6 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     iEvent.getByToken(mc_token, muons);
 
 
-    if(selectMuons){
-    	vector<reco::MuonCollection> selectedMuons = *selectMuons(muons);
-    } else {
-
-    }
-    */
 
     //now read out all the stuff that is not muon specific
 
@@ -393,8 +429,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     edm::Handle<reco::BeamSpot> beamSpotHandle;
     iEvent.getByToken(obs_token, beamSpotHandle);
 */
-
-
+	tree.fill();
 }
 
 
@@ -776,15 +811,135 @@ int CSCPatternExtractor::extractNonSegmentSpecificDigis(const edm::Event& iEvent
 */
 
 const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::MuonCollection& m){
-	return m;
+	reco::MuonCollection selectedMuons;
+	for(const auto& muon : m){
+		if(!muon.isStandAloneMuon()) continue; //selecting on standalone muons (necessary?)
+		selectedMuons.push_back(muon);
+	}
+	return selectedMuons;
 }
 
 const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::MuonCollection& m) {
-	return m;
+	reco::MuonCollection selectedMuons;
+	for(const auto& muon : m){
+		if(!muon.isStandAloneMuon()) continue; //selecting on standalone muons (necessary?)
+		selectedMuons.push_back(muon);
+	}
+	return selectedMuons;
 }
 
 const reco::MuonCollection CSCPatternExtractor::selectDisplacedMuons(const reco::MuonCollection& m) {
-	return m;
+	reco::MuonCollection selectedMuons;
+	for(const auto& muon : m){
+		if(!muon.isStandAloneMuon()) continue; //selecting on standalone muons (necessary?)
+		selectedMuons.push_back(muon);
+	}
+	return selectedMuons;
+}
+
+void CSCPatternExtractor::resetFillInfo(){
+	eventInfo.reset();
+	muonInfo.reset();
+	segmentInfo.reset();
+	recHitInfo.reset();
+}
+
+
+/* Finds all the segments associated with a muon in the CSC system, taken from:
+ * https://github.com/cms-sw/cmssw/blob/master/RecoMuon/TrackingTools/src/MuonSegmentMatcher.cc
+ *
+ * Author: Alan Tua
+ *
+ * Needed to modify arguments to modularize searching
+ *
+ *
+ */
+vector<const CSCSegment*> CSCPatternExtractor::matchCSC(const reco::Track& muon, edm::Handle<CSCSegmentCollection> allSegmentsCSC){
+	//using namespace edm;
+
+	//edm::Handle<CSCSegmentCollection> allSegmentsCSC;
+	//event.getByToken(allSegmentsCSCToken, allSegmentsCSC);
+
+	vector<const CSCSegment*> pointerToCSCSegments;
+
+	double matchRatioCSC=0;
+	int numCSC = 0;
+	double CSCXCut = 0.001;
+	double CSCYCut = 0.001;
+	double countMuonCSCHits = 0;
+
+	for(CSCSegmentCollection::const_iterator segmentCSC = allSegmentsCSC->begin(); segmentCSC != allSegmentsCSC->end(); segmentCSC++) {
+		double CSCcountAgreeingHits=0;
+
+		if ( !segmentCSC->isValid()) continue;
+
+
+		numCSC++;
+		const vector<CSCRecHit2D>& CSCRechits2D = segmentCSC->specificRecHits();
+		countMuonCSCHits = 0;
+		CSCDetId myChamber((*segmentCSC).geographicalId().rawId());
+
+		bool segments = false;
+
+		for(trackingRecHit_iterator hitC = muon.recHitsBegin(); hitC != muon.recHitsEnd(); ++hitC) {
+			if (!(*hitC)->isValid()) continue;
+			if ( (*hitC)->geographicalId().det() != DetId::Muon ) continue;
+			if ( (*hitC)->geographicalId().subdetId() != MuonSubdetId::CSC ) continue;
+			if (!(*hitC)->isValid()) continue;
+			if ( (*hitC)->recHits().size()>1) segments = true;
+
+			//DETECTOR CONSTRUCTION
+			DetId id = (*hitC)->geographicalId();
+			CSCDetId cscDetIdHit(id.rawId());
+
+			if (segments) {
+				if(!(myChamber.rawId()==cscDetIdHit.rawId())) continue;
+
+				// and compare the local positions
+				LocalPoint positionLocalCSC = (*hitC)->localPosition();
+				LocalPoint segLocalCSC = segmentCSC->localPosition();
+				if ((fabs(positionLocalCSC.x()-segLocalCSC.x())<CSCXCut) &&
+						(fabs(positionLocalCSC.y()-segLocalCSC.y())<CSCYCut))
+					pointerToCSCSegments.push_back(&(*segmentCSC));
+				continue;
+			}
+
+			if(!(cscDetIdHit.ring()==myChamber.ring())) continue;
+			if(!(cscDetIdHit.station()==myChamber.station())) continue;
+			if(!(cscDetIdHit.endcap()==myChamber.endcap())) continue;
+			if(!(cscDetIdHit.chamber()==myChamber.chamber())) continue;
+
+			countMuonCSCHits++;
+
+			LocalPoint positionLocalCSC = (*hitC)->localPosition();
+
+			for (vector<CSCRecHit2D>::const_iterator hiti=CSCRechits2D.begin(); hiti!=CSCRechits2D.end(); hiti++) {
+
+				if ( !hiti->isValid()) continue;
+				CSCDetId cscDetId((hiti->geographicalId()).rawId());
+
+				if ((*hitC)->geographicalId().rawId()!=(hiti->geographicalId()).rawId()) continue;
+
+				LocalPoint segLocalCSC = hiti->localPosition();
+				//		cout<<"Layer Id (MuonHit) =  "<<cscDetIdHit<<" Muon Local Position (det frame) "<<positionLocalCSC <<endl;
+				//		cout<<"Layer Id  (CSCHit) =  "<<cscDetId<<"  Hit Local Position (det frame) "<<segLocalCSC <<endl;
+				if((fabs(positionLocalCSC.x()-segLocalCSC.x())<CSCXCut) &&
+						(fabs(positionLocalCSC.y()-segLocalCSC.y())<CSCYCut)) {
+					CSCcountAgreeingHits++;
+					//		  cout << "   Matched." << endl;
+				}
+			}//End 2D rechit iteration
+		}//End muon hit iteration
+
+		matchRatioCSC = countMuonCSCHits == 0 ? 0 : CSCcountAgreeingHits/countMuonCSCHits;
+
+		if ((matchRatioCSC>0.9) && ((countMuonCSCHits>1) || !cscTightMatch)) pointerToCSCSegments.push_back(&(*segmentCSC));
+
+	} //End CSC Segment Iteration
+
+	return pointerToCSCSegments;
+
+
 }
 
 //define this as a plug-in
