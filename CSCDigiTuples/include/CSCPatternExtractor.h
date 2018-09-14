@@ -70,16 +70,6 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         virtual void analyze(const edm::Event&, const edm::EventSetup&);
         virtual void endJob();
 
-        // ----------member data ---------------------------
-
-        //int extractSegmentSpecificDigis(const edm::Event& iEvent, int chamberId= -1);
-        //int extractNonSegmentSpecificDigis(const edm::Event& iEvent);
-
-        //int extractDigis()
-
-        //template <class T>
-        //int extractDigis(MuonDigiCollection<CSCDetId,T> collection, int chamberId);
-
         const reco::MuonCollection (*selectMuons)(const reco::MuonCollection& m);
 
 
@@ -136,11 +126,19 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         int q;
 
         TreeContainer tree;
-        FillEventInfo eventInfo;
-        FillMuonInfo muonInfo;
-        FillSegmentInfo segmentInfo;
-        FillRecHitInfo recHitInfo;
 
+
+        FillEventInfo eventInfo;
+
+       // FillMuonInfo muonInfo;
+//        FillSegmentInfo segmentInfo;
+//        FillRecHitInfo recHitInfo;
+/*
+        FillLCTInfo lctInfo;
+        FillCLCTInfo clctInfo;
+
+        FillCompInfo compInfo;
+        */
         /*
         SegmentData segs;
         RecHitData recHits;
@@ -157,7 +155,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         StatusData tmbs;
         */
 
-        string filename;
+       // string filename;
         edm::EDGetTokenT<CSCSegmentCollection> allSegmentsCSCToken;
 
         /*

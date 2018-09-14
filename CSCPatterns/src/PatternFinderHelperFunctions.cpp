@@ -7,6 +7,7 @@
 
 
 #include "../include/PatternFinderHelperFunctions.h"
+#include "../../CSCDigiTuples/include/CSCHelper.h"
 
 
 
@@ -439,20 +440,51 @@ int chamberSerial( int ec, int st, int ri, int ch ) {
 
 
 int fillCompHits(ChamberHits& theseCompHits,
-		const vector< vector<int> >* compStr, //comparator strip #
-		const vector< vector<int> >* compHS, //comparator half strip #
-		const vector< vector< vector<int> > >* compTimeOn,
-		const vector<int>* compLay,
-		const vector<int>* compId) {
+		const CSCInfo::Comparators& c) {
 
-	int EC = (int)theseCompHits._endcap;
-	int ST = (int)theseCompHits._station;
-	int RI = (int)theseCompHits._ring;
-	int CH = (int)theseCompHits._chamber;
+	unsigned int EC = (int)theseCompHits._endcap;
+	unsigned int ST = (int)theseCompHits._station;
+	unsigned int RI = (int)theseCompHits._ring;
+	unsigned int CH = (int)theseCompHits._chamber;
 
-	int chSid = chamberSerial(EC, ST, RI, CH);
+	//int chSid = chamberSerial(EC, ST, RI, CH);
+	int chSid = CSCHelper::serialize(ST, RI, CH, EC);
+
 	bool me11a = (ST == 1 && RI == 4);
 	bool me11b = (ST == 1 && RI == 1);
+	for(unsigned int i = 0; i < c.size(); i++){
+		if(chSid != c.ch_id[i]) continue; //only look at where we are now
+		unsigned int lay = c.lay[i]-1;
+		unsigned int str = c.strip[i];
+		if(str < 1) {
+			printf("compStrip = %i, how did that happen?\n", str);
+			return -1;
+		}
+		unsigned int hs = c.halfStrip[i];
+		unsigned int timeOn = c.bestTime[i];
+		//account for size of  me11a/b
+		if((me11a || me11b) && str > 64) str -= 64;
+
+		int halfStripVal;
+		if(me11a ||me11b || !(lay%2)){ //if we are in me11 or an even layer (opposite from Cameron's code, since I shift to zero)
+			halfStripVal = 2*(str-1)+hs+1;
+		} else { //odd layers shift down an extra half strip
+			halfStripVal = 2*(str-1)+hs;
+		}
+
+		if((unsigned int)halfStripVal >= N_MAX_HALF_STRIPS || halfStripVal < 0) {
+			printf("Error: For compId = %i, ST=%i, RI=%i, Comp Half Strip Value out of range index = %i --- compStrip = %i, compHStrip = %i, layer = %i\n",
+					chSid,ST,RI, halfStripVal, str, hs, lay);
+			return -1;
+		} else {
+			if(timeOn < 0 || timeOn >= 16) {
+				printf("Error timeOn is an invalid number: %i\n", timeOn);
+				return -1;
+			} else {
+				theseCompHits._hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+			}
+		}
+	/*
 	for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
 		if(chSid != (*compId)[icomp]) continue; //only look at where we are now
 
@@ -499,32 +531,32 @@ int fillCompHits(ChamberHits& theseCompHits,
 				}
 			}
 		}
+		*/
 	}
 	return 0;
 }
 
 int fillRecHits(ChamberHits& theseRecHits,
-		const vector<int>* rhId,
-		const vector<int>* rhLay,
-		const vector<float>* rhPos){
+		const CSCInfo::RecHits& r){
 	int EC = (int)theseRecHits._endcap;
 	int ST = (int)theseRecHits._station;
 	int RI = (int)theseRecHits._ring;
 	int CH = (int)theseRecHits._chamber;
 
-	int chSid = chamberSerial(EC, ST, RI, CH);
+
+	int chSid = CSCHelper::serialize(ST, RI, CH, EC);
 	bool me11a = (ST == 1 && RI == 4);
 	bool me11b = (ST == 1 && RI == 1);
-	for(unsigned int thisRh = 0; thisRh < rhId->size(); thisRh++)
+	for(unsigned int thisRh = 0; thisRh < r.size(); thisRh++)
 	{
-		int thisId = rhId->at(thisRh);
+		int thisId = r.ch_id->at(thisRh);
 
 		if(chSid != thisId) continue; //just look at matches
 		//rhLay goes 1-6
-		unsigned int iLay = rhLay->at(thisRh)-1;
+		unsigned int iLay = r.lay->at(thisRh)-1;
 
 		//goes 1-80
-		float thisRhPos = rhPos->at(thisRh);
+		float thisRhPos = r.pos_x->at(thisRh);
 
 		int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
 		if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer

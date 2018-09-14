@@ -63,13 +63,9 @@ unsigned short int chamberSerial( CSCDetId id ) {
 }
 */
 
-//written to remove ambiguity between ME11A and ME11B
-unsigned int serialize(CSCDetId id){
-    unsigned int st = id.station();
-    unsigned int ri = id.ring();
-    unsigned int ch = id.chamber();
-    unsigned int ec = id.endcap();
 
+//written to remove ambiguity between ME11A and ME11B
+unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
     //sanity check
     if(ec > 2 || st > 4 || ri > 4 || ch > 36) return 0xffffffff;
 
@@ -85,6 +81,36 @@ unsigned int serialize(CSCDetId id){
     return  (ec << 10)|(st << 8)|(ri << 6)| ch;
 }
 
+unsigned int serialize(CSCDetId id){
+    unsigned int st = id.station();
+    unsigned int ri = id.ring();
+    unsigned int ch = id.chamber();
+    unsigned int ec = id.endcap();
+    return CSCHelper::serialize(st,ri,ch,ec);
 }
+
+struct ChamberId {
+	unsigned int station;
+	unsigned int ring;
+	unsigned int chamber;
+	unsigned int endcap;
+};
+
+//TOO: Test this!
+ChamberId unserialize(unsigned int serial){
+	ChamberId c;
+	c.chamber		= serial & 0x0000003f; //6 bits
+	serial 			= serial >> 6;
+	c.ring 			= serial & 0x00000003; //2 bits
+	serial			= serial >> 2;
+	c.station 		= serial & 0x00000003; //2 bits
+	serial			= serial >> 2;
+	c.endcap		= serial;
+	return c;
+
+}
+
+
+};
 
 #endif /*CSCUCLA_CSCDIGITUPLES_FILLCSCINFO_H*/

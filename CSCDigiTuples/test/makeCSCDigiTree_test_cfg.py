@@ -37,7 +37,7 @@ process.MessageLogger = cms.Service("MessageLogger",
     categories = cms.untracked.vstring('FwkJob'),
     destinations = cms.untracked.vstring('cout'),
      debugModules = cms.untracked.vstring('*'),
-     threshold = cms.untracked.string('ERROR') 
+     threshold = cms.untracked.string('DEBUG') 
 )
 
 
@@ -76,7 +76,7 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         dmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDMBStatusDigi"),
         tmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCTMBStatusDigi"),
         minPt = cms.double(20.),
-        dataType = cms.untracked.string('minBias'),
+        dataType = cms.untracked.string('jPsi'),
         MatchParameters = cms.PSet(
             DTsegments = cms.InputTag("dt4DSegments"),
             DTradius = cms.double(0.1),
@@ -179,6 +179,7 @@ process.TFileService = cms.Service("TFileService",
                                    )
 
 process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+#process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis)
 
 
 process.schedule.append(process.p)

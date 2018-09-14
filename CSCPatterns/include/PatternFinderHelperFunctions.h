@@ -15,6 +15,8 @@
 #include "PatternFinderClasses.h"
 #include "LUTClasses.h"
 
+#include "../../CSCDigiTuples/include/CSCInfo.h"
+
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow);
 
@@ -50,18 +52,12 @@ vector<CSCPattern>* createNewPatterns();
 //creates the currently implemented patterns in the TMB
 vector<CSCPattern>* createOldPatterns();
 
-int chamberSerial( int ec, int st, int ri, int ch );
+//int chamberSerial( int ec, int st, int ri, int ch );
 
 int fillCompHits(ChamberHits& theseCompHits,
-		const vector< vector<int> >* compStr, //comparator strip #
-		const vector< vector<int> >* compHS, //comparator half strip #
-		const vector< vector< vector<int> > >* compTimeOn,
-		const vector<int>* compLay,
-		const vector<int>* compId); // index of what ring/station you are on
+		const CSCInfo::Comparators& c); // index of what ring/station you are on
 
 int fillRecHits(ChamberHits& theseRecHits,
-		const vector<int>* rhId,
-		const vector<int>* rhLay,
-		const vector<float>* rhPos);
+		const CSCInfo::RecHits& r);
 
 #endif /* PATTERNFINDERHELPERFUNCTIONS_H_ */
