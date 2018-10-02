@@ -23,9 +23,34 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 process.options = cms.untracked.PSet( SkipEvent =
 cms.untracked.vstring('ProductNotFound') )
 
+
+# samples:
+#   singlemu: '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
+#            '101X_dataRun2_Prompt_v11'
+#
+#    jpsi: '/store/data/Run2018C/Charmonium/RAW/v1/000/320/065/00000/FE58EEB1-178E-E811-97C5-FA163E5ED053.root',
+#            '101X_dataRun2_Prompt_v11'
+#
+#    zerobias: '/store/data/Run2018D/ZeroBias7/RAW-RECO/LogError-PromptReco-v2/000/323/399/00000/FC46AD98-6140-1C49-BB39-7B1293D338A0.root'
+#            '101X_dataRun2_Prompt_v11'
+#
+
+#dataset = '/store/data/Run2018C/Charmonium/RAW/v1/000/320/065/00000/FE58EEB1-178E-E811-97C5-FA163E5ED053.root'
+dataset = 'file:/uscms/home/wnash/eos/Charmonium/charmonium2018C/test/RAW/FE58EEB1-178E-E811-97C5-FA163E5ED053.root'
+selectionString = 'jPsi'
+run = dataset.split('/')[3]
+outfileName = 'CSCDigiTree_'+run+'_'+selectionString+'.root'
+
+
+isRawReco = 'RAW-RECO' in dataset
+isRawOnly = not isRawReco and 'RAW' in dataset
+if not isRawReco and not isRawOnly:
+    print "Error: Unknown dataset: %s"%dataset
+    exit()
+
 process.source = cms.Source ("PoolSource",
         fileNames = cms.untracked.vstring(
-             '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
+dataset,
             )
 
 )
@@ -37,7 +62,7 @@ process.MessageLogger = cms.Service("MessageLogger",
     categories = cms.untracked.vstring('FwkJob'),
     destinations = cms.untracked.vstring('cout'),
      debugModules = cms.untracked.vstring('*'),
-     threshold = cms.untracked.string('DEBUG') 
+     threshold = cms.untracked.string('ERROR') 
 )
 
 
@@ -60,8 +85,9 @@ process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
 #process.load("EventFilter.CSCRawToDigi.cscUnpacker_cfi")
 #process.load("RecoLocalMuon.Configuration.RecoLocalMuon_cff")
 
+
 process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
-        NtupleFileName       = cms.untracked.string('CSCDigiTree.root'),
+        NtupleFileName       = cms.untracked.string(outfileName),
              muonCollection = cms.InputTag("muons"),
         offlineBeamSpotTag = cms.InputTag("offlineBeamSpot"),
         csctfDigiTag = cms.InputTag("csctfDigis"),
@@ -75,8 +101,7 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         dduDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDDUStatusDigi"),
         dmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDMBStatusDigi"),
         tmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCTMBStatusDigi"),
-        minPt = cms.double(20.),
-        dataType = cms.untracked.string('jPsi'),
+        selection = cms.untracked.string(selectionString),
         MatchParameters = cms.PSet(
             DTsegments = cms.InputTag("dt4DSegments"),
             DTradius = cms.double(0.1),
@@ -178,7 +203,10 @@ process.TFileService = cms.Service("TFileService",
                                    fileName = cms.string('TPEHists.root')
                                    )
 
-process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+if isRawReco:
+    process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+if isRawOnly:
+     process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 #process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis)
 
 

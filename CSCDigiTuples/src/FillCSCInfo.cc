@@ -3,22 +3,27 @@
 
 #include "DataFormats/MuonReco/interface/Muon.h"
 
+void TreeContainer::fill(){
+	  tree->Fill();
+	  for(auto& info: infos) info->reset();
+}
+
 void FillEventInfo::fill(const edm::Event& iEvent){
-  e.EventNumber     = iEvent.id().event();
-  e.RunNumber       = iEvent.id().run();
-  e.LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
-  e.BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
+  EventNumber     = iEvent.id().event();
+  RunNumber       = iEvent.id().run();
+  LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
+  BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
 }
 
 
 void FillMuonInfo::fill(const reco::MuonCollection& muons){
 	for(const auto& muon: muons){
-		m.pt->push_back(muon.pt());
-		m.eta->push_back(muon.eta());
-		m.phi->push_back(muon.phi());
-		m.q->push_back(muon.charge());
-		m.isGlobal->push_back(muon.isGlobalMuon());
-		m.isTracker->push_back(muon.isTrackerMuon());
+		pt->push_back(muon.pt());
+		eta->push_back(muon.eta());
+		phi->push_back(muon.phi());
+		q->push_back(muon.charge());
+		isGlobal->push_back(muon.isGlobalMuon());
+		isTracker->push_back(muon.isTrackerMuon());
 	}
 }
 
@@ -46,13 +51,13 @@ void FillSegmentInfo::fill(std::vector<const CSCSegment*>& segments, const CSCGe
 
 void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC, int mu_index){
 
-	DetId id  = segment.geographicalId();
-	CSCDetId chamberId(id.rawId());
+	DetId detId  = segment.geographicalId();
+	CSCDetId id(detId.rawId());
 
 	const auto& segmentHits = segment.specificRecHits();
 	//const auto& segmentHits = dSiter->specificRecHits();
 	//inherited from C. Bravo - translates [cm] -> [strips]
-	const CSCChamber *segChamber = theCSC->chamber(chamberId);
+	const CSCChamber *segChamber = theCSC->chamber(id);
 	const CSCLayer *segLay3 = segChamber->layer(3);
 	const CSCLayer *segLay4 = segChamber->layer(4);
 	const CSCLayerGeometry *segLay3Geo = segLay3->geometry();
@@ -72,14 +77,14 @@ void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC,
 
 
 	//fill everything
-	s.mu_id->push_back(mu_index);
-	s.ch_id->push_back(CSCHelper::serialize(id));
-	s.pos_x->push_back(segLay3Geo->strip(tP));
-	s.pos_y->push_back(segment.localPosition().y());
-	s.dxdz->push_back(segment.localDirection().x() / cm2strip / ( segment.localDirection().z() / cm2lay));
-	s.dydz->push_back(segment.localDirection().y() / segment.localDirection().z());
-	s.chisq->push_back(segment.chi2());
-	s.nHits->push_back(CSCHelper::convertTo<size8>(segmentHits.size(), "segment_nHits"));
+	mu_id->push_back(mu_index);
+	ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+	pos_x->push_back(segLay3Geo->strip(tP));
+	pos_y->push_back(segment.localPosition().y());
+	dxdz->push_back(segment.localDirection().x() / cm2strip / ( segment.localDirection().z() / cm2lay));
+	dydz->push_back(segment.localDirection().y() / segment.localDirection().z());
+	chisq->push_back(segment.chi2());
+	nHits->push_back(CSCHelper::convertTo<size8>(segmentHits.size(), "segment_nHits"));
 
 }
 
@@ -88,8 +93,8 @@ void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC,
 void FillRecHitInfo::fill(const std::vector<CSCRecHit2D>& recHits, int mu_index){
   for (const auto& rechit : recHits){
 
-      DetId idd = rechit.geographicalId();
-      CSCDetId hitID(idd.rawId());
+      DetId detId = rechit.geographicalId();
+      CSCDetId id(detId.rawId());
 
       int centerID = rechit.nStrips()/2;
       int centerStr = rechit.channels(centerID);
@@ -100,13 +105,13 @@ void FillRecHitInfo::fill(const std::vector<CSCRecHit2D>& recHits, int mu_index)
     	  if(rechit.adcs(centerID,tI) > rhMaxBuf) rhMaxBuf = rechit.adcs(centerID,tI);
       }
 
-      r.mu_id->push_back(mu_index);
-      r.ch_id->push_back(CSCHelper::serialize(hitID));
-      r.lay->push_back(CSCHelper::convertTo<size8>(hitID.layer(),"rh_lay"));
-      r.pos_x->push_back(float(centerStr) + rechit.positionWithinStrip());
-      r.pos_y->push_back(-1); //NOT IMPLEMENTED
-      r.e->push_back(rechit.energyDepositedInLayer());
-      r.max_adc->push_back(rhMaxBuf);
+      mu_id->push_back(mu_index);
+      ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+      lay->push_back(CSCHelper::convertTo<size8>(id.layer(),"rh_lay"));
+      pos_x->push_back(float(centerStr) + rechit.positionWithinStrip());
+      pos_y->push_back(-1); //NOT IMPLEMENTED
+      e->push_back(rechit.energyDepositedInLayer());
+      max_adc->push_back(rhMaxBuf);
   }
 }
 
@@ -120,12 +125,12 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
     const CSCCorrelatedLCTDigiCollection::Range& range =(*chamber).second;
     for(CSCCorrelatedLCTDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
     {
-      l.ch_id       ->push_back(CSCHelper::serialize(id));
-      l.quality     ->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"lct_quality"));
-      l.pattern     ->push_back(CSCHelper::convertTo<size8>(digiItr->getPattern(),"lct_pattern"));
-      l.bend        ->push_back(CSCHelper::convertTo<size8>(digiItr->getBend()   ,"lct_bend"));
-      l.keyWireGroup->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG()  ,"lct_keyWireGroup"));
-      l.keyHalfStrip->push_back(CSCHelper::convertTo<size8>(digiItr->getStrip()  ,"lct_keyHalfStrip"));
+      ch_id       ->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+      quality     ->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"lct_quality"));
+      pattern     ->push_back(CSCHelper::convertTo<size8>(digiItr->getPattern(),"lct_pattern"));
+      bend        ->push_back(CSCHelper::convertTo<size8>(digiItr->getBend()   ,"lct_bend"));
+      keyWireGroup->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG()  ,"lct_keyWireGroup"));
+      keyHalfStrip->push_back(CSCHelper::convertTo<size8>(digiItr->getStrip()  ,"lct_keyHalfStrip"));
       }
   }
 }
@@ -140,34 +145,34 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 		for (CSCCLCTDigiCollection::const_iterator digiItr = range.first;
 				digiItr != range.second; ++digiItr) {
 
-			c.ch_id->push_back(CSCHelper::serialize(id));
-			c.isvalid->push_back(
-					CSCHelper::convertTo<size8>(digiItr->isValid(),
-							"clct_isvalid"));
-			c.quality->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getQuality(),
-							"clct_quality"));
-			c.pattern->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getPattern(),
-							"clct_pattern"));
-			c.stripType->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getStripType(),
-							"clct_stripType"));
-			c.bend->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getBend(),
-							"clct_bend"));
-			c.halfStrip->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getStrip(),
-							"clct_halfStrip"));
-			c.CFEB->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getCFEB(),
-							"clct_CFEB"));
-			c.BX->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getBX(), "clct_BX"));
-			c.trkNumber->push_back(
-					CSCHelper::convertTo<size8>(digiItr->getTrknmb(),
-							"clct_trkNumber"));
-			c.keyStrip->push_back(
+			ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+			isValid->push_back(
+				CSCHelper::convertTo<size8>(digiItr->isValid(),
+						"clct_isvalid"));
+			quality->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getQuality(),
+						"clct_quality"));
+			pattern->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getPattern(),
+						"clct_pattern"));
+			stripType->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getStripType(),
+						"clct_stripType"));
+			bend->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getBend(),
+						"clct_bend"));
+			halfStrip->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getStrip(),
+						"clct_halfStrip"));
+			CFEB->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getCFEB(),
+						"clct_CFEB"));
+			BX->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getBX(), "clct_BX"));
+			trkNumber->push_back(
+				CSCHelper::convertTo<size8>(digiItr->getTrknmb(),
+						"clct_trkNumber"));
+			keyStrip->push_back(
 					CSCHelper::convertTo<size8>(digiItr->getKeyStrip(),
 							"clct_keyStrip"));
 		}
@@ -186,16 +191,16 @@ void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
     for(CSCComparatorDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
     {
     	//cout << "test" << endl;
-			c.ch_id->push_back(CSCHelper::serialize(id));
-			c.lay->push_back(
-					CSCHelper::convertTo<size8>(id.layer(), "comp_lay"));
-			c.strip->push_back(
-					CSCHelper::convertTo<size8>((*digiItr).getStrip(),
-							"comp_strip"));
-			c.halfStrip->push_back(
-					CSCHelper::convertTo<size8>((*digiItr).getComparator(),
-							"comp_comp"));
-			c.nTimeOn->push_back(
+			ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+			lay->push_back(
+				CSCHelper::convertTo<size8>(id.layer(), "comp_lay"));
+			strip->push_back(
+				CSCHelper::convertTo<size8>((*digiItr).getStrip(),
+						"comp_strip"));
+			halfStrip->push_back(
+				CSCHelper::convertTo<size8>((*digiItr).getComparator(),
+						"comp_comp"));
+			nTimeOn->push_back(
 					CSCHelper::convertTo<size8>((*digiItr).getTimeBinsOn().size(),
 							"comp_nTimeOn"));
 			unsigned int bestTimeBin = 0;
@@ -205,7 +210,7 @@ void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
 					break;
 				}
 			}
-			c.bestTime->push_back(CSCHelper::convertTo<size8>(bestTimeBin, "comp_bestTime"));
+			bestTime->push_back(CSCHelper::convertTo<size8>(bestTimeBin, "comp_bestTime"));
 
 		}
 	}

@@ -70,14 +70,13 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         virtual void analyze(const edm::Event&, const edm::EventSetup&);
         virtual void endJob();
 
-        const reco::MuonCollection (*selectMuons)(const reco::MuonCollection& m);
 
+        const reco::MuonCollection (*selectMuons)(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t);
 
-        static const reco::MuonCollection selectSingleMuMuons(const reco::MuonCollection& m);
-        static const reco::MuonCollection selectJPsiMuons(const reco::MuonCollection& m);
-        static const reco::MuonCollection selectDisplacedMuons(const reco::MuonCollection& m);
-
-        void resetFillInfo();
+        //TODO: could come up with a nicer way to pass arguments, static definition is tricky...
+        static const reco::MuonCollection selectSingleMuMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t);
+        static const reco::MuonCollection selectJPsiMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t);
+        static const reco::MuonCollection selectDisplacedMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t);
 
         vector<const CSCSegment*> matchCSC(const reco::Track& muon, edm::Handle<CSCSegmentCollection> allSegmentsCSC);
         bool cscTightMatch;
@@ -95,6 +94,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> ld_token;
         edm::EDGetTokenT<CSCComparatorDigiCollection> cod_token;
         edm::EDGetTokenT<reco::BeamSpot> obs_token;
+        edm::EDGetTokenT<reco::VertexCollection> vtx_token;
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> csctflct_token;
         edm::EDGetTokenT<CSCCorrelatedLCTDigiCollection> emtflct_token;
         edm::EDGetTokenT<CSCDDUStatusDigiCollection> ddu_token;
@@ -105,11 +105,11 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         MuonServiceProxy *theService;
         //MuonSegmentMatcher *theMatcher;
         MuonQualityCuts *muonQualityCuts;
-        double minPt;
-        string dataType;
+        //double minPt;
+        string selection;
         edm::InputTag CSCSegmentTags_;
 
-        int evN;
+       // int evN;
 
         /*
         int Event_EventNumber;
@@ -117,28 +117,24 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         int Event_LumiSection;
         int Event_BXCrossing;
         */
-
+/*
         bool ss;
         bool os;
         double Pt;
         double eta;
         double phi;
         int q;
-
+*/
         TreeContainer tree;
 
 
         FillEventInfo eventInfo;
-
-       // FillMuonInfo muonInfo;
-//        FillSegmentInfo segmentInfo;
-//        FillRecHitInfo recHitInfo;
-/*
+        FillMuonInfo muonInfo;
+        FillSegmentInfo segmentInfo;
+        FillRecHitInfo recHitInfo;
         FillLCTInfo lctInfo;
         FillCLCTInfo clctInfo;
-
         FillCompInfo compInfo;
-        */
         /*
         SegmentData segs;
         RecHitData recHits;
@@ -158,6 +154,8 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
        // string filename;
         edm::EDGetTokenT<CSCSegmentCollection> allSegmentsCSCToken;
 
+
+       // TH1F* h_invMass;
         /*
 
         TTree *tree;

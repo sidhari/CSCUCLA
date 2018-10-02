@@ -453,15 +453,15 @@ int fillCompHits(ChamberHits& theseCompHits,
 	bool me11a = (ST == 1 && RI == 4);
 	bool me11b = (ST == 1 && RI == 1);
 	for(unsigned int i = 0; i < c.size(); i++){
-		if(chSid != c.ch_id[i]) continue; //only look at where we are now
-		unsigned int lay = c.lay[i]-1;
-		unsigned int str = c.strip[i];
+		if(chSid != c.ch_id->at(i)) continue; //only look at where we are now
+		unsigned int lay = c.lay->at(i)-1;
+		unsigned int str = c.strip->at(i);
 		if(str < 1) {
 			printf("compStrip = %i, how did that happen?\n", str);
 			return -1;
 		}
-		unsigned int hs = c.halfStrip[i];
-		unsigned int timeOn = c.bestTime[i];
+		unsigned int hs = c.halfStrip->at(i);
+		unsigned int timeOn = c.bestTime->at(i);
 		//account for size of  me11a/b
 		if((me11a || me11b) && str > 64) str -= 64;
 
@@ -477,7 +477,7 @@ int fillCompHits(ChamberHits& theseCompHits,
 					chSid,ST,RI, halfStripVal, str, hs, lay);
 			return -1;
 		} else {
-			if(timeOn < 0 || timeOn >= 16) {
+			if(timeOn >= 16) {
 				printf("Error timeOn is an invalid number: %i\n", timeOn);
 				return -1;
 			} else {

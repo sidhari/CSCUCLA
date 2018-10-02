@@ -33,17 +33,14 @@ namespace CSCInfo {
 class Object {
 public:
 	const string name;
-	~Object(){};
-	Object(const char *n): name(n){
-		cout << "<internal screaming>" << endl;
-	}
+	virtual ~Object(){};
+	Object(const char *n): name(n){}
 
 };
 
 class Event : public Object{
 public:
 	Event() : Object("Event"){
-		cout <<"helphelphelphelphelphelp" << name << endl;
 		EventNumber = 0;
 		RunNumber = 0;
 		LumiSection = -1;
@@ -211,7 +208,7 @@ class CLCTs : public Object{
 public:
 	CLCTs() : Object("clct") {
 		ch_id = 0;
-		isvalid = 0;
+		isValid = 0;
 		quality = 0;
 		pattern = 0;
 		stripType = 0;
@@ -224,7 +221,7 @@ public:
 	}
 	CLCTs(TTree* t) : CLCTs() {
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(), &ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(isvalid))).c_str(), &isvalid);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(isValid))).c_str(), &isValid);
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(quality))).c_str(), &quality);
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pattern))).c_str(), &pattern);
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(stripType))).c_str(), &stripType);
@@ -237,7 +234,7 @@ public:
 	}
 
 	std::vector<size16> *ch_id;
-	std::vector<size8>* isvalid;
+	std::vector<size8>* isValid;
 	std::vector<size16>* quality;
 	std::vector<size8>* pattern;
 	std::vector<size8>* stripType;

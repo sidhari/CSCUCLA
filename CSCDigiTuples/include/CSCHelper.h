@@ -1,7 +1,7 @@
 #ifndef CSCUCLA_CSCDIGITUPLES_CSCHELPER_H
 #define CSCUCLA_CSCDIGITUPLES_CSCHELPER_H
 
-#include "DataFormats/MuonDetId/interface/CSCDetId.h"
+//#include "DataFormats/MuonDetId/interface/CSCDetId.h"
 
 
 
@@ -66,8 +66,17 @@ unsigned short int chamberSerial( CSCDetId id ) {
 
 //written to remove ambiguity between ME11A and ME11B
 unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
+	//set them to be 0 based
+	st--;ri--;ch--;ec--;
     //sanity check
-    if(ec > 2 || st > 4 || ri > 4 || ch > 36) return 0xffffffff;
+    if(ec >= 2 || st >= 4 || ri >= 4 || ch >= 36) {
+    	std::cout << "Error: Trying to serialize invalid chamber:" <<
+    			" ST = " << st <<
+    			" RI = " << ri <<
+				" CH = " << ch <<
+				" EC = " << ec << std::endl;
+    	return 0xffffffff;
+    }
 
 	/* EC = 1 -> 2  [1 bit]
 	 * ST = 1 -> 4  [2 bits]
@@ -81,14 +90,6 @@ unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsign
     return  (ec << 10)|(st << 8)|(ri << 6)| ch;
 }
 
-unsigned int serialize(CSCDetId id){
-    unsigned int st = id.station();
-    unsigned int ri = id.ring();
-    unsigned int ch = id.chamber();
-    unsigned int ec = id.endcap();
-    return CSCHelper::serialize(st,ri,ch,ec);
-}
-
 struct ChamberId {
 	unsigned int station;
 	unsigned int ring;
@@ -96,16 +97,26 @@ struct ChamberId {
 	unsigned int endcap;
 };
 
-//TOO: Test this!
+unsigned int serialize(ChamberId id){
+    unsigned int st = id.station;
+    unsigned int ri = id.ring;
+    unsigned int ch = id.chamber;
+    unsigned int ec = id.endcap;
+    return CSCHelper::serialize(st,ri,ch,ec);
+}
+
+/* @brief Unserializes chamber id. Everything <= 1
+ *
+ */
 ChamberId unserialize(unsigned int serial){
 	ChamberId c;
-	c.chamber		= serial & 0x0000003f; //6 bits
+	c.chamber		= (serial & 0x0000003f)+1; //6 bits
 	serial 			= serial >> 6;
-	c.ring 			= serial & 0x00000003; //2 bits
+	c.ring 			= (serial & 0x00000003)+1; //2 bits
 	serial			= serial >> 2;
-	c.station 		= serial & 0x00000003; //2 bits
+	c.station 		= (serial & 0x00000003)+1; //2 bits
 	serial			= serial >> 2;
-	c.endcap		= serial;
+	c.endcap		= serial+1;
 	return c;
 
 }

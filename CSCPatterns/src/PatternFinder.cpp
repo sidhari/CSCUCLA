@@ -37,6 +37,9 @@
 using namespace std;
 
 
+
+// TODO: Check for TMB Headers
+
 /* TODO: Multithreading
  *
  * - open files in main thread
@@ -48,7 +51,8 @@ using namespace std;
  *
  */
 
-// TODO: Check for TMB Headers
+
+
 
 //
 //int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) {
@@ -190,6 +194,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	plotTree->Branch("segmentdXdZ", &segmentdXdZ, "segmentdXdZ/F");
 	plotTree->Branch("patX", &patX, "patX/F");
 	plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
+
+	TH1F* h_clctLayerCount = new TH1F("h_clctLayerCount", "h_clctlayerCount", 7,0,7);
 	//t->SetBranchAddress("Event_EventNumber", &evt.EventNumber);
 
 	//CSCInfo::Muons muons;
@@ -241,7 +247,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			RI = c.ring;
 			CH = c.chamber;
 
-			printf("EC = %u, ST = %u, RI = %u, CH = %u\n", EC, ST, RI, CH);
+			//printf("EC = %u, ST = %u, RI = %u, CH = %u\n", EC, ST, RI, CH);
 
 			segmentX = segments.pos_x->at(thisSeg); //strips
 			segmentdXdZ = segments.dxdz->at(thisSeg);
@@ -332,8 +338,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			}
 
 			// fill the numerator if it is within our capture window
-			float posCaptureWindow = 0.30; //strips
-			float slopeCaptureWindow = 0.25; //strips/layer
+			//float posCaptureWindow = 0.30; //strips
+			//float slopeCaptureWindow = 0.25; //strips/layer
 
 			/*
 			bool foundMatchingCandidate = false;
@@ -388,19 +394,21 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			plotTree->Fill();
 
-			CLCTCandidate* bestCLCT = newSetMatch.at(closestNewMatchIndex);
+			h_clctLayerCount->Fill(newSetMatch.at(closestNewMatchIndex)->layerCount());
+
+			//CLCTCandidate* bestCLCT = newSetMatch.at(closestNewMatchIndex);
 
 
-			unsigned int layers = bestCLCT->_lutEntry->_layers;
+			//unsigned int layers = bestCLCT->_lutEntry->_layers;
 
-
+/*
 			int code_hits [MAX_PATTERN_WIDTH][NLAYERS];
 			if(bestCLCT->getHits(code_hits)){
 				printf("Error: can't recover hits\n");
 				return -1;
 			}
-
-			float hs_clctkeyhs = 2*bestCLCT->keyStrip();
+*/
+			//float hs_clctkeyhs = 2*bestCLCT->keyStrip();
 
 
 
@@ -422,6 +430,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	outF->cd();
 	plotTree->Write();
+	h_clctLayerCount->Write();
 	/*
 	lutSegmentPosDiff->Write();
 	lutSegmentSlopeDiff->Write();

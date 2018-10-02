@@ -33,6 +33,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include "TString.h"
+#include "TH1F.h"
 
 /* TODO:
  * - make TreeWriter, TreeReader class (inherit from TreeContainer?)
@@ -52,38 +53,74 @@ typedef   unsigned char        size8 ; // 8 bit 0->255
 typedef   unsigned short int   size16; //16 bit 0->65536
 typedef   unsigned int         size  ; //32 bit 0->4294967296
 
+class FillInfo;
+
 class TreeContainer {
 public:
   TreeContainer(TString fileName, TString treeName, TString treeTitle){
 	file = new TFile(fileName, "RECREATE");
 	tree = new TTree(treeName,treeTitle);
+	h_allPtMuons = new TH1F("h_allPtMuons", "h_allPtMuons", 200, 0,200);
+	h_osInvMass = new TH1F("h_osInvMass", "h_osInvMass", 200,2.8, 3.3);
+	h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass", 200,2.8, 3.3);
+	h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass", 200,0, 10);
+	h_nAllMuons = new TH1F("h_nAllMuons", "h_nAllMuons", 20,0,20);
+	h_nSelectedMuons = new TH1F("h_nSelectedMuons", "h_nSelectedMuons", 20, 0, 20);
   }
   void write() {
     file->cd();
+    h_allPtMuons->Write();
+    h_osInvMass->Write();
+    h_ssInvMass->Write();
+    h_premassCutInvMass->Write();
+    h_nAllMuons->Write();
+    h_nSelectedMuons->Write();
     tree->Write();
     file->Close();
     delete file;
   }
 
-  void fill() {tree->Fill();}
+  void fill();
+  /*{
+	  tree->Fill();
+	  for(auto& info: infos) info->reset();
+  }*/
+
+  void addInfo(FillInfo* info){
+	  if(info) infos.push_back(info);
+  }
+
   TFile * file;
   TTree * tree;
 
+  //TODO: Could come up with a cleaner, more general way to do this...
+  TH1F* h_osInvMass;
+  TH1F* h_ssInvMass;
+  TH1F* h_premassCutInvMass;
+  TH1F* h_nAllMuons;
+  TH1F* h_allPtMuons;
+  TH1F* h_nSelectedMuons;
+
+private:
+  std::vector<FillInfo*> infos;
+
 };
+
 
 class FillInfo {
 public:
   FillInfo(const std::string& prfx, TreeContainer& tree) :
 	  prefix(prfx),
 	  fTree(&tree)
-{reset();};
-
+{
+	  reset();
+	  fTree->addInfo(this);
+};
   virtual ~FillInfo() {};
   virtual void reset() {};
 protected:
   //const TString prefix; //prefix before each tree branch associated with this object
-  const std::string prefix; //prefix before each tree branch associated with this object
-
+  const string prefix;
 
   //Book single variable
   template<class T>
@@ -107,77 +144,70 @@ protected:
 };
 
 
-class FillEventInfo : public FillInfo {
+class FillEventInfo : public CSCInfo::Event, public FillInfo {
 public:
 
   FillEventInfo(TreeContainer& tree) :
-	  FillInfo(e.name,tree)
-	  //FillInfo("help",tree)
+	  Event(), FillInfo(name, tree)
 {
-	  cout << e.name << endl;
-    book("EventNumber",e.EventNumber,"l");
-    book("RunNumber"  ,e.RunNumber  ,"l");
-    book("LumiSection",e.LumiSection,"I");
-    book("BXCrossing" ,e.BXCrossing ,"I");
+    book(GET_VARIABLE_NAME(EventNumber),EventNumber,"l");
+    book(GET_VARIABLE_NAME(RunNumber)  ,RunNumber  ,"l");
+    book(GET_VARIABLE_NAME(LumiSection),LumiSection,"I");
+    book(GET_VARIABLE_NAME(BXCrossing) ,BXCrossing ,"I");
   }
   virtual ~FillEventInfo() {};
 
   virtual void reset(){
-    e.EventNumber  = 0;
-    e.RunNumber    = 0;
-    e.LumiSection  = -1;
-    e.BXCrossing   = -1;
+    EventNumber  = 0;
+    RunNumber    = 0;
+    LumiSection  = -1;
+    BXCrossing   = -1;
   }
 
-private:
-  CSCInfo::Event e;
-
-  public:
 
   void fill(const edm::Event& iEvent);
 
 };
 
 
-class FillMuonInfo : public FillInfo {
+class FillMuonInfo : public CSCInfo::Muons, public FillInfo {
 public:
 	FillMuonInfo(TreeContainer& tree) :
-		FillInfo(m.name,tree)
+		Muons(),
+		FillInfo(name,tree)
 {
 
 		//might want to make a constructor for the object here...
-		m.pt = new std::vector<float>();
-		m.eta = new std::vector<float>();
-		m.phi = new std::vector<float>();
-		m.q = new std::vector<int>();
-		m.isGlobal = new std::vector<bool>();
-		m.isTracker = new std::vector<bool>();
-		book("pt"		,*m.pt			);
-		book("eta"		,*m.eta		);
-		book("phi"		,*m.phi		);
-		book("q"		,*m.q			);
-		book("isGlobal"	,*m.isGlobal	);
-		book("isTracker",*m.isTracker	);
+		pt = new std::vector<float>();
+		eta = new std::vector<float>();
+		phi = new std::vector<float>();
+		q = new std::vector<int>();
+		isGlobal = new std::vector<bool>();
+		isTracker = new std::vector<bool>();
+		book(GET_VARIABLE_NAME(pt), *pt);
+		book(GET_VARIABLE_NAME(eta), *eta);
+		book(GET_VARIABLE_NAME(phi), *phi);
+		book(GET_VARIABLE_NAME(q), *q);
+		book(GET_VARIABLE_NAME(isGlobal), *isGlobal);
+		book(GET_VARIABLE_NAME(isTracker), *isTracker);
 }
 	virtual ~FillMuonInfo() {
-		delete m.pt;
-		delete m.eta;
-		delete m.phi;
-		delete m.q;
-		delete m.isGlobal;
-		delete m.isTracker;
+		delete pt;
+		delete eta;
+		delete phi;
+		delete q;
+		delete isGlobal;
+		delete isTracker;
 	};
 
 	virtual void reset() {
-		m.pt->clear();
-		m.eta->clear();
-		m.phi->clear();
-		m.q->clear();
-		m.isGlobal->clear();
-		m.isTracker->clear();
+		pt->clear();
+		eta->clear();
+		phi->clear();
+		q->clear();
+		isGlobal->clear();
+		isTracker->clear();
 	}
-private:
-	CSCInfo::Muons m;
 
 public:
 
@@ -185,57 +215,51 @@ public:
 };
 
 
-class FillSegmentInfo : public FillInfo {
+class FillSegmentInfo : public CSCInfo::Segments, public FillInfo {
 public:
 
   FillSegmentInfo(TreeContainer& tree) :
-	  FillInfo(s.name,tree) {
-	s.mu_id = new vector<int>();
-	s.ch_id = new vector<int>();
-	s.pos_x = new vector<float>();
-	s.pos_y = new vector<float>();
-	s.dxdz = new vector <float>();
-	s.dydz = new vector<float>();
-	s.chisq = new vector<float>();
-	s.nHits = new vector<size8>();
-    book("mu_id"       ,*s.mu_id      );
-    book("ch_id"       ,*s.ch_id      );
-    book("pos_x"       ,*s.pos_x      );
-    book("pos_y"       ,*s.pos_y      );
-    book("dxdz"        ,*s.dxdz       );
-    book("dydz"        ,*s.dydz       );
-    book("chisq"       ,*s.chisq      );
-    book("nHits"       ,*s.nHits      );
+	  Segments(),
+	  FillInfo(name,tree) {
+	mu_id = new vector<int>();
+	ch_id = new vector<int>();
+	pos_x = new vector<float>();
+	pos_y = new vector<float>();
+	dxdz = new vector <float>();
+	dydz = new vector<float>();
+	chisq = new vector<float>();
+	nHits = new vector<size8>();
+    book(GET_VARIABLE_NAME(mu_id)     ,*mu_id      );
+    book(GET_VARIABLE_NAME(ch_id)     ,*ch_id      );
+    book(GET_VARIABLE_NAME(pos_x),*pos_x      );
+    book(GET_VARIABLE_NAME(pos_y)     ,*pos_y      );
+    book(GET_VARIABLE_NAME(dxdz)     ,*dxdz       );
+    book(GET_VARIABLE_NAME(dydz)       ,*dydz       );
+    book(GET_VARIABLE_NAME(chisq)    ,*chisq      );
+    book(GET_VARIABLE_NAME(nHits)     ,*nHits      );
 
   }
   virtual ~FillSegmentInfo() {
-	  delete s.mu_id;
-	  delete s.ch_id;
-	  delete s.pos_x;
-	  delete s.pos_y;
-	  delete s.dxdz;
-	  delete s.dydz;
-	  delete s.chisq;
-	  delete s.nHits;
+	  delete mu_id;
+	  delete ch_id;
+	  delete pos_x;
+	  delete pos_y;
+	  delete dxdz;
+	  delete dydz;
+	  delete chisq;
+	  delete nHits;
   };
 
   virtual void reset(){
-    s.mu_id       ->clear();
-    s.ch_id       ->clear();
-    s.pos_x       ->clear();
-    s.pos_y       ->clear();
-    s.dxdz        ->clear();
-    s.dydz        ->clear();
-    s.chisq       ->clear();
-    s.nHits       ->clear();
+    mu_id       ->clear();
+    ch_id       ->clear();
+    pos_x       ->clear();
+    pos_y       ->clear();
+    dxdz        ->clear();
+    dydz        ->clear();
+    chisq       ->clear();
+    nHits       ->clear();
   }
-
-
-private:
-  	 CSCInfo::Segments s;
-
-
-  public:
 
   //void fill(const CSCSegmentCollection& segments, const CSCRecHit2DCollection * recHits = 0);
   void fill(std::vector<const CSCSegment*>& segments, const CSCGeometry* theCSC, int mu_index = -1);
@@ -244,104 +268,94 @@ private:
 
 };
 
-class FillRecHitInfo : public FillInfo {
+class FillRecHitInfo : public CSCInfo::RecHits, public FillInfo {
 public:
 
 	FillRecHitInfo(TreeContainer& tree) :
-			FillInfo(r.name, tree) {
-		r.mu_id = new vector<int>();
-		r.ch_id = new vector<int>();
-		r.lay = new vector<size8>();
-		r.pos_x = new vector<float>();
-		r.pos_y = new vector<float>();
-		r.e = new vector<float>();
-		r.max_adc = new vector<float>();
-		book("mu_id", *r.mu_id);
-		book("ch_id", *r.ch_id);
-		book("lay", *r.lay);
-		book("pos_x", *r.pos_x);
-		book("pos_y", *r.pos_y);
-		book("e", *r.e);
-		book("max_adc", *r.max_adc);
+			RecHits(),
+			FillInfo(name, tree) {
+		mu_id = new vector<int>();
+		ch_id = new vector<int>();
+		lay = new vector<size8>();
+		pos_x = new vector<float>();
+		pos_y = new vector<float>();
+		e = new vector<float>();
+		max_adc = new vector<float>();
+		book(GET_VARIABLE_NAME(mu_id), *mu_id);
+		book(GET_VARIABLE_NAME(ch_id), *ch_id);
+		book(GET_VARIABLE_NAME(lay), *lay);
+		book(GET_VARIABLE_NAME(pos_x), *pos_x);
+		book(GET_VARIABLE_NAME(pos_y), *pos_y);
+		book(GET_VARIABLE_NAME(e), *e);
+		book(GET_VARIABLE_NAME(max_adc), *max_adc);
 
 	}
 	virtual ~FillRecHitInfo() {
-		delete r.mu_id;
-		delete r.ch_id;
-		delete r.lay;
-		delete r.pos_x;
-		delete r.pos_y;
-		delete r.e;
-		delete r.max_adc;
+		delete mu_id;
+		delete ch_id;
+		delete lay;
+		delete pos_x;
+		delete pos_y;
+		delete e;
+		delete max_adc;
 	}
 	;
 
 	virtual void reset() {
-		r.mu_id->clear();
-		r.ch_id->clear();
-		r.lay->clear();
-		r.pos_x->clear();
-		r.pos_y->clear();
-		r.e->clear();
-		r.max_adc->clear();
+		mu_id->clear();
+		ch_id->clear();
+		lay->clear();
+		pos_x->clear();
+		pos_y->clear();
+		e->clear();
+		max_adc->clear();
 	}
 
-private:
-	CSCInfo::RecHits r;
-
-
-public:
-
-  //void fill(const CSCRecHit2DCollection& recHits);
   void fill(const std::vector<CSCRecHit2D>& recHits, int mu_index);
 
 };
 
-class FillLCTInfo: public FillInfo {
+class FillLCTInfo: public CSCInfo::LCTs, public FillInfo {
 public:
 
 	FillLCTInfo(TreeContainer& tree) :
-			FillInfo(l.name, tree) {
-		l.ch_id = new vector<size16>();
-		l.quality = new vector<size8>();
-		l.pattern = new vector<size8>();
-		l.bend = new vector<size8>();
-		l.keyWireGroup = new vector<size8>();
-		l.keyHalfStrip = new vector<size8>();
-		l.bunchCross = new vector<size8>();
-		book("ch_id", *l.ch_id);
-		book("quality", *l.quality);
-		book("pattern", *l.pattern);
-		book("bend", *l.bend);
-		book("keyWireGroup", *l.keyWireGroup);
-		book("keyHalfStrip", *l.keyHalfStrip);
-		book("bunchCross", *l.bunchCross);
+			LCTs(),
+			FillInfo(name, tree) {
+		ch_id = new vector<size16>();
+		quality = new vector<size8>();
+		pattern = new vector<size8>();
+		bend = new vector<size8>();
+		keyWireGroup = new vector<size8>();
+		keyHalfStrip = new vector<size8>();
+		bunchCross = new vector<size8>();
+		book(GET_VARIABLE_NAME(ch_id), *ch_id);
+		book(GET_VARIABLE_NAME(quality), *quality);
+		book(GET_VARIABLE_NAME(pattern), *pattern);
+		book(GET_VARIABLE_NAME(bend), *bend);
+		book(GET_VARIABLE_NAME(keyWireGroup), *keyWireGroup);
+		book(GET_VARIABLE_NAME(keyHalfStrip), *keyHalfStrip);
+		book(GET_VARIABLE_NAME(bunchCross), *bunchCross);
 
 	}
 	virtual ~FillLCTInfo() {
-		delete l.ch_id;
-		delete l.quality;
-		delete l.pattern;
-		delete l.bend;
-		delete l.keyWireGroup;
-		delete l.keyHalfStrip;
-		delete l.bunchCross;
+		delete ch_id;
+		delete quality;
+		delete pattern;
+		delete bend;
+		delete keyWireGroup;
+		delete keyHalfStrip;
+		delete bunchCross;
 	};
 
 	virtual void reset() {
-		l.ch_id->clear();
-		l.quality->clear();
-		l.pattern->clear();
-		l.bend->clear();
-		l.keyWireGroup->clear();
-		l.keyHalfStrip->clear();
-		l.bunchCross->clear();
+		ch_id->clear();
+		quality->clear();
+		pattern->clear();
+		bend->clear();
+		keyWireGroup->clear();
+		keyHalfStrip->clear();
+		bunchCross->clear();
 	}
-
-private:
-	CSCInfo::LCTs l;
-
-public:
 
 	void fill(const CSCCorrelatedLCTDigiCollection& lcts);
 
@@ -349,122 +363,115 @@ public:
 
 
 
-class FillCLCTInfo: public FillInfo {
+class FillCLCTInfo: public CSCInfo::CLCTs, public FillInfo {
 public:
 
 	FillCLCTInfo(TreeContainer& tree) :
-			FillInfo(c.name, tree) {
-		c.ch_id = new vector<size16>();
-		c.isvalid = new vector<size8>();
-		c.quality = new vector<size16>();
-		c.pattern = new vector<size8>();
-		c.stripType = new vector<size8>();
-		c.bend = new vector<size8>();
-		c.halfStrip = new vector<size8>();
-		c.CFEB = new vector<size8>();
-		c.BX = new vector<size8>();
-		c.trkNumber = new vector<size8>();
-		c.keyStrip = new vector<size8>();
-		book("ch_id", *c.ch_id);
-		book("isValid", *c.isvalid);
-		book("quality", *c.quality);
-		book("pattern", *c.pattern);
-		book("stripType", *c.stripType);
-		book("bend", *c.bend);
-		book("halfStrip", *c.halfStrip);
-		book("CFEB", *c.CFEB);
-		book("BX", *c.BX);
-		book("trkNumber", *c.trkNumber);
-		book("keyStrip", *c.keyStrip);
+			CLCTs(),
+			FillInfo(name, tree) {
+		ch_id = new vector<size16>();
+		isValid = new vector<size8>();
+		quality = new vector<size16>();
+		pattern = new vector<size8>();
+		stripType = new vector<size8>();
+		bend = new vector<size8>();
+		halfStrip = new vector<size8>();
+		CFEB = new vector<size8>();
+		BX = new vector<size8>();
+		trkNumber = new vector<size8>();
+		keyStrip = new vector<size8>();
+		book(GET_VARIABLE_NAME(ch_id), *ch_id);
+		book(GET_VARIABLE_NAME(isValid), *isValid);
+		book(GET_VARIABLE_NAME(quality), *quality);
+		book(GET_VARIABLE_NAME(pattern), *pattern);
+		book(GET_VARIABLE_NAME(stripType), *stripType);
+		book(GET_VARIABLE_NAME(bend), *bend);
+		book(GET_VARIABLE_NAME(halfStrip), *halfStrip);
+		book(GET_VARIABLE_NAME(CFEB), *CFEB);
+		book(GET_VARIABLE_NAME(BX), *BX);
+		book(GET_VARIABLE_NAME(trkNumber), *trkNumber);
+		book(GET_VARIABLE_NAME(keyStrip), *keyStrip);
 
 	}
 	virtual ~FillCLCTInfo() {
-		delete c.ch_id;
-		delete c.isvalid;
-		delete c.quality;
-		delete c.pattern;
-		delete c.stripType;
-		delete c.bend;
-		delete c.halfStrip;
-		delete c.CFEB;
-		delete c.BX;
-		delete c.trkNumber;
-		delete c.keyStrip;
+		delete ch_id;
+		delete isValid;
+		delete quality;
+		delete pattern;
+		delete stripType;
+		delete bend;
+		delete halfStrip;
+		delete CFEB;
+		delete BX;
+		delete trkNumber;
+		delete keyStrip;
 	}
 	;
 
 	virtual void reset() {
-		c.ch_id->clear();
-		c.isvalid->clear();
-		c.quality->clear();
-		c.pattern->clear();
-		c.stripType->clear();
-		c.bend->clear();
-		c.halfStrip->clear();
-		c.CFEB->clear();
-		c.BX->clear();
-		c.trkNumber->clear();
-		c.keyStrip->clear();
+		ch_id->clear();
+		isValid->clear();
+		quality->clear();
+		pattern->clear();
+		stripType->clear();
+		bend->clear();
+		halfStrip->clear();
+		CFEB->clear();
+		BX->clear();
+		trkNumber->clear();
+		keyStrip->clear();
 	}
-
-private:
-	CSCInfo::CLCTs c;
-
-public:
 
 	void fill(const CSCCLCTDigiCollection& clcts);
 
 };
 
 
-class FillCompInfo : public FillInfo {
+class FillCompInfo : public CSCInfo::Comparators, public FillInfo {
 public:
 
   FillCompInfo(TreeContainer& tree) :
-	  FillInfo(c.name, tree) {
-	  c.ch_id = new vector<int>();
-	  c.lay = new vector<size8>();
-	  c.strip = new vector<size8>();
-	  c.halfStrip = new vector<size8>();
-	  c.bestTime = new vector<size8>();
-	  c.nTimeOn = new vector<size8>();
+	  Comparators(),
+	  FillInfo(name, tree) {
+	  ch_id = new vector<int>();
+	  lay = new vector<size8>();
+	  strip = new vector<size8>();
+	  halfStrip = new vector<size8>();
+	  bestTime = new vector<size8>();
+	  nTimeOn = new vector<size8>();
 
-		book("ch_id", *c.ch_id);
-		book("lay", *c.lay);
-		book("strip", *c.strip);
-		book("halfStrip", *c.halfStrip);
-		book("bestTime", *c.bestTime);
-		book("nTimeOn", *c.nTimeOn);
+		book(GET_VARIABLE_NAME(ch_id), *ch_id);
+		book(GET_VARIABLE_NAME(lay), *lay);
+		book(GET_VARIABLE_NAME(strip), *strip);
+		book(GET_VARIABLE_NAME(halfStrip), *halfStrip);
+		book(GET_VARIABLE_NAME(bestTime), *bestTime);
+		book(GET_VARIABLE_NAME(nTimeOn), *nTimeOn);
 
 
 
   }
   virtual ~FillCompInfo() {
-	  delete c.ch_id;
-	  delete c.lay;
-	  delete c.strip;
-	  delete c.halfStrip;
-	  delete c.bestTime;
-	  delete c.nTimeOn;
+	  delete ch_id;
+	  delete lay;
+	  delete strip;
+	  delete halfStrip;
+	  delete bestTime;
+	  delete nTimeOn;
   };
 
   virtual void reset(){
-	  c.ch_id->clear();
-	  c.lay->clear();
-	  c.strip->clear();
-	  c.halfStrip->clear();
-	  c.bestTime->clear();
-	  c.nTimeOn->clear();
+	  ch_id->clear();
+	  lay->clear();
+	  strip->clear();
+	  halfStrip->clear();
+	  bestTime->clear();
+	  nTimeOn->clear();
   }
-
-private:
-  CSCInfo::Comparators c;
-
-  public:
 
   void fill(const CSCComparatorDigiCollection& strips);
 
 };
+
 
 
 
