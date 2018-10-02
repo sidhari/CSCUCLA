@@ -148,8 +148,6 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     iSetup.get<MuonGeometryRecord>().get(cscGeom);
     theCSC = cscGeom.product();
 
-    edm::Handle<reco::VertexCollection> vertices;
-    iEvent.getByToken(vtx_token, vertices);
 
     //Get all the segments
     edm::Handle<CSCSegmentCollection> allSegmentsCSC;
@@ -169,6 +167,8 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 	tree.h_nAllMuons->Fill(muons->size());
 
     if(selectMuons){
+        edm::Handle<reco::VertexCollection> vertices;
+        iEvent.getByToken(vtx_token, vertices);
     	if(vertices->empty()) return; //only look at events with a PV
 
     	const reco::MuonCollection selected_muons = selectMuons(*muons,vertices->front(),tree);
@@ -218,17 +218,19 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 
 // ------------ method called once each job just after ending the event loop  ------------
 void CSCPatternExtractor::endJob() {
+	cout << "Wrote to: " << tree.file->GetName() << endl;
 	cout << "Finished running CSCPatternExtractor.cc" << endl;
 }
 
 
 const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t){
-	float minPt = 20.;
+	float minPt = 2.;
 
 	reco::MuonCollection selectedMuons;
 	for(const auto& muon : m){
 		if(!muon.isStandAloneMuon()) continue; //selecting on standalone muons (necessary?)
 		if(!muon::isTightMuon(muon,vtx)) continue;
+		if(muon.pt() < minPt) continue;
 		selectedMuons.push_back(muon);
 		/*
 		if(!(muon.isGlobalMuon()&& muon.isTrackerMuon())) continue;
@@ -270,15 +272,12 @@ const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::Muon
 		t.h_allPtMuons->Fill(mu1.pt());
 		if(find(selectedIndices.begin(), selectedIndices.end(), i) != selectedIndices.end()) continue; //only match mu1 once
 		if(!mu1.isStandAloneMuon()) continue; //standalone 1 cut
-		if(mu1.pt() < minPt) continue; //pt 1 cut
-		//for(unsigned int j =i+1; j < m.size(); j++){
-		//if(foundOS || foundSS){
-		//}
+		//if(mu1.pt() < minPt) continue; //pt 1 cut
 		for(unsigned int j =i+1; !foundOS && !foundSS && j < m.size(); j++){
 			const auto& mu2 = m.at(j);
 			if(find(selectedIndices.begin(), selectedIndices.end(), j) != selectedIndices.end()) continue; //only match mu2 once
 			if(!mu2.isStandAloneMuon()) continue; //standalone 2 cut
-			if(mu2.pt()< minPt) continue; //pt 2 cut
+			//if(mu2.pt()< minPt) continue; //pt 2 cut
 			TLorentzVector mu1Lorentz;
 			mu1Lorentz.SetPtEtaPhiE(mu1.pt(), mu1.eta(), mu1.phi(), mu1.energy());
 			TLorentzVector mu2Lorentz;
@@ -294,8 +293,8 @@ const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::Muon
 			else{
 				t.h_osInvMass->Fill(invMass);
 				foundOS = true;
-				selectedIndices.push_back(i);
-				selectedIndices.push_back(j);
+				if(m.at(i).pt() > minPt) selectedIndices.push_back(i);
+				if(m.at(j).pt() > minPt) selectedIndices.push_back(j);
 			}
 		}
 	}
