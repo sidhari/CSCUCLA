@@ -38,11 +38,12 @@ process.options = cms.untracked.PSet( SkipEvent =
 cms.untracked.vstring('ProductNotFound') )
 
 
-# samples:
+# example samples:
 #   singlemu: '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
 #            '101X_dataRun2_Prompt_v11'
 #
 #            '/store/data/Run2017D/SingleMuon/RAW/v1/000/302/031/00000/005D3323-8A8D-E711-B3C9-02163E01A517.root' //2017
+#            '92X_dataRun2_Prompt_v11'
 #
 #    jpsi: '/store/data/Run2018C/Charmonium/RAW/v1/000/320/065/00000/FE58EEB1-178E-E811-97C5-FA163E5ED053.root',
 #            '101X_dataRun2_Prompt_v11'
@@ -56,9 +57,17 @@ cms.untracked.vstring('ProductNotFound') )
 #dataset = '/store/data/Run2018C/Charmonium/RAW/v1/000/319/756/00000/50DA85EC-4D8A-E811-AB28-FA163E56AF73.root' #20182nd
 #dataset = '/store/data/Run2018B/Charmonium/RAW/v1/000/317/089/00000/CCB70690-4C63-E811-A9BD-FA163E851C2E.root' #20182nd
 #dataset = '/store/data/Run2018A/Charmonium/RAW/v1/000/315/257/00000/1020D514-A349-E811-AA19-FA163EDB8EB7.root' #20182nd
+
+#
+# CHARMONIUM NMUON TEST
+#
 #dataset = '/store/data/Run2018C/Charmonium/RAW/v1/000/319/337/00000/1C4B30FD-6282-E811-96B1-02163E015211.root' #20182nd
 #dataset = ' /store/data/Run2017F/Charmonium/RAW/v1/000/305/045/00000/F4100DFC-ACB0-E711-9C0C-02163E01A714.root' #tested against camerons oct 11
-#dataset = '/store/data/Run2017D/SingleMuon/RAW/v1/000/302/031/00000/005D3323-8A8D-E711-B3C9-02163E01A517.root'
+
+
+#
+# SINGLE MUON NMUON TEST
+#
 #dataset = '/store/data/Run2017D/SingleMuon/RAW-RECO/ZMu-PromptReco-v1/000/302/031/00000/00060D74-2D8F-E711-9FEA-02163E011A48.root'
 dataset = '/store/relval/CMSSW_10_3_0_pre5/SingleMuon/RAW-RECO/ZMu-103X_dataRun2_PromptLike_v6_RelVal_sigMu2018D-v1/10000/8007A95E-58B7-1947-9987-E4F3310241F0.root'
 

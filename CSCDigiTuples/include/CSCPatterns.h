@@ -236,7 +236,13 @@ class CSCPatterns : public edm::EDAnalyzer {
         TH1F * etamuon;
         TH1F * ptsamuon;
         TH1F * Nmuon_h;
+        TH1F * NSelectedMuons_h;
+        TH1F * NSegments_h_Test;
+        TH1F * NSegments_h;
         TH1F * chambernumber;
+        TH1F* Events_h;
+        TH1F* OSorSS_h;
+        TH1F* inMass_h;
         TFile *file;
 
 };

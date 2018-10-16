@@ -320,10 +320,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 				clct->_lutEntry = thisEntry;
 			}
 
-
-			if(newSetMatch.size() > 1){
-				sort(newSetMatch.begin(), newSetMatch.end(), CLCTCandidate::quality);
-			}
+			//sort the matches
+			sort(newSetMatch.begin(), newSetMatch.end(), CLCTCandidate::quality);
 
 			if(DEBUG > 0){
 				printf("segmentX: %f - segmentdXdZ: %f\n", segmentX,segmentdXdZ);

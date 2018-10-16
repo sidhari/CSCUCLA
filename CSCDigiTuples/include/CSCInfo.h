@@ -45,6 +45,7 @@ public:
 		RunNumber = 0;
 		LumiSection = -1;
 		BXCrossing = -1;
+		NSegmentsInEvent = 0;
 	}
 	Event(TTree* t): Event(){
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(EventNumber))).c_str(),
@@ -55,6 +56,8 @@ public:
 						&LumiSection);
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(BXCrossing))).c_str(),
 						&BXCrossing);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(NSegmentsInEvent))).c_str(),
+						&NSegmentsInEvent);
 	}
 
 
@@ -62,6 +65,7 @@ public:
 	unsigned long long RunNumber;
 	int LumiSection;
 	int BXCrossing;
+	int NSegmentsInEvent;
 
 };
 

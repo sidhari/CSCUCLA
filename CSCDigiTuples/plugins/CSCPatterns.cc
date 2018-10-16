@@ -104,7 +104,12 @@ CSCPatterns::CSCPatterns(const edm::ParameterSet& iConfig)
     dimuonMos_2SA = new TH1F("dimuonMos_2SA","Mass of Dimuons;m_{#mu#mu} [GeV];Events",100,0,10);
     dimuon3M_2SA = new TH1F("dimuon3M_2SA","Mass of Dimuons;m_{#mu#mu} [GeV];Events",100,2.0,4.0);
     Nmuon_h = new TH1F("Nmuon_h","Number of Muons;Number of Muons;Events",11,-0.5,10.5);
-
+    NSelectedMuons_h = new TH1F("NSelectedMuons", ";N Selected Muons; Events", 10, 0, 10);
+    NSegments_h = new TH1F("NSegments", ";N Segments; Muons", 20, 0, 20);
+    NSegments_h_Test = new TH1F("NSegments_test", ";N Segments_test; Muons", 20, 0, 20);
+    Events_h = new TH1F("events", "events", 100,0,100);
+    OSorSS_h = new TH1F("OSorSS", "OSorSS", 2,0,1);
+    inMass_h = new TH1F("inMass", "inMass", 100,2,5);
 
     tree->Branch("Event_EventNumber",&Event_EventNumber,"Event_EventNumber/I");
     tree->Branch("Event_RunNumber",&Event_RunNumber,"Event_RunNumber/I");
@@ -235,8 +240,13 @@ CSCPatterns::~CSCPatterns()
     ptsamuon->Write();
     Nmuon_h->Write();
     chambernumber->Write();
+    NSelectedMuons_h->Write();
+    NSegments_h->Write();
+    NSegments_h_Test->Write();
+    Events_h->Write();
+    OSorSS_h->Write();
+    inMass->Write();
     file->Close();
-
 
 }
 
@@ -258,6 +268,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     Event_BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
 
     evN++;
+    Events_h->Fill(evN);
+
 
     // Get the CSC Geometry :
     ESHandle<CSCGeometry> cscGeom;
@@ -390,6 +402,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         }
     }
     if(mu1Ios == -9 && mu1Iss == -9) return;
+    if(mu1Iss != -9) OSorSS_h->Fill(0);
+    if(mu1Ios != -9) OSorSS_h->Fill(1);
     /*if(muGlobal.at(mu1Ios) || muGlobal.at(mu2Ios))
     {
         dimuonMos_1Gl->Fill((muP4.at(mu1Ios) + muP4.at(mu2Ios)).M());
@@ -423,7 +437,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool inMss = false;
     if(mu1Ios >= 0)
     {
-        if( ( (muP4.at(mu1Ios) + muP4.at(mu2Ios)).M() < massJpsi - massWin ) || ( (muP4.at(mu1Ios) + muP4.at(mu2Ios)).M() > massJpsi + massWin ) ) inMos = true;
+        //if( ( (muP4.at(mu1Ios) + muP4.at(mu2Ios)).M() < massJpsi - massWin ) || ( (muP4.at(mu1Ios) + muP4.at(mu2Ios)).M() > massJpsi + massWin ) ) inMos = true;
+        if( ( (muP4.at(mu1Ios) + muP4.at(mu2Ios)).M() < massJpsi + massWin ) && ( (muP4.at(mu1Ios) + muP4.at(mu2Ios)).M()> massJpsi - massWin ) ) inMos = true;
         ptmu1->Fill(muP4.at(mu1Ios).Pt());
         ptmu2->Fill(muP4.at(mu2Ios).Pt());
         dimuonMos->Fill((muP4.at(mu1Ios) + muP4.at(mu2Ios)).M());
@@ -431,7 +446,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
     if(mu1Iss >= 0)
     {
-        if( ( (muP4.at(mu1Iss) + muP4.at(mu2Iss)).M() < massJpsi - massWin ) || ( (muP4.at(mu1Iss) + muP4.at(mu2Iss)).M() > massJpsi + massWin ) ) inMss = true;
+        //if( ( (muP4.at(mu1Iss) + muP4.at(mu2Iss)).M() < massJpsi - massWin ) || ( (muP4.at(mu1Iss) + muP4.at(mu2Iss)).M() > massJpsi + massWin ) ) inMss = true;
+        if( ( (muP4.at(mu1Iss) + muP4.at(mu2Iss)).M() < massJpsi + massWin ) && ( (muP4.at(mu1Iss) + muP4.at(mu2Iss)).M() > massJpsi - massWin ) ) inMss = true;
         ptmu1->Fill(muP4.at(mu1Iss).Pt());
         ptmu2->Fill(muP4.at(mu2Iss).Pt());
         dimuonMss->Fill((muP4.at(mu1Iss) + muP4.at(mu2Iss)).M());
@@ -441,6 +457,11 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     cout << "inMos: " << inMos << " inMss: " << inMss << " mu1Ios: " << mu1Ios << " mu2Ios: " << mu2Ios << " mu1Iss: " << mu1Iss << " mu2Iss: " << mu2Iss << endl;
 
 
+
+    /* NSelected Muons should be filled at every point
+     *
+     */
+    unsigned int NSelectedMuons = 0;
     int ind = -1;
     //Loop over muons applying the selection used for the timing analysis
     for (reco::MuonCollection::const_iterator muon = muons->begin(); muon!= muons->end(); muon++) 
@@ -455,6 +476,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         if (!muon->standAloneMuon()) continue;
         if (muon->pt()<minPt) continue;
+        NSelectedMuons++;
 
         //isGoodMuon in src/MuonQualityCuts.cc
         //if (!muonQualityCuts->isGoodMuon(iEvent, muon, beamSpotHandle)) continue;
@@ -562,6 +584,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         vector<const CSCSegment*> range = theMatcher->matchCSC(*muon->standAloneMuon(),iEvent);
 
         Nseg = range.size();
+        NSegments_h_Test->Fill(Nseg);
 
         vector<int> ch_serialID;
 
@@ -638,6 +661,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
             if(chDone) continue;
             ch_serialID.push_back(chamber);
             chambernumber->Fill(chamber);
+
 
             // Extract LCT for all strips in this chamber
             for (CSCCorrelatedLCTDigiCollection::DigiRangeIterator lctDigi_id=cscLCTDigi->begin(); lctDigi_id!=cscLCTDigi->end(); lctDigi_id++)
@@ -807,6 +831,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 alctFBX.push_back(alctFBXBuf);
             }
 
+
             // Extract Comparator Data
             for (CSCComparatorDigiCollection::DigiRangeIterator compDigi_id=compDigi->begin(); compDigi_id!=compDigi->end(); compDigi_id++)
             {
@@ -831,6 +856,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 compHS.push_back(compHSBuf);
                 compTimeOn.push_back(compTimeOnBuf);
             }
+
 
             // Extract data from WireDigis
             for (CSCWireDigiCollection::DigiRangeIterator wireDigi_id=cscWireDigi->begin(); wireDigi_id!=cscWireDigi->end(); wireDigi_id++)
@@ -880,8 +906,9 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         }// Matched CSCSegment loop
 
-        if(range.size() > 0)
+        if(Nseg > 0)
         {
+            /* Code simply froze here and never reached the end of the loop, maybe infinite loop?
             // Extract DDU Status Digis
             for (CSCDDUStatusDigiCollection::DigiRangeIterator dduDigi_id=dduDigi->begin(); dduDigi_id!=dduDigi->end(); dduDigi_id++)
             {
@@ -909,6 +936,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                     dduTrailer.push_back(dduTrailerBuf);
                 }
             }
+            cout << "got here 10" << endl;
             // Extract DMB Status Digis
             for (CSCDMBStatusDigiCollection::DigiRangeIterator dmbDigi_id=dmbDigi->begin(); dmbDigi_id!=dmbDigi->end(); dmbDigi_id++)
             {
@@ -936,6 +964,8 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                     dmbTrailer.push_back(dmbTrailerBuf);
                 }
             }
+
+            cout << "got here 11" << endl;
             // Extract TMB Status Digis
             for (CSCTMBStatusDigiCollection::DigiRangeIterator tmbDigi_id=tmbDigi->begin(); tmbDigi_id!=tmbDigi->end(); tmbDigi_id++)
             {
@@ -964,11 +994,14 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                     tmbTrailer.push_back(tmbTrailerBuf);
                 }
             }
+            */
         }
 
-        cout << "Number of pats: " << clctPat.size() << " number of segments: " << range.size() <<  endl;
-        if(range.size() > 0) tree->Fill();
+        cout << "Number of pats: " << clctPat.size() << " number of segments: " << Nseg<<  endl;
+        if(Nseg > 0) tree->Fill();
+        NSegments_h->Fill(Nseg);
     }// Muon loop
+    NSelectedMuons_h->Fill(NSelectedMuons);
 }
 
 

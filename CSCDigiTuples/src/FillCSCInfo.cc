@@ -5,26 +5,32 @@
 
 void TreeContainer::fill(){
 	  tree->Fill();
-	  for(auto& info: infos) info->reset();
 }
 
-void FillEventInfo::fill(const edm::Event& iEvent){
+void TreeContainer::reset(){
+	for(auto& info: infos) info->reset();
+}
+
+void FillEventInfo::fill(const edm::Event& iEvent, unsigned int nSegments){
   EventNumber     = iEvent.id().event();
   RunNumber       = iEvent.id().run();
   LumiSection     = iEvent.eventAuxiliary().luminosityBlock();
   BXCrossing      = iEvent.eventAuxiliary().bunchCrossing();
+  NSegmentsInEvent = nSegments;
 }
 
 
 void FillMuonInfo::fill(const reco::MuonCollection& muons){
-	for(const auto& muon: muons){
-		pt->push_back(muon.pt());
-		eta->push_back(muon.eta());
-		phi->push_back(muon.phi());
-		q->push_back(muon.charge());
-		isGlobal->push_back(muon.isGlobalMuon());
-		isTracker->push_back(muon.isTrackerMuon());
-	}
+	for(const auto& muon: muons) fill(muon);
+}
+
+void FillMuonInfo::fill(const reco::Muon& muon) {
+	pt->push_back(muon.pt());
+	eta->push_back(muon.eta());
+	phi->push_back(muon.phi());
+	q->push_back(muon.charge());
+	isGlobal->push_back(muon.isGlobalMuon());
+	isTracker->push_back(muon.isTrackerMuon());
 }
 
 size16 FillSegmentInfo::findRecHitIdx(const CSCRecHit2D& hit, const CSCRecHit2DCollection* allRecHits){
