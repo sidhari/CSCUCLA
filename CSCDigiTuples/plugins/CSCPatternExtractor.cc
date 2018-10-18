@@ -142,6 +142,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 	for(const auto& mu: *muons) {
 		tree.h_allMuonsPt->Fill(mu.pt());
 		tree.h_allMuonsEta->Fill(mu.eta());
+		tree.h_allMuonsPhi->Fill(mu.phi());
 	}
 
 	for(unsigned int i =0; i < muons->size(); i++){
@@ -376,6 +377,7 @@ const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::Muon
 		t.h_muonCuts->AddBinContent(MUON_CUTS::isOSAndPtOVerThreshold);
 		t.h_selectedMuonsPt->Fill(m.at(index).pt());
 		t.h_selectedMuonsEta->Fill(m.at(index).eta());
+		t.h_selectedMuonsPhi->Fill(m.at(index).phi());
 	}
 	return selectedMuons;
 }

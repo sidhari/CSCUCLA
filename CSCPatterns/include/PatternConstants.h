@@ -11,7 +11,7 @@
 #include <string>
 
 const unsigned int BATCH_EVENTS = 1000; //amount of events to be run over in a single batch job
-const int DEBUG = 1;
+const int DEBUG = -1;
 const bool USE_COMP_HITS = 1; //false uses recHits
 const unsigned int NLAYERS = 6; //6 layers
 const unsigned int MAX_PATTERN_WIDTH = 11;

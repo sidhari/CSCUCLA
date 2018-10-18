@@ -234,16 +234,16 @@ process.l1tCsctf.gangedME11a = False
 from Configuration.StandardSequences.Eras import eras
 eras.run2_common.toModify( process.l1tCsctf, gangedME11a = False )
 
-process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('TPEHists.root')
-                                   )
+#process.TFileService = cms.Service("TFileService",
+#                                  fileName = cms.string('TPEHists.root')
+#                                  )
 # TODO: RAW-RECO appears to crash unless full reconstruction is done. Find out why
 #if isRawReco:
 #    process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 #if isRawOnly:
 #    process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
-process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
-
+#process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 
 process.schedule.append(process.p)
 

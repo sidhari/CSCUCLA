@@ -10,7 +10,7 @@
 
 using namespace std;
 
-int patternDrawer(unsigned int pattID,int cc){
+int patternDrawer(unsigned int pattID,int cc=-1){
 
 	//all the new patterns
 	vector<CSCPattern>* newPatterns = createNewPatterns();

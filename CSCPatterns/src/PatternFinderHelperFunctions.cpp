@@ -10,7 +10,6 @@
 #include "../../CSCDigiTuples/include/CSCHelper.h"
 
 
-
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {
 	//numbers start at 1, so time bins really go 1-16 here
 	for(unsigned int validTime = startTimeWindow; validTime < startTimeWindow+TIME_CAPTURE_WINDOW; validTime++){
@@ -570,8 +569,5 @@ int fillRecHits(ChamberHits& theseRecHits,
 	}
 	return 0;
 }
-
-
-
 
 

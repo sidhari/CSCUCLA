@@ -459,7 +459,7 @@ int LUT::convertToPSLLine(const LUTEntry& e){
 	const unsigned int nOutBits = 18; //amount of bits we can write to
 
 	// See email "CLCT output to Track Finder"
-	// Need position offset range of [-2,2] hs, and 0.25 half-strip resolution to make proper use of our new scheme
+	// Need position offset range of [-2,2] hs, and 0.125 half-strip resolution to make proper use of our new scheme
 	// [2 - (-2)]/ 0.25 = 16 -> 4 bits
 	const unsigned int positionRange = 2;
 	const unsigned int nPositionBits = 4;

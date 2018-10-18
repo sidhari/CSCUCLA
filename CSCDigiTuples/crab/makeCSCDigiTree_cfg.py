@@ -5,9 +5,12 @@ process = cms.Process("TEST")
 
 process.load("Configuration/StandardSequences/GeometryDB_cff")
 process.load("Configuration/StandardSequences/MagneticField_cff")
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff') #ORIGINAL
+#process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 process.load("Configuration/StandardSequences/RawToDigi_Data_cff")
-process.load("Configuration.StandardSequences.Reconstruction_cff")
+#process.load('Configuration.StandardSequences.L1Reco_cff') #ADDED
+#process.load("Configuration.StandardSequences.Reconstruction_cff") #CHANGED
+process.load("Configuration.StandardSequences.Reconstruction_Data_cff")
 
 process.load("TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAny_cfi")
 
@@ -17,7 +20,8 @@ from Configuration.AlCa.GlobalTag import GlobalTag
 #Need to change this parameter depending on dataset you run over, tells you detector alignment
 # Find here: https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideFrontierConditions
 #process.GlobalTag.globaltag = '74X_dataRun2_Prompt_v4'
-process.GlobalTag.globaltag = '101X_dataRun2_Prompt_v11' #2018 CMSSW_10_1_7
+#process.GlobalTag.globaltag = '101X_dataRun2_Prompt_v11' #2018 CMSSW_10_1_7
+process.GlobalTag.globaltag = '103X_dataRun2_PromptLike_v6'
 #process.GlobalTag.globaltag = '92X_dataRun2_Prompt_v11' #2017 CMSSW_9_2_13
 
 #
@@ -70,19 +74,21 @@ cms.untracked.vstring('ProductNotFound') )
 #
 #dataset = '/store/data/Run2017D/SingleMuon/RAW-RECO/ZMu-PromptReco-v1/000/302/031/00000/00060D74-2D8F-E711-9FEA-02163E011A48.root'
 dataset = '/store/relval/CMSSW_10_3_0_pre5/SingleMuon/RAW-RECO/ZMu-103X_dataRun2_PromptLike_v6_RelVal_sigMu2018D-v1/10000/8007A95E-58B7-1947-9987-E4F3310241F0.root'
+#dataset = 'file:step3_RAW2DIGI_L1Reco_RECO.root'
 
-selectionString = dataset.split('/')[4]
+#selectionString = dataset.split('/')[4]
+selectionString = 'SingleMuon'
 
 #selectionString = 'jPsi'
-run = dataset.split('/')[3]
+#run = dataset.split('/')[3]
+run = 'RERERECO'
 outfileName = 'CSCDigiTree_'+run+'_'+selectionString+'.root'
 
-
-isRawReco = 'RAW-RECO' in dataset
-isRawOnly = not isRawReco and 'RAW' in dataset
-if not isRawReco and not isRawOnly:
-    print "Error: Unknown dataset: %s"%dataset
-    exit()
+#isRawReco = 'RAW-RECO' in dataset
+#isRawOnly = not isRawReco and 'RAW' in dataset
+#if not isRawReco and not isRawOnly:
+#    print "Error: Unknown dataset: %s"%dataset
+#    exit()
 
 process.source = cms.Source ("PoolSource",
         fileNames = cms.untracked.vstring(
@@ -90,6 +96,7 @@ dataset,
             )
 
 )
+
 process.MessageLogger = cms.Service("MessageLogger",
     cout = cms.untracked.PSet(
         default = cms.untracked.PSet( limit = cms.untracked.int32(-1) ),
@@ -105,7 +112,6 @@ process.MessageLogger = cms.Service("MessageLogger",
 """Customise digi/reco geometry to use unganged ME1/a channels"""
 process.CSCGeometryESModule.useGangedStripsInME1a = False
 process.idealForDigiCSCGeometry.useGangedStripsInME1a = False
-
 
 # filter on trigger path
 process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
@@ -243,16 +249,50 @@ process.l1tCsctf.gangedME11a = False
 from Configuration.StandardSequences.Eras import eras
 eras.run2_common.toModify( process.l1tCsctf, gangedME11a = False )
 
-process.TFileService = cms.Service("TFileService",
-                                   fileName = cms.string('TPEHists.root')
-                                   )
+#process.TFileService = cms.Service("TFileService",
+#                                   fileName = cms.string('TPEHists.root')
+#                                   )
 # TODO: RAW-RECO appears to crash unless full reconstruction is done. Find out why
 #if isRawReco:
 #    process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 #if isRawOnly:
 #    process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
-process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+#process.p = cms.Path(process.RawToDigi * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+#process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+#process.p = cms.Path(process.RawToDigi * process.L1Reco * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 
 
 process.schedule.append(process.p)
+
+#ALL NEW FROM HERE
+
+# from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
+# associatePatAlgosToolsTask(process)
+# 
+# # customisation of the process.
+# 
+# # Automatic addition of the customisation function from Configuration.DataProcessing.RecoTLR
+# from Configuration.DataProcessing.RecoTLR import customisePostEra_Run2_2018 
+# 
+# #call to customisation function customisePostEra_Run2_2018 imported from Configuration.DataProcessing.RecoTLR
+# process = customisePostEra_Run2_2018(process)
+# 
+# # End of customisation functions
+# #do not add changes to your config after this point (unless you know what you are doing)
+# from FWCore.ParameterSet.Utilities import convertToUnscheduled
+# process=convertToUnscheduled(process)
+# 
+# 
+# # Customisation from command line
+# 
+# #Have logErrorHarvester wait for the same EDProducers to finish as those providing data for the OutputModule
+# from FWCore.Modules.logErrorHarvester_cff import customiseLogErrorHarvesterUsingOutputCommands
+# process = customiseLogErrorHarvesterUsingOutputCommands(process)
+# 
+# # Add early deletion of temporary data products to reduce peak memory need
+# from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
+# process = customiseEarlyDelete(process)
+
+
 

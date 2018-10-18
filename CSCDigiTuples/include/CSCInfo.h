@@ -237,6 +237,10 @@ public:
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(keyStrip))).c_str(), &keyStrip);
 	}
 
+	unsigned int size() const {
+		return ch_id ? ch_id->size() : 0;
+	}
+
 	std::vector<size16> *ch_id;
 	std::vector<size8>* isValid;
 	std::vector<size16>* quality;

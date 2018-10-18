@@ -17,7 +17,6 @@
 
 #include "../../CSCDigiTuples/include/CSCInfo.h"
 
-
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow);
 
 int findClosestToSegment(vector<CLCTCandidate*> matches, float segmentX);
@@ -59,5 +58,6 @@ int fillCompHits(ChamberHits& theseCompHits,
 
 int fillRecHits(ChamberHits& theseRecHits,
 		const CSCInfo::RecHits& r);
+
 
 #endif /* PATTERNFINDERHELPERFUNCTIONS_H_ */

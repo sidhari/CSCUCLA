@@ -268,7 +268,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 
 			//TODO: REMOVE THISSSSSSSSSSSSSS
-			if(!me11b) continue;
+			//if(!me11b) continue;
 
 
 			ChamberHits theseRHHits(0, ST, RI, EC, CH);
@@ -276,7 +276,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			if(fillCompHits(theseCompHits, comparators)) return -1;
 
-			if (!USE_COMP_HITS || DEBUG) if(fillRecHits(theseRHHits,recHits)) return -1;
+			if (!USE_COMP_HITS || DEBUG > 0) if(fillRecHits(theseRHHits,recHits)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;

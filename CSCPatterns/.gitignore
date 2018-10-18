@@ -4,3 +4,8 @@
 *.txt
 plots/*
 ../papers
+src/CLCTLayerAnalyzer
+src/PatternFinder
+src/printPatternCC
+src/root/*
+python/quick_hacks/*

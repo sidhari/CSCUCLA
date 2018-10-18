@@ -103,9 +103,11 @@ public:
 
 	h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 100, 0,100);
 	h_allMuonsEta = new TH1F("h_allMuonsEta", "h_allMuonsEta; #eta; Muons", 100, -3,3);
+	h_allMuonsPhi = new TH1F("h_allMuonsPhi", "h_allMuonsPhi; #phi; Muons", 100, -3.2,3.2);
 	h_allInvMass = new TH1F("h_allInvMass", "h_allInvMass; Mass [GeV], Dimuons", 100, 0, 100);
 	h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 100, 0,100);
 	h_selectedMuonsEta = new TH1F("h_selectedMuonsEta", "h_selectedMuonsEta; #eta; Muons", 100, -3,3);
+	h_selectedMuonsPhi = new TH1F("h_selectedMuonsPhi", "h_selectedMuonsPhi; #phi; Muons", 100, -3.2,3.2);
 
 	h_osInvMass = new TH1F("h_osInvMass", "h_osInvMass; Mass [GeV]; Dimuons", 100,80, 100);
 	h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass; Mass [GeV]; Dimuons", 100,80, 100);
@@ -122,9 +124,11 @@ public:
 
     h_allMuonsPt->Write();
     h_allMuonsEta->Write();
+    h_allMuonsPhi->Write();
     h_allInvMass->Write();
     h_selectedMuonsPt->Write();
     h_selectedMuonsEta->Write();
+    h_selectedMuonsPhi->Write();
     h_osInvMass->Write();
     h_ssInvMass->Write();
     h_premassCutInvMass->Write();
@@ -161,9 +165,11 @@ public:
   TH1F* h_nAllMuons;
   TH1F* h_allMuonsPt;
   TH1F* h_allMuonsEta;
+  TH1F* h_allMuonsPhi;
   TH1F* h_allInvMass;
   TH1F* h_selectedMuonsPt;
   TH1F* h_selectedMuonsEta;
+  TH1F* h_selectedMuonsPhi;
   TH1F* h_nSelectedMuons;
   TH1F* h_nAllSegments;
 
