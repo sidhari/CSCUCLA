@@ -7,7 +7,7 @@
 
 
 #include "../include/PatternFinderHelperFunctions.h"
-#include "../../CSCDigiTuples/include/CSCHelper.h"
+#include "../include/CSCHelper.h"
 
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {

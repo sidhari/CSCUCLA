@@ -121,6 +121,30 @@ ChamberId unserialize(unsigned int serial){
 
 }
 
+int MAX_ME11A_HALF_STRIP = 127;
+int MAX_ME11A_STRIP = 64;
+
+/*
+//returns the bounds [lowest, highest] in strips of the given chamber.
+// highest bound is an included index
+std::pair<unsigned int, unsigned int> chamberBounds(ChamberId chamber){
+	unsigned int lowerBound = 0;
+	unsigned int upperBound = 79; //standard for majority of chambers
+	bool me11a = (chamber.station == 1 && chamber.ring == 4);
+	bool me11b = (chamber.station == 1 && chamber.ring ==1);
+	bool me13 = (chamber.station ==1 && chamber.ring == 3);
+	if(me11a) upperBound = 47;
+	else if(me11b || me13) upperBound = 63;
+	return make_pair(lowerBound, upperBound);
+}
+
+
+//returns the bounds [lowest, highest] in strips of the given chamber
+std::pair<unsigned int, unsigned int> chamberBounds(unsigned int serial){
+	return chamberBounds(unserialize(serial));
+}
+*/
+
 
 };
 

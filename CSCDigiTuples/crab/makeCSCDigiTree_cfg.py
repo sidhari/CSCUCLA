@@ -1,28 +1,35 @@
 import FWCore.ParameterSet.Config as cms
 import subprocess
+#process = cms.Process("TEST")
 
-process = cms.Process("TEST")
 
-process.load("Configuration/StandardSequences/GeometryDB_cff")
-process.load("Configuration/StandardSequences/MagneticField_cff")
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff') #ORIGINAL
-#process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
-process.load("Configuration/StandardSequences/RawToDigi_Data_cff")
-#process.load('Configuration.StandardSequences.L1Reco_cff') #ADDED
-#process.load("Configuration.StandardSequences.Reconstruction_cff") #CHANGED
-process.load("Configuration.StandardSequences.Reconstruction_Data_cff")
+from Configuration.StandardSequences.Eras import eras
+process = cms.Process("TEST",eras.Run2_2018)
+
+# import of standard configurations
+process.load('Configuration.StandardSequences.Services_cff')
+process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
+process.load('FWCore.MessageService.MessageLogger_cfi')
+process.load('Configuration.EventContent.EventContent_cff')
+process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
+process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
+process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
+process.load('Configuration.StandardSequences.L1Reco_cff')
+process.load('Configuration.StandardSequences.Reconstruction_Data_cff')
+process.load('Configuration.StandardSequences.Skims_cff')
+process.load('CommonTools.ParticleFlow.EITopPAG_cff')
+process.load('PhysicsTools.PatAlgos.slimming.metFilterPaths_cff')
+process.load('Configuration.StandardSequences.PAT_cff')
+process.load('Configuration.StandardSequences.AlCaRecoStreams_cff')
+process.load('DQMOffline.Configuration.DQMOffline_cff')
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 
 process.load("TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAny_cfi")
 
 from Configuration.AlCa.GlobalTag import GlobalTag
 
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data_promptlike', '')
 
-#Need to change this parameter depending on dataset you run over, tells you detector alignment
-# Find here: https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideFrontierConditions
-#process.GlobalTag.globaltag = '74X_dataRun2_Prompt_v4'
-#process.GlobalTag.globaltag = '101X_dataRun2_Prompt_v11' #2018 CMSSW_10_1_7
-process.GlobalTag.globaltag = '103X_dataRun2_PromptLike_v6'
-#process.GlobalTag.globaltag = '92X_dataRun2_Prompt_v11' #2017 CMSSW_9_2_13
 
 #
 # CORRECT LUMI SECTIONS
@@ -37,23 +44,16 @@ process.GlobalTag.globaltag = '103X_dataRun2_PromptLike_v6'
 #process.inputs.lumisToProcess.extend(myList)
 
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
-process.options = cms.untracked.PSet( SkipEvent =
-cms.untracked.vstring('ProductNotFound') )
-
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 # example samples:
 #   singlemu: '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
-#            '101X_dataRun2_Prompt_v11'
 #
 #            '/store/data/Run2017D/SingleMuon/RAW/v1/000/302/031/00000/005D3323-8A8D-E711-B3C9-02163E01A517.root' //2017
-#            '92X_dataRun2_Prompt_v11'
 #
 #    jpsi: '/store/data/Run2018C/Charmonium/RAW/v1/000/320/065/00000/FE58EEB1-178E-E811-97C5-FA163E5ED053.root',
-#            '101X_dataRun2_Prompt_v11'
 #
 #    zerobias: '/store/data/Run2018D/ZeroBias7/RAW-RECO/LogError-PromptReco-v2/000/323/399/00000/FC46AD98-6140-1C49-BB39-7B1293D338A0.root'
-#            '101X_dataRun2_Prompt_v11'
 #
 
 #dataset = '/store/data/Run2018C/Charmonium/RAW/v1/000/320/065/00000/FE58EEB1-178E-E811-97C5-FA163E5ED053.root'
@@ -73,16 +73,18 @@ cms.untracked.vstring('ProductNotFound') )
 # SINGLE MUON NMUON TEST
 #
 #dataset = '/store/data/Run2017D/SingleMuon/RAW-RECO/ZMu-PromptReco-v1/000/302/031/00000/00060D74-2D8F-E711-9FEA-02163E011A48.root'
-dataset = '/store/relval/CMSSW_10_3_0_pre5/SingleMuon/RAW-RECO/ZMu-103X_dataRun2_PromptLike_v6_RelVal_sigMu2018D-v1/10000/8007A95E-58B7-1947-9987-E4F3310241F0.root'
+#dataset = '/store/relval/CMSSW_10_3_0_pre5/SingleMuon/RAW-RECO/ZMu-103X_dataRun2_PromptLike_v6_RelVal_sigMu2018D-v1/10000/8007A95E-58B7-1947-9987-E4F3310241F0.root'
+dataset = '/store/data/Run2018D/SingleMuon/RAW-RECO/ZMu-PromptReco-v2/000/324/970/00000/FFCA0A00-2503-4242-8CAE-E1AC6E574063.root'
 #dataset = 'file:step3_RAW2DIGI_L1Reco_RECO.root'
 
-#selectionString = dataset.split('/')[4]
-selectionString = 'SingleMuon'
+selectionString = dataset.split('/')[4]
+#selectionString = 'SingleMuon'
 
 #selectionString = 'jPsi'
-#run = dataset.split('/')[3]
-run = 'RERERECO'
+run = dataset.split('/')[3]
+#run = 'RERERECO'
 outfileName = 'CSCDigiTree_'+run+'_'+selectionString+'.root'
+#outfileName = 'CSCDigiTree.root'
 
 #isRawReco = 'RAW-RECO' in dataset
 #isRawOnly = not isRawReco and 'RAW' in dataset
@@ -108,21 +110,6 @@ process.MessageLogger = cms.Service("MessageLogger",
      threshold = cms.untracked.string('ERROR') 
 )
 
-
-"""Customise digi/reco geometry to use unganged ME1/a channels"""
-process.CSCGeometryESModule.useGangedStripsInME1a = False
-process.idealForDigiCSCGeometry.useGangedStripsInME1a = False
-
-# filter on trigger path
-process.triggerSelection = cms.EDFilter( "TriggerResultsFilter",
-    triggerConditions = cms.vstring(''),
-    hltResults = cms.InputTag( "TriggerResults", "", "HLT" ),
-    l1tResults = cms.InputTag( "gtDigis" ),
-    l1tIgnoreMask = cms.bool( False ),
-    l1techIgnorePrescales = cms.bool( False ),
-    daqPartitions = cms.uint32( 1 ),
-    throw = cms.bool( True )
-)
 
 process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         NtupleFileName       = cms.untracked.string(outfileName),
@@ -160,9 +147,14 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
 
 
 process.load("L1Trigger.CSCTriggerPrimitives.cscTriggerPrimitiveDigis_cfi")
+#nick change,temporarily removed
 process.cscTriggerPrimitiveDigis.CSCComparatorDigiProducer = "muonCSCDigis:MuonCSCComparatorDigi"
 process.cscTriggerPrimitiveDigis.CSCWireDigiProducer = "muonCSCDigis:MuonCSCWireDigi"
-process.cscTriggerPrimitiveDigis.tmbParam.mpcBlockMe1a = 0
+
+
+#nick change
+#process.cscTriggerPrimitiveDigis.tmbParam.mpcBlockMe1a = 0
+
 process.load("L1TriggerConfig.L1CSCTPConfigProducers.L1CSCTriggerPrimitivesConfig_cff")
 #test if something exists by doing python -i <filename>, then typing the object you're curious about
 
@@ -188,111 +180,69 @@ process.lctreader = cms.EDAnalyzer("CSCTriggerPrimitivesReader",
     CSCWireDigiProducer = cms.InputTag("simMuonCSCDigis","MuonCSCWireDigi")
 )
 
-# CSCTF stuff
-process.load("DQMServices.Components.DQMEnvironment_cfi")
-
-#process.load("DQM.L1TMonitor.environment_file_cff")
-process.load("DQMServices.Core.DQM_cfg")
-process.load("DQMServices.Components.DQMEnvironment_cfi")
-process.dqmSaver.convention = 'Online'
-process.dqmSaver.referenceHandling = 'all'
-process.dqmSaver.dirName = '.'
-process.dqmSaver.producer = 'DQM'
-process.dqmSaver.saveByLumiSection = -1
-process.dqmSaver.saveByRun = 1
-process.dqmSaver.saveAtJobEnd = True
-process.load("DQM.Integration.config.dqmPythonTypes")
-es_prefer_GlobalTag = cms.ESPrefer('GlobalTag')
-process.load("DQM.L1TMonitor.L1TMonitor_cff")
-process.load("DQM.L1TMonitor.L1TSync_cff")
-process.load("DQM.L1TMonitorClient.L1TMonitorClient_cff")
-process.l1tSync.oracleDB = cms.string("oracle://cms_orcon_adg/CMS_COND_31X_L1T")
-process.l1tSync.pathCondDB = cms.string("/afs/cern.ch/cms/DB/conddb/ADG")
-process.l1tRate.oracleDB = cms.string("oracle://cms_orcon_adg/CMS_COND_31X_L1T")
-process.l1tRate.pathCondDB = cms.string("/afs/cern.ch/cms/DB/conddb/ADG")
-process.l1tMonitorPath = cms.Path(process.l1tMonitorOnline)
-process.l1tMonitorClientPath = cms.Path(process.l1tMonitorClient)
-process.l1tSyncPath = cms.Path(process.l1tSyncHltFilter+process.l1tSync)
-process.l1tMonitorEndPath = cms.EndPath(process.l1tMonitorEndPathSeq)
-process.l1tMonitorClientEndPath = cms.EndPath(process.l1tMonitorClientEndPathSeq)
-process.l1tMonitorPath = cms.Path(process.csctfDigis * process.l1tCsctf)
-process.dqmEndPath = cms.EndPath(
-                                 process.dqmEnv *
-                                 process.dqmSaver
-                                 )
-process.schedule = cms.Schedule(#process.rawToDigiPath,
-                                process.l1tMonitorPath,
-                                process.l1tSyncPath,
-                                process.l1tMonitorClientPath,
-                                #process.l1tMonitorEndPath,
-                                process.l1tMonitorClientEndPath,
-                                process.dqmEndPath
-                                )
-process.l1tMonitorOnline.remove(process.bxTiming)
-process.l1tMonitorOnline.remove(process.l1tBPTX)
-process.l1tMonitorOnline.remove(process.l1tDttf)
-#process.l1tMonitorOnline.remove(process.l1tCsctf)
-process.l1tMonitorOnline.remove(process.l1tRpctf)
-process.l1tMonitorOnline.remove(process.l1tGmt)
-process.l1tMonitorOnline.remove(process.l1tGt)
-process.l1tMonitorOnline.remove(process.l1ExtraDqmSeq)
-process.l1tMonitorOnline.remove(process.l1tRate)
-process.l1tMonitorOnline.remove(process.l1tRctSeq)
-process.l1tMonitorOnline.remove(process.l1tGctSeq)
-#process.l1tMonitorEndPathSeq.remove(process.l1s)
-#process.l1tMonitorEndPathSeq.remove(process.l1tscalers)
-process.schedule.remove(process.l1tSyncPath)
-
-process.l1tCsctf.gmtProducer = "null"
-process.l1tCsctf.gangedME11a = False
-
-from Configuration.StandardSequences.Eras import eras
-eras.run2_common.toModify( process.l1tCsctf, gangedME11a = False )
-
-#process.TFileService = cms.Service("TFileService",
-#                                   fileName = cms.string('TPEHists.root')
-#                                   )
 # TODO: RAW-RECO appears to crash unless full reconstruction is done. Find out why
 #if isRawReco:
 #    process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 #if isRawOnly:
 #    process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 #process.p = cms.Path(process.RawToDigi * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
-#process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
-#process.p = cms.Path(process.RawToDigi * process.L1Reco * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+# process.p = cms.Path(process.RawToDigi * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+#process.p = cms.Path(process.RawToDigi * process.reconstruction * process.MakeNtuple)
+
+#TODO: verify you need all of this stuff
 process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 
 
-process.schedule.append(process.p)
+#process.p = cms.Path(process.RawToDigi * process.L1Reco * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+# process.p = cms.Path(process.gtDigis *\
+#                       process.muonCSCDigis *\
+#                        process.csc2DRecHits *\
+#                         process.cscSegments *\
+#                          process.cscTriggerPrimitiveDigis *\
+#                           process.MakeNtuple)
+# 
 
-#ALL NEW FROM HERE
 
-# from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
-# associatePatAlgosToolsTask(process)
-# 
-# # customisation of the process.
-# 
-# # Automatic addition of the customisation function from Configuration.DataProcessing.RecoTLR
-# from Configuration.DataProcessing.RecoTLR import customisePostEra_Run2_2018 
-# 
-# #call to customisation function customisePostEra_Run2_2018 imported from Configuration.DataProcessing.RecoTLR
-# process = customisePostEra_Run2_2018(process)
-# 
-# # End of customisation functions
-# #do not add changes to your config after this point (unless you know what you are doing)
-# from FWCore.ParameterSet.Utilities import convertToUnscheduled
-# process=convertToUnscheduled(process)
-# 
-# 
-# # Customisation from command line
-# 
-# #Have logErrorHarvester wait for the same EDProducers to finish as those providing data for the OutputModule
-# from FWCore.Modules.logErrorHarvester_cff import customiseLogErrorHarvesterUsingOutputCommands
-# process = customiseLogErrorHarvesterUsingOutputCommands(process)
-# 
-# # Add early deletion of temporary data products to reduce peak memory need
-# from Configuration.StandardSequences.earlyDeleteSettings_cff import customiseEarlyDelete
-# process = customiseEarlyDelete(process)
-
+#TODO: check if this matches the reco-data (CSCDigiTree-fromRECO.root), if it does, keep RAW data configuration, if it doesn't, forget about RAW...
+#Oct. 25 Over 20 events, this configuration has no events that get output to the CSCDigiTree
+# process.p = cms.Path(process.RawToDigi *\
+#                       process.reconstruction *\
+#                       process.EIsequence *\
+#                       process.goodVertices+process.trackingFailureFilter *\
+#                       process.primaryVertexFilter *\
+#                       process.CSCTightHaloFilter *\
+#                       process.trkPOGFilters *\
+#                       process.HcalStripHaloFilter *\
+#                       ~process.logErrorTooManyClusters *\
+#                       process.EcalDeadCellTriggerPrimitiveFilter *\
+#                       process.ecalLaserCorrFilter *\
+#                       process.globalSuperTightHalo2016Filter *\
+#                       process.eeBadScFilter *\
+#                       process.metFilters *\
+#                       process.chargedHadronTrackResolutionFilter *\
+#                       process.globalTightHalo2016Filter *\
+#                       process.CSCTightHaloTrkMuUnvetoFilter *\
+#                       process.HBHENoiseFilterResultProducer+process.HBHENoiseIsoFilter *\
+#                       process.BadChargedCandidateSummer16Filter*\
+#                       process.hcalLaserEventFilter *\
+#                       process.BadPFMuonFilter *\
+#                       process.ecalBadCalibFilter *\
+#                       process.HBHENoiseFilterResultProducer+process.HBHENoiseFilter*\
+#                       ~process.toomanystripclus53X *\
+#                       process.EcalDeadCellBoundaryEnergyFilter *\
+#                       process.BadChargedCandidateFilter *\
+#                       ~process.manystripclus53X *\
+#                       process.BadPFMuonSummer16Filter *\
+#                       process.muonBadTrackFilter *\
+#                       process.CSCTightHalo2015Filter *\
+#                       process.gtDigis *\
+#                       process.muonCSCDigis *\
+#                       process.csc2DRecHits *\
+#                       process.cscSegments *\
+#                       process.cscTriggerPrimitiveDigis *\
+#                       process.MakeNtuple)
+from Configuration.DataProcessing.RecoTLR import customisePostEra_Run2_2018 
+process = customisePostEra_Run2_2018(process)
+process.schedule = cms.Schedule(process.p)
 
 

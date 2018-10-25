@@ -245,7 +245,7 @@ CSCPatterns::~CSCPatterns()
     NSegments_h_Test->Write();
     Events_h->Write();
     OSorSS_h->Write();
-    inMass->Write();
+    inMass_h->Write();
     file->Close();
 
 }

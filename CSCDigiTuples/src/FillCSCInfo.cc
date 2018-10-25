@@ -128,10 +128,20 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
   for (CSCCorrelatedLCTDigiCollection::DigiRangeIterator chamber=lcts.begin(); chamber!=lcts.end(); chamber++)
   {
     CSCDetId id = (*chamber).first;
+    unsigned int st = id.station();
+    unsigned int ri = id.ring();
+    unsigned int ch = id.chamber();
+    unsigned int ec = id.endcap();
+
     const CSCCorrelatedLCTDigiCollection::Range& range =(*chamber).second;
     for(CSCCorrelatedLCTDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
     {
-      ch_id       ->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+    	if(st == 1 && ri == 1){
+    		//we need to manually adjust this because they don't for us
+    		//getStrip returns a half strip (who knows why)
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11A_HALF_STRIP) ri = 4;
+    	}
+      ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
       quality     ->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"lct_quality"));
       pattern     ->push_back(CSCHelper::convertTo<size8>(digiItr->getPattern(),"lct_pattern"));
       bend        ->push_back(CSCHelper::convertTo<size8>(digiItr->getBend()   ,"lct_bend"));
@@ -147,11 +157,21 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 	for (CSCCLCTDigiCollection::DigiRangeIterator chamber = clcts.begin();
 			chamber != clcts.end(); chamber++) {
 		CSCDetId id = (*chamber).first;
+	    unsigned int st = id.station();
+	    unsigned int ri = id.ring();
+	    unsigned int ch = id.chamber();
+	    unsigned int ec = id.endcap();
+
 		const CSCCLCTDigiCollection::Range& range = (*chamber).second;
 		for (CSCCLCTDigiCollection::const_iterator digiItr = range.first;
 				digiItr != range.second; ++digiItr) {
 
-			ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+			if(st == 1 && ri == 1){
+				//we need to manually adjust this because they don't for us
+				//getStrip returns a half strip (who knows why)
+				if(digiItr->getKeyStrip() > CSCHelper::MAX_ME11A_HALF_STRIP) ri = 4;
+			}
+			ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			isValid->push_back(
 				CSCHelper::convertTo<size8>(digiItr->isValid(),
 						"clct_isvalid"));
@@ -188,16 +208,22 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 
 
 void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
-	//cout << "filling comp hits..." <<endl;
   for (CSCComparatorDigiCollection::DigiRangeIterator chamber=comps.begin(); chamber!=comps.end(); chamber++)
   {
     CSCDetId id = (*chamber).first;
-	  //cout << id << endl;
+    unsigned int st = id.station();
+    unsigned int ri = id.ring();
+    unsigned int ch = id.chamber();
+    unsigned int ec = id.endcap();
     const CSCComparatorDigiCollection::Range& range =(*chamber).second;
     for(CSCComparatorDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
     {
-    	//cout << "test" << endl;
-			ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
+    	if(st == 1 && ri == 1){
+    		//we need to manually adjust this because they don't for us
+    		//getStrip returns a strip this time (different than before)
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11A_STRIP) ri = 4;
+    	}
+    	ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			lay->push_back(
 				CSCHelper::convertTo<size8>(id.layer(), "comp_lay"));
 			strip->push_back(

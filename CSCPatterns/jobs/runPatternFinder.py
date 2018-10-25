@@ -2,11 +2,12 @@ import glob
 import os
 
 EOS = '/uscms/home/wnash/eos/'
-SAMPLE_DIR = 'Charmonium/charmonium2017C/'
+#SAMPLE_DIR = 'Charmonium/charmonium2017C/'
+SAMPLE_DIR = 'SingleMuon/zskim2018D/'
 TOP_DIR = EOS+SAMPLE_DIR
 SRC_DIR = '../src/'
 LIB_DIR = '../lib/'
-LUT_DIR = 'data/Charmonium/charmonium2016F+2017BCEF/luts/' #TODO: clean this up...
+LUT_DIR = 'dat/Charmonium/charmonium2016F+2017BCEF/luts/' #TODO: clean this up...
 MAKE_DIR = '..'
 TEMPLATE_RUN_FOLDER = 'run/'
 
@@ -48,7 +49,7 @@ def makeTarball(tarFile, runFolder):
     
     # executable, libs, cpp, h
     tarLines ='%s %s %s %s %s'%(makefileToTar, libsToTar, srcsToTar, incsToTar,lutsToTar)
-    os.system('pushd %s; tar czf %s %s;popd; mv %s/%s %s'%(MAKE_DIR,tarFile, tarLines, MAKE_DIR,tarFile, runFolder)) #tar and change back
+    os.system('pushd %s; tar -hczf %s %s;popd; mv %s/%s %s'%(MAKE_DIR,tarFile, tarLines, MAKE_DIR,tarFile, runFolder)) #tar and change back
     return runFolder+tarFile #return the tarFile path
 
 
@@ -71,6 +72,7 @@ def writeSubmitScript(scriptfile, runFolder, runOnCondor, tarPath, inputfilePath
     scriptfile.write("transfer_output_files  ="+outputfile+"\n")
     scriptfile.write("transfer_output_remaps =\"%s=%s\"\n"%(outputfile, TOP_DIR+OUTPUT_FOLDER+outputfile))
     scriptfile.write("whentotransferoutput   =ON_EXIT\n")
+    scriptfile.write("getenv                 =True\n")
     scriptfile.write("queue                  1\n")
 
 

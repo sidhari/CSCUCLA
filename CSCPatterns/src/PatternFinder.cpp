@@ -13,7 +13,7 @@
 //#include <TROOT.h>
 
 
-#include <ROOT/TTreeProcessorMT.hxx>
+//#include <ROOT/TTreeProcessorMT.hxx>
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
 
@@ -23,6 +23,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <algorithm>
+#include <chrono>
 #include <time.h>
 
 
@@ -31,8 +32,9 @@
 #include "../include/PatternFinderHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
-#include "../../CSCDigiTuples/include/CSCInfo.h"
-#include "../../CSCDigiTuples/include/CSCHelper.h"
+//using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
+#include "../include/CSCInfo.h"
+#include "../include/CSCHelper.h"
 
 using namespace std;
 
@@ -313,7 +315,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			//TODO: make debug printout of this stuff
 			for(auto & clct: newSetMatch){
 				if(thisLUT->getEntry(clct->key(), thisEntry)){
-					printf("Error: unable to get entry for clct\n");
+					printf("Error: unable to get entry for clct: pat: %i cc: %i\n", clct->patternId(), clct->comparatorCodeId());
 					return -1;
 				}
 				//assign the clct the LUT entry we found to be associated with it

@@ -15,7 +15,7 @@
 #include "PatternFinderClasses.h"
 #include "LUTClasses.h"
 
-#include "../../CSCDigiTuples/include/CSCInfo.h"
+#include "CSCInfo.h"
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow);
 

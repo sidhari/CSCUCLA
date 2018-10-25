@@ -22,8 +22,8 @@ using namespace std;
 #include "../include/PatternFinderHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
-#include "../../CSCDigiTuples/include/CSCInfo.h"
-#include "../../CSCDigiTuples/include/CSCHelper.h"
+#include "../include/CSCInfo.h"
+#include "../include/CSCHelper.h"
 
 
 int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=-1) {
@@ -63,35 +63,20 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 
 	vector<TH1F*> clctLayerCount_mePlus;
-	vector<TH1F*> real_clctLayerCount_mePlus;
 	vector<TH1F*> clctLayerCount_meMinus;
-	vector<TH1F*> real_clctLayerCount_meMinus;
 
 	for(unsigned int i =1; i <=36; i++){
-		real_clctLayerCount_mePlus.push_back(new TH1F(("h_real_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("ME+1/1/"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
-		clctLayerCount_mePlus.push_back(new TH1F(("h_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
-		real_clctLayerCount_meMinus.push_back(new TH1F(("h_real_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("ME-1/1/"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
-		clctLayerCount_meMinus.push_back(new TH1F(("h_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Segments").c_str(), 7,0,7));
+		clctLayerCount_mePlus.push_back(new TH1F(("h_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Matched CLCTs").c_str(), 7,0,7));
+		clctLayerCount_meMinus.push_back(new TH1F(("h_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Matched CLCTs").c_str(), 7,0,7));
 	}
 
+	TH1F* clctLayerCount_mep11a_11 = new TH1F("h_clctLayerCount_me_p11a11","h_clctLayerCount_me_p11a11; Layer Count; Matched CLCTs", 7,0,7);
+	TH1F* clctLayerCount_mep11b_11 = new TH1F("h_clctLayerCount_me_p11b11","h_clctLayerCount_me_p11b11; Layer Count; Matched CLCTs", 7,0,7);
 
-	vector<TH1F*> clctsInChamber_matchedCLCTs;// how many clcts in the chamber with a given matched clct, split by layer count
-	vector<TH1F*> clctsInChamber_matchedCLCTs_me11a;// how many clcts in the chamber with a given matched clct, split by layer count
-	vector<TH1F*> clctsInChamber_matchedCLCTs_me11b;// how many clcts in the chamber with a given matched clct, split by layer count
-	for(unsigned int i =3; i <= 6; i++){
-		clctsInChamber_matchedCLCTs.push_back(new TH1F(
-				("h_clctsInChamber_"+to_string(i)+"layersCLCTs").c_str(),
-				("h_clctsInChamber_"+to_string(i)+"layersCLCTs; CLCTs in Chamber; Segment Matched CLCTs").c_str(),
-				2, 1, 3));
-		clctsInChamber_matchedCLCTs_me11a.push_back(new TH1F(
-						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11a").c_str(),
-						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11a; CLCTs in Chamber; Segment Matched CLCTs").c_str(),
-						2, 1, 3));
-		clctsInChamber_matchedCLCTs_me11b.push_back(new TH1F(
-						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11b").c_str(),
-						("h_clctsInChamber_"+to_string(i)+"layersCLCTs_me11b; CLCTs in Chamber; Segment Matched CLCTs").c_str(),
-						2, 1, 3));
-	}
+	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",50,0,50);
+	TH1F* mep11a_11_3Lay_Pt = new TH1F("h_mep11a_3Lay_11_Pt","h_mep11a_3Lay_11_Pt; Pt; CLCTs",50,0,50);
+	TH1F* mep11b_11_Pt = new TH1F("h_mep11b_11_Pt","h_mep11b_11_Pt; Pt; CLCTs",50,0,50);
+	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",50,0,50);
 
 
 	int EC = 0; // 1-2
@@ -164,11 +149,24 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 					//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
 					matchedCLCTs.push_back(make_pair(thisClctId, (unsigned int)closestCLCTtoSegmentIndex));
 					if(EC == 1){
-						real_clctLayerCount_mePlus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-					}else if (EC == 2){
-						real_clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-					}
+						clctLayerCount_mePlus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						if(CH == 11){
+							if(me11a){
+								clctLayerCount_mep11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+								mep11a_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+								if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11a_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+							}
+							if(me11b){
+								clctLayerCount_mep11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+								mep11b_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+								if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11b_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
 
+							}
+
+						}
+					}else if (EC == 2){
+						clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+					}
 				}
 
 			}
@@ -181,13 +179,21 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	unsigned int m_entries = 0;
 	for(unsigned int i = 1; i <= 36; i++) {
 
-		TH1F* p_hist = real_clctLayerCount_mePlus.at(i-1);
+		TH1F* p_hist = clctLayerCount_mePlus.at(i-1);
 		p_hist->Write();
 		p_entries += p_hist->GetBinContent(4);
-		TH1F* m_hist = real_clctLayerCount_meMinus.at(i-1);
+		TH1F* m_hist = clctLayerCount_meMinus.at(i-1);
 		m_hist->Write();
 		m_entries += m_hist->GetBinContent(4);
 	}
+
+	clctLayerCount_mep11a_11->Write();
+	clctLayerCount_mep11b_11->Write();
+	mep11a_11_Pt->Write();
+	mep11a_11_3Lay_Pt->Write();
+	mep11b_11_Pt->Write();
+	mep11b_11_3Lay_Pt->Write();
+
 	TH1F* me_plus_11_3lay_clct_mult = new TH1F("h_me_plus_11_3lay_clct_mult","h_me_plus_11_3lay_clct_mult; Chamber; 3Layer CLCTs", 36, 1,37);
 	TH1F* me_minus_11_3lay_clct_mult = new TH1F("h_me_minus_11_3lay_clct_mult","h_me_minus_11_3lay_clct_mult; Chamber; Matched 3Layer CLCTs", 36, 1,37);
 
