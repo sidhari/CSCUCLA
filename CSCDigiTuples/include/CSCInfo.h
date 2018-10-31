@@ -201,6 +201,10 @@ public:
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(bunchCross))).c_str(), &bunchCross);
 	}
 
+	unsigned int size() const {
+		return ch_id ? ch_id->size() : 0;
+	}
+
 	std::vector<size16>* ch_id;
 	std::vector<size8>* quality;
 	std::vector<size8>* pattern;

@@ -72,7 +72,7 @@ compInfo(tree)
 	 */
 
 	selection = iConfig.getUntrackedParameter<std::string>("selection");
-	if (selection == "minBias"){
+	if (selection == "ZeroBias"){
 		cout <<  "--- Running as minBias sample --- " << endl;
 		selectMuons = 0;
 	}else{
@@ -237,7 +237,7 @@ void CSCPatternExtractor::endJob() {
 
 
 const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t){
-	float minPt = 20.;
+	float minPt = 25.;
 	float massZ = 91.1876;
 	float massWindow = 10;
 
@@ -304,6 +304,7 @@ const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::
 		t.h_muonCuts->AddBinContent(MUON_CUTS::isOSAndPtOVerThreshold);
 		t.h_selectedMuonsPt->Fill(m.at(index).pt());
 		t.h_selectedMuonsEta->Fill(m.at(index).eta());
+		t.h_selectedMuonsPhi->Fill(m.at(index).phi());
 	}
 	return selectedMuons;
 }

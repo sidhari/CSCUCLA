@@ -26,6 +26,88 @@ using namespace std;
 #include "../include/CSCHelper.h"
 
 
+//quick and dirty hack, sorry later me
+/*
+int matchCLCTs(const CSCInfo::CLCTs& clcts, const int segId, const float segmentX, vector<pair<int, unsigned int>>& matchedCLCTs,
+		vector<TH1F*>& clctLayerCount_mePlus,
+		vector<TH1F*>& clctLayerCount_meMinus,
+		TH1F* clctLayerCount_mep11a_11,
+		TH1F* clctLayerCount_mep11b_11,
+		TH1F* clctLayerCount_mem11a_11,
+		TH1F* clctLayerCount_mem11b_11,
+		TH1F* mep11a_11_Pt,
+		TH1F* mep11a_11_3Lay_Pt,
+		TH1F* mep11b_11_Pt,
+		TH1F* mep11b_11_3Lay_Pt,
+		const CSCInfo::Muons& muons,
+		const CSCInfo::Segments& segments,
+		unsigned int thisSeg) {
+	CSCHelper::ChamberId c = CSCHelper::unserialize(segId);
+
+	int EC = c.endcap;
+	int ST = c.station;
+	int RI = c.ring;
+	int CH = c.chamber;
+
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
+	bool me13 = (ST == 1 && RI == 3);
+
+	//printf("segmentX = %f\n",segmentX);
+	for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
+		int thisClctId = clcts.ch_id->at(iclct);
+		if(thisClctId != segId) continue;
+
+		int closestCLCTtoSegmentIndex = -1;
+		float minDistanceSegmentToClosestCLCT = 1e5;
+		if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), make_pair(thisClctId, iclct)) != matchedCLCTs.end()) continue;
+		float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
+		if(me11a) clctStripPos -= 16*4;
+		if(abs(clctStripPos - segmentX) < minDistanceSegmentToClosestCLCT) {
+			minDistanceSegmentToClosestCLCT = abs(clctStripPos - segmentX);
+			closestCLCTtoSegmentIndex = iclct;
+		}
+
+		if(closestCLCTtoSegmentIndex != -1){ //if we found one
+			//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
+			matchedCLCTs.push_back(make_pair(thisClctId, (unsigned int)closestCLCTtoSegmentIndex));
+			if(EC == 1){
+				clctLayerCount_mePlus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+				if(CH == 11){
+					if(me11a){
+						clctLayerCount_mep11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						mep11a_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+						if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11a_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+					}
+					if(me11b){
+						clctLayerCount_mep11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						mep11b_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+						if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11b_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+
+					}
+
+				}
+			}else if (EC == 2){
+				clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+				if(CH == 11){
+					if(me11a){
+						clctLayerCount_mem11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+					}
+					if(me11b){
+						clctLayerCount_mem11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+					}
+
+				}
+			}
+		}
+
+	}
+	return 0;
+}
+*/
+
+
+
 int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=-1) {
 
 	//TODO: change everythign printf -> cout
@@ -65,7 +147,8 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	vector<TH1F*> clctLayerCount_mePlus;
 	vector<TH1F*> clctLayerCount_meMinus;
 
-	for(unsigned int i =1; i <=36; i++){
+	//for(unsigned int i =1; i <=36; i++){
+	for(unsigned int i =1; i <=12; i++){
 		clctLayerCount_mePlus.push_back(new TH1F(("h_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Matched CLCTs").c_str(), 7,0,7));
 		clctLayerCount_meMinus.push_back(new TH1F(("h_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Matched CLCTs").c_str(), 7,0,7));
 	}
@@ -73,11 +156,27 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	TH1F* clctLayerCount_mep11a_11 = new TH1F("h_clctLayerCount_me_p11a11","h_clctLayerCount_me_p11a11; Layer Count; Matched CLCTs", 7,0,7);
 	TH1F* clctLayerCount_mep11b_11 = new TH1F("h_clctLayerCount_me_p11b11","h_clctLayerCount_me_p11b11; Layer Count; Matched CLCTs", 7,0,7);
 
-	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",50,0,50);
-	TH1F* mep11a_11_3Lay_Pt = new TH1F("h_mep11a_3Lay_11_Pt","h_mep11a_3Lay_11_Pt; Pt; CLCTs",50,0,50);
-	TH1F* mep11b_11_Pt = new TH1F("h_mep11b_11_Pt","h_mep11b_11_Pt; Pt; CLCTs",50,0,50);
-	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",50,0,50);
+	TH1F* clctLayerCount_mem11a_11 = new TH1F("h_clctLayerCount_me_m11a11","h_clctLayerCount_me_m11a11; Layer Count; Matched CLCTs", 7,0,7);
+	TH1F* clctLayerCount_mem11b_11 = new TH1F("h_clctLayerCount_me_m11b11","h_clctLayerCount_me_m11b11; Layer Count; Matched CLCTs", 7,0,7);
 
+
+	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* mep11a_11_3Lay_Pt = new TH1F("h_mep11a_3Lay_11_Pt","h_mep11a_3Lay_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* mep11b_11_Pt = new TH1F("h_mep11b_11_Pt","h_mep11b_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",14,0,70);
+
+	TH1F* lctLayerCount_mep11a_11 = new TH1F("h_lctLayerCount_me_p11a11","h_lctLayerCount_me_p11a11; Layer Count; Matched LCTs", 12,0,12);
+	TH1F* lctLayerCount_mep11b_11 = new TH1F("h_lctLayerCount_me_p11b11","h_lctLayerCount_me_p11b11; Layer Count; Matched LCTs", 12,0,12);
+
+	TH1F* lctLayerCount_mem11a_11 = new TH1F("h_lctLayerCount_me_m11a11","h_lctLayerCount_me_m11a11; Layer Count; Matched LCTs", 12,0,12);
+	TH1F* lctLayerCount_mem11b_11 = new TH1F("h_lctLayerCount_me_m11b11","h_lctLayerCount_me_m11b11; Layer Count; Matched LCTs", 12,0,12);
+
+/*
+	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* mep11a_11_3Lay_Pt = new TH1F("h_mep11a_3Lay_11_Pt","h_mep11a_3Lay_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* mep11b_11_Pt = new TH1F("h_mep11b_11_Pt","h_mep11b_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",14,0,70);
+*/
 
 	int EC = 0; // 1-2
 	int ST = 0; // 1-4
@@ -95,8 +194,15 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
+		//
+		// Oct. 29 Skipping all events past new firmware update
+		//
+		if(evt.RunNumber > 323362) continue;
+
+
 		// chamberid, index in clct array - the sorting isn't perfect, since we go in order of segments, so can find a worse match first
 		vector<pair<int, unsigned int>> matchedCLCTs;
+		vector<pair<int, unsigned int>> matchedLCTs;
 
 
 		//iterate through segments
@@ -108,6 +214,12 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 			ST = c.station;
 			RI = c.ring;
 			CH = c.chamber;
+
+			//
+			// Cut to look at only Pt > 25
+			//Remove after rerunning patternextractor, done now so I don't have to wait for crab to finish again
+
+			if(muons.pt->at(segments.mu_id->at(thisSeg)) < 25) continue;
 
 
 			segmentX = segments.pos_x->at(thisSeg); //strips
@@ -129,8 +241,9 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 			//Selecting only CLCTs in these chambers
 			if(!(me11b || me11a)) continue;
 
-
-			//printf("segmentX = %f\n",segmentX);
+			//
+			// MATCH CLCTS
+			//
 			for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
 				int thisClctId = clcts.ch_id->at(iclct);
 				if(thisClctId != segId) continue;
@@ -166,9 +279,66 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 						}
 					}else if (EC == 2){
 						clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						if(CH == 11){
+							if(me11a){
+								clctLayerCount_mem11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+							}
+							if(me11b){
+								clctLayerCount_mem11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+							}
+
+						}
 					}
 				}
 
+			}
+
+			//MATCH LCTS
+
+			for(unsigned int ilct =0; ilct < lcts.size(); ilct++){
+				int thisLctId = clcts.ch_id->at(ilct);
+				if(thisLctId != segId) continue;
+				int closestLCTtoSegmentIndex = -1;
+				float minDistanceSegmentToClosestLCT = 1e5;
+				if(std::find(matchedLCTs.begin(), matchedLCTs.end(), make_pair(thisLctId, ilct)) != matchedLCTs.end()) continue;
+				float lctStripPos = lcts.keyHalfStrip->at(ilct)/2.;
+				if(me11a) lctStripPos -= 16*4;
+				if(abs(lctStripPos - segmentX) < minDistanceSegmentToClosestLCT) {
+					minDistanceSegmentToClosestLCT = abs(lctStripPos - segmentX);
+					closestLCTtoSegmentIndex = ilct;
+				}
+				if(closestLCTtoSegmentIndex != -1){ //if we found one
+					//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
+					matchedLCTs.push_back(make_pair(thisLctId, (unsigned int)closestLCTtoSegmentIndex));
+					if(EC == 1){
+						//lctLayerCount_mePlus.at(CH-1)->Fill(clcts.quality->at(closestLCTtoSegmentIndex));
+						if(CH == 11){
+							if(me11a){
+								lctLayerCount_mep11a_11->Fill(lcts.quality->at(closestLCTtoSegmentIndex));
+								//mep11a_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+								//if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11a_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+							}
+							if(me11b){
+								lctLayerCount_mep11b_11->Fill(lcts.quality->at(closestLCTtoSegmentIndex));
+								//mep11b_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+								//if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11b_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+
+							}
+
+						}
+					}else if (EC == 2){
+						//clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						if(CH == 11){
+							if(me11a){
+								lctLayerCount_mem11a_11->Fill(lcts.quality->at(closestLCTtoSegmentIndex));
+							}
+							if(me11b){
+								lctLayerCount_mem11b_11->Fill(lcts.quality->at(closestLCTtoSegmentIndex));
+							}
+
+						}
+					}
+				}
 			}
 
 		}
@@ -189,6 +359,8 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 	clctLayerCount_mep11a_11->Write();
 	clctLayerCount_mep11b_11->Write();
+	clctLayerCount_mem11a_11->Write();
+	clctLayerCount_mem11b_11->Write();
 	mep11a_11_Pt->Write();
 	mep11a_11_3Lay_Pt->Write();
 	mep11b_11_Pt->Write();
@@ -201,6 +373,11 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	me_plus_11_3lay_clct_mult->Write();
 	me_minus_11_3lay_clct_mult->SetEntries(m_entries);
 	me_minus_11_3lay_clct_mult->Write();
+
+	lctLayerCount_mep11a_11->Write();
+	lctLayerCount_mep11b_11->Write();
+	lctLayerCount_mem11a_11->Write();
+	lctLayerCount_mem11b_11->Write();
 
 
 	outF->Close();
