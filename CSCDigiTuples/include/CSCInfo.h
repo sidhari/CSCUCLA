@@ -248,6 +248,16 @@ public:
 		return ch_id ? ch_id->size() : 0;
 	}
 
+	//returns the amount of clcts in the chamber <chamber_index>
+	unsigned int size(unsigned int chamber_index) const {
+		if(!ch_id) return 0;
+		unsigned int count =0;
+		for(auto id : *ch_id){
+			if(chamber_index == id) count++;
+		}
+		return count;
+	}
+
 	std::vector<size16> *ch_id;
 	std::vector<size8>* isValid;
 	std::vector<size16>* quality;

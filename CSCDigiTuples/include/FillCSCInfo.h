@@ -111,7 +111,7 @@ public:
 
 	h_osInvMass = new TH1F("h_osInvMass", "h_osInvMass; Mass [GeV]; Dimuons", 100,80, 100);
 	h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass; Mass [GeV]; Dimuons", 100,80, 100);
-	h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", 130,0, 130);
+	h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", 60,60, 120);
 	h_nAllMuons = new TH1F("h_nAllMuons", "h_nAllMuons; Muons; Events", 20,0,20);
 	h_nSelectedMuons = new TH1F("h_nSelectedMuons", "h_nSelectedMuons; Muons; Events", 20, 0, 20);
 	h_nAllSegments = new TH1F("h_nAllSegments", "h_nAllSegments; Segments; Count", 25, 0,25);

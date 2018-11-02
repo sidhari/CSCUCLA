@@ -26,86 +26,37 @@ using namespace std;
 #include "../include/CSCHelper.h"
 
 
-//quick and dirty hack, sorry later me
-/*
-int matchCLCTs(const CSCInfo::CLCTs& clcts, const int segId, const float segmentX, vector<pair<int, unsigned int>>& matchedCLCTs,
-		vector<TH1F*>& clctLayerCount_mePlus,
-		vector<TH1F*>& clctLayerCount_meMinus,
-		TH1F* clctLayerCount_mep11a_11,
-		TH1F* clctLayerCount_mep11b_11,
-		TH1F* clctLayerCount_mem11a_11,
-		TH1F* clctLayerCount_mem11b_11,
-		TH1F* mep11a_11_Pt,
-		TH1F* mep11a_11_3Lay_Pt,
-		TH1F* mep11b_11_Pt,
-		TH1F* mep11b_11_3Lay_Pt,
-		const CSCInfo::Muons& muons,
-		const CSCInfo::Segments& segments,
-		unsigned int thisSeg) {
-	CSCHelper::ChamberId c = CSCHelper::unserialize(segId);
-
-	int EC = c.endcap;
-	int ST = c.station;
-	int RI = c.ring;
-	int CH = c.chamber;
-
-	bool me11a = (ST == 1 && RI == 4);
-	bool me11b = (ST == 1 && RI == 1);
-	bool me13 = (ST == 1 && RI == 3);
-
-	//printf("segmentX = %f\n",segmentX);
-	for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
-		int thisClctId = clcts.ch_id->at(iclct);
-		if(thisClctId != segId) continue;
-
-		int closestCLCTtoSegmentIndex = -1;
-		float minDistanceSegmentToClosestCLCT = 1e5;
-		if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), make_pair(thisClctId, iclct)) != matchedCLCTs.end()) continue;
-		float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
-		if(me11a) clctStripPos -= 16*4;
-		if(abs(clctStripPos - segmentX) < minDistanceSegmentToClosestCLCT) {
-			minDistanceSegmentToClosestCLCT = abs(clctStripPos - segmentX);
-			closestCLCTtoSegmentIndex = iclct;
-		}
-
-		if(closestCLCTtoSegmentIndex != -1){ //if we found one
-			//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
-			matchedCLCTs.push_back(make_pair(thisClctId, (unsigned int)closestCLCTtoSegmentIndex));
-			if(EC == 1){
-				clctLayerCount_mePlus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-				if(CH == 11){
-					if(me11a){
-						clctLayerCount_mep11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-						mep11a_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
-						if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11a_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
-					}
-					if(me11b){
-						clctLayerCount_mep11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-						mep11b_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
-						if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11b_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
-
-					}
-
-				}
-			}else if (EC == 2){
-				clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-				if(CH == 11){
-					if(me11a){
-						clctLayerCount_mem11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-					}
-					if(me11b){
-						clctLayerCount_mem11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
-					}
-
-				}
-			}
-		}
-
+//looks at a map of histograms, if it contains the key, fills the corresponding histogram with "histValue"
+void fillHist(map<unsigned int, TH1F*> hists, unsigned int key, float histValue){
+	//look to see if we care about this chamber
+	auto it = hists.find(key);
+	if(it != hists.end()){
+		//fill the correct histogram
+		it->second->Fill(histValue);
 	}
-	return 0;
 }
-*/
 
+
+vector<pair<int,int>> RING_ENDCAP_PERMUTATIONS{make_pair(4,1), make_pair(1,1), make_pair(4,2), make_pair(1,2)};
+
+map<unsigned int, TH1F*> makeHistPermutation(string name, string title, unsigned int bins, unsigned int low, unsigned int high){
+	TH1F* h_me11a_plus = new TH1F((name+"_me_p11a_11").c_str(),("me_p11a_11 " +title).c_str(),bins,low,high);
+	TH1F* h_me11b_plus = new TH1F((name+"_me_p11b_11").c_str(),("me_p11b_11" +title).c_str(),bins,low,high);
+	TH1F* h_me11a_minus = new TH1F((name+"_me_m11a_11").c_str(),("me_m11a_11 "+title).c_str(),bins,low,high);
+	TH1F* h_me11b_minus = new TH1F((name+"_me_m11b_11").c_str(),("me_m11b_11" +title).c_str(),bins,low,high);
+
+	unsigned int me_p11a11 = CSCHelper::serialize(1,4,11,1);
+	unsigned int me_p11b11 = CSCHelper::serialize(1,1,11,1);
+	unsigned int me_m11a11 = CSCHelper::serialize(1,4,11,2);
+	unsigned int me_m11b11 = CSCHelper::serialize(1,1,11,2);
+
+	map<unsigned int, TH1F*> hists;
+	hists[me_p11a11] = h_me11a_plus;
+	hists[me_p11b11] = h_me11b_plus;
+	hists[me_m11a11] = h_me11a_minus;
+	hists[me_m11b11] = h_me11b_minus;
+	return hists;
+}
 
 
 int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=-1) {
@@ -147,11 +98,28 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	vector<TH1F*> clctLayerCount_mePlus;
 	vector<TH1F*> clctLayerCount_meMinus;
 
-	//for(unsigned int i =1; i <=36; i++){
-	for(unsigned int i =1; i <=12; i++){
+	for(unsigned int i =1; i <=36; i++){
+	//for(unsigned int i =1; i <=12; i++){
 		clctLayerCount_mePlus.push_back(new TH1F(("h_clctLayerCount_me_p_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_p_1_1_"+to_string(i)+"; Layer Count; Matched CLCTs").c_str(), 7,0,7));
 		clctLayerCount_meMinus.push_back(new TH1F(("h_clctLayerCount_me_m_1_1_"+to_string(i)).c_str(), ("h_clctLayerCount_me_m_1_1_"+to_string(i)+"; Layer Count; Matched CLCTs").c_str(), 7,0,7));
 	}
+
+/*TODO: make each histogram follow the framework of makehistpermutation, which will make it so you easily write the correct histograms, etc
+ *
+ */
+	map<unsigned int,TH1F*> clctLayerCounts = makeHistPermutation("h_clctLayerCount", "h_clctLayerCount;Layer Count; Matched CLCTs",7,0,7);
+	map<unsigned int,TH1F*> unmatchedClctLayerCounts = makeHistPermutation("h_unmatchedClctLayerCount", "h_unmatchedClctLayerCount;Layer Count; Unmatched CLCTs",7,0,7);
+
+/*
+	//all segments in the chamber with the clct layer threshold changed
+	map<unsigned int,TH1F*> clctEff_den = makeHistPermutation("h_clctEff_den", "h_clctEff_den; Pt [GeV]; Efficiency", 15, 20,100);
+	//if the chamber associated with the segment has any clct in it
+	map<unsigned int,TH1F*> clctEff_hasClct = makeHistPermutation("h_clctEff_hasClct", "h_clctEff_hasClct; Pt [GeV]; Efficiency", 15, 20,100);
+	//if the chamber has a 3 layer clct in it
+	map<unsigned int,TH1F*>clctEff_has3LayClct = makeHistPermutation("h_clctEff_has3layClct", "h_clctEff_has3LayClct; Pt [GeV]; Efficiency", 15, 20,100);
+	//if the 3 layer clct is the closest to the segment
+	map<unsigned int,TH1F*> clctEff_3LayClct = makeHistPermutation("h_clctEff_3LayClct", "h_clctEff_3LayClct; Pt [GeV]; Efficiency", 15, 20,100);
+*/
 
 	TH1F* clctLayerCount_mep11a_11 = new TH1F("h_clctLayerCount_me_p11a11","h_clctLayerCount_me_p11a11; Layer Count; Matched CLCTs", 7,0,7);
 	TH1F* clctLayerCount_mep11b_11 = new TH1F("h_clctLayerCount_me_p11b11","h_clctLayerCount_me_p11b11; Layer Count; Matched CLCTs", 7,0,7);
@@ -160,16 +128,34 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	TH1F* clctLayerCount_mem11b_11 = new TH1F("h_clctLayerCount_me_m11b11","h_clctLayerCount_me_m11b11; Layer Count; Matched CLCTs", 7,0,7);
 
 
-	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",14,0,70);
-	TH1F* mep11a_11_3Lay_Pt = new TH1F("h_mep11a_3Lay_11_Pt","h_mep11a_3Lay_11_Pt; Pt; CLCTs",14,0,70);
-	TH1F* mep11b_11_Pt = new TH1F("h_mep11b_11_Pt","h_mep11b_11_Pt; Pt; CLCTs",14,0,70);
-	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",14,0,70);
+	TH1F* unmatched_clctLayerCount_mep11a_11 = new TH1F("h_unmatched_clctLayerCount_me_p11a11","h_unmatched_clctLayerCount_me_p11a11; Layer Count; Matched CLCTs", 7,0,7);
+	TH1F* unmatched_clctLayerCount_mep11b_11 = new TH1F("h_unmatched_clctLayerCount_me_p11b11","h_unmatched_clctLayerCount_me_p11b11; Layer Count; Matched CLCTs", 7,0,7);
 
-	TH1F* lctLayerCount_mep11a_11 = new TH1F("h_lctLayerCount_me_p11a11","h_lctLayerCount_me_p11a11; Layer Count; Matched LCTs", 12,0,12);
-	TH1F* lctLayerCount_mep11b_11 = new TH1F("h_lctLayerCount_me_p11b11","h_lctLayerCount_me_p11b11; Layer Count; Matched LCTs", 12,0,12);
+	TH1F* me11_clctMult = new TH1F("h_me11_clctMult","h_me11_clctMult", 8,0,8);
+	TH1F* me11_3lay_clctMult = new TH1F("h_me11_clctMult","h_me11_clctMult", 8,0,8);
 
-	TH1F* lctLayerCount_mem11a_11 = new TH1F("h_lctLayerCount_me_m11a11","h_lctLayerCount_me_m11a11; Layer Count; Matched LCTs", 12,0,12);
-	TH1F* lctLayerCount_mem11b_11 = new TH1F("h_lctLayerCount_me_m11b11","h_lctLayerCount_me_m11b11; Layer Count; Matched LCTs", 12,0,12);
+	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",18,0,90);
+	TH1F* mep11a_11_3Lay_Pt = new TH1F("h_mep11a_3Lay_11_Pt","h_mep11a_3Lay_11_Pt; Pt; CLCTs",18,0,90);
+	TH1F* mep11b_11_Pt = new TH1F("h_mep11b_11_Pt","h_mep11b_11_Pt; Pt; CLCTs",18,0,90);
+	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",18,0,90);
+
+	TH1F* lctLayerCount_mep11a_11 = new TH1F("h_lctLayerCount_me_p11a11","h_lctLayerCount_me_p11a11; Layer Count; Matched LCTs", 16,0,16);
+	TH1F* lctLayerCount_mep11b_11 = new TH1F("h_lctLayerCount_me_p11b11","h_lctLayerCount_me_p11b11; Layer Count; Matched LCTs", 16,0,16);
+
+	TH1F* lctLayerCount_mem11a_11 = new TH1F("h_lctLayerCount_me_m11a11","h_lctLayerCount_me_m11a11; Layer Count; Matched LCTs", 16,0,16);
+	TH1F* lctLayerCount_mem11b_11 = new TH1F("h_lctLayerCount_me_m11b11","h_lctLayerCount_me_m11b11; Layer Count; Matched LCTs", 16,0,16);
+
+
+
+	//all segments in the chamber with the clct layer threshold changed
+	TH1F* clctEff_den = new TH1F("h_clctEff_den", "h_clctEff_den; Pt [GeV]; Efficiency", 15, 20,100);
+	//if the chamber associated with the segment has any clct in it
+	TH1F* clctEff_hasClct = new TH1F("h_clctEff_hasClct", "h_clctEff_hasClct; Pt [GeV]; Efficiency", 15, 20,100);
+	//if the chamber has a 3 layer clct in it
+	TH1F* clctEff_has3LayClct = new TH1F("h_clctEff_has3layClct", "h_clctEff_has3LayClct; Pt [GeV]; Efficiency", 15, 20,100);
+	//if the 3 layer clct is the closest to the segment
+	TH1F* clctEff_3LayClct = new TH1F("h_clctEff_3LayClct", "h_clctEff_3LayClct; Pt [GeV]; Efficiency", 15, 20,100);
+
 
 /*
 	TH1F* mep11a_11_Pt = new TH1F("h_mep11a_11_Pt","h_mep11a_11_Pt; Pt; CLCTs",14,0,70);
@@ -197,12 +183,17 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 		//
 		// Oct. 29 Skipping all events past new firmware update
 		//
+		//if(evt.RunNumber <= 323362) continue;
 		if(evt.RunNumber > 323362) continue;
 
 
 		// chamberid, index in clct array - the sorting isn't perfect, since we go in order of segments, so can find a worse match first
-		vector<pair<int, unsigned int>> matchedCLCTs;
-		vector<pair<int, unsigned int>> matchedLCTs;
+		//vector<pair<int, unsigned int>> matchedCLCTs;
+		vector< unsigned int> matchedCLCTs;
+		//vector<pair<int, unsigned int>> matchedLCTs;
+		vector<unsigned int> matchedLCTs;
+
+
 
 
 		//iterate through segments
@@ -219,7 +210,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 			// Cut to look at only Pt > 25
 			//Remove after rerunning patternextractor, done now so I don't have to wait for crab to finish again
 
-			if(muons.pt->at(segments.mu_id->at(thisSeg)) < 25) continue;
+			//if(muons.pt->at(segments.mu_id->at(thisSeg)) < 25) continue;
 
 
 			segmentX = segments.pos_x->at(thisSeg); //strips
@@ -238,9 +229,152 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 				if(segmentX > 79) continue;
 			}
 
-			//Selecting only CLCTs in these chambers
 			if(!(me11b || me11a)) continue;
 
+			/*
+			float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
+
+			int closestCLCTtoSegmentIndex = -1;
+			float minDistanceSegmentToClosestCLCT = 1e5;
+			//iterate through clcts
+			for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
+				int thisClctId = clcts.ch_id->at(iclct);
+				if(thisClctId != segId) continue;
+				unsigned int qual = clcts.quality->at(iclct);
+				if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), iclct) != matchedCLCTs.end()) continue;
+				float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
+				if(me11a) clctStripPos -= 16*4;
+				if(abs(clctStripPos - segmentX) < minDistanceSegmentToClosestCLCT) {
+					minDistanceSegmentToClosestCLCT = abs(clctStripPos - segmentX);
+					closestCLCTtoSegmentIndex = iclct;
+				}
+
+				//now iterate through the types of chambers we want to look at
+				for(unsigned int iperm = 0; iperm < RING_ENDCAP_PERMUTATIONS.size(); iperm++){
+					const auto& pair = RING_ENDCAP_PERMUTATIONS.at(iperm);
+					if(RI != pair.first || EC != pair.second) continue;
+
+
+				}
+			}
+			*/
+
+			bool inUpdatedChamber = (CH == 11 && EC == 1);
+
+			//Selecting only CLCTs in these chambers
+			float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
+			//fillHist(clctEff_den, segId, Pt);
+
+			if(inUpdatedChamber)clctEff_den->Fill(Pt);
+			bool foundCLCT = false; //if we found a clct in the same chamber as the segment
+			bool found3LayCLCT = false;
+			bool matched3LayCLCT = false;
+
+			//ChamberHits theseCompHits(1, ST, RI, EC, CH);
+
+			//if(fillCompHits(theseCompHits, comparators)) return -1;
+
+			int closestCLCTtoSegmentIndex = -1;
+			float minDistanceSegmentToClosestCLCT = 1e5;
+			for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
+				int thisClctId = clcts.ch_id->at(iclct);
+				if(thisClctId != segId) continue;
+				if(inUpdatedChamber)foundCLCT = true;
+				unsigned int qual = clcts.quality->at(iclct);
+				if(qual == 3 && inUpdatedChamber) found3LayCLCT = true;
+
+
+				if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), iclct) != matchedCLCTs.end()) continue;
+				float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
+				if(me11a) clctStripPos -= 16*4;
+				if(abs(clctStripPos - segmentX) < minDistanceSegmentToClosestCLCT) {
+					minDistanceSegmentToClosestCLCT = abs(clctStripPos - segmentX);
+					closestCLCTtoSegmentIndex = iclct;
+				}
+			}
+			if(closestCLCTtoSegmentIndex != -1){ //if we found one
+				//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
+				//matchedCLCTs.push_back(make_pair(thisClctId, (unsigned int)closestCLCTtoSegmentIndex));
+				matchedCLCTs.push_back((unsigned int)closestCLCTtoSegmentIndex);
+				unsigned int qual = clcts.quality->at(closestCLCTtoSegmentIndex);
+
+				//look to see if we care about this chamber
+				auto it = clctLayerCounts.find(segId);
+				if(it != clctLayerCounts.end()){
+					//fill the correct histogram
+					it->second->Fill(qual);
+				}
+
+
+				//if(qual == 3) printChamber(theseCompHits);
+				if(qual == 3 && inUpdatedChamber) matched3LayCLCT = true;
+				if(EC == 1){
+					me11_clctMult->Fill(clcts.size(closestCLCTtoSegmentIndex));
+					if(qual == 3) me11_3lay_clctMult->Fill(clcts.size(closestCLCTtoSegmentIndex));
+					clctLayerCount_mePlus.at(CH-1)->Fill(qual);
+					if(CH == 11){
+						if(me11a){
+							clctLayerCount_mep11a_11->Fill(qual);
+							mep11a_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+							if(qual == 3) mep11a_11_3Lay_Pt->Fill(Pt);
+						}
+						if(me11b){
+							clctLayerCount_mep11b_11->Fill(qual);
+							mep11b_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+							if(qual== 3) mep11b_11_3Lay_Pt->Fill(Pt);
+
+						}
+
+					}
+				}else if (EC == 2){
+					clctLayerCount_meMinus.at(CH-1)->Fill(qual);
+					if(CH == 11){
+						if(me11a){
+							clctLayerCount_mem11a_11->Fill(qual);
+						}
+						if(me11b){
+							clctLayerCount_mem11b_11->Fill(qual);
+						}
+
+					}
+				}
+			}//closest index
+			if(foundCLCT) clctEff_hasClct->Fill(Pt);
+			if(found3LayCLCT) clctEff_has3LayClct->Fill(Pt);
+			if(matched3LayCLCT) clctEff_3LayClct->Fill(Pt);
+		}//segments
+
+
+		//now look through the clcts that were not matched to a segment
+		for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
+			int thisClctId = clcts.ch_id->at(iclct);
+			CSCHelper::ChamberId c = CSCHelper::unserialize(thisClctId);
+
+			EC = c.endcap;
+			ST = c.station;
+			RI = c.ring;
+			CH = c.chamber;
+
+			bool inUpdatedChamber = (CH == 11 && EC == 1);
+
+			if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), iclct) != matchedCLCTs.end()) continue;
+			bool me11a = (ST == 1 && RI == 4);
+			bool me11b = (ST == 1 && RI == 1);
+
+			unsigned int qual = clcts.quality->at(iclct);
+
+			//could be invalidated by segments at edges of chambers, TODO: could make sure CLCTs are not on the edge
+			if(inUpdatedChamber){
+				if(me11a){
+					unmatched_clctLayerCount_mep11a_11->Fill(qual);
+				}else if(me11b){
+					unmatched_clctLayerCount_mep11b_11->Fill(qual);
+				}
+			}
+
+		}
+
+			/*
 			//
 			// MATCH CLCTS
 			//
@@ -261,30 +395,34 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 				if(closestCLCTtoSegmentIndex != -1){ //if we found one
 					//printf("found: %i\n", clctQ->at(iclct).at(closestCLCTtoSegmentIndex));
 					matchedCLCTs.push_back(make_pair(thisClctId, (unsigned int)closestCLCTtoSegmentIndex));
+					unsigned int qual = clcts.quality->at(closestCLCTtoSegmentIndex);
+					if(qual == 3) printChamber(theseCompHits);
 					if(EC == 1){
-						clctLayerCount_mePlus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						me11_clctMult->Fill(clcts.size(thisClctId));
+						if(qual == 3) me11_3lay_clctMult->Fill(clcts.size(thisClctId));
+						clctLayerCount_mePlus.at(CH-1)->Fill(qual);
 						if(CH == 11){
 							if(me11a){
-								clctLayerCount_mep11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+								clctLayerCount_mep11a_11->Fill(qual);
 								mep11a_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
-								if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11a_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+								if(qual == 3) mep11a_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
 							}
 							if(me11b){
-								clctLayerCount_mep11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+								clctLayerCount_mep11b_11->Fill(qual);
 								mep11b_11_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
-								if(clcts.quality->at(closestCLCTtoSegmentIndex) == 3) mep11b_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
+								if(qual== 3) mep11b_11_3Lay_Pt->Fill(muons.pt->at(segments.mu_id->at(thisSeg)));
 
 							}
 
 						}
 					}else if (EC == 2){
-						clctLayerCount_meMinus.at(CH-1)->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+						clctLayerCount_meMinus.at(CH-1)->Fill(qual);
 						if(CH == 11){
 							if(me11a){
-								clctLayerCount_mem11a_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+								clctLayerCount_mem11a_11->Fill(qual);
 							}
 							if(me11b){
-								clctLayerCount_mem11b_11->Fill(clcts.quality->at(closestCLCTtoSegmentIndex));
+								clctLayerCount_mem11b_11->Fill(qual);
 							}
 
 						}
@@ -292,11 +430,12 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 				}
 
 			}
+			*/
 
 			//MATCH LCTS
-
+		/*
 			for(unsigned int ilct =0; ilct < lcts.size(); ilct++){
-				int thisLctId = clcts.ch_id->at(ilct);
+				int thisLctId = lcts.ch_id->at(ilct);
 				if(thisLctId != segId) continue;
 				int closestLCTtoSegmentIndex = -1;
 				float minDistanceSegmentToClosestLCT = 1e5;
@@ -338,10 +477,12 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 						}
 					}
-				}
-			}
 
-		}
+				}*/
+
+
+
+
 	}
 
 
@@ -361,10 +502,21 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	clctLayerCount_mep11b_11->Write();
 	clctLayerCount_mem11a_11->Write();
 	clctLayerCount_mem11b_11->Write();
+	unmatched_clctLayerCount_mep11a_11->Write();
+	unmatched_clctLayerCount_mep11b_11->Write();
+
+	clctEff_den->Write();
+	clctEff_hasClct->Write();
+	clctEff_has3LayClct->Write();
+	clctEff_3LayClct->Write();
+
 	mep11a_11_Pt->Write();
 	mep11a_11_3Lay_Pt->Write();
 	mep11b_11_Pt->Write();
 	mep11b_11_3Lay_Pt->Write();
+
+	me11_clctMult->Write();
+	me11_3lay_clctMult->Write();
 
 	TH1F* me_plus_11_3lay_clct_mult = new TH1F("h_me_plus_11_3lay_clct_mult","h_me_plus_11_3lay_clct_mult; Chamber; 3Layer CLCTs", 36, 1,37);
 	TH1F* me_minus_11_3lay_clct_mult = new TH1F("h_me_minus_11_3lay_clct_mult","h_me_minus_11_3lay_clct_mult; Chamber; Matched 3Layer CLCTs", 36, 1,37);
@@ -379,6 +531,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	lctLayerCount_mem11a_11->Write();
 	lctLayerCount_mem11b_11->Write();
 
+	for(auto hist : clctLayerCounts) hist.second->Write();
 
 	outF->Close();
 

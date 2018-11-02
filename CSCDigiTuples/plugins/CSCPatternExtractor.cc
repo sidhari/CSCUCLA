@@ -259,7 +259,6 @@ const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::
 		t.h_muonCuts->AddBinContent(MUON_CUTS::isGlobal);
 
 		if(find(selectedIndices.begin(), selectedIndices.end(), i) != selectedIndices.end()) continue; //only match mu1 once
-		//if(!mu1.isStandAloneMuon() || !mu1.isGlobalMuon()) continue; //standalone , global 1 cut
 		for(unsigned int j =i+1; !foundOS && !foundSS && j < m.size(); j++){
 			if(find(selectedIndices.begin(), selectedIndices.end(), j) != selectedIndices.end()) continue; //only match mu2 once
 			const auto& mu2 = m.at(j);

@@ -1,6 +1,7 @@
 import ROOT as R
 #import numpy as n
 import array
+import StatsTools as S
 R.PyConfig.IgnoreCommandLineOptions = True
 R.gROOT.SetBatch(True)
 
@@ -180,8 +181,15 @@ def MOVE_EDGES(Object, L=0., R=0., T=0., B=0., NDC=False):
 # Enhances a plot object, expected to be a hist, graph, or hstack
 # legName is the legend display name, legType is the legend symbol draw option, option is the draw option
 class Plot(object):
-    def __init__(self, plot, legName='hist', legType='felp', option='hist'):
-        self.plot = plot
+    def __init__(self, plot=None,file=None, legName='hist', legType='felp', option='hist'):
+        if isinstance(plot, str) and isinstance(file, R.TFile):
+            h = file.Get(plot)
+            self.plot = h
+        elif isinstance(plot, R.TH1F):
+            self.plot = plot
+        else:
+            self.plot = None
+        #self.plot = plot
         self.legName = legName
         self.legType = legType
         self.option = option
@@ -201,6 +209,9 @@ class Plot(object):
     # scales axis title offsets from axis
     def scaleTitleOffsets(self, factor, axes='XY'):
         SCALE(self, 'TitleOffset', float(factor), Axes=axes)
+        
+    def BinomialDivide(self, denomPlot):
+        self.plot = S.binomial_divide(self.plot, denomPlot)[0]
     
     # sets axis titles
     def setTitles(self, X=None, Y=None, Z=None):
@@ -305,9 +316,12 @@ class Canvas(R.TCanvas):
     # by default, the draw order (stored in plotList) is also used for the legend order
     # just in case, if necessary, addToPlotList=False won't add a plot to plotList
     # addS is for drawing with option 'sames', required for fit boxes
-    def addMainPlot(self, plot, addToPlotList=True, addS=False):
+    def addMainPlot(self, plot, addToPlotList=True, addS=False,color=''):
         plot.UseCurrentStyle()
-        plot.SetLineColor(COLORS_16[len(self.plotList)%16])
+        if color is '':
+            plot.SetLineColor(COLORS_16[len(self.plotList)%16])
+        else:
+            plot.SetLineColor(color)
         #plot.SetFillColor(COLORS_16[len(self.plotList)%16])
         self.cd()
         self.mainPad.cd()
@@ -379,6 +393,7 @@ class Canvas(R.TCanvas):
         if autoOrder:
             for plot in self.plotList:
                 self.addLegendEntry(plot)
+        return self.legend
 
     # wrapper for adding legend entries
     def addLegendEntry(self, plot):
@@ -414,59 +429,7 @@ class Canvas(R.TCanvas):
         sbox.SetX2NDC(X2[pos[1]])
         sbox.SetY1NDC(Y1[pos[0]])
         sbox.SetY2NDC(Y2[pos[0]])
-        
   
-#         if zeroed:
-#             nbins = rat.GetNbinsX()
-#             for ibin in range(1, nbins):
-#                 f_bin = rat.GetBinContent(ibin)
-#                 self.rat.SetBinContent(ibin, f_bin-1.)
-# 
-# 
-#         if not self.ratAxesDrawn:
-#             self.firstRatioPlot = self.rat
-# 
-#             if (xtit != ''):
-#                 self.rat.GetXaxis().SetTitle(xtit)
-#             SCALE(self.rat, 'TitleSize', factor, Axes='XY')
-#             SCALE(self.rat, 'LabelSize', factor, Axes='XY')
-#             SCALE(self.rat, 'TickLength', factor, Axes='X')
-#             self.rat.GetXaxis().CenterTitle()
-# 
-#             self.rat.GetYaxis().SetTitle(ytit)
-#             SCALE(self.rat, 'TitleOffset', 1./factor, Axes='Y')
-#             self.rat.GetYaxis().SetTickLength (0.01)
-#             self.rat.GetYaxis().CenterTitle()
-#             self.rat.GetYaxis().SetNdivisions(505)
-#             self.rat.GetYaxis().SetRangeUser(low,high)
-#             self.rat.GetXaxis().SetLabelSize(factor*self.fontsize)#, 'XYZ')      # default 0.04
-#             self.rat.GetYaxis().SetLabelSize(factor*self.fontsize)#, 'XYZ')      # default 0.04
-# 
-#             self.rat.Draw(option)
-#             self.ratAxesDrawn = True
-# 
-#             if len(yrange) == 0:
-#                 low = self.rat.GetXaxis().GetXmin()
-#                 up  = self.rat.GetXaxis().GetXmax()
-#                 #x   = array.array([ low, up ])
-#                 x   = array.array('f')
-#                 x.append(low)
-#                 x.append(up)
-#                 #y   = array.array([ center , center ])
-#                 y   = array.array('f')
-#                 y.append(center)
-#                 y.append(center)
-#                 self.gr = R.TGraph(2,x,y)
-#                 self.gr.SetLineColor(R.kRed)
-#                 self.gr.SetLineStyle(3)
-#                 self.gr.SetLineWidth(2)
-#                 self.gr.Draw('C same')
-# 
-#         self.rat.Draw(option+' same')
-#         self.rat.SetMarkerColor(color)
-#         self.rat.SetLineColor(color)
-#         self.ratPad.RedrawAxis()
-#         self.ratList.append(self.rat)
         
         
     def addRatioPlot(self,ratio, color=R.kBlack, legName='', legType='pe', option='hist', ytit='Data/MC', xtit='', zeroed=False, plusminus=0.5, yrange=[]):
