@@ -50,7 +50,7 @@ void printChamber(const ChamberHits &c){
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		if(!me11 && !(y%2)) printf(" ");
 		for(unsigned int x = 0; x < N_MAX_HALF_STRIPS-1; x++){
-			if(!(x%16)) printf("|");
+			if(!(x%32)) printf("|");
 			if(c._hits[x][y]) printf("%X",c._hits[x][y]-1); //print one less, so we stay in hexadecimal (0-15)
 			else printf("-");
 		}
@@ -58,7 +58,7 @@ void printChamber(const ChamberHits &c){
 		printf("\n");
 	}
 	for(unsigned int x = 0;x < N_MAX_HALF_STRIPS-1; x++){
-		if(!(x%17)) printf("%i", x/17);
+		if(!(x%32)) printf("%i", x/32);
 		else printf(" ");
 	}
 	printf("\n");
@@ -177,7 +177,9 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
 		// Cycle through each time window, if comphits, look in all possible windows (1-4 to 13-16).
 		// also ignore bins 1 & 2 if using comp hits, talk with Cameron.
-		for(unsigned int time = (USE_COMP_HITS ? 3 : 1); time < (USE_COMP_HITS ? 16 - TIME_CAPTURE_WINDOW + 2 : 2); time++){
+		//Nov 5. - Only time bins that are used are 6,7,8,9, TODO: Verify this reproduces actual CLCT results
+		//for(unsigned int time = (USE_COMP_HITS ? 3 : 1); time < (USE_COMP_HITS ? 16 - TIME_CAPTURE_WINDOW + 2 : 2); time++){
+		for(unsigned int time = (USE_COMP_HITS ? 6 : 1); time < (USE_COMP_HITS ? 10 : 2); time++){
 
 			int matchedLayerCount = 0;
 

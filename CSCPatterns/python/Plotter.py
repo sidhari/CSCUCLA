@@ -185,10 +185,8 @@ class Plot(object):
         if isinstance(plot, str) and isinstance(file, R.TFile):
             h = file.Get(plot)
             self.plot = h
-        elif isinstance(plot, R.TH1F):
-            self.plot = plot
         else:
-            self.plot = None
+            self.plot = plot
         #self.plot = plot
         self.legName = legName
         self.legType = legType
