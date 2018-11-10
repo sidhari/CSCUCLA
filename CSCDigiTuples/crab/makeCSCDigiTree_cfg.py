@@ -44,7 +44,7 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data_promptlike', ''
 #process.inputs.lumisToProcess.extend(myList)
 
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(20) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 # example samples:
 #   singlemu: '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
@@ -199,8 +199,8 @@ process.lctreader = cms.EDAnalyzer("CSCTriggerPrimitivesReader",
 
 #TODO: verify you need all of this stuff
 # TO USE WITH --- RECO ---
-#process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
-
+process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+process.schedule = cms.Schedule(process.p)
 
 #process.p = cms.Path(process.RawToDigi * process.L1Reco * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 # process.p = cms.Path(process.gtDigis *\
@@ -259,84 +259,84 @@ process.lctreader = cms.EDAnalyzer("CSCTriggerPrimitivesReader",
 #                       process.MakeNtuple)
 
 #WORK IN PROGRESS OCT. 29
-
-# Path and EndPath definitions
-process.raw2digi_step = cms.Path(process.RawToDigi)
-process.L1Reco_step = cms.Path(process.L1Reco)
-process.reconstruction_step = cms.Path(process.reconstruction)
-process.eventinterpretaion_step = cms.Path(process.EIsequence)
-process.Flag_trackingFailureFilter = cms.Path(process.goodVertices+process.trackingFailureFilter)
-process.Flag_goodVertices = cms.Path(process.primaryVertexFilter)
-process.Flag_CSCTightHaloFilter = cms.Path(process.CSCTightHaloFilter)
-process.Flag_trkPOGFilters = cms.Path(process.trkPOGFilters)
-process.Flag_HcalStripHaloFilter = cms.Path(process.HcalStripHaloFilter)
-process.Flag_trkPOG_logErrorTooManyClusters = cms.Path(~process.logErrorTooManyClusters)
-process.Flag_EcalDeadCellTriggerPrimitiveFilter = cms.Path(process.EcalDeadCellTriggerPrimitiveFilter)
-process.Flag_ecalLaserCorrFilter = cms.Path(process.ecalLaserCorrFilter)
-process.Flag_globalSuperTightHalo2016Filter = cms.Path(process.globalSuperTightHalo2016Filter)
-process.Flag_eeBadScFilter = cms.Path(process.eeBadScFilter)
-process.Flag_METFilters = cms.Path(process.metFilters)
-process.Flag_chargedHadronTrackResolutionFilter = cms.Path(process.chargedHadronTrackResolutionFilter)
-process.Flag_globalTightHalo2016Filter = cms.Path(process.globalTightHalo2016Filter)
-process.Flag_CSCTightHaloTrkMuUnvetoFilter = cms.Path(process.CSCTightHaloTrkMuUnvetoFilter)
-process.Flag_HBHENoiseIsoFilter = cms.Path(process.HBHENoiseFilterResultProducer+process.HBHENoiseIsoFilter)
-process.Flag_BadChargedCandidateSummer16Filter = cms.Path(process.BadChargedCandidateSummer16Filter)
-process.Flag_hcalLaserEventFilter = cms.Path(process.hcalLaserEventFilter)
-process.Flag_BadPFMuonFilter = cms.Path(process.BadPFMuonFilter)
-process.Flag_ecalBadCalibFilter = cms.Path(process.ecalBadCalibFilter)
-process.Flag_HBHENoiseFilter = cms.Path(process.HBHENoiseFilterResultProducer+process.HBHENoiseFilter)
-process.Flag_trkPOG_toomanystripclus53X = cms.Path(~process.toomanystripclus53X)
-process.Flag_EcalDeadCellBoundaryEnergyFilter = cms.Path(process.EcalDeadCellBoundaryEnergyFilter)
-process.Flag_BadChargedCandidateFilter = cms.Path(process.BadChargedCandidateFilter)
-process.Flag_trkPOG_manystripclus53X = cms.Path(~process.manystripclus53X)
-process.Flag_BadPFMuonSummer16Filter = cms.Path(process.BadPFMuonSummer16Filter)
-process.Flag_muonBadTrackFilter = cms.Path(process.muonBadTrackFilter)
-process.Flag_CSCTightHalo2015Filter = cms.Path(process.CSCTightHalo2015Filter)
-process.gtDigis_step = cms.Path(process.gtDigis)
-process.muonCSCDigis_step = cms.Path(process.muonCSCDigis)
-process.csc2DRecHits_step = cms.Path(process.csc2DRecHits)
-process.cscSegments_step = cms.Path(process.cscSegments)
-process.cscTriggerPrimitiveDigis_step = cms.Path(process.cscTriggerPrimitiveDigis)
-process.MakeNtuple_step = cms.EndPath(process.MakeNtuple)
-
-# Schedule definition
-process.schedule = cms.Schedule(process.raw2digi_step,\
-                                process.L1Reco_step,\
-                                process.reconstruction_step,\
-                                process.eventinterpretaion_step,\
-                                process.Flag_HBHENoiseFilter,\
-                                process.Flag_HBHENoiseIsoFilter,\
-                                process.Flag_CSCTightHaloFilter,\
-                                process.Flag_CSCTightHaloTrkMuUnvetoFilter,\
-                                process.Flag_CSCTightHalo2015Filter,\
-                                process.Flag_globalTightHalo2016Filter,\
-                                process.Flag_globalSuperTightHalo2016Filter,\
-                                process.Flag_HcalStripHaloFilter,\
-                                process.Flag_hcalLaserEventFilter,\
-                                process.Flag_EcalDeadCellTriggerPrimitiveFilter,\
-                                process.Flag_EcalDeadCellBoundaryEnergyFilter,\
-                                process.Flag_ecalBadCalibFilter,\
-                                process.Flag_goodVertices,\
-                                process.Flag_eeBadScFilter,\
-                                process.Flag_ecalLaserCorrFilter,\
-                                process.Flag_trkPOGFilters,\
-                                process.Flag_chargedHadronTrackResolutionFilter,\
-                                process.Flag_muonBadTrackFilter,\
-                                process.Flag_BadChargedCandidateFilter,\
-                                process.Flag_BadPFMuonFilter,\
-                                process.Flag_BadChargedCandidateSummer16Filter,\
-                                process.Flag_BadPFMuonSummer16Filter,\
-                                process.Flag_trkPOG_manystripclus53X,\
-                                process.Flag_trkPOG_toomanystripclus53X,\
-                                process.Flag_trkPOG_logErrorTooManyClusters,\
-                                process.Flag_METFilters,\
-                                process.gtDigis_step,\
-                                process.muonCSCDigis_step,\
-                                process.csc2DRecHits_step,\
-                                process.cscSegments_step,\
-                                process.cscTriggerPrimitiveDigis_step,\
-                                process.MakeNtuple_step
-)
+# 
+# # Path and EndPath definitions
+# process.raw2digi_step = cms.Path(process.RawToDigi)
+# process.L1Reco_step = cms.Path(process.L1Reco)
+# process.reconstruction_step = cms.Path(process.reconstruction)
+# process.eventinterpretaion_step = cms.Path(process.EIsequence)
+# process.Flag_trackingFailureFilter = cms.Path(process.goodVertices+process.trackingFailureFilter)
+# process.Flag_goodVertices = cms.Path(process.primaryVertexFilter)
+# process.Flag_CSCTightHaloFilter = cms.Path(process.CSCTightHaloFilter)
+# process.Flag_trkPOGFilters = cms.Path(process.trkPOGFilters)
+# process.Flag_HcalStripHaloFilter = cms.Path(process.HcalStripHaloFilter)
+# process.Flag_trkPOG_logErrorTooManyClusters = cms.Path(~process.logErrorTooManyClusters)
+# process.Flag_EcalDeadCellTriggerPrimitiveFilter = cms.Path(process.EcalDeadCellTriggerPrimitiveFilter)
+# process.Flag_ecalLaserCorrFilter = cms.Path(process.ecalLaserCorrFilter)
+# process.Flag_globalSuperTightHalo2016Filter = cms.Path(process.globalSuperTightHalo2016Filter)
+# process.Flag_eeBadScFilter = cms.Path(process.eeBadScFilter)
+# process.Flag_METFilters = cms.Path(process.metFilters)
+# process.Flag_chargedHadronTrackResolutionFilter = cms.Path(process.chargedHadronTrackResolutionFilter)
+# process.Flag_globalTightHalo2016Filter = cms.Path(process.globalTightHalo2016Filter)
+# process.Flag_CSCTightHaloTrkMuUnvetoFilter = cms.Path(process.CSCTightHaloTrkMuUnvetoFilter)
+# process.Flag_HBHENoiseIsoFilter = cms.Path(process.HBHENoiseFilterResultProducer+process.HBHENoiseIsoFilter)
+# process.Flag_BadChargedCandidateSummer16Filter = cms.Path(process.BadChargedCandidateSummer16Filter)
+# process.Flag_hcalLaserEventFilter = cms.Path(process.hcalLaserEventFilter)
+# process.Flag_BadPFMuonFilter = cms.Path(process.BadPFMuonFilter)
+# process.Flag_ecalBadCalibFilter = cms.Path(process.ecalBadCalibFilter)
+# process.Flag_HBHENoiseFilter = cms.Path(process.HBHENoiseFilterResultProducer+process.HBHENoiseFilter)
+# process.Flag_trkPOG_toomanystripclus53X = cms.Path(~process.toomanystripclus53X)
+# process.Flag_EcalDeadCellBoundaryEnergyFilter = cms.Path(process.EcalDeadCellBoundaryEnergyFilter)
+# process.Flag_BadChargedCandidateFilter = cms.Path(process.BadChargedCandidateFilter)
+# process.Flag_trkPOG_manystripclus53X = cms.Path(~process.manystripclus53X)
+# process.Flag_BadPFMuonSummer16Filter = cms.Path(process.BadPFMuonSummer16Filter)
+# process.Flag_muonBadTrackFilter = cms.Path(process.muonBadTrackFilter)
+# process.Flag_CSCTightHalo2015Filter = cms.Path(process.CSCTightHalo2015Filter)
+# process.gtDigis_step = cms.Path(process.gtDigis)
+# process.muonCSCDigis_step = cms.Path(process.muonCSCDigis)
+# process.csc2DRecHits_step = cms.Path(process.csc2DRecHits)
+# process.cscSegments_step = cms.Path(process.cscSegments)
+# process.cscTriggerPrimitiveDigis_step = cms.Path(process.cscTriggerPrimitiveDigis)
+# process.MakeNtuple_step = cms.EndPath(process.MakeNtuple)
+# 
+# # Schedule definition
+# process.schedule = cms.Schedule(process.raw2digi_step,\
+#                                 process.L1Reco_step,\
+#                                 process.reconstruction_step,\
+#                                 process.eventinterpretaion_step,\
+#                                 process.Flag_HBHENoiseFilter,\
+#                                 process.Flag_HBHENoiseIsoFilter,\
+#                                 process.Flag_CSCTightHaloFilter,\
+#                                 process.Flag_CSCTightHaloTrkMuUnvetoFilter,\
+#                                 process.Flag_CSCTightHalo2015Filter,\
+#                                 process.Flag_globalTightHalo2016Filter,\
+#                                 process.Flag_globalSuperTightHalo2016Filter,\
+#                                 process.Flag_HcalStripHaloFilter,\
+#                                 process.Flag_hcalLaserEventFilter,\
+#                                 process.Flag_EcalDeadCellTriggerPrimitiveFilter,\
+#                                 process.Flag_EcalDeadCellBoundaryEnergyFilter,\
+#                                 process.Flag_ecalBadCalibFilter,\
+#                                 process.Flag_goodVertices,\
+#                                 process.Flag_eeBadScFilter,\
+#                                 process.Flag_ecalLaserCorrFilter,\
+#                                 process.Flag_trkPOGFilters,\
+#                                 process.Flag_chargedHadronTrackResolutionFilter,\
+#                                 process.Flag_muonBadTrackFilter,\
+#                                 process.Flag_BadChargedCandidateFilter,\
+#                                 process.Flag_BadPFMuonFilter,\
+#                                 process.Flag_BadChargedCandidateSummer16Filter,\
+#                                 process.Flag_BadPFMuonSummer16Filter,\
+#                                 process.Flag_trkPOG_manystripclus53X,\
+#                                 process.Flag_trkPOG_toomanystripclus53X,\
+#                                 process.Flag_trkPOG_logErrorTooManyClusters,\
+#                                 process.Flag_METFilters,\
+#                                 process.gtDigis_step,\
+#                                 process.muonCSCDigis_step,\
+#                                 process.csc2DRecHits_step,\
+#                                 process.cscSegments_step,\
+#                                 process.cscTriggerPrimitiveDigis_step,\
+#                                 process.MakeNtuple_step
+# )
 process.schedule.associate(process.patTask)
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
@@ -352,7 +352,7 @@ process.options = cms.untracked.PSet(
 )
 
 #Setup FWK for multithreaded
-process.options.numberOfThreads=cms.untracked.uint32(8)
-process.options.numberOfStreams=cms.untracked.uint32(0)
+#process.options.numberOfThreads=cms.untracked.uint32(8)
+#process.options.numberOfStreams=cms.untracked.uint32(0)
 
 

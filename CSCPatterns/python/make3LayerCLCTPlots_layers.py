@@ -3,10 +3,11 @@ import Plotter as p
 
 
 writePath ='~/Documents/Presentations/2018/181026-3LayerEff/'
-#writePath ='~/Documents/Presentations/2018/181026-3LayerEff/secondFirmwareUpdate/'
+f = r.TFile('../data/SingleMuon/zskim2018D/CLCTLayerAnalysis-Aug-Sep.root')
 
-f = r.TFile('../data/SingleMuon/zskim2018D-full/CLCTLayerAnalysis-Full.root')
-#f = r.TFile('../dummySingleMuon.root')
+#writePath ='~/Documents/Presentations/2018/181026-3LayerEff/secondFirmwareUpdate/'
+#f = r.TFile('../data/SingleMuon/zskim2018D/CLCTLayerAnalysis-Sep+.root')
+
 print f
 if not hasattr(f, 'IsOpen'):
     print "can't open file"

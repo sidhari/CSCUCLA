@@ -49,36 +49,45 @@ public:
 class LUTEntry {
 public:
 	LUTEntry();
-	LUTEntry(float position, float slope, unsigned int nsegments,
-			float quality, unsigned int layers, float chi2);
+	LUTEntry(float position, float slope, unsigned long nsegments, unsigned long nclcts,
+			float multiplicity, float quality, unsigned int layers, float chi2);
 
 
 	~LUTEntry() {}
 
 	int addSegment(float positionOffset, float slopeOffset);
+	int addCLCT(unsigned int multiplicity=1);
 	bool operator<(const LUTEntry& l) const;
 	bool operator==(const LUTEntry& l) const;
 	float position() const;
 	float slope() const;
 	unsigned int nsegments() const; //amount of segments used to construct LUT entry
+	unsigned int nclcts() const;
 	float quality() const;
-	int calculateMeans();
+	float probability() const;
+	float multiplicity() const; //calculates average multiplicity for how many clcts it is associated with
+	int makeFinal();
 
 
 	const unsigned int _layers; //layers in code
 	const float _chi2; //chi2 of fit
 
 private:
-	bool _calculatedMeans; //if we have already calculated the offsets with all the segments
-	vector<float> _positionOffsets;
+	bool _isFinal; //if we have already calculated the offsets with all the segments
+	vector<float> _positionOffsets; //segment - clct
 	vector<float> _slopeOffsets;
 
 	float _position;
 	float _slope;
-	unsigned int _nsegments; //amount of segments used to construct LUT entry
+	unsigned long _nsegments; //amount of segments used to construct LUT entry
+	unsigned long _nclcts; //amount of clcts we found when making this entry (not necessarily matched with segments)
+	float _multiplicity;
+
+	vector<unsigned int> _clctMultiplicities; //fill for each clct we find how many there are in the chamber
 	float _quality; //quality parameter used choose between CLCTs
 
 };
+
 
 /* @brief Lambda function used to optimize LUTEntrys in the set,
  * mostly for printing
@@ -111,8 +120,9 @@ public:
 	int editEntry(const LUTKey& k, LUTEntry*& e);
 	int getEntry(const LUTKey&k, const LUTEntry*& e, bool debug=false) const;
 	void print(unsigned int minSegments=0);
-	int write(const string& filename);
-	int writePSLs(const string& fileprefix);
+	int writeToText(const string& filename);
+	int writeToROOT(const string& filename);
+	int writeToPSLs(const string& fileprefix);
 	int makeFinal();
 
 private:

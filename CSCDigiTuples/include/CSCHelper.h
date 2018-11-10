@@ -41,42 +41,31 @@ Target convertTo(Source source, const char name[], bool lenient = false, bool* g
   return converted;
 }
 
-/*
-unsigned short int chamberSerial( CSCDetId id ) {
-    int st = id.station();
-    int ri = id.ring();
-    int ch = id.chamber();
-    int ec = id.endcap();
-    int kSerial = ch;
-    if (st == 1 && ri == 1) kSerial = ch;
-    if (st == 1 && ri == 2) kSerial = ch + 36;
-    if (st == 1 && ri == 3) kSerial = ch + 72;
-    if (st == 1 && ri == 4) kSerial = ch;
-    if (st == 2 && ri == 1) kSerial = ch + 108;
-    if (st == 2 && ri == 2) kSerial = ch + 126;
-    if (st == 3 && ri == 1) kSerial = ch + 162;
-    if (st == 3 && ri == 2) kSerial = ch + 180;
-    if (st == 4 && ri == 1) kSerial = ch + 216;
-    if (st == 4 && ri == 2) kSerial = ch + 234;  // one day...
-    if (ec == 2) kSerial = kSerial + 300;
-    return convertTo<unsigned short int>(kSerial,"chamberSerial");
-}
-*/
+unsigned int MAX_CHAMBER_HASH = 2048;
 
+bool isValidChamber(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
+	//set them to be 0 based
+	 st--;ri--;ch--;ec--;
+	 if(ec >= 2 || st >= 4 || ri >= 4 || ch >= 36) {
+		 return false;
+	 }
+	 return true;
+}
 
 //written to remove ambiguity between ME11A and ME11B
 unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
-	//set them to be 0 based
-	st--;ri--;ch--;ec--;
-    //sanity check
-    if(ec >= 2 || st >= 4 || ri >= 4 || ch >= 36) {
+	//sanity check
+	if(!isValidChamber(st,ri,ch,ec)){
     	std::cout << "Error: Trying to serialize invalid chamber:" <<
     			" ST = " << st <<
     			" RI = " << ri <<
 				" CH = " << ch <<
 				" EC = " << ec << std::endl;
     	return 0xffffffff;
-    }
+	}
+	//set them to be 0 based
+	st--;ri--;ch--;ec--;
+
 
 	/* EC = 1 -> 2  [1 bit]
 	 * ST = 1 -> 4  [2 bits]

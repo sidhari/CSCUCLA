@@ -75,25 +75,29 @@ LUTEntry::LUTEntry():
 						_position(0.),
 						_slope(0.),
 						_nsegments(0),
+						_nclcts(0),
+						_multiplicity(-1),
 						_quality(-1)
 {
-	_calculatedMeans = false;
+	_isFinal = false;
 }
 
-LUTEntry::LUTEntry(float position, float slope, unsigned int nsegments,
-		float quality, unsigned int layers, float chi2) :
+LUTEntry::LUTEntry(float position, float slope, unsigned long nsegments, unsigned long nclcts,
+		float multiplicity, float quality, unsigned int layers, float chi2) :
 						_layers(layers),
 						_chi2(chi2),
 						_position(position),
 						_slope(slope),
 						_nsegments(nsegments),
+						_nclcts(nclcts),
+						_multiplicity(multiplicity),
 						_quality(quality){
-	_calculatedMeans = false;
+	_isFinal = false;
 }
 
 int LUTEntry::addSegment(float positionOffset, float slopeOffset){
-	if(_calculatedMeans){
-		cout << "Error: already calculated means, shouldn't add more segments!" << endl;
+	if(_isFinal){
+		cout << "Error: already finalized, shouldn't add more segments!" << endl;
 		return -1;
 	}
 	_positionOffsets.push_back(positionOffset);
@@ -101,35 +105,56 @@ int LUTEntry::addSegment(float positionOffset, float slopeOffset){
 	return 0;
 }
 
+int LUTEntry::addCLCT(unsigned int multiplicity){
+	if(_isFinal){
+		cout << "Error: already finalized, shouldn't add more clcts!" << endl;
+		return -1;
+	}
+	_clctMultiplicities.push_back(multiplicity);
+	return 0;
+}
+
 /*@brief
  *  Sort the LUT using nsegments, since it will make searching
  *  the LUT faster. This is not the same thing as quality sorting
  *  at present (July 28th, 2018).
+ *
+ *  Changed segments -> probability Nov 8
  */
 bool LUTEntry::operator<(const LUTEntry& l) const{
-	return nsegments() < l.nsegments() ? false : true;
+	if (probability() < l.probability()) return false;
+	else if (probability() == l.probability()){
+		if(nsegments() < l.nsegments()) return false;
+		else if (nsegments() == l.nsegments()){
+			return _layers < l._layers ? false : true;
+		}
+	}
+	return true;
+//	return nsegments() < l.nsegments() ? false : true;
+	//return probability() < l.probability() ? false : true;
 }
 
 bool LUTEntry::operator==(const LUTEntry& l) const{
 	return (_position == l._position &&
 			_slope == l._slope &&
 			_nsegments == l._nsegments &&
+			nclcts() == l.nclcts() &&
 			_quality == l._quality &&
 			_layers == l._layers &&
 			_chi2 == l._chi2 &&
-			_calculatedMeans == l._calculatedMeans);
+			_isFinal == l._isFinal);
 }
 
 
 float LUTEntry::position() const{
-	if(!_calculatedMeans && _positionOffsets.size()){
+	if(!_isFinal && _positionOffsets.size()){
 		cout << "Error: Need to run lutEntry.calculateMeans()" << endl;
 	}
 	return _position;
 }
 
 float LUTEntry::slope() const{
-	if(!_calculatedMeans && _positionOffsets.size()){
+	if(!_isFinal && _positionOffsets.size()){
 		cout << "Error: Need to run lutEntry.calculateMeans()" << endl;
 	}
 	return _slope;
@@ -139,14 +164,33 @@ unsigned int LUTEntry::nsegments() const{
 	return _positionOffsets.size()? _positionOffsets.size() : _nsegments;
 }
 
+unsigned int LUTEntry::nclcts() const{
+	return _clctMultiplicities.size() ? _clctMultiplicities.size() : _nclcts; //vector is filled once for each time the clct shows up
+}
+
 float LUTEntry::quality() const{
 	return _quality;
 }
 
-/* @brief Looks at the entries for each segments and recalculates
- * the position and slope
+/* @brief Probability clct will later be matched to a muon
+ *
  */
-int LUTEntry::calculateMeans(){
+float LUTEntry::probability() const{
+	if(nclcts()) return 1.*nsegments()/nclcts();
+	else return 0;
+}
+
+/* @brief How many (on average) clcts show up in the same chamber as this one
+ *
+ */
+float LUTEntry::multiplicity() const{
+	return _multiplicity;
+}
+
+/* @brief Looks at the entries for each segments and recalculates
+ * the position and slope, and find multiplicity of clcts
+ */
+int LUTEntry::makeFinal(){
 	unsigned int entries = _positionOffsets.size();
 	//cout << "entries = " << entries << endl;
 	if(!entries) return 0;
@@ -164,10 +208,19 @@ int LUTEntry::calculateMeans(){
 	_position = posSum/entries;
 	_slope = slopeSum/entries;
 	_nsegments = entries;
-	_calculatedMeans = true;
+
+	_nclcts = _clctMultiplicities.size();
+	if(!_nclcts) return 0;
+	float totalMult = 0;
+	for(auto mult: _clctMultiplicities){
+		totalMult += mult;
+	}
+	_multiplicity = totalMult/_nclcts;
+	_isFinal = true;
 	//cout << "calculated means! nseg = " << _nsegments<< endl;
 	return 0;
 }
+
 
 
 //
@@ -235,6 +288,8 @@ LUT::LUT(const string& name, const string& filepath):
 			float position          = stof(elements[counter++]);
 			float slope             = stof(elements[counter++]);
 			unsigned long nsegments = stoul(elements[counter++]);
+			unsigned long nclcts	= 0; //TODO
+			float multiplicity		= 0;
 			float quality           = stof(elements[counter++]);
 			unsigned int layers     = stoul(elements[counter++]);
 			float chi2              = stof(elements[counter++]);
@@ -247,12 +302,14 @@ LUT::LUT(const string& name, const string& filepath):
 						" pos: " << position << //strips
 						" slope: " << slope << //strip /layer
 						" nseg: " << nsegments <<
+						" nclcts: " << nclcts <<
+						" mult: " << multiplicity <<
 						" quality: " << quality <<
 						" layers: " << layers <<
 						" chi2: " << chi2 << endl;
 			}
 
-			LUTEntry entry = LUTEntry(position, slope, nsegments,
+			LUTEntry entry = LUTEntry(position, slope, nsegments, nclcts, multiplicity,
 					quality, layers, chi2);
 			setEntry(key,entry);
 		}
@@ -316,11 +373,14 @@ int LUT::getEntry(const LUTKey& k, const LUTEntry*& e, bool debug) const{
  */
 void LUT::print(unsigned int minSegments){
 	printf("\033[94m=== Printing LUT - Chamber: %s ===\033[0m\n", _name.c_str());
-	printf("[%4s,%5s,%7s] -> [%8s,%6s,%5s,%5s,%8s,%8s]\n",
+	printf("[%4s,%5s,%7s] -> [%5s,%8s,%8s,%5s,%6s,%5s,%5s,%8s,%8s]\n",
 			"patt",
 			"cc",
 			"cc(b4)",
+			"prob",
 			"nseg",
+			"nclct",
+			"mult",
 			"qual",
 			"lays",
 			"chi2",
@@ -333,11 +393,14 @@ void LUT::print(unsigned int minSegments){
 		const LUTKey& k = x.first;
 		const LUTEntry& e = x.second;
 		if(e.nsegments() < minSegments) break;
-		printf("[%4i,%5i,%7s] -> [%8.1e,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
+		printf("[%4i,%5i,%7s] -> [%5.3f,%8.1e,%8.1e,%5.3f,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
 				k._pattern,
 				k._code,
 				ComparatorCode::getStringInBase4(k._code).c_str(),
+				e.probability(),
 				(double)e.nsegments(),
+				(double)e.nclcts(),
+				e.multiplicity(),
 				e.quality(),
 				e._layers,
 				e._chi2,
@@ -346,7 +409,7 @@ void LUT::print(unsigned int minSegments){
 	}
 }
 
-int LUT::write(const string& filename) {
+int LUT::writeToText(const string& filename) {
 		cout << "\033[94m=== Writing LUT ===\033[0m" << endl;
 		cout << "Writing to file: " << filename << endl;
 		ofstream myfile;
@@ -376,10 +439,74 @@ int LUT::write(const string& filename) {
 
 }
 
+int LUT::writeToROOT(const string& filename){
+	if(!_isFinal)makeFinal();
+
+	cout << "\033[94m=== Writing LUT ===\033[0m" << endl;
+	cout << "Writing to file: " << filename << endl;
+	TFile * outF = new TFile(filename.c_str(),"RECREATE");
+	if(!outF){
+		printf("Failed to open output file: %s\n", filename.c_str());
+		return -1;
+	}
+	//
+	// OUTPUT TREE
+	//
+
+	int patternId;
+	int ccId;
+	float position;
+	float slope;
+	unsigned int nsegments;
+	unsigned int nclcts;
+	unsigned int quality;
+	float probability;
+	unsigned int layers;
+	float chi2;
+	float multiplicity;
+
+	TTree* outTree = new TTree("clctTree", "TTree for analysis of probability if a CLCT will result in a real muon or not");
+	outTree->Branch("patternId", &patternId, "patternId/I");
+	outTree->Branch("ccId", &ccId, "ccId/I");
+	outTree->Branch("position", &position, "position/F");
+	outTree->Branch("slope", &slope, "slope/F");
+	outTree->Branch("nsegments", &nsegments, "nsegments/I");
+	outTree->Branch("nclcts", &nclcts, "nclcts/I");
+	outTree->Branch("quality", &quality, "quality/F");
+	outTree->Branch("probability", &probability, "probability/F");
+	outTree->Branch("layers", &layers, "layers/I");
+	outTree->Branch("chi2", &chi2, "chi2/F");
+	outTree->Branch("multiplicity", &multiplicity, "multiplicity/F");
+
+
+	for(auto& it : _orderedLUT){
+		patternId = it.first._pattern;
+		ccId = it.first._code;
+		position = it.second.position();
+		slope = it.second.slope();
+		nsegments = it.second.nsegments();
+		nclcts = it.second.nclcts();
+		quality = it.second.quality();
+		probability = it.second.probability();
+		layers = it.second._layers;
+		chi2 = it.second._chi2;
+		multiplicity = it.second.multiplicity();
+		outTree->Fill();
+	}
+
+	outF->cd();
+	outTree->Write();
+	outF->Close();
+	cout << "LUT Write completed" << endl;
+
+
+	return 0;
+}
+
 /* @brief Writes pattern Specific LUTs (PSLs),
  * readable by the OTMB. One for each pattern
  */
-int LUT::writePSLs(const string& fileprefix){
+int LUT::writeToPSLs(const string& fileprefix){
 	cout << "\033[94m=== Writing PSL ===\033[0m" << endl;
 	if(!_isFinal)makeFinal();
 
@@ -443,7 +570,7 @@ int LUT::writePSLs(const string& fileprefix){
 int LUT::makeFinal(){
 	if(_isFinal) return 0;
 	for(auto& x: _lut) {
-		x.second.calculateMeans();
+		x.second.makeFinal();
 		_orderedLUT.insert(x);
 	}
 	_isFinal = true;
@@ -594,7 +721,7 @@ int DetectorLUTs::writeAll(const string& path) {
 	//TODO: make it so we have a bool that keeps track of if its final
 	makeFinal();
 	for(auto& l : _luts){
-		l.second.write(path+l.second._name+".lut");
+		l.second.writeToText(path+l.second._name+".lut");
 	}
 	return 0;
 }

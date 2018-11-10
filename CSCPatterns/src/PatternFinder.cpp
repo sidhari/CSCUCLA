@@ -54,36 +54,6 @@ using namespace std;
  */
 
 
-
-
-//
-//int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) {
-//
-//	unsigned int nthreads = std::thread::hardware_concurrency();
-//	ROOT::EnableImplicitMT(nthreads);
-//	ROOT::EnableThreadSafety();
-//	ROOT::TTreeProcessorMT tp(inputfile.c_str(), "CSCDigiTree");
-//
-//	auto processPatternFinder = [&](TTreeReader &r) {
-//		cout << "start: " << start << " end: " << end << endl;
-//		r.SetEntriesRange(start, end);
-//
-//
-//		while(r.Next()){
-//			cout << "r.Entry: " << r.GetCurrentEntry() << endl;
-//		}
-//	};
-//
-//	try {
-//		tp.Process(processPatternFinder);
-//	} catch( const char* msg) {
-//		cerr << "ERROR: " << msg << endl;
-//		return -1;
-//	}
-//	return 0;
-//}
-
-
 int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) {
 
 	//TODO: change everythign printf -> cout
@@ -238,8 +208,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 		t->GetEntry(i);
 
-		//if(!os) continue;
-
 		//iterate through segments
 		for(unsigned int thisSeg = 0; thisSeg < segments.size(); thisSeg++){
 			CSCHelper::ChamberId c = CSCHelper::unserialize(segments.ch_id->at(thisSeg));
@@ -269,10 +237,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			}
 
 
-			//TODO: REMOVE THISSSSSSSSSSSSSS
-			//if(!me11b) continue;
-
-
 			ChamberHits theseRHHits(0, ST, RI, EC, CH);
 			ChamberHits theseCompHits(1, ST, RI, EC, CH);
 
@@ -287,7 +251,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			testChamber = USE_COMP_HITS ? &theseCompHits : &theseRHHits;
 
 			nChambersRanOver++;
-			//foundOneMatchEffDen->Fill(Pt);
 
 			//now run on comparator hits
 			if(DEBUG > 0) printf("~~~~ Matches for Muon: %i,  Segment %i ~~~\n",i,  thisSeg);

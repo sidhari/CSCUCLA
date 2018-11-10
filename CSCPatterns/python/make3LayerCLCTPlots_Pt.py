@@ -2,10 +2,12 @@ import ROOT as r
 import Plotter as p
 import StatsTools as s
 
-writePath ='~/Documents/Presentations/2018/181026-3LayerEff/'
+#writePath ='~/Documents/Presentations/2018/181026-3LayerEff/'
+writePath ='~/Documents/Presentations/2018/181026-3LayerEff/pt10/'
 
 
-f = r.TFile('../data/SingleMuon/zskim2018D-full/CLCTLayerAnalysis-Full.root')
+#f = r.TFile('../data/SingleMuon/zskim2018D-full/CLCTLayerAnalysis-Full.root')
+f = r.TFile('../data/SingleMuon/zskim2018D/CLCTLayerAnalysis-Pt10.root')
 can = p.Canvas(True,lumi='',ratioFactor=1./3)
 
 # pt_a_h = f.Get("h_mep11a_11_Pt")

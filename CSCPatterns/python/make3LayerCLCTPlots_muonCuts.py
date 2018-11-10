@@ -1,7 +1,7 @@
 import ROOT as r
 import Plotter as p
  
-f = r.TFile('../data/SingleMuon/zskim2018D-full/CSCDigiTree-Full.root')
+f = r.TFile('../data/SingleMuon/zskim2018D/CSCDigiTree-Full.root')
 can = p.Canvas(lumi='')
  
 pt_h = f.Get('h_muonCuts')

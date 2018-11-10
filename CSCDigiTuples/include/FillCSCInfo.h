@@ -51,24 +51,29 @@
 
 //for histogram bins, starting at 1
 enum EVENT_CUTS {
-	allEvents=1,
-	eventHasSegments,
-	eventHasCSCDigis,
-	eventHasVertex,
-	EVENT_SIZE_PLUS_ONE
+	allEvents,
+	hasSegments,
+	hasCSCDigis,
+	hasVertex,
+	hasZ,
+	hasMuonInCSC,
+	EVENT_SIZE
 };
 
 //for histogram bins, starting at 1
 enum MUON_CUTS {
-	allMuons=1,
-	allMuonsAfterEventCuts,
+	allMuons,
+	eventHasSegments,
+	eventHasCSCDigis,
+	eventHasVertex,
 	isStandAlone,
 	isGlobal,
 	isInMassWindow,
 	isSS,
 	isOS,
 	isOSAndPtOVerThreshold,
-	MUON_SIZE_PLUS_ONE
+	muonHasSegments,
+	MUON_SIZE
 };
 
 
@@ -84,22 +89,27 @@ public:
 	file = new TFile(fileName, "RECREATE");
 	tree = new TTree(treeName,treeTitle);
 
-	h_eventCuts = new TH1F("h_eventCuts", "h_eventCuts; ; Events", EVENT_CUTS::EVENT_SIZE_PLUS_ONE-1, 0, EVENT_CUTS::EVENT_SIZE_PLUS_ONE-1);
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::allEvents, "allEvents");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::eventHasSegments, "eventHasSegments");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::eventHasCSCDigis, "eventHasCSCDigis");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::eventHasVertex, "eventHasVertex");
+	h_eventCuts = new TH1F("h_eventCuts", "h_eventCuts; ; Events", EVENT_CUTS::EVENT_SIZE, 0, EVENT_CUTS::EVENT_SIZE);
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::allEvents+1, "allEvents");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasSegments+1, "eventHasSegments");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasCSCDigis+1, "eventHasCSCDigis");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasVertex+1, "eventHasVertex");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasZ+1, "eventHasZ");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasMuonInCSC+1, "eventHasMuonInCSC");
 
 
-	h_muonCuts = new TH1F("h_muonCuts", "h_muonCuts; ; Muons", MUON_CUTS::MUON_SIZE_PLUS_ONE-1, 0, MUON_CUTS::MUON_SIZE_PLUS_ONE-1);
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::allMuons, "allMuons");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::allMuonsAfterEventCuts, "allMuonsAfterEventCuts");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isStandAlone, "isStandalone");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isGlobal, "isGlobal");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isInMassWindow, "isInMassWindow");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isSS, "isSS");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOS, "isOS");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOSAndPtOVerThreshold, "isOS+Pt>thres");
+	h_muonCuts = new TH1F("h_muonCuts", "h_muonCuts; ; Muons", MUON_CUTS::MUON_SIZE, 0, MUON_CUTS::MUON_SIZE);
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::allMuons+1, "allMuons");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasSegments+1, "eventHasSegments");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasCSCDigis+1, "eventHasCSCDigis");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasVertex+1, "eventHasVertex");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isStandAlone+1, "isStandalone");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isGlobal+1, "isGlobal");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isInMassWindow+1, "isInMassWindow");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isSS+1, "isSS");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOS+1, "isOS");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOSAndPtOVerThreshold+1, "isOS+Pt>thres");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::muonHasSegments+1, "muonHasSegment");
 
 	h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 100, 0,100);
 	h_allMuonsEta = new TH1F("h_allMuonsEta", "h_allMuonsEta; #eta; Muons", 100, -3,3);

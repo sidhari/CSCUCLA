@@ -151,7 +151,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 	map<unsigned int, TH1F*> matchPt = makeHistPermutation("h_matchedPt", "h_matchedPt;Pt [GeV]; CLCTs", 18,0,90);
 	map<unsigned int, TH1F*> matchPt_3Lay = makeHistPermutation("h_matchedPt_3Lay", "h_matchedPt_3Lay;Pt [GeV]; CLCTs", 18,0,90);
-
+/*
 
 	TH1F* clctLayerCount_mep11a_11 = new TH1F("h_clctLayerCount_me_p11a11","h_clctLayerCount_me_p11a11; Layer Count; Matched CLCTs", 7,0,7);
 	TH1F* clctLayerCount_mep11b_11 = new TH1F("h_clctLayerCount_me_p11b11","h_clctLayerCount_me_p11b11; Layer Count; Matched CLCTs", 7,0,7);
@@ -176,7 +176,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 	TH1F* lctLayerCount_mem11a_11 = new TH1F("h_lctLayerCount_me_m11a11","h_lctLayerCount_me_m11a11; Layer Count; Matched LCTs", 16,0,16);
 	TH1F* lctLayerCount_mem11b_11 = new TH1F("h_lctLayerCount_me_m11b11","h_lctLayerCount_me_m11b11; Layer Count; Matched LCTs", 16,0,16);
-
+*/
 
 	/*
 
@@ -264,6 +264,16 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 			//Selecting only CLCTs in these chambers
 			float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
+
+			/*
+			 * Cutting on Pt!
+			 */
+			if (Pt < 25) continue;
+
+
+
+
+
 			fillHist(clctEff_den, segId, Pt);
 			fillHist(clctEff_cuts,segId,nSegments);
 
@@ -271,8 +281,8 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 			bool found3LayCLCT = false;
 			bool matched3LayCLCT = false;
 
-			ChamberHits theseCompHits(1, ST, RI, EC, CH);
-			if(fillCompHits(theseCompHits, comparators)) return -1;
+			//ChamberHits theseCompHits(1, ST, RI, EC, CH);
+			//if(fillCompHits(theseCompHits, comparators)) return -1;
 
 
 			int closestCLCTtoSegmentIndex = -1;
@@ -299,7 +309,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 				if(qual == 3) {
 					cout << "threeLayerCount = " << threeLayerCounterME11A++ << endl;
-					printChamber(theseCompHits);
+					//printChamber(theseCompHits);
 				}
 
 				//look to see if we care about this chamber
@@ -311,7 +321,11 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 				//if(qual == 3) printChamber(theseCompHits);
 				if(qual == 3) matched3LayCLCT = true;
 
-			}//closest index
+				//closest index
+			}else {
+				fillHist(clctLayerCounts,segId, 0); //set a quality 0 if we find no associated clct
+
+			}
 			if(foundCLCT) {
 				fillHist(clctEff_hasClct,segId,Pt);
 				fillHist(clctEff_cuts,segId,hasClct);
@@ -328,17 +342,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 			}
 
-			//remove after debug
-			/*
-			unsigned int sameChamberCount = 0;
-			for(unsigned int ilct =0; ilct < lcts.size(); ilct++){
-				int thisLctId = lcts.ch_id->at(ilct);
-				if(thisLctId != segId) continue;
-				sameChamberCount++;
-			}
-			*/
 
-			//if(lcts.size()>1)cout << "segPos = " << segmentX << endl;
 			//MATCH LCTS
 			int closestLCTtoSegmentIndex = -1;
 			float minDistanceSegmentToClosestLCT = 1e5;
@@ -360,6 +364,8 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 				//look to see if we care about this chamber
 				fillHist(lctQuality,segId, qual);
+			} else {
+				fillHist(lctQuality,segId,0); //call unmatched "quality 0"
 			}
 		}//segments
 
@@ -367,8 +373,6 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 		//now look through the clcts that were not matched to a segment
 		for(unsigned int iclct =0; iclct < clcts.size(); iclct++){
 			int thisClctId = clcts.ch_id->at(iclct);
-			//CSCHelper::ChamberId c = CSCHelper::unserialize(thisClctId);
-
 			unsigned int qual = clcts.quality->at(iclct);
 
 			fillHist(allClctLayerCounts,thisClctId,qual);
@@ -405,39 +409,6 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 		m_entries += m_hist->GetBinContent(4);
 	}
 
-	clctLayerCount_mep11a_11->Write();
-	clctLayerCount_mep11b_11->Write();
-	clctLayerCount_mem11a_11->Write();
-	clctLayerCount_mem11b_11->Write();
-	unmatched_clctLayerCount_mep11a_11->Write();
-	unmatched_clctLayerCount_mep11b_11->Write();
-
-	/*
-	clctEff_den->Write();
-	clctEff_hasClct->Write();
-	clctEff_has3LayClct->Write();
-	clctEff_3LayClct->Write();
-*/
-	mep11a_11_Pt->Write();
-	mep11a_11_3Lay_Pt->Write();
-	mep11b_11_Pt->Write();
-	mep11b_11_3Lay_Pt->Write();
-
-	me11_clctMult->Write();
-	me11_3lay_clctMult->Write();
-
-	TH1F* me_plus_11_3lay_clct_mult = new TH1F("h_me_plus_11_3lay_clct_mult","h_me_plus_11_3lay_clct_mult; Chamber; 3Layer CLCTs", 36, 1,37);
-	TH1F* me_minus_11_3lay_clct_mult = new TH1F("h_me_minus_11_3lay_clct_mult","h_me_minus_11_3lay_clct_mult; Chamber; Matched 3Layer CLCTs", 36, 1,37);
-
-	me_plus_11_3lay_clct_mult->SetEntries(p_entries);
-	me_plus_11_3lay_clct_mult->Write();
-	me_minus_11_3lay_clct_mult->SetEntries(m_entries);
-	me_minus_11_3lay_clct_mult->Write();
-
-	lctLayerCount_mep11a_11->Write();
-	lctLayerCount_mep11b_11->Write();
-	lctLayerCount_mem11a_11->Write();
-	lctLayerCount_mem11b_11->Write();
 
 	for(auto hist : allClctLayerCounts) hist.second->Write();
 	for(auto hist : clctLayerCounts) hist.second->Write();
