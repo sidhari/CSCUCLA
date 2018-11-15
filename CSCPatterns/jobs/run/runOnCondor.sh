@@ -27,7 +27,7 @@ make #make locally
 #mv *.cpp $CMSVERS/src/src #move all the src needed for the dictionary
 #cd $CMSVERS/src/
 
-
+ls -R
 #executable, inputfile, outputfile
 ./src/${1} ../../${2} ${3}
 mv ${3} ../../ #move out of CMSSW build so it transfers properly

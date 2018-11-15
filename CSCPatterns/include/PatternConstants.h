@@ -20,7 +20,7 @@ const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 
 
-const std::string LINEFIT_LUT_PATH = "data/linearFits.lut";
+const std::string LINEFIT_LUT_PATH = "dat/linearFits.lut";
 
 //labels of all envelopes
 const unsigned int NPATTERNS = 5;

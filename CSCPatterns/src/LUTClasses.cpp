@@ -75,6 +75,7 @@ LUTEntry::LUTEntry():
 						_position(0.),
 						_slope(0.),
 						_nsegments(0),
+						_pt(-1), //default to non-physical pt to keep things clear
 						_nclcts(0),
 						_multiplicity(-1),
 						_quality(-1)
@@ -82,34 +83,73 @@ LUTEntry::LUTEntry():
 	_isFinal = false;
 }
 
-LUTEntry::LUTEntry(float position, float slope, unsigned long nsegments, unsigned long nclcts,
+LUTEntry::LUTEntry(float position, float slope, unsigned long nsegments, float pt, unsigned long nclcts,
 		float multiplicity, float quality, unsigned int layers, float chi2) :
 						_layers(layers),
 						_chi2(chi2),
 						_position(position),
 						_slope(slope),
 						_nsegments(nsegments),
+						_pt(pt),
 						_nclcts(nclcts),
 						_multiplicity(multiplicity),
 						_quality(quality){
 	_isFinal = false;
 }
 
-int LUTEntry::addSegment(float positionOffset, float slopeOffset){
+int LUTEntry::loadTree(TTree* tree) {
+	if(_isFinal) return -1;
+	bool hasSegment;
+	float position;
+	float slope;
+	float pt;
+	int multiplicity;
+	tree->SetBranchAddress("hasSegment", &hasSegment);
+	tree->SetBranchAddress("position", &position);
+	tree->SetBranchAddress("slope", &slope);
+	tree->SetBranchAddress("pt",&pt);
+	tree->SetBranchAddress("multiplicity", &multiplicity);
+
+	_nclcts = tree->GetEntries();
+	_nsegments = 0;
+	for(unsigned int i =0; i < _nclcts; i++){
+		tree->GetEntry(i);
+		if(hasSegment)_nsegments++;
+		_hasSegment.push_back(hasSegment);
+		_positionOffsets.push_back(position);
+		_slopeOffsets.push_back(slope);
+		_pts.push_back(pt);
+		_clctMultiplicities.push_back(multiplicity);
+	}
+	return makeFinal();
+}
+
+/*
+int LUTEntry::addSegment(float positionOffset, float slopeOffset,float pt){
 	if(_isFinal){
 		cout << "Error: already finalized, shouldn't add more segments!" << endl;
 		return -1;
 	}
 	_positionOffsets.push_back(positionOffset);
 	_slopeOffsets.push_back(slopeOffset);
+	_pts.push_back(pt);
 	return 0;
 }
-
-int LUTEntry::addCLCT(unsigned int multiplicity){
+*/
+/*@brief adds a CLCT to the entry, if pt > -1., we are also adding a segment
+ *
+ */
+int LUTEntry::addCLCT(unsigned int multiplicity, float pt,float posOffset, float slopeOffset){
 	if(_isFinal){
 		cout << "Error: already finalized, shouldn't add more clcts!" << endl;
 		return -1;
 	}
+
+	//way to differentiate matched to segment or not
+	_hasSegment.push_back(pt >= 0);
+	_pts.push_back(pt);
+	_positionOffsets.push_back(posOffset);
+	_slopeOffsets.push_back(slopeOffset);
 	_clctMultiplicities.push_back(multiplicity);
 	return 0;
 }
@@ -122,22 +162,26 @@ int LUTEntry::addCLCT(unsigned int multiplicity){
  *  Changed segments -> probability Nov 8
  */
 bool LUTEntry::operator<(const LUTEntry& l) const{
-	if (probability() < l.probability()) return false;
-	else if (probability() == l.probability()){
+
+
+	//if (nclcts() < l.nclcts()) return false;
+	//else if (nclcts() == l.nclcts()){
+	if(multiplicity() < l.multiplicity()) return false;
+	else if (multiplicity() == l.multiplicity()) {
 		if(nsegments() < l.nsegments()) return false;
 		else if (nsegments() == l.nsegments()){
 			return _layers < l._layers ? false : true;
 		}
 	}
 	return true;
-//	return nsegments() < l.nsegments() ? false : true;
-	//return probability() < l.probability() ? false : true;
+
 }
 
 bool LUTEntry::operator==(const LUTEntry& l) const{
 	return (_position == l._position &&
 			_slope == l._slope &&
 			_nsegments == l._nsegments &&
+			_pt == l._pt &&
 			nclcts() == l.nclcts() &&
 			_quality == l._quality &&
 			_layers == l._layers &&
@@ -148,20 +192,31 @@ bool LUTEntry::operator==(const LUTEntry& l) const{
 
 float LUTEntry::position() const{
 	if(!_isFinal && _positionOffsets.size()){
-		cout << "Error: Need to run lutEntry.calculateMeans()" << endl;
+		cout << "Error: Need to run lutEntry.makeFinal()" << endl;
 	}
 	return _position;
 }
 
 float LUTEntry::slope() const{
 	if(!_isFinal && _positionOffsets.size()){
-		cout << "Error: Need to run lutEntry.calculateMeans()" << endl;
+		cout << "Error: Need to run lutEntry.makeFinal()" << endl;
 	}
 	return _slope;
 }
 
 unsigned int LUTEntry::nsegments() const{
-	return _positionOffsets.size()? _positionOffsets.size() : _nsegments;
+	if( !_hasSegment.size()) return _nsegments;
+
+	unsigned int segments = 0;
+	for (bool hasSeg : _hasSegment) segments += hasSeg;
+	return segments;
+}
+
+float LUTEntry::pt() const{
+	if(!_isFinal && _pts.size()){
+		cout << "Error: Need to run lutEntry.makeFinal()" << endl;
+	}
+	return _pt;
 }
 
 unsigned int LUTEntry::nclcts() const{
@@ -186,27 +241,123 @@ float LUTEntry::probability() const{
 float LUTEntry::multiplicity() const{
 	return _multiplicity;
 }
+/*
+const vector<float>& LUTEntry::positionOffsets() const{
+	return _positionOffsets;
+}
+
+const vector<float>& LUTEntry::slopeOffsets() const{
+	return _slopeOffsets;
+}
+
+const vector<float>& LUTEntry::pts() const{
+	return _pts;
+}
+
+const vector<unsigned int>& LUTEntry::clctMultiplicities() const{
+	return _clctMultiplicities;
+}
+*/
+/* @brief Makes a tree out of the variables obtained from each individual clct / segment
+ *
+ */
+TTree* LUTEntry::makeTree(const string& name) const {
+	unsigned int clcts = nclcts();
+	bool hasSegment;
+	float position;
+	float slope;
+	float pt;
+	int multiplicity;
+	TTree* tree = new TTree(name.c_str(),name.c_str());
+	tree->Branch("hasSegment",&hasSegment);
+	tree->Branch("position", &position, "position/F");
+	tree->Branch("slope",&slope, "slope/F");
+	tree->Branch("pt",&pt, "pt/F");
+	tree->Branch("multiplicity", &multiplicity, "multiplicity/I");
+	if(_hasSegment.size() != clcts ||
+			_positionOffsets.size() != clcts ||
+			_slopeOffsets.size() != clcts ||
+			_pts.size() != clcts ||
+			_clctMultiplicities.size() != clcts) {
+		return 0;
+	}
+
+
+
+	for(unsigned int i = 0; i < clcts; i++){
+		hasSegment = _hasSegment.at(i);
+		position = _positionOffsets.at(i);
+		slope = _slopeOffsets.at(i);
+		pt = _pts.at(i);
+		multiplicity = _clctMultiplicities.at(i);
+		tree->Fill();
+	}
+	return tree;
+
+}
 
 /* @brief Looks at the entries for each segments and recalculates
  * the position and slope, and find multiplicity of clcts
  */
 int LUTEntry::makeFinal(){
+	unsigned int clcts = nclcts();
+	if(!clcts) return 0; //cant do anything
+	if(_hasSegment.size() != clcts ||
+			_positionOffsets.size() != clcts ||
+			_slopeOffsets.size() != clcts ||
+			_pts.size() != clcts ||
+			_clctMultiplicities.size() != clcts) {
+		return -1;
+	}
+	unsigned int segments = nsegments();
+
+	float multSum = 0;
+	float posSum = 0;
+	float slopeSum = 0;
+	float ptSum = 0;
+	for(unsigned int i =0; i < clcts; i++){
+		multSum += _clctMultiplicities.at(i);
+		if(_hasSegment.at(i)){
+			posSum += _positionOffsets.at(i);
+			slopeSum += _slopeOffsets.at(i);
+			ptSum += _pts.at(i);
+		}
+	}
+
+	_multiplicity = multSum / clcts;
+	_nclcts = clcts;
+	_nsegments = segments;
+	if(segments) {
+		_position = posSum / segments;
+		_slope = slopeSum / segments;
+		_pt = ptSum / segments;
+	}
+	_isFinal = true;
+	return 0;
+
+
+
+
+/*
 	unsigned int entries = _positionOffsets.size();
 	//cout << "entries = " << entries << endl;
 	if(!entries) return 0;
-	if(_slopeOffsets.size() != entries){
-		cout << "Error: position and slope vector different lengths" << endl;
+	if(_slopeOffsets.size() != entries || _pts.size() != entries){
+		cout << "Error: position / slope / pt vector different lengths" << endl;
 		return -1;
 	}
 	float posSum = 0;
 	float slopeSum = 0;
+	float ptSum = 0;
 	for(unsigned int i=0; i < entries; i++){
 		posSum += _positionOffsets.at(i);
 		slopeSum += _slopeOffsets.at(i);
+		ptSum +=_pts.at(i);
 	}
 	//assign new position and slope values
 	_position = posSum/entries;
 	_slope = slopeSum/entries;
+	_pt = ptSum/entries;
 	_nsegments = entries;
 
 	_nclcts = _clctMultiplicities.size();
@@ -219,6 +370,7 @@ int LUTEntry::makeFinal(){
 	_isFinal = true;
 	//cout << "calculated means! nseg = " << _nsegments<< endl;
 	return 0;
+	*/
 }
 
 
@@ -288,7 +440,8 @@ LUT::LUT(const string& name, const string& filepath):
 			float position          = stof(elements[counter++]);
 			float slope             = stof(elements[counter++]);
 			unsigned long nsegments = stoul(elements[counter++]);
-			unsigned long nclcts	= 0; //TODO
+			float pt				= 0; //TODO
+			unsigned long nclcts	= 0;
 			float multiplicity		= 0;
 			float quality           = stof(elements[counter++]);
 			unsigned int layers     = stoul(elements[counter++]);
@@ -302,6 +455,7 @@ LUT::LUT(const string& name, const string& filepath):
 						" pos: " << position << //strips
 						" slope: " << slope << //strip /layer
 						" nseg: " << nsegments <<
+						" pt " << pt << //GeV
 						" nclcts: " << nclcts <<
 						" mult: " << multiplicity <<
 						" quality: " << quality <<
@@ -309,7 +463,7 @@ LUT::LUT(const string& name, const string& filepath):
 						" chi2: " << chi2 << endl;
 			}
 
-			LUTEntry entry = LUTEntry(position, slope, nsegments, nclcts, multiplicity,
+			LUTEntry entry = LUTEntry(position, slope, nsegments, pt, nclcts, multiplicity,
 					quality, layers, chi2);
 			setEntry(key,entry);
 		}
@@ -318,7 +472,6 @@ LUT::LUT(const string& name, const string& filepath):
 	} else {
 		cout << "Error: unable to open file:" << filepath << endl;
 	}
-
 }
 
 int LUT::setEntry(const LUTKey& k,const LUTEntry& e){
@@ -371,14 +524,15 @@ int LUT::getEntry(const LUTKey& k, const LUTEntry*& e, bool debug) const{
  * are less than the min segments
  *
  */
-void LUT::print(unsigned int minSegments){
+void LUT::print(unsigned int minClcts){
 	printf("\033[94m=== Printing LUT - Chamber: %s ===\033[0m\n", _name.c_str());
-	printf("[%4s,%5s,%7s] -> [%5s,%8s,%8s,%5s,%6s,%5s,%5s,%8s,%8s]\n",
+	printf("[%4s,%5s,%7s] -> [%5s,%8s,%6s,%8s,%6s,%6s,%5s,%5s,%8s,%8s]\n",
 			"patt",
 			"cc",
 			"cc(b4)",
 			"prob",
 			"nseg",
+			"pt",
 			"nclct",
 			"mult",
 			"qual",
@@ -392,13 +546,14 @@ void LUT::print(unsigned int minSegments){
 	for(auto& x: _orderedLUT){
 		const LUTKey& k = x.first;
 		const LUTEntry& e = x.second;
-		if(e.nsegments() < minSegments) break;
-		printf("[%4i,%5i,%7s] -> [%5.3f,%8.1e,%8.1e,%5.3f,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
+		if(e.nclcts() < minClcts) break;
+		printf("[%4i,%5i,%7s] -> [%5.3f,%8.1e,%6.2f,%8.1e,%6.3f,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
 				k._pattern,
 				k._code,
 				ComparatorCode::getStringInBase4(k._code).c_str(),
 				e.probability(),
 				(double)e.nsegments(),
+				e.pt(),
 				(double)e.nclcts(),
 				e.multiplicity(),
 				e.quality(),
@@ -407,6 +562,28 @@ void LUT::print(unsigned int minSegments){
 				e.position(),
 				e.slope());
 	}
+}
+
+int LUT::loadROOT(const string& rootfile) {
+	cout << "\033[94m=== Loading LUT ===\033[0m" << endl;
+	cout << "Loading file: " << rootfile << endl;
+	TFile* f = TFile::Open(rootfile.c_str());
+	if(!f) return -1;
+
+	unsigned int count = 0;
+	for(auto& it: _lut){
+		count++;
+		if(count % (_lut.size()/10) == 0) cout << "Processed " << round(100.*count/_lut.size()) << " %" << endl;
+
+		int patt = it.first._pattern;
+		int cc = it.first._code;
+		string treeName = string("p" + to_string(patt) + "_cc" + to_string(cc));
+		TTree* t = (TTree*)f->Get(treeName.c_str());
+		if(!t) return -1;
+		if(it.second.loadTree(t)) return -1;
+	}
+
+	return 0;
 }
 
 int LUT::writeToText(const string& filename) {
@@ -449,6 +626,19 @@ int LUT::writeToROOT(const string& filename){
 		printf("Failed to open output file: %s\n", filename.c_str());
 		return -1;
 	}
+
+
+	outF->cd();
+	for(auto& it :_orderedLUT){
+		int patt = it.first._pattern;
+		int cc = it.first._code;
+		string treeName = string("p" + to_string(patt) + "_cc" + to_string(cc));
+		TTree* thisTree = it.second.makeTree(treeName);
+		thisTree->Write();
+	}
+	outF->Close();
+
+	/*
 	//
 	// OUTPUT TREE
 	//
@@ -458,6 +648,7 @@ int LUT::writeToROOT(const string& filename){
 	float position;
 	float slope;
 	unsigned int nsegments;
+	float pt;
 	unsigned int nclcts;
 	unsigned int quality;
 	float probability;
@@ -471,6 +662,7 @@ int LUT::writeToROOT(const string& filename){
 	outTree->Branch("position", &position, "position/F");
 	outTree->Branch("slope", &slope, "slope/F");
 	outTree->Branch("nsegments", &nsegments, "nsegments/I");
+	outTree->Branch("pt", &pt, "pt/F");
 	outTree->Branch("nclcts", &nclcts, "nclcts/I");
 	outTree->Branch("quality", &quality, "quality/F");
 	outTree->Branch("probability", &probability, "probability/F");
@@ -485,6 +677,7 @@ int LUT::writeToROOT(const string& filename){
 		position = it.second.position();
 		slope = it.second.slope();
 		nsegments = it.second.nsegments();
+		pt = it.second.pt();
 		nclcts = it.second.nclcts();
 		quality = it.second.quality();
 		probability = it.second.probability();
@@ -497,8 +690,8 @@ int LUT::writeToROOT(const string& filename){
 	outF->cd();
 	outTree->Write();
 	outF->Close();
+	*/
 	cout << "LUT Write completed" << endl;
-
 
 	return 0;
 }

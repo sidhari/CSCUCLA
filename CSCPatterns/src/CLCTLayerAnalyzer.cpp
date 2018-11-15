@@ -197,10 +197,10 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 	TH1F* mep11b_11_3Lay_Pt = new TH1F("h_mep11b_3Lay_11_Pt","h_mep11b_3Lay_11_Pt; Pt; CLCTs",14,0,70);
 */
 
-	int EC = 0; // 1-2
+	//int EC = 0; // 1-2
 	int ST = 0; // 1-4
 	int RI = 0; // 1-4
-	int CH = 0;
+	//int CH = 0;
 	float segmentX = 0;
 
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
@@ -238,10 +238,10 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 			int segId = segments.ch_id->at(thisSeg);
 			CSCHelper::ChamberId c = CSCHelper::unserialize(segId);
 
-			EC = c.endcap;
+			//EC = c.endcap;
 			ST = c.station;
 			RI = c.ring;
-			CH = c.chamber;
+			//CH = c.chamber;
 
 
 			segmentX = segments.pos_x->at(thisSeg); //strips

@@ -37,6 +37,15 @@ using namespace std;
 
 
 
+struct SegmentMatch {
+	int clctIndex;
+	float posOffset;
+	float slopeOffset;
+	float pt;
+};
+
+
+
 /* Calculates probability of a muon given a comparator code.
  * See slides: https://indico.cern.ch/event/744948/
  */
@@ -102,6 +111,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 	*/
 
 
+	/*
 	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
 	if(!outF){
 		printf("Failed to open output file: %s\n", outputfile.c_str());
@@ -110,7 +120,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 	TH1F* h_clctPatterns_real = new TH1F("h_clctPatterns_real","Recorded CLCT Pattern IDs; Pattern ID; CLCTs", 11,0,11);
 	TH1F* h_clctPatterns_emulated = new TH1F("h_clctPatterns_emulated","Emulated CLCT Pattern IDs; Pattern ID; CLCTs", 11,0,11);
-
+*/
 	//
 	// TREE ITERATION
 	//
@@ -121,7 +131,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
 
 	for(int i = start; i < end; i++) {
-		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+		if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
 
@@ -149,6 +159,9 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;
 
+			//get all the clcts in the chamber
+
+
 			if(searchForMatch(compHits, oldEnvelopes,oldSetMatch) || searchForMatch(compHits, newEnvelopes,newSetMatch)) {
 				oldSetMatch.clear();
 				newSetMatch.clear();
@@ -167,6 +180,9 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 			vector<int> matchedOldId;
 
 
+			vector<SegmentMatch> matchedNew;
+
+
 			//iterate through segments
 			for(unsigned int thisSeg = 0; thisSeg < segments.size(); thisSeg++){
 				int segHash = segments.ch_id->at(thisSeg);
@@ -175,6 +191,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 				float segmentX = segments.pos_x->at(thisSeg); //strips
 				float segmentdXdZ = segments.dxdz->at(thisSeg);
+				float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
 				/*
 				// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
@@ -191,6 +208,10 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				}
 				*/
 
+				//
+				// find all the clcts that are in the chamber, and match
+				//
+
 				if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
 				if(DEBUG > 0) cout << "Legacy Match: (";
 				int closestOldMatchIndex = findClosestToSegment(oldSetMatch,segmentX);
@@ -206,16 +227,27 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				 * clct1 could match seg2, but gets ignore by this procedure
 				 */
 				if(find(matchedNewId.begin(), matchedNewId.end(), closestNewMatchIndex) == matchedNewId.end()){
-					matchedNewId.push_back(closestNewMatchIndex);
+
 					auto& clct = newSetMatch.at(closestNewMatchIndex);
 
 					float clctX = clct->keyStrip();
+					/*
 					LUTEntry* entry = 0;
 
 					if(bayesLUT.editEntry(clct->key(),entry)){
 						return -1;
 					}
-					entry->addSegment(segmentX-clctX, segmentdXdZ);
+					entry->addSegment(segmentX-clctX, segmentdXdZ,Pt);
+					*/
+
+					SegmentMatch thisMatch;
+					thisMatch.clctIndex = closestNewMatchIndex;
+					thisMatch.posOffset = segmentX-clctX;
+					thisMatch.slopeOffset = segmentdXdZ;
+					thisMatch.pt = Pt;
+
+					matchedNewId.push_back(closestNewMatchIndex);
+					matchedNew.push_back(thisMatch); //not the most elegant, but fuck it
 
 				}
 				if(find(matchedOldId.begin(),matchedOldId.end(), closestOldMatchIndex) == matchedOldId.end()){
@@ -223,15 +255,42 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				}
 			}
 
-			for(unsigned int iclct=0; iclct < newSetMatch.size(); iclct++){
+			for(int iclct=0; iclct < (int)newSetMatch.size(); iclct++){
 				auto& clct = newSetMatch.at(iclct);
 				LUTEntry* entry = 0;
 
 				if(bayesLUT.editEntry(clct->key(),entry)){
 					return -1;
 				}
-				entry->addCLCT(newSetMatch.size());
 
+				bool foundSegment = false;
+				for(auto segMatch : matchedNew){
+					if(segMatch.clctIndex == iclct){
+						foundSegment = true;
+						float pt = segMatch.pt;
+						float pos = segMatch.posOffset;
+						float slope = segMatch.slopeOffset;
+						entry->addCLCT(newSetMatch.size(), pt, pos,slope);
+					}
+				}
+				if(!foundSegment){
+					entry->addCLCT(newSetMatch.size());
+				}
+
+				/*
+				//if we matched to a segment
+				if(find(matchedNewId.begin(), matchedNewId.end(), iclct) != matchedNewId.end()){
+					cout << "here1" << endl;
+					float pt = matchedNew.at(iclct).pt;
+					float pos = matchedNew.at(iclct).posOffset;
+					float slope = matchedNew.at(iclct).slopeOffset;
+
+					cout << "here2" << endl;
+					entry->addCLCT(newSetMatch.size(), pt, pos,slope);
+				}else{ //if we didn't match to a segment
+					entry->addCLCT(newSetMatch.size());
+				}
+				*/
 
 			}
 
@@ -243,13 +302,16 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 	}
 
-	bayesLUT.print();
-	bayesLUT.writeToROOT("machineLearnMe.root");
+	//cout << "got here" << endl;
+	//bayesLUT.print();
+	bayesLUT.writeToROOT(outputfile);
 
+	/*
 
 	outF->cd();
 	h_clctPatterns_emulated->Write();
 	h_clctPatterns_real->Write();
+	*/
 
 
 	printf("Wrote to file: %s\n",outputfile.c_str());

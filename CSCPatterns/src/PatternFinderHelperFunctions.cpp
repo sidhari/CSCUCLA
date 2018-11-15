@@ -283,6 +283,7 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     int CH = 0;
     float segmentX = 0;
     float segmentdXdZ = 0;
+    float pt = -1; //TODO
     float patX = 0;
     float legacyLctX = 0;
 
@@ -343,8 +344,14 @@ int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
     	float legacyPosDiff   = segmentX - legacyLctX;
     	float legacySlopeDiff = segmentdXdZ;
 
-    	if(newEntry->addSegment(newPosDiff, newSlopeDiff) ||
-    	legacyEntry->addSegment(legacyPosDiff, legacySlopeDiff)){
+    	/*
+    	if(newEntry->addSegment(newPosDiff, newSlopeDiff,pt) ||
+    	legacyEntry->addSegment(legacyPosDiff, legacySlopeDiff,pt)){
+    		return -1;
+    	} TODO: FIX ME
+    	*/
+    	if(newEntry->addCLCT(0,newPosDiff, newSlopeDiff,pt) ||
+    	legacyEntry->addCLCT(0,legacyPosDiff, legacySlopeDiff,pt)){
     		return -1;
     	}
 

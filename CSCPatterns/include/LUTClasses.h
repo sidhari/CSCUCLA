@@ -16,6 +16,8 @@
 #include <functional>
 #include <algorithm>
 
+#include "TTree.h"
+
 #include "../include/PatternFinderClasses.h"
 
 
@@ -49,23 +51,41 @@ public:
 class LUTEntry {
 public:
 	LUTEntry();
-	LUTEntry(float position, float slope, unsigned long nsegments, unsigned long nclcts,
+	LUTEntry(float position, float slope, unsigned long nsegments, float pt, unsigned long nclcts,
 			float multiplicity, float quality, unsigned int layers, float chi2);
+	//LUTEntry(TTree* tree, float quality, float layers, float chi2);
 
 
 	~LUTEntry() {}
 
-	int addSegment(float positionOffset, float slopeOffset);
-	int addCLCT(unsigned int multiplicity=1);
+	/* TODO: add lumi?
+	 *
+	 */
+
+	int loadTree(TTree* tree);
+	int addCLCT(unsigned int multiplicity=1, float pt=-1.,float posOffset=-999., float slopeoffset=-999.); //no associated segment
+
 	bool operator<(const LUTEntry& l) const;
 	bool operator==(const LUTEntry& l) const;
 	float position() const;
 	float slope() const;
 	unsigned int nsegments() const; //amount of segments used to construct LUT entry
+	float pt() const;
 	unsigned int nclcts() const;
 	float quality() const;
 	float probability() const;
 	float multiplicity() const; //calculates average multiplicity for how many clcts it is associated with
+
+/*
+	const vector<float>& positionOffsets() const;
+	const vector<float>& slopeOffsets() const;
+	const vector<float>& pts() const;
+	const vector<unsigned int>& clctMultiplicities() const;
+	*/
+
+	TTree* makeTree(const string& name) const;
+
+
 	int makeFinal();
 
 
@@ -74,16 +94,26 @@ public:
 
 private:
 	bool _isFinal; //if we have already calculated the offsets with all the segments
+	/*
+	 * TODO: Nov 13
+	 * - organize everything so it is per CLCT, with -999. for pt, offset entries without segments
+	 * - make tree writer class belong to each entry specifically
+	 *
+	 */
+	vector<bool> _hasSegment; //if we ahve a segment associated with this one or not
 	vector<float> _positionOffsets; //segment - clct
 	vector<float> _slopeOffsets;
+	vector<float> _pts; //all pts associated with segments put into entry
+	vector<unsigned int> _clctMultiplicities; //fill for each clct we find how many there are in the chamber
 
+	float _pt; // [GeV] average pt of associated segments
 	float _position;
 	float _slope;
 	unsigned long _nsegments; //amount of segments used to construct LUT entry
 	unsigned long _nclcts; //amount of clcts we found when making this entry (not necessarily matched with segments)
 	float _multiplicity;
 
-	vector<unsigned int> _clctMultiplicities; //fill for each clct we find how many there are in the chamber
+
 	float _quality; //quality parameter used choose between CLCTs
 
 };
@@ -110,7 +140,7 @@ class LUT {
 public:
 	LUT();
 	LUT(const string& name);
-	LUT(const string& name, const string& filename);
+	LUT(const string& name, const string& lutfile);
 
 	~LUT() {};
 
@@ -120,6 +150,9 @@ public:
 	int editEntry(const LUTKey& k, LUTEntry*& e);
 	int getEntry(const LUTKey&k, const LUTEntry*& e, bool debug=false) const;
 	void print(unsigned int minSegments=0);
+	void printPython(unsigned int minSegments=0) {print(minSegments);} //because python keywords...
+
+	int loadROOT(const string& rootfile);
 	int writeToText(const string& filename);
 	int writeToROOT(const string& filename);
 	int writeToPSLs(const string& fileprefix);
