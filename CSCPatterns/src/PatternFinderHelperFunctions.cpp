@@ -170,61 +170,51 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	}
 
 	unsigned int maxMatchedLayers = 0;
-	unsigned int bestTimeBin = (USE_COMP_HITS ? 3 : 1); //default as 1
+	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
+	//unsigned int bestTimeBin = (USE_COMP_HITS ? 3 : 1); //default as 1
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
 	for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
 		// Cycle through each time window, if comphits, look in all possible windows (1-4 to 13-16).
 		// also ignore bins 1 & 2 if using comp hits, talk with Cameron.
-		//Nov 5. - Only time bins that are used are 6,7,8,9, TODO: Verify this reproduces actual CLCT results
-		//for(unsigned int time = (USE_COMP_HITS ? 3 : 1); time < (USE_COMP_HITS ? 16 - TIME_CAPTURE_WINDOW + 2 : 2); time++){
-		for(unsigned int time = (USE_COMP_HITS ? 6 : 1); time < (USE_COMP_HITS ? 10 : 2); time++){
+		//Nov 5. - Only time bins that are used are 6,7,8,9 from zero or 7,8,9,10 here
+		int matchedLayerCount = 0;
+		if(p._isLegacy){
+			matchedLayerCount = legacyLayersMatched(c,p,x,time);
+		} else {
+			matchedLayerCount = getOverlap(c,p,x,time, overlap);
+			if(matchedLayerCount < 0) {
+				if(DEBUG >= 0) printf("Error: cannot get overlap for pattern\n");
+				return -1;
+			}
 
-			int matchedLayerCount = 0;
-
-			//legacy code doesnt use overlaps, so we have a slightly different algorithm
+		}
+		//if we have a better match than we have had before
+		if(matchedLayerCount == NLAYERS){ //optimization
 			if(p._isLegacy){
-				matchedLayerCount = legacyLayersMatched(c,p,x,time);
-			} else {
-				matchedLayerCount = getOverlap(c,p,x,time, overlap);
-				if(matchedLayerCount < 0) {
-					if(DEBUG >= 0) printf("Error: cannot get overlap for pattern\n");
-					return -1;
-				}
-
+				mi = new CLCTCandidate(p,x, time,matchedLayerCount);
+			}else{
+				mi = new CLCTCandidate(p,x, time,overlap);
+				if(mi->comparatorCodeId() < 0) return -1;
 			}
-
-
-
-			//if we have a better match than we have had before
-			if(matchedLayerCount == NLAYERS){ //optimization
-				if(p._isLegacy){
-					mi = new CLCTCandidate(p,x, time,matchedLayerCount);
-				}else{
-					mi = new CLCTCandidate(p,x, time,overlap);
-					if(mi->comparatorCodeId() < 0) return -1;
-				}
-				return matchedLayerCount;
-			}
-			if(matchedLayerCount > (int)maxMatchedLayers) {
-				maxMatchedLayers = (unsigned int)matchedLayerCount;
-				bestHorizontalIndex = x;
-				bestTimeBin = time;
-			}
+			return matchedLayerCount;
+		}
+		if(matchedLayerCount > (int)maxMatchedLayers) {
+			maxMatchedLayers = (unsigned int)matchedLayerCount;
+			bestHorizontalIndex = x;
 		}
 	}
 
-	//refill the overlap with the best found location
-	if(!p._isLegacy && getOverlap(c,p,bestHorizontalIndex,bestTimeBin, overlap) < 0){
+	if(!p._isLegacy && getOverlap(c,p,bestHorizontalIndex,time, overlap) < 0){
 		printf("Error: cannot get overlap for pattern\n");
 		return -1;
 	}
 
 	if(p._isLegacy){
-		mi = new CLCTCandidate(p, bestHorizontalIndex, bestTimeBin, maxMatchedLayers);
+		mi = new CLCTCandidate(p, bestHorizontalIndex, time, maxMatchedLayers);
 	}else {
-		mi = new CLCTCandidate(p, bestHorizontalIndex, bestTimeBin, overlap);
+		mi = new CLCTCandidate(p, bestHorizontalIndex, time, overlap);
 		if(mi->comparatorCodeId() < 0) return -1;
 	}
 	if(DEBUG > 1){
@@ -392,15 +382,15 @@ vector<CSCPattern>* createOldPatterns(){
 	//fill in the correctly oriented matrices, should change eventually...
 	for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
 		for(unsigned int y = 0; y< NLAYERS; y++){
-			ID2_BASE[x][y] = id2Bools[NLAYERS-1-y][x];
-			ID3_BASE[MAX_PATTERN_WIDTH-x-1][y] =id2Bools[NLAYERS-1-y][x];
-			ID4_BASE[x][y] = id4Bools[NLAYERS-1-y][x];
-			ID5_BASE[MAX_PATTERN_WIDTH-x-1][y] =id4Bools[NLAYERS-1-y][x];
-			ID6_BASE[x][y] = id6Bools[NLAYERS-1-y][x];
-			ID7_BASE[MAX_PATTERN_WIDTH-x-1][y] =id6Bools[NLAYERS-1-y][x];
-			ID8_BASE[x][y] = id8Bools[NLAYERS-1-y][x];
-			ID9_BASE[MAX_PATTERN_WIDTH-x-1][y] =id8Bools[NLAYERS-1-y][x];
-			IDA_BASE[x][y] = idABools[NLAYERS-1-y][x];
+			ID2_BASE[x][y] = id2Bools[y][x];
+			ID3_BASE[MAX_PATTERN_WIDTH-x-1][y] =id2Bools[y][x];
+			ID4_BASE[x][y] = id4Bools[y][x];
+			ID5_BASE[MAX_PATTERN_WIDTH-x-1][y] =id4Bools[y][x];
+			ID6_BASE[x][y] = id6Bools[y][x];
+			ID7_BASE[MAX_PATTERN_WIDTH-x-1][y] =id6Bools[y][x];
+			ID8_BASE[x][y] = id8Bools[y][x];
+			ID9_BASE[MAX_PATTERN_WIDTH-x-1][y] =id8Bools[y][x];
+			IDA_BASE[x][y] = idABools[y][x];
 		}
 	}
 

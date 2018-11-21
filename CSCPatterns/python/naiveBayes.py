@@ -16,7 +16,14 @@ r.gSystem.Load('../lib/PatternFinderClasses_cpp')
 
 
 lut = r.LUT("test", "../dat/linearFits.lut")
-lut.loadROOT('/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/SingleMuon/zskim2018D/BayesAnal-1Star.root')
+lut.loadROOT('/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/SingleMuon/zskim2018D/BayesAnalysis-1Star.root')
 #lut.loadROOT('../temp.root')
 
-lut.printPython(1)
+lut.printPython(100)
+#lut.size()
+#print lut.nclcts()
+#print lut.nsegments()
+
+#lut.sort("mcpl")
+#lut.printPython(100)
+#lut.size()

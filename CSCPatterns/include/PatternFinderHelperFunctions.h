@@ -51,8 +51,6 @@ vector<CSCPattern>* createNewPatterns();
 //creates the currently implemented patterns in the TMB
 vector<CSCPattern>* createOldPatterns();
 
-//int chamberSerial( int ec, int st, int ri, int ch );
-
 int fillCompHits(ChamberHits& theseCompHits,
 		const CSCInfo::Comparators& c); // index of what ring/station you are on
 

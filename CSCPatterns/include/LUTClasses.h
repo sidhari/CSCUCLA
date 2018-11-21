@@ -119,17 +119,6 @@ private:
 };
 
 
-/* @brief Lambda function used to optimize LUTEntrys in the set,
- * mostly for printing
- */
-typedef function<bool(pair<LUTKey,LUTEntry>, pair<LUTKey,LUTEntry>)> LUTLambda;
-LUTLambda LUT_FUNT =
-		[](pair<LUTKey,LUTEntry> l1, pair<LUTKey,LUTEntry> l2)
-		{
-		return l1.second < l2.second;
-		};
-
-
 /* @brief Lookup table to be used in the (O)TMB to translate
  * from
  *
@@ -149,17 +138,67 @@ public:
 	int setEntry(const LUTKey& k,const LUTEntry& e);
 	int editEntry(const LUTKey& k, LUTEntry*& e);
 	int getEntry(const LUTKey&k, const LUTEntry*& e, bool debug=false) const;
-	void print(unsigned int minSegments=0);
-	void printPython(unsigned int minSegments=0) {print(minSegments);} //because python keywords...
+	void print(unsigned int minClcts=0,unsigned int minSegments=0, unsigned int minLayers=0);
+	void printPython(unsigned int minClcts=0,unsigned int minSegments=0,unsigned int minLayers=0) {print(minClcts,minSegments,minLayers);} //because python keywords...
 
 	int loadROOT(const string& rootfile);
 	int writeToText(const string& filename);
 	int writeToROOT(const string& filename);
 	int writeToPSLs(const string& fileprefix);
 	int makeFinal();
+	int sort(const string& sortOrder);
+	int size() const {return _orderedLUT.size();}
 
+	int nclcts();
+	int nsegments();
 private:
 	bool _isFinal;
+	int _nclcts;
+	int _nsegments;
+	string _sortOrder;
+	/* @brief Lambda function used to optimize LUTEntrys in the set,
+	 * mostly for printing
+	 */
+	typedef function<bool(pair<LUTKey,LUTEntry>, pair<LUTKey,LUTEntry>)> LUTLambda;
+	LUTLambda _lutFunc =
+			[this](pair<LUTKey,LUTEntry> l1, pair<LUTKey,LUTEntry> l2)
+			{
+
+		auto& l1e = l1.second;
+		auto& l2e = l2.second;
+		for(auto c: _sortOrder){
+			//cout << c << endl;
+			switch (c) {
+			case 'p':
+				if(l1e.probability() == l2e.probability()) continue;
+				return l1e.probability() > l2e.probability();
+			case 's':
+				if(l1e.nsegments() == l2e.nsegments()) continue;
+				return l1e.nsegments() > l2e.nsegments();
+			case 'c':
+				if(l1e.nclcts() == l2e.nclcts()) continue;
+				return l1e.nclcts() > l2e.nclcts();
+			case 'l':
+				if(l1e._layers == l2e._layers) continue;
+				return l1e._layers > l2e._layers;
+			case 'm':
+				if(l1e.multiplicity() == l2e.multiplicity()) continue;
+				return l1e.multiplicity() > l2e.multiplicity();
+			case 'x': //x^2
+				if(l1e._chi2 == l2e._chi2) continue;
+				return l1e._chi2 < l2e._chi2;
+			case 'e': //energy
+				if(l1e.pt() == l2e.pt()) continue;
+				return l1e.pt() > l2e.pt();
+			default:
+				return l1.second < l2.second;
+			}
+		}
+		return false;
+
+		};
+
+
 	set<pair<LUTKey, LUTEntry>, LUTLambda> _orderedLUT;
 	map<LUTKey,LUTEntry> _lut;
 
