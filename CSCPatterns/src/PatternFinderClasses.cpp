@@ -324,7 +324,16 @@ int CLCTCandidate::getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const{
 
 //center position of the track [strips]
 float CLCTCandidate::keyStrip() const{
-	return (_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;
+	//return (_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;
+	return keyHalfStrip()/2+1;
+	//return (_horizontalIndex + (MAX_PATTERN_WIDTH+1)/2 )/2.;
+}
+
+int CLCTCandidate::keyHalfStrip() const {
+	//-1 from the method of storing the comparator data, which even and odd layers are offset, needing
+	// counting to start from 1 instead of 0, see "fillCompHits" in helper functions
+	// TODO: should implement this more seamlessly
+	return _horizontalIndex + MAX_PATTERN_WIDTH/2 - 1;
 }
 
 void CLCTCandidate::print3x6Pattern() const{
@@ -443,6 +452,19 @@ ChamberHits::ChamberHits(const ChamberHits& c) :
 			_ring(c._ring),
 			_endcap(c._endcap),
 			_chamber(c._chamber) {
+	_minHs = 0;
+	bool me11a = _station == 1 && _ring == 4;
+	bool me11b = _station == 1 && _ring == 1;
+	bool me13 = _station == 1 && _ring == 3;
+	if(me11a){
+		_maxHs = 2*48;
+	}else if (me11b || me13){
+		_maxHs = 2*64;
+	} else {
+		_maxHs = 2*80;
+	}
+
+
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
 		for(unsigned int j = 0; j < NLAYERS; j++){
 			_hits[i][j] = c._hits[i][j];

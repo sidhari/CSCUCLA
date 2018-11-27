@@ -128,6 +128,10 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 	TH1F* emulatedMultiplicity = new TH1F("emulatedMultiplicity", "emulatedMultiplicity; CLCT Multiplicity; CLCTs", 10,0,10);
 	TH1F* realMultiplicity = new TH1F("realMultiplicity", "realMultiplicity; CLCT Multiplicity; CLCTs", 10,0,10);
 
+	//how many times we match to the first clct
+	unsigned int clct0 = 0;
+	unsigned int match_clct0 = 0;
+	unsigned int pmatch_clct0 = 0;
 
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
@@ -151,7 +155,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 			bool me11a = (ST == 1 && RI == 4);
-			//bool me11b = (ST == 1 && RI == 1);
+			bool me11b = (ST == 1 && RI == 1);
 			//bool me13 = (ST == 1 && RI == 3);
 
 			//
@@ -164,20 +168,49 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 			vector<CLCTCandidate*> emulatedCLCTs;
 
-			if(searchForMatch(compHits,oldPatterns, emulatedCLCTs)){
+			if(searchForMatch(compHits,oldPatterns, emulatedCLCTs,true)){
+			//if(searchForMatch(compHits,oldPatterns, emulatedCLCTs,false)){
 				emulatedCLCTs.clear();
+				//cout << "Something broke" << endl;
+				//return;
+
 				continue;
 			}
 
+			/*
+			if(evt.EventNumber ==1245089719){
+			//if(evt.EventNumber ==1235325654){
+
+			//if(evt.EventNumber ==1246883624){
+				if(emulatedCLCTs.size()){
+				cout << "Printing stuff for shower evt, clcts: " << emulatedCLCTs.size() << endl;
+				printChamber(compHits);
+				//i6098951
+				}
+			}
+
+			if(emulatedCLCTs.size() > 5){
+				cout << "Crazy Event:" << evt.EventNumber << endl;
+				cout << "Run:" << evt.RunNumber << endl;
+				cout << "Lumi:" << evt.LumiSection << endl;
+				cout << "EMU COUNT:" << emulatedCLCTs.size() << endl;
+				cout << "i" << i <<endl;
+				printChamber(compHits);
+			}
+			*/
+
 			//remove 3 layer emulated clcts
-			for(unsigned int iemu =0; iemu < emulatedCLCTs.size(); iemu++){
-				if(emulatedCLCTs.at(iemu)->layerCount() == 3) {
-					emulatedCLCTs.erase(emulatedCLCTs.begin()+iemu);
-					iemu--;
+			bool threeLayerChamber = (me11a || me11b) && CH == 11 && EC ==1;
+			if(!threeLayerChamber) {
+				for(unsigned int iemu =0; iemu < emulatedCLCTs.size(); iemu++){
+					if(emulatedCLCTs.at(iemu)->layerCount() == 3) {
+						emulatedCLCTs.erase(emulatedCLCTs.begin()+iemu);
+						iemu--;
+					}
 				}
 			}
 			//only take two leading clcts
-			while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
+			//while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
 
 			for(auto emu : emulatedCLCTs){
@@ -208,17 +241,24 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				int clctHash = clcts.ch_id->at(iclct);
 				if(clctHash != chamberHash) continue;
 				clctsInChamber++;
+				if(clctsInChamber == 1) clct0++; //hope that the first one is ordered correctly...
 				realLayerCount->Fill(clcts.quality->at(iclct));
 
 
-				float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
-				if(me11a) clctStripPos -= 16*4;
+				//float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
+
+				float clctHSPos = clcts.keyStrip->at(iclct); //key strip is in units of half strips...
+				if(me11a) clctHSPos -= 32*4; //TEST Nov 21
+				//float clctStripPos = clcts.keyStrip->at(iclct);
+				//if(me11a) clctStripPos -= 16*4; //TEST Nov 21
+				//if(me11a) clctStripPos -= 16*4; //TEST Nov 21
 
 				int closestEmu = -1;
 				float minDistanceToCLCT = 1e5;
 				for(unsigned int iemu=0; iemu < emulatedCLCTs.size(); iemu++){
 					if(find(matchedIndices.begin(), matchedIndices.end(), iemu) != matchedIndices.end()) continue;
-					float distance = 2.*(clctStripPos - emulatedCLCTs.at(iemu)->keyStrip());
+					//float distance = 2.*(clctStripPos - emulatedCLCTs.at(iemu)->keyStrip());
+					float distance = clctHSPos - emulatedCLCTs.at(iemu)->keyHalfStrip();
 					if(abs(distance) <  abs(minDistanceToCLCT)){
 						minDistanceToCLCT = distance;
 						closestEmu = iemu;
@@ -229,6 +269,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				if(closestEmu != -1){ //found a match
 					matchedIndices.push_back(closestEmu);
 					emulationStripDiff->Fill(minDistanceToCLCT);
+					if(clctsInChamber == 1) match_clct0++;
 
 					if(abs(minDistanceToCLCT) <= 2) match_offsetLE2.push_back(closestEmu);
 					if(abs(minDistanceToCLCT) <= 1) match_offsetLE1.push_back(closestEmu);
@@ -241,23 +282,27 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 							if(minDistanceToCLCT == 0) {
 								perfectMatches.push_back(closestEmu);
 								perfMatch = true;
+								if(clctsInChamber==1)pmatch_clct0++;
 							}
 						}
 
 					}
-					if(!perfMatch){
-						cout << "~~~ No Perfect Match Found ~~~ " << endl;
-						printChamber(compHits);
-						cout << "Real CLCT: pat: " << (int)clcts.pattern->at(iclct) << " layers: "<< clcts.quality->at(iclct)<< " pos: "<< 2.*clctStripPos <<" [hs]"<< endl;
-						if(closestEmu != -1) {
-							cout << "Emulated: pat: " << emulatedCLCTs.at(closestEmu)->patternId() << " layers: " <<  emulatedCLCTs.at(closestEmu)->layerCount() <<
-									" pos: " << 2.*emulatedCLCTs.at(closestEmu)->keyStrip() << " [hs]" << endl;
-							printPattern(emulatedCLCTs.at(closestEmu)->_pattern);
-						}else{
-							cout << "No matching emu" << endl;
-						}
-
+				}
+				if(!perfMatch){
+					cout << "~~~ No Perfect Match Found ~~~ " << endl;
+					printChamber(compHits);
+					//cout << "Real CLCT: pat: " << (int)clcts.pattern->at(iclct) << " layers: "<< clcts.quality->at(iclct)<< " pos: "<< 2.*clctStripPos <<" [hs]"<< endl;
+					cout << "Real CLCT: pat: " << (int)clcts.pattern->at(iclct) << " layers: "<< clcts.quality->at(iclct)<< " pos: "<< clctHSPos <<" [hs]"<< endl;
+					if(closestEmu != -1) {
+						cout << "Emulated: pat: " << emulatedCLCTs.at(closestEmu)->patternId() << " layers: " <<  emulatedCLCTs.at(closestEmu)->layerCount() <<
+								//" pos: " << 2.*emulatedCLCTs.at(closestEmu)->keyStrip() << " [hs]" << endl;
+								" pos: " << emulatedCLCTs.at(closestEmu)->keyHalfStrip() << " [hs]" << endl;
+						printPattern(emulatedCLCTs.at(closestEmu)->_pattern);
+					}else{
+						cout << "No matching emu" << endl;
 					}
+					cout << "Using emulated CLCT: " << closestEmu+1 << " / " << emulatedCLCTs.size() << endl;
+
 				}
 			}
 
@@ -316,6 +361,17 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 	emulatedMultiplicity->Write();
 	realMultiplicity->Write();
 	outF->Close();
+
+	unsigned int realCLCTs = emulationMatching->GetBinContent(1);
+	unsigned int matches = emulationMatching->GetBinContent(5);
+	unsigned int perfectMatches = emulationMatching->GetBinContent(6);
+
+	cout << "        Matches: " << matches << " / " << realCLCTs << " = " << 1.*matches/realCLCTs << endl;
+	cout << "Perfect Matches: " << perfectMatches << " / " << realCLCTs << " = " << 1.*perfectMatches/realCLCTs << endl;
+
+	cout << "-- clct0's --" << endl;
+	cout << "        Matches: " << match_clct0 << " / " << clct0 << " = " << 1.*match_clct0/clct0 << endl;
+	cout << "Perfect Matches: " << pmatch_clct0 << " / " << clct0 << " = " << 1.*pmatch_clct0/clct0 << endl;
 
 
 	cout << "Wrote to file: " << outputfile << endl;

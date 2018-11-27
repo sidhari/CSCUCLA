@@ -158,7 +158,8 @@ int legacyLayersMatched(const ChamberHits &c, const CSCPattern &p, const int hor
 
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
-int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi){
+// previousCandidates are a list of clcts you found earlier, which tell you which regions in the chamber not to look
+int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi,const vector<CLCTCandidate*>&previousCandidates){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3];
@@ -171,11 +172,28 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 
 	unsigned int maxMatchedLayers = 0;
 	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
-	//unsigned int bestTimeBin = (USE_COMP_HITS ? 3 : 1); //default as 1
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
-	for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
+	//for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
+
+	/* Allow matches only in regions where the key half strip is within the chamber,
+	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
+	 * since the layers are offset for non-me11a/b chambers TODO
+	 * iterate
+	 */
+	for(int x = -(int)MAX_PATTERN_WIDTH/2+1; x < (int)N_MAX_HALF_STRIPS - (int)(MAX_PATTERN_WIDTH/2+1); x++){
+		//check if region is in the busy window, if using old tmb logic
+		bool isInBusyWindow = false;
+		for(auto cand : previousCandidates){
+			if(x <= cand->_horizontalIndex + (int)BUSY_WINDOW &&
+					x >= cand->_horizontalIndex - (int)BUSY_WINDOW){
+				isInBusyWindow = true;
+				break;
+			}
+		}
+		if(isInBusyWindow) continue;
+
 		// Cycle through each time window, if comphits, look in all possible windows (1-4 to 13-16).
 		// also ignore bins 1 & 2 if using comp hits, talk with Cameron.
 		//Nov 5. - Only time bins that are used are 6,7,8,9 from zero or 7,8,9,10 here
@@ -225,8 +243,13 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	return maxMatchedLayers;
 }
 
-//look for the best matched pattern, when we have a set of them, and fill the set match info
-int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m){
+
+//look for the best matched pattern, when we have a set of them, and fill the set match info,useBusyWindow
+// makes a window  of [low, high] comparator
+// values of where NOT to search, following the current implementation of the TMB described here:
+// https://github.com/csc-fw/otmb_fw_docs/blob/master/tmb2013-2005_spec.pdf
+// note that this is currently NOT the key half strip, but some constant off of it ( MAX_PATTERN_WIDTH / 2? )
+int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow){
 
 	ChamberHits shrinkingChamber = c;
 
@@ -235,12 +258,23 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 	//loop through all the patterns we have
 	for(unsigned int ip = 0; ip < ps->size(); ip++) {
 		CLCTCandidate *thisMatch = 0;
-		if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
-			if(DEBUG >= 0){
-				printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
-				printChamber(c);
+		if(useBusyWindow){
+			//need to pass the previous candidates if using busy window, to block out region of where to look
+			if(containsPattern(c,ps->at(ip),thisMatch,m) < 0) {
+				if(DEBUG >= 0){
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					printChamber(c);
+				}
+				return -1;
 			}
-			return -1;
+		}else{
+			if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
+				if(DEBUG >= 0){
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					printChamber(c);
+				}
+				return -1;
+			}
 		}
 		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount()){
 			if(bestMatch) delete bestMatch;
@@ -257,8 +291,10 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 			printPattern(bestMatch->_pattern);
 		}
 		m.push_back(bestMatch);
+		//WARNING: using a busy window smaller than the max pattern size may cause this emulation to perform
+		// differently than expected, since we are removing hits here
 		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber
-		return searchForMatch(shrinkingChamber, ps, m); //find the next one
+		return searchForMatch(shrinkingChamber, ps, m,useBusyWindow); //find the next one
 	}else return 0; //add nothing if we don't find anything
 }
 

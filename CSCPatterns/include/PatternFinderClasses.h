@@ -104,6 +104,7 @@ public:
 
 	int getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const;
 	float keyStrip() const;
+	int keyHalfStrip() const;
 	void print3x6Pattern() const;
 	void printCodeInPattern() const;
 	int comparatorCodeId() const;
@@ -143,6 +144,9 @@ public:
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
 
 	ChamberHits& operator-=(const CLCTCandidate& mi);
+private:
+	unsigned int _minHs;
+	unsigned int _maxHs;
 
 };
 
