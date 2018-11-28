@@ -20,6 +20,7 @@
 
 #include "PatternConstants.h"
 #include "../include/LUTClasses.h"
+#include "../include/CSCInfo.h"
 
 using namespace std;
 
@@ -130,8 +131,8 @@ private:
  */
 class ChamberHits {
 public:
-	ChamberHits(bool isComparator, unsigned int station, unsigned int ring,
-			unsigned int endcap, unsigned int chamber);
+	ChamberHits(unsigned int station, unsigned int ring,
+			unsigned int endcap, unsigned int chamber, bool isComparator=true);
 	ChamberHits(const ChamberHits& c);
 
 	~ChamberHits(){}
@@ -141,7 +142,14 @@ public:
 	const unsigned int _ring;
 	const unsigned int _endcap;
 	const unsigned int _chamber;
+	unsigned int minHs() const {return _minHs;}
+	unsigned int maxHs() const {return _maxHs;}
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
+
+	bool shift(unsigned int lay) const;
+
+	int fill(const CSCInfo::Comparators& c);
+	void print() const;
 
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:

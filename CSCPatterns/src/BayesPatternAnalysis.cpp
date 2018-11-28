@@ -152,9 +152,10 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 			// Emulate the TMB to find all the CLCTs
 			//
 
-			ChamberHits compHits(1, ST, RI, EC, CH);
+			ChamberHits compHits(ST, RI, EC, CH);
 
-			if(fillCompHits(compHits, comparators)) return -1;
+			//if(fillCompHits(compHits, comparators)) return -1;
+			if(compHits.fill(comparators)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;

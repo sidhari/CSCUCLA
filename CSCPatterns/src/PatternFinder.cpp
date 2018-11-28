@@ -82,7 +82,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	if(newLUTs.loadAll("data/"+dataset+"/luts/") ||
 			legacyLUTs.loadAll("data/"+dataset+"/luts/")){
 		printf("Could not find .lut files, recreating them...\n");
-		string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/data/"+dataset+"/CLCTMatch-Full.root";
+		string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/"+dataset+"/CLCTMatch-Full.root";
 		TFile* lutFile = new TFile(lutFilepath.c_str());
 		if(!lutFile){
 			printf("Failed to open lut file: %s\n", lutFilepath.c_str());
@@ -237,10 +237,11 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			}
 
 
-			ChamberHits theseRHHits(0, ST, RI, EC, CH);
-			ChamberHits theseCompHits(1, ST, RI, EC, CH);
+			ChamberHits theseRHHits(ST, RI, EC, CH,false);
+			ChamberHits theseCompHits(ST, RI, EC, CH);
 
-			if(fillCompHits(theseCompHits, comparators)) return -1;
+			//if(fillCompHits(theseCompHits, comparators)) return -1;
+			if(theseCompHits.fill( comparators)) return -1;
 
 			if (!USE_COMP_HITS || DEBUG > 0) if(fillRecHits(theseRHHits,recHits)) return -1;
 

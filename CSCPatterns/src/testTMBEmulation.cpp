@@ -38,7 +38,7 @@ using namespace std;
 
 
 
-int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int end=-1) {
+int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-1) {
 
 	//TODO: change everythign printf -> cout
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -156,15 +156,15 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
-			//bool me13 = (ST == 1 && RI == 3);
 
 			//
 			// Emulate the TMB to find all the CLCTs
 			//
 
-			ChamberHits compHits(1, ST, RI, EC, CH);
+			ChamberHits compHits(ST, RI, EC, CH);
 
-			if(fillCompHits(compHits, comparators)) return -1;
+			//if(fillCompHits(compHits, comparators)) return -1;
+			if(compHits.fill(comparators)) return -1;
 
 			vector<CLCTCandidate*> emulatedCLCTs;
 
@@ -244,14 +244,8 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				if(clctsInChamber == 1) clct0++; //hope that the first one is ordered correctly...
 				realLayerCount->Fill(clcts.quality->at(iclct));
 
-
-				//float clctStripPos = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
-
 				float clctHSPos = clcts.keyStrip->at(iclct); //key strip is in units of half strips...
-				if(me11a) clctHSPos -= 32*4; //TEST Nov 21
-				//float clctStripPos = clcts.keyStrip->at(iclct);
-				//if(me11a) clctStripPos -= 16*4; //TEST Nov 21
-				//if(me11a) clctStripPos -= 16*4; //TEST Nov 21
+				if(me11a) clctHSPos -= 32*4;
 
 				int closestEmu = -1;
 				float minDistanceToCLCT = 1e5;
@@ -290,8 +284,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				}
 				if(!perfMatch){
 					cout << "~~~ No Perfect Match Found ~~~ " << endl;
-					printChamber(compHits);
-					//cout << "Real CLCT: pat: " << (int)clcts.pattern->at(iclct) << " layers: "<< clcts.quality->at(iclct)<< " pos: "<< 2.*clctStripPos <<" [hs]"<< endl;
+					compHits.print();
 					cout << "Real CLCT: pat: " << (int)clcts.pattern->at(iclct) << " layers: "<< clcts.quality->at(iclct)<< " pos: "<< clctHSPos <<" [hs]"<< endl;
 					if(closestEmu != -1) {
 						cout << "Emulated: pat: " << emulatedCLCTs.at(closestEmu)->patternId() << " layers: " <<  emulatedCLCTs.at(closestEmu)->layerCount() <<
@@ -389,14 +382,14 @@ int main(int argc, char* argv[])
 	try {
 		switch(argc){
 		case 3:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]));
+			return testTMBEmulation(string(argv[1]), string(argv[2]));
 		case 4:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
+			return testTMBEmulation(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
 		case 5:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
+			return testTMBEmulation(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
 		default:
 			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./PatternFinder inputFile outputFile (events)" << endl;
+			cout << "./<name> inputFile outputFile (events)" << endl;
 			return -1;
 		}
 	}catch( const char* msg) {

@@ -11,6 +11,8 @@
 #include "../include/PatternFinderClasses.h"
 #include "../include/PatternFinderHelperFunctions.h"
 
+#include "../include/CSCHelper.h"
+
 //
 // ComparatorCode
 //
@@ -431,14 +433,25 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 // ChamberHits
 //
 
-ChamberHits::ChamberHits(bool isComparator, unsigned int station, unsigned int ring,
-		unsigned int endcap, unsigned int chamber) :
+ChamberHits::ChamberHits(unsigned int station, unsigned int ring,
+		unsigned int endcap, unsigned int chamber, bool isComparator) :
 				_isComparator(isComparator),
 				_station(station),
 				_ring(ring),
 				_endcap(endcap),
 				_chamber(chamber)
 {
+	_minHs = 0;
+	bool me11a = _station == 1 && _ring == 4;
+	bool me11b = _station == 1 && _ring == 1;
+	bool me13 = _station == 1 && _ring == 3;
+	if(me11a){
+		_maxHs = 2*48;
+	}else if (me11b || me13){
+		_maxHs = 2*64;
+	} else {
+		_maxHs = 2*80;
+	}
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
 		for(unsigned int j = 0; j < NLAYERS; j++){
 			_hits[i][j] = 0;
@@ -452,24 +465,85 @@ ChamberHits::ChamberHits(const ChamberHits& c) :
 			_ring(c._ring),
 			_endcap(c._endcap),
 			_chamber(c._chamber) {
-	_minHs = 0;
-	bool me11a = _station == 1 && _ring == 4;
-	bool me11b = _station == 1 && _ring == 1;
-	bool me13 = _station == 1 && _ring == 3;
-	if(me11a){
-		_maxHs = 2*48;
-	}else if (me11b || me13){
-		_maxHs = 2*64;
-	} else {
-		_maxHs = 2*80;
-	}
-
-
+	_minHs = c._minHs;
+	_maxHs = c._maxHs;
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
 		for(unsigned int j = 0; j < NLAYERS; j++){
 			_hits[i][j] = c._hits[i][j];
 		}
 	}
+}
+
+//odd layers shift down an extra half strip
+//me11a/b, and even layers are all shifted by one half strip for storage in an array
+bool ChamberHits::shift(unsigned int lay) const {
+	bool me11a = (_station == 1 && _ring == 4);
+	bool me11b = (_station == 1 && _ring == 1);
+	return me11a ||me11b || !(lay%2);
+}
+
+/* @brief fills the comparator hits class with the comparators given
+ *
+ */
+int ChamberHits::fill(const CSCInfo::Comparators& c){
+
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	bool me11a = (_station == 1 && _ring == 4);
+	bool me11b = (_station == 1 && _ring == 1);
+	for(unsigned int i = 0; i < c.size(); i++){
+		if(chSid != c.ch_id->at(i)) continue; //only look at where we are now
+		unsigned int lay = c.lay->at(i)-1;
+		unsigned int str = c.strip->at(i);
+		if(str < 1) {
+			printf("compStrip = %i, how did that happen?\n", str);
+			return -1;
+		}
+		unsigned int hs = c.halfStrip->at(i);
+		unsigned int timeOn = c.bestTime->at(i);
+		if((me11a || me11b) && str > 64) str -= 64;
+
+		int halfStripVal;
+
+		halfStripVal = 2*(str-1)+hs;
+		if(halfStripVal >= (int)maxHs() || halfStripVal < (int)minHs()){
+			cout << "Error: hs" << halfStripVal << " outside of [" << minHs() << ", "<< maxHs() << "]" << endl;
+			return -1;
+		}
+
+		halfStripVal+=shift(lay);
+		if(halfStripVal < 0 || halfStripVal >= (int)N_MAX_HALF_STRIPS){
+			cout << "Error: not enough allocated memory for halfstrip placement, something is wrong" << endl;
+			return -1;
+		}
+
+		if(timeOn >= 16) {
+			printf("Error timeOn is an invalid number: %i\n", timeOn);
+			return -1;
+		} else {
+			_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+		}
+	}
+
+	return 0;
+}
+
+void ChamberHits::print() const {
+	printf("==== Printing Chamber  ST = %i, RI = %i, CH = %i, EC = %i====\n", _station, _ring, _chamber, _endcap);
+	for(unsigned int y = 0; y < NLAYERS; y++) {
+		if(shift(y)) printf(" ");
+		for(unsigned int x = minHs() + shift(y); x < maxHs()+shift(y); x++){
+			if(!((x-shift(y))%CFEB_HS)) printf("|");
+			if(_hits[x][y]) printf("%X",_hits[x][y]-1); //print one less, so we stay in hexadecimal (0-15)
+			else printf("-");
+		}
+		printf("|\n");
+	}
+	if(shift(0)) printf(" ");
+	for(unsigned int x = minHs();x < maxHs()+1; x++){
+		if(!(x%(CFEB_HS+1))) printf("%i", x/(CFEB_HS+1));
+		else printf(" ");
+	}
+	printf("\n");
 }
 
 //takes the hits associated with clct "mi" out of the chamber

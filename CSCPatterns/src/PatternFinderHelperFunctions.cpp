@@ -44,12 +44,13 @@ void printPattern(const CSCPattern &p) {
 	}
 }
 
+/*
 void printChamber(const ChamberHits &c){
 	printf("==== Printing Chamber Distribution ST = %i, RI = %i, CH = %i, EC = %i====\n", c._station, c._ring, c._chamber, c._endcap);
 	bool me11 = (c._station == 1 &&(c._ring == 1 || c._ring == 4));
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		if(!me11 && !(y%2)) printf(" ");
-		for(unsigned int x = 0; x < N_MAX_HALF_STRIPS-1; x++){
+		for(unsigned int x = 0; x < c.maxHs()+5; x++){
 			if(!(x%32)) printf("|");
 			if(c._hits[x][y]) printf("%X",c._hits[x][y]-1); //print one less, so we stay in hexadecimal (0-15)
 			else printf("-");
@@ -57,13 +58,13 @@ void printChamber(const ChamberHits &c){
 		if(!me11 && !(y%2)) printf(" ");
 		printf("\n");
 	}
-	for(unsigned int x = 0;x < N_MAX_HALF_STRIPS-1; x++){
-		if(!(x%32)) printf("%i", x/32);
+	for(unsigned int x = 0;x < c.maxHs()+1; x++){
+		if(!(x%33)) printf("%i", x/33);
 		else printf(" ");
 	}
 	printf("\n");
 }
-
+*/
 
 //only has new patterns now
 int printPatternCC(unsigned int pattID,int cc){
@@ -182,7 +183,7 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	 * since the layers are offset for non-me11a/b chambers TODO
 	 * iterate
 	 */
-	for(int x = -(int)MAX_PATTERN_WIDTH/2+1; x < (int)N_MAX_HALF_STRIPS - (int)(MAX_PATTERN_WIDTH/2+1); x++){
+	for(int x = (int)c.minHs() -(int)MAX_PATTERN_WIDTH/2+1; x < (int)c.maxHs() - (int)MAX_PATTERN_WIDTH/2+1; x++){
 		//check if region is in the busy window, if using old tmb logic
 		bool isInBusyWindow = false;
 		for(auto cand : previousCandidates){
@@ -236,7 +237,8 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 		if(mi->comparatorCodeId() < 0) return -1;
 	}
 	if(DEBUG > 1){
-		printChamber(c);
+		c.print();
+		//printChamber(c);
 		printPattern(p);
 		mi->print3x6Pattern();
 	}
@@ -263,7 +265,8 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 			if(containsPattern(c,ps->at(ip),thisMatch,m) < 0) {
 				if(DEBUG >= 0){
 					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
-					printChamber(c);
+					c.print();
+					//printChamber(c);
 				}
 				return -1;
 			}
@@ -271,7 +274,8 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 			if(containsPattern(c,ps->at(ip),thisMatch) < 0) {
 				if(DEBUG >= 0){
 					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
-					printChamber(c);
+					c.print();
+					//printChamber(c);
 				}
 				return -1;
 			}
@@ -287,7 +291,8 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 	//we have a valid best match
 	if(bestMatch && bestMatch->layerCount() >=(int) N_LAYER_REQUIREMENT){
 		if(DEBUG > 0){
-			printChamber(c);
+			c.print();
+			//printChamber(c);
 			printPattern(bestMatch->_pattern);
 		}
 		m.push_back(bestMatch);
@@ -416,6 +421,8 @@ vector<CSCPattern>* createOldPatterns(){
 	vector<CSCPattern>* thisVector = new vector<CSCPattern>();
 
 	//fill in the correctly oriented matrices, should change eventually...
+	//correct, tested nov 27
+
 	for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
 		for(unsigned int y = 0; y< NLAYERS; y++){
 			ID2_BASE[x][y] = id2Bools[y][x];
@@ -430,6 +437,29 @@ vector<CSCPattern>* createOldPatterns(){
 		}
 	}
 
+	/* doesn't look like this is correct
+	for(unsigned int x = 0; x < MAX_PATTERN_WIDTH; x++){
+		for(unsigned int y = 0; y< NLAYERS; y++){
+			//ID2_BASE[x][y] = id2Bools[y][x];
+			ID3_BASE[x][y] = id2Bools[y][x];
+			//ID3_BASE[MAX_PATTERN_WIDTH-x-1][y] =id2Bools[y][x];
+			ID2_BASE[MAX_PATTERN_WIDTH-x-1][y] =id2Bools[y][x];
+			//ID4_BASE[x][y] = id4Bools[y][x];
+			ID5_BASE[x][y] = id4Bools[y][x];
+			//ID5_BASE[MAX_PATTERN_WIDTH-x-1][y] =id4Bools[y][x];
+			ID4_BASE[MAX_PATTERN_WIDTH-x-1][y] =id4Bools[y][x];
+			//ID6_BASE[x][y] = id6Bools[y][x];
+			ID7_BASE[x][y] = id6Bools[y][x];
+			//ID7_BASE[MAX_PATTERN_WIDTH-x-1][y] =id6Bools[y][x];
+			ID6_BASE[MAX_PATTERN_WIDTH-x-1][y] =id6Bools[y][x];
+			//ID8_BASE[x][y] = id8Bools[y][x];
+			ID9_BASE[x][y] = id8Bools[y][x];
+			//ID9_BASE[MAX_PATTERN_WIDTH-x-1][y] =id8Bools[y][x];
+			ID8_BASE[MAX_PATTERN_WIDTH-x-1][y] =id8Bools[y][x];
+			IDA_BASE[x][y] = idABools[y][x];
+		}
+	}
+	*/
 
 	CSCPattern id2("ID2",2,true, ID2_BASE);
 	CSCPattern id3("ID3",3,true,ID3_BASE);
@@ -472,7 +502,7 @@ int chamberSerial( int ec, int st, int ri, int ch ) {
     return kSerial;
 }
 
-
+/*
 int fillCompHits(ChamberHits& theseCompHits,
 		const CSCInfo::Comparators& c) {
 
@@ -518,6 +548,7 @@ int fillCompHits(ChamberHits& theseCompHits,
 				theseCompHits._hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
 			}
 		}
+		*/
 	/*
 	for(unsigned int icomp = 0; icomp < compId->size(); icomp++){
 		if(chSid != (*compId)[icomp]) continue; //only look at where we are now
@@ -566,9 +597,11 @@ int fillCompHits(ChamberHits& theseCompHits,
 			}
 		}
 		*/
+/*
 	}
 	return 0;
 }
+*/
 
 int fillRecHits(ChamberHits& theseRecHits,
 		const CSCInfo::RecHits& r){
