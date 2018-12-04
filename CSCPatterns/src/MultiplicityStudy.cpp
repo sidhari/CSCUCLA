@@ -86,9 +86,13 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	//x = ring, y = stat
 	//TH2F* multiplicityByChamber = new TH2F("multByCham", "mumltByCham; Ring; Station", 4, 1,5, 3, 1,4);
 
+
+	const int nbins = 10;
+	float binVals[nbins+1] = {1,2,3,4,5,6,7,8,9,10,15};
 	vector<TH1F*> multiplicities;
 	for(auto& name : CHAMBER_NAMES){
-		TH1F* cham = new TH1F(name.c_str(), (name+"; CLCT Multiplicity; CLCTs").c_str(), 10, 1,11);
+		//TH1F* cham = new TH1F(name.c_str(), (name+"; CLCT Multiplicity; CLCTs").c_str(), 15, 1,16);
+		TH1F* cham = new TH1F(name.c_str(), (name+"; CLCT Multiplicity; CLCTs").c_str(),nbins, binVals);
 		multiplicities.push_back(cham);
 	}
 
@@ -168,7 +172,8 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 				auto& st_ri = CHAMBER_ST_RI[c];
 				//this is the chamber we are in right now
 				if(ST == st_ri[0] && RI == st_ri[1]){
-					multiplicities.at(c)->Fill(eclcts.size());
+					if(eclcts.size() > binVals[nbins]) multiplicities.at(c)->Fill(binVals[nbins-1]);//fill overflow in earlier bin
+					else multiplicities.at(c)->Fill(eclcts.size());
 					break;
 				}
 
@@ -181,8 +186,8 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	}
 	outF->cd();
 	for (auto& hist : multiplicities) {
-		double norm = hist->GetEntries();
-		if(norm) hist->Scale(1./norm);
+		//double norm = hist->GetEntries();
+		//if(norm) hist->Scale(1./norm);
 		hist->Write();
 	}
 	outF->Close();

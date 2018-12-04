@@ -78,9 +78,10 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	DetectorLUTs newLUTs;
 	DetectorLUTs legacyLUTs(true);
 
+	cout << "Loading Luts..." << endl;
 	//check if we have made .lut files already
-	if(newLUTs.loadAll("data/"+dataset+"/luts/") ||
-			legacyLUTs.loadAll("data/"+dataset+"/luts/")){
+	if(newLUTs.loadAll("dat/"+dataset+"/luts/") ||
+			legacyLUTs.loadAll("dat/"+dataset+"/luts/")){
 		printf("Could not find .lut files, recreating them...\n");
 		string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/"+dataset+"/CLCTMatch-Full.root";
 		TFile* lutFile = new TFile(lutFilepath.c_str());
@@ -100,12 +101,14 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			return -1;
 		}
 
-		newLUTs.writeAll("data/"+dataset+"/luts/");
-		legacyLUTs.writeAll("data/"+dataset+"/luts/");
+		newLUTs.writeAll("dat/"+dataset+"/luts/");
+		legacyLUTs.writeAll("dat/"+dataset+"/luts/");
 	} else {
 		newLUTs.makeFinal();
 		legacyLUTs.makeFinal();
 	}
+
+	cout << "Loaded LUTS" << endl;
 
 	//pointers used to look at different LUT's
 	const LUT* thisLUT = 0;
@@ -167,6 +170,16 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	plotTree->Branch("patX", &patX, "patX/F");
 	plotTree->Branch("legacyLctX", &legacyLctX, "legacyLctX/F");
 
+	TH1F* lutSegmentPosDiff = new TH1F("h_lutSegmentPosDiff", "h_lutSegmentPosDiff", 100, -1, 1);
+	TH1F* lutSegmentPosDiff_halfStrip = new TH1F("h_lutSegmentPosDiff_halfStrip", "h_lutSegmentPosDiff_halfStrip", 100, -1, 1);
+	TH1F* lutSegmentPosDiff_quarterStrip = new TH1F("h_lutSegmentPosDiff_quarterStrip", "h_lutSegmentPosDiff_quarterStrip", 100, -1, 1);
+	TH1F* lutSegmentPosDiff_eighthStrip = new TH1F("h_lutSegmentPosDiff_eighthStrip", "h_lutSegmentPosDiff_eighthStrip", 100, -1, 1);
+	TH1F* lutSegmentPosDiff_sixteenthStrip = new TH1F("h_lutSegmentPosDiff_sixteenthStrip", "h_lutSegmentPosDiff_sixteenthStrip", 100, -1, 1);
+	TH1F* lutSegmentSlopeDiff = new TH1F("h_lutSegmentSlopeDiff", "h_lutSegmentSlopeDiff", 100, -1, 1);
+
+
+	TH1F* legacyLUTSegmentPosDiff = new TH1F("h_legacyPosDiff", "h_legacyPosDiff; lut - seg[strips]; segments",100,-1,1);
+	TH1F* legacyLUTSegmentSlopeDiff = new TH1F("h_legacySlopeDiff", "h_legacySlopeDiff; lut - seg [strips/lay]", 100, -1,1);
 	TH1F* h_clctLayerCount = new TH1F("h_clctLayerCount", "h_clctlayerCount", 7,0,7);
 	//t->SetBranchAddress("Event_EventNumber", &evt.EventNumber);
 
@@ -217,8 +230,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			RI = c.ring;
 			CH = c.chamber;
 
-			//printf("EC = %u, ST = %u, RI = %u, CH = %u\n", EC, ST, RI, CH);
-
 			segmentX = segments.pos_x->at(thisSeg); //strips
 			segmentdXdZ = segments.dxdz->at(thisSeg);
 
@@ -236,12 +247,15 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 				if(segmentX > 79) continue;
 			}
 
+			//REMOVE ME
+			//if(!me11b) continue;
+
 
 			ChamberHits theseRHHits(ST, RI, EC, CH,false);
 			ChamberHits theseCompHits(ST, RI, EC, CH);
 
 			//if(fillCompHits(theseCompHits, comparators)) return -1;
-			if(theseCompHits.fill( comparators)) return -1;
+			if(theseCompHits.fill(comparators)) return -1;
 
 			if (!USE_COMP_HITS || DEBUG > 0) if(fillRecHits(theseRHHits,recHits)) return -1;
 
@@ -270,6 +284,10 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			}
 
 			//Now compare with LUT data
+
+			/* NEW LUTS
+			 *
+			 */
 
 			if(newLUTs.getLUT(ST,RI,thisLUT)) {
 				printf("Error: can't access LUT for: %i %i\n", ST,RI);
@@ -305,38 +323,118 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			//float posCaptureWindow = 0.30; //strips
 			//float slopeCaptureWindow = 0.25; //strips/layer
 
-			/*
+
 			bool foundMatchingCandidate = false;
+			float minX = 1e5;
+			float minX_halfStrip = 1e5;
+			float minX_quarterStrip = 1e5;
+			float minX_eighthStrip = 1e5;
+			float minX_sixteenthStrip = 1e5;
+			float mindXdZ = 1e5;
 
 			//look through all the candidates, until we find the first match
-			for(unsigned int iclct = 0; !foundMatchingCandidate && iclct < newSetMatch.size() && iclct < segEffNums.size(); iclct++){
+			for(unsigned int iclct = 0; !foundMatchingCandidate && iclct < newSetMatch.size(); iclct++){
 				//depending on how many clcts were allowed to look at,
 				// look until we find one
 				const LUTEntry* iEntry = newSetMatch.at(iclct)->_lutEntry;
 
 
-				float lutX = newSetMatch.at(iclct)->keyStrip() + iEntry->position();
+				float lutX = newSetMatch.at(iclct)->keyStrip() + iEntry->position()-1;
 				float lutdXdZ =iEntry->slope();
 
 				//only fill the best candidate
+/*
 				if(iclct == 0){
 					lutSegmentPosDiff->Fill(lutX - segmentX);
 					lutSegmentSlopeDiff->Fill(lutdXdZ - segmentdXdZ);
 				}
+*/
+				float xDiff = lutX - segmentX;
+				float xDiff_halfStrip = round(2.*lutX)/2. - segmentX;
+				float xDiff_quarterStrip = round(4.*lutX)/4. - segmentX;
+				float xDiff_eighthStrip = round(8.*lutX)/8. - segmentX;
+				float xDiff_sixteenthStrip = round(16.*lutX)/16. - segmentX;
+				float dxdzDiff = lutdXdZ - segmentdXdZ;
+				//cout << " EC " << EC << "ST: " << ST << endl;
+				//cout << "xDiff " << xDiff << "nsegs " << newSetMatch.at(iclct)->_lutEntry->nsegments() <<endl;
+
+				if(abs(xDiff) < abs(minX)){
+					minX = xDiff;
+					minX_halfStrip = xDiff_halfStrip;
+					minX_quarterStrip = xDiff_quarterStrip;
+					minX_eighthStrip = xDiff_eighthStrip;
+					minX_sixteenthStrip = xDiff_sixteenthStrip;
+					mindXdZ = dxdzDiff;
+					foundMatchingCandidate = true;
+				}
 
 
+/*
 				if(abs(lutX - segmentX) < posCaptureWindow &&
 						abs(lutdXdZ -segmentdXdZ) < slopeCaptureWindow){
 
 					foundMatchingCandidate = true;
-					segEffNums.at(iclct)->Fill(Pt);
-					segEffDen->Fill(Pt);
+					//segEffNums.at(iclct)->Fill(Pt);
+					//segEffDen->Fill(Pt);
+					//lutSegmentPosDiff->Fill(lutX - segmentX);
+					//lutSegmentSlopeDiff->Fill(lutdXdZ - segmentdXdZ);
 				}
+*/
 				//segEffNums.at(isegeff)->Fill(Pt);
 			}
+			if(foundMatchingCandidate ){
+				lutSegmentPosDiff->Fill(minX);
+				lutSegmentPosDiff_halfStrip->Fill(minX_halfStrip);
+				lutSegmentPosDiff_quarterStrip->Fill(minX_quarterStrip);
+				lutSegmentPosDiff_eighthStrip->Fill(minX_eighthStrip);
+				lutSegmentPosDiff_sixteenthStrip->Fill(minX_sixteenthStrip);
+				lutSegmentSlopeDiff->Fill(mindXdZ);
+			}
 
-			if(foundMatchingCandidate) foundOneMatchEffNum->Fill(Pt);
-		*/
+			//if(foundMatchingCandidate) foundOneMatchEffNum->Fill(Pt);
+
+			/*
+			 *  OLD LUTS
+			 */
+			if(legacyLUTs.getLUT(ST,RI,thisLUT)) {
+				printf("Error: can't access LUT for: %i %i\n", ST,RI);
+				return -1;
+			}
+
+			for(auto & clct : oldSetMatch){
+				if(thisLUT->getEntry(clct->key(), thisEntry)){
+					printf("Error: unable to get entry for clct: pat: %i cc: %i\n", clct->patternId(), clct->comparatorCodeId());
+					return -1;
+				}
+				//assign the clct the LUT entry we found to be associated with it
+				clct->_lutEntry = thisEntry;
+
+
+			}
+
+			bool foundMatchingCandidate_legacy = false;
+			float minX_legacy = 1e5;
+			float mindXdZ_legacy = 1e5;
+			for(unsigned int iclct=0; !foundMatchingCandidate_legacy &&iclct < oldSetMatch.size(); iclct++) {
+				const LUTEntry* iEntry = oldSetMatch.at(iclct)->_lutEntry;
+
+				float lutX = oldSetMatch.at(iclct)->keyStrip() + iEntry->position()-1;
+				float lutdXdZ = iEntry->slope();
+
+				float xDiff = lutX - segmentX;
+				float dxdzDiff = lutdXdZ - segmentdXdZ;
+
+				if(abs(xDiff) < abs(minX_legacy)){
+					minX_legacy = xDiff;
+					mindXdZ_legacy = dxdzDiff;
+					foundMatchingCandidate_legacy = true;
+				}
+			}
+			if(foundMatchingCandidate_legacy){
+				legacyLUTSegmentPosDiff->Fill(minX_legacy);
+				legacyLUTSegmentSlopeDiff->Fill(mindXdZ_legacy);
+			}
+
 
 			if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
 			if(DEBUG > 0) cout << "Legacy Match: (";
@@ -394,6 +492,15 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	outF->cd();
 	plotTree->Write();
+	lutSegmentPosDiff->Write();
+	lutSegmentPosDiff_halfStrip->Write();
+	lutSegmentPosDiff_quarterStrip->Write();
+	lutSegmentPosDiff_eighthStrip->Write();
+	lutSegmentPosDiff_sixteenthStrip->Write();
+	lutSegmentSlopeDiff->Write();
+
+	legacyLUTSegmentPosDiff->Write();
+	legacyLUTSegmentSlopeDiff->Write();
 	h_clctLayerCount->Write();
 	/*
 	lutSegmentPosDiff->Write();

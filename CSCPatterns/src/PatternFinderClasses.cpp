@@ -327,7 +327,9 @@ int CLCTCandidate::getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const{
 //center position of the track [strips]
 float CLCTCandidate::keyStrip() const{
 	//return (_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;
-	return keyHalfStrip()/2+1;
+	//NOT FULLY TESTED NOV 28
+	return keyHalfStrip()/2.+1;
+	//return keyHalfStrip()/2+1; NOV 28 config
 	//return (_horizontalIndex + (MAX_PATTERN_WIDTH+1)/2 )/2.;
 }
 

@@ -11,14 +11,19 @@ from array import array
 #
 #
 
+#### BEFORE NOV 28
+#SAMPLEDIR       = "/uscms/home/wnash/eos/Charmonium/"
+#TRAININGFOLDER = "charmonium2016F/"
+#TESTFOLDER     = "charmonium2017D/"
 
-SAMPLEDIR       = "/uscms/home/wnash/eos/Charmonium/"
+#AFTER NOV 28
+SAMPLEDIR       = "/uscms/home/wnash/eos/"
 #TRAININGFOLDER = "charmonium2017C/"
-TRAININGFOLDER = "charmonium2016F/"
-TESTFOLDER     = "charmonium2017D/"
+TRAININGFOLDER = "Charmonium/charmonium2016F+2017BCEF/"
+TESTFOLDER     = "SingleMuon/zskim2018D-redo/"
 DATAFILE       = "CLCTMatch-Full.root"
 
-LUTWRITEDIR = "../data/" + TRAININGFOLDER
+LUTWRITEDIR = "../dat/" + TRAININGFOLDER
 LUTROOTFILE = "LUT.root" #prefaced with chamber, e.g. ME11A-LUT.root
 TESTWRITEDIR = LUTWRITEDIR+TESTFOLDER
     
@@ -30,15 +35,18 @@ TESTFILE     = SAMPLEDIR+TESTFOLDER+DATAFILE
 
 BESTNTHRES = 10
 
-    #make directories
-if not os.path.isdir(LUTWRITEDIR):
-    print("Making directory: %s"%LUTWRITEDIR)
-    os.system("mkdir %s"%LUTWRITEDIR)
+common.makeDir(SAMPLEDIR, TRAININGFOLDER+TESTFOLDER)
+#makeDir(SAMPLEDIR+)
 
-if not os.path.isdir(TESTWRITEDIR):
-    print("Making directory: %s"%TESTWRITEDIR)
-    os.system("mkdir %s"%TESTWRITEDIR)
-    
+#     #make directories
+# if not os.path.isdir(SAMPLEDIR,LUTWRITEDIR):
+#     print("Making directory: %s"%LUTWRITEDIR)
+#     os.system("mkdir %s"%LUTWRITEDIR)
+# 
+# if not os.path.isdir(TESTWRITEDIR):
+#     print("Making directory: %s"%TESTWRITEDIR)
+#     os.system("mkdir %s"%TESTWRITEDIR)
+#     
   
     
 
@@ -448,7 +456,7 @@ def runTest(chamber, newLUT, legacyLUT, linefitLUT):
 #
 #     Read in linear fit data
 #    
-linefitLUT = common.loadLUT("../data/linearFits.lut")
+linefitLUT = common.loadLUT("../dat/linearFits.lut")
 
 
 

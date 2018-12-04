@@ -11,6 +11,7 @@
 #include <TGraph.h>
 #include <TF1.h>
 #include <TSystem.h>
+#include <TH1F.h>
 
 //c++
 #include <fstream>
@@ -52,6 +53,8 @@ int comparatorCodeEmulator(){
 
 	//all the patterns we will fit
 	vector<CSCPattern>* newPatterns = createNewPatterns();
+
+
 
 	//output file stream to write the fits
 	ofstream output;

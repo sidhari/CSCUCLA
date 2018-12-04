@@ -135,7 +135,7 @@ for inputfilePath in glob.glob(TOP_DIR + '/*/*/CSCDigiTree_*.root'):
     print "Making condor script for %s"%inputfilePath
     
     #pulls out the number associated with the input file
-    num = inputfilePath.split('_')[2].split('.')[0]
+    num = inputfilePath.split('_')[-1].split('.')[0]
     
     thisOutputIdentifier = OUTPUT_IDENTIFIER+'-'+num
     

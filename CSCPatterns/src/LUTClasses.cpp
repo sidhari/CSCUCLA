@@ -31,22 +31,14 @@ using namespace std;
 
 LUTKey::LUTKey(int pattern, int code) :
 		_pattern(pattern),
-		_code(code),
-		_isLegacy(false){
+		_code(code){
 
 }
 
-LUTKey::LUTKey(int pattern) :
-		_pattern(pattern),
-		_code(-1),
-		_isLegacy(true) {
-
-}
 
 LUTKey::LUTKey(const LUTKey&  k) :
 	_pattern(k._pattern),
-	_code(k._code),
-	_isLegacy(k._isLegacy){
+	_code(k._code){
 
 }
 
@@ -60,8 +52,7 @@ bool LUTKey::operator<(const LUTKey& l) const{
 
 bool LUTKey::operator==(const LUTKey& l) const{
 	return (_pattern == l._pattern &&
-			_code == l._code &&
-			_isLegacy == l._isLegacy);
+			_code == l._code);
 }
 
 
@@ -315,104 +306,26 @@ int LUTEntry::makeFinal(){
 //
 
 LUT::LUT():
-	_name("Default")
+	LUT("Default")
+{
+}
+
+LUT::LUT(const string& name, bool isLegacy):
+	_name(name),
+_isLegacy(isLegacy)
 {
 	_isFinal = false;
 	_nclcts = 0;
 	_nsegments = 0;
-	_sortOrder = "pclm";
+	_sortOrder = "cslxk";
 	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(_lutFunc);
 }
 
-LUT::LUT(const string& name):
-	_name(name)
+LUT::LUT(const string& name, const string& filepath, bool isLegacy):
+	LUT(name,isLegacy)
 {
-	_isFinal = false;
-	_nclcts = 0;
-	_nsegments = 0;
-	_sortOrder = "pclmm";
-	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(_lutFunc);
-}
-
-LUT::LUT(const string& name, const string& filepath):
-	_name(name)
-{
-	_isFinal = false;
-	_sortOrder = "pclm";
-	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(_lutFunc);
-	//cout << "\033[94m=== Loading LUT ===\033[0m" << endl;
-	//cout << "Loading from file: " << filepath << endl;
-	//this = LUT();
-	string line;
-	ifstream myfile(filepath.c_str());
-	if(myfile.is_open()){
-		while(getline(myfile, line)){
-			vector<string> elements;
-			char delim = ' ';
-			size_t current, previous = 0;
-			current = line.find(delim);
-			while(current != string::npos){
-				elements.push_back(line.substr(previous, current-previous));
-				previous = current+1;
-				current = line.find(delim,previous);
-			}
-			elements.push_back(line.substr(previous,current-previous));
-
-			//how many elements we expect to get from an LUT using the new scheme
-			const unsigned int sizeOfNewLUT = 9;
-			const unsigned int sizeOfLegacyLUT = sizeOfNewLUT-1;
-
-
-			if(!elements.size()) cout << "Error, something went wrong reading the LUT" << endl;
-
-			unsigned int counter = 0;
-			int pattern            = stoi(elements[counter++]);
-
-			LUTKey key = LUTKey(pattern);
-			if(elements.size() == sizeOfNewLUT) {
-				int code = stoi(elements[counter++]);
-				key = LUTKey(pattern,code);
-			} else if (elements.size() != sizeOfLegacyLUT) {
-				cout << "Error reading .lut file, entry has "<< elements.size() <<
-						" elements" << endl;
-				return;
-			}
-
-			counter++; //skip delimeter word
-			float position          = stof(elements[counter++]);
-			float slope             = stof(elements[counter++]);
-			unsigned long nsegments = stoul(elements[counter++]);
-			float pt				= 0; //TODO
-			unsigned long nclcts	= 0;
-			float multiplicity		= 0;
-			float quality           = stof(elements[counter++]);
-			unsigned int layers     = stoul(elements[counter++]);
-			float chi2              = stof(elements[counter++]);
-
-
-			if(DEBUG >2){
-				cout << line << endl;
-				cout << "patt: " << key._pattern<<
-						" cc: " << key._code <<
-						" pos: " << position << //strips
-						" slope: " << slope << //strip /layer
-						" nseg: " << nsegments <<
-						" pt " << pt << //GeV
-						" nclcts: " << nclcts <<
-						" mult: " << multiplicity <<
-						" quality: " << quality <<
-						" layers: " << layers <<
-						" chi2: " << chi2 << endl;
-			}
-
-			LUTEntry entry = LUTEntry(position, slope, nsegments, pt, nclcts, multiplicity,
-					quality, layers, chi2);
-			setEntry(key,entry);
-		}
-		myfile.close();
-		//cout << "Completed loading of line fit table" << endl;
-	} else {
-		cout << "Error: unable to open file:" << filepath << endl;
+	if(loadText(filepath)){
+		cout << "Error, can't load file" << endl;
 	}
 }
 
@@ -435,7 +348,7 @@ int LUT::editEntry(const LUTKey& k, LUTEntry*& e) {
 		e = &(it->second);
 		return 0;
 	}
-	if(k._isLegacy){ //no default setting for legacy lut
+	if(_isLegacy){ //no default setting for legacy lut
 		setEntry(k, LUTEntry());
 		return editEntry(k,e);
 	} else { //all other patterns should have a default
@@ -448,7 +361,7 @@ int LUT::getEntry(const LUTKey& k, const LUTEntry*& e, bool debug) const{
 		cout << "Need to finalize LUT to access entries" <<endl;
 		return -1;
 	}
-	if(debug) cout << "Looking for [ " << k._pattern << ", " << k._code << "]" << endl;
+	if(debug) cout << "Looking for [ " << k._pattern << ", " << k._code << "] in orderedLUT (size:" << _orderedLUT.size() << ") " <<endl;
 	for(auto& x: _orderedLUT){
 		if(debug) cout << "[" << x.first._pattern << ", " << x.first._code << "]: " <<
 				"[qual = " << x.second.quality() << "]" << endl;
@@ -580,6 +493,84 @@ int LUT::loadROOT(const string& rootfile) {
 	return 0;
 }
 
+int LUT::loadText(const string& textfile){
+	if(_isFinal) return -1;
+	string line;
+	ifstream myfile(textfile.c_str());
+	if(myfile.is_open()){
+		while(getline(myfile, line)){
+			vector<string> elements;
+			char delim = ' ';
+			size_t current, previous = 0;
+			current = line.find(delim);
+			while(current != string::npos){
+				elements.push_back(line.substr(previous, current-previous));
+				previous = current+1;
+				current = line.find(delim,previous);
+			}
+			elements.push_back(line.substr(previous,current-previous));
+
+			//how many elements we expect to get from an LUT using the new scheme
+			const unsigned int sizeOfNewLUT = 9;
+			const unsigned int sizeOfLegacyLUT = sizeOfNewLUT-1;
+
+
+			if(!elements.size()) cout << "Error, something went wrong reading the LUT" << endl;
+
+			unsigned int counter = 0;
+			int pattern            = stoi(elements[counter++]);
+
+			LUTKey key = LUTKey(pattern);
+			if(elements.size() == sizeOfNewLUT && !_isLegacy) {
+				int code = stoi(elements[counter++]);
+				key = LUTKey(pattern,code);
+			} else if (elements.size() != sizeOfLegacyLUT || !_isLegacy) {
+				cout << "Error: loading file not consistent size with declared LUT: isLegacy = " << _isLegacy << endl;
+				cout << "Error reading .lut file, entry has "<< elements.size() <<
+						" elements" << endl;
+				return -1;
+			}
+
+			counter++; //skip delimeter word
+			float position          = stof(elements[counter++]);
+			float slope             = stof(elements[counter++]);
+			unsigned long nsegments = stoul(elements[counter++]);
+			float pt				= 0; //TODO
+			unsigned long nclcts	= 0;
+			float multiplicity		= 0;
+			float quality           = stof(elements[counter++]);
+			unsigned int layers     = stoul(elements[counter++]);
+			float chi2              = stof(elements[counter++]);
+
+
+			if(DEBUG >2){
+				cout << line << endl;
+				cout << "patt: " << key._pattern<<
+						" cc: " << key._code <<
+						" pos: " << position << //strips
+						" slope: " << slope << //strip /layer
+						" nseg: " << nsegments <<
+						" pt " << pt << //GeV
+						" nclcts: " << nclcts <<
+						" mult: " << multiplicity <<
+						" quality: " << quality <<
+						" layers: " << layers <<
+						" chi2: " << chi2 << endl;
+			}
+
+			LUTEntry entry = LUTEntry(position, slope, nsegments, pt, nclcts, multiplicity,
+					quality, layers, chi2);
+			if(setEntry(key,entry))return -1;
+		}
+		myfile.close();
+		//cout << "Completed loading of line fit table" << endl;
+	} else {
+		cout << "Error: unable to open file:" << textfile << endl;
+	}
+	if(DEBUG > 1) cout << "lut.size():" << _lut.size() << endl;
+	return 0;
+}
+
 int LUT::writeToText(const string& filename) {
 		cout << "\033[94m=== Writing LUT ===\033[0m" << endl;
 		cout << "Writing to file: " << filename << endl;
@@ -595,7 +586,7 @@ int LUT::writeToText(const string& filename) {
 
 			// pat code - pos slope nseg qual layers chi2
 			myfile << it.first._pattern << " ";
-			if(!it.first._isLegacy) myfile << it.first._code << " ";
+			if(_isLegacy) myfile << it.first._code << " ";
 			myfile << "~ ";
 			myfile << it.second.position() << " ";
 			myfile << it.second.slope() << " ";
@@ -704,12 +695,33 @@ int LUT::makeFinal(){
 	if(_isFinal) return 0;
 	_nclcts = 0;
 	_nsegments = 0;
+	//int useless = 0;
+	//int counter =0;
 	for(auto& x: _lut) {
-		x.second.makeFinal();
+		//counter++;
+		//if(!(counter%100)) cout << "processed: " << counter << endl;
+
+		//useless = x.first._code; //TODO: weird bug that doesn't write the orderedlut unless x.first is mentioned
+		//cout << "inserting: " << x.first._code << endl;
+		//cout << "inserting: " << x.first._isLegacy << endl;
+		//cout << "test" << endl;
+		//x.first._code;
+		if(x.second.makeFinal()) return -1;
+		//print.second
 		_nclcts += x.second.nclcts();
+		//cout << "nclcts " << _nclcts << endl;
 		_nsegments += x.second.nsegments();
-		_orderedLUT.insert(x);
+		//insert returns <iterator,bool> true if successful
+		//pair<LUTKey,LUTEntry> newPair = x;
+		//bool inserted = _orderedLUT.insert(newPair).second;
+		bool inserted = _orderedLUT.insert(x).second;
+		//cout << "inserted: " << inserted << endl;
+		if(!inserted) {
+			cout << "Error: did not insert into ordered lut" << endl;
+			return -1;
+		}
 	}
+	if(DEBUG>0) cout <<"madeFinal: "<< _name<<" lut.size():" << _lut.size() << " orderedLUT.size(): "<< _orderedLUT.size() << endl;
 	_isFinal = true;
 	return 0;
 }
@@ -828,6 +840,7 @@ int DetectorLUTs::loadAll(const string& path){
 		string filepath = path+CHAMBER_NAMES[i];
 		if(_isLegacy) filepath += LEGACY_SUFFIX;
 		filepath += ".lut";
+		if(DEBUG) cout << "Adding LUT Entry: " << filepath << endl;
 		if(addEntry(CHAMBER_NAMES[i],
 				CHAMBER_ST_RI[i][0],CHAMBER_ST_RI[i][1],
 				filepath)) {
@@ -846,12 +859,21 @@ int DetectorLUTs::addEntry(const string& name, int station, int ring, const stri
 				" " << ring << " , overwriting" <<endl;
 
 	}
+	_luts.insert(make_pair(key, LUT(name,lutpath, _isLegacy)));
+	/*
 	//default to line fits if not legacy
 	if(!_isLegacy){
+		//PRELOADS WITH LINEAR FITS
+		//auto thisLUT = LUT(name, LINEFIT_LUT_PATH);
+		//thisLUT.loadText(lutpath);
+		//_luts.insert(make_pair(key,thisLUT));
+
+
 		_luts.insert(make_pair(key, LUT(name, lutpath)));
 	} else {
 		_luts.insert(make_pair(key, LUT(name)));
 	}
+	*/
 	return 0;
 }
 
@@ -877,7 +899,9 @@ int DetectorLUTs::getLUT(int station, int ring, const LUT*& lut){
 
 
 int DetectorLUTs::makeFinal(){
-	for(auto& l: _luts) l.second.makeFinal();
+	for(auto& l: _luts) {
+		if(l.second.makeFinal()) return -1;
+	}
 	return 0;
 }
 

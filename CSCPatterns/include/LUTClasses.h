@@ -11,6 +11,8 @@
 #include <set>
 #include <map>
 #include <string>
+#include <iterator>
+#include <utility> //pair
 
 //lambda
 #include <functional>
@@ -28,8 +30,8 @@ using namespace std;
  */
 class LUTKey {
 public:
-	LUTKey(int pattern, int code);
-	LUTKey(int pattern);
+	//default -1 if not new codes
+	LUTKey(int pattern, int code = -1);
 	LUTKey(const LUTKey&  k);
 
 	~LUTKey() {}
@@ -40,7 +42,6 @@ public:
 
 	int _pattern;
 	int _code; //comparator code
-	bool _isLegacy;
 };
 
 
@@ -67,21 +68,14 @@ public:
 
 	bool operator<(const LUTEntry& l) const;
 	bool operator==(const LUTEntry& l) const;
-	float position() const;
-	float slope() const;
+	float position() const; //strips
+	float slope() const; //strips/layer
 	unsigned int nsegments() const; //amount of segments used to construct LUT entry
 	float pt() const;
 	unsigned int nclcts() const;
 	float quality() const;
 	float probability() const;
 	float multiplicity() const; //calculates average multiplicity for how many clcts it is associated with
-
-/*
-	const vector<float>& positionOffsets() const;
-	const vector<float>& slopeOffsets() const;
-	const vector<float>& pts() const;
-	const vector<unsigned int>& clctMultiplicities() const;
-	*/
 
 	TTree* makeTree(const string& name) const;
 
@@ -128,8 +122,8 @@ private:
 class LUT {
 public:
 	LUT();
-	LUT(const string& name);
-	LUT(const string& name, const string& lutfile);
+	LUT(const string& name, bool isLegacy=false);
+	LUT(const string& name, const string& lutfile, bool isLegacy=false);
 
 	~LUT() {};
 
@@ -142,6 +136,7 @@ public:
 	void printPython(unsigned int minClcts=0,unsigned int minSegments=0,unsigned int minLayers=0) {print(minClcts,minSegments,minLayers);} //because python keywords...
 
 	int loadROOT(const string& rootfile);
+	int loadText(const string& textfile);
 	int writeToText(const string& filename);
 	int writeToROOT(const string& filename);
 	int writeToPSLs(const string& fileprefix);
@@ -153,6 +148,7 @@ public:
 	int nsegments();
 private:
 	bool _isFinal;
+	const bool _isLegacy;
 	int _nclcts;
 	int _nsegments;
 	string _sortOrder;
@@ -164,38 +160,46 @@ private:
 			[this](pair<LUTKey,LUTEntry> l1, pair<LUTKey,LUTEntry> l2)
 			{
 
-		auto& l1e = l1.second;
-		auto& l2e = l2.second;
-		for(auto c: _sortOrder){
-			//cout << c << endl;
-			switch (c) {
-			case 'p':
-				if(l1e.probability() == l2e.probability()) continue;
-				return l1e.probability() > l2e.probability();
-			case 's':
-				if(l1e.nsegments() == l2e.nsegments()) continue;
-				return l1e.nsegments() > l2e.nsegments();
-			case 'c':
-				if(l1e.nclcts() == l2e.nclcts()) continue;
-				return l1e.nclcts() > l2e.nclcts();
-			case 'l':
-				if(l1e._layers == l2e._layers) continue;
-				return l1e._layers > l2e._layers;
-			case 'm':
-				if(l1e.multiplicity() == l2e.multiplicity()) continue;
-				return l1e.multiplicity() > l2e.multiplicity();
-			case 'x': //x^2
-				if(l1e._chi2 == l2e._chi2) continue;
-				return l1e._chi2 < l2e._chi2;
-			case 'e': //energy
-				if(l1e.pt() == l2e.pt()) continue;
-				return l1e.pt() > l2e.pt();
-			default:
-				return l1.second < l2.second;
+			//cout << "sorting: l1.pat: "<< l1.first._pattern << " l1.code: " << l1.first._code << " l2.pat" << l2.first._pattern <<
+			//		" l2.code: " << l2.first._code << endl;
+			return l1.first < l2.first;
+			//TODO: some bug here, doesn't work for first lut??
+			/*
+			auto& l1e = l1.second;
+			auto& l2e = l2.second;
+			for(auto c: _sortOrder){
+				//cout << c << endl;
+				switch (c) {
+				case 'p':
+					if(l1e.probability() == l2e.probability()) continue;
+					return l1e.probability() > l2e.probability();
+				case 's':
+					if(l1e.nsegments() == l2e.nsegments()) continue;
+					return l1e.nsegments() > l2e.nsegments();
+				case 'c':
+					if(l1e.nclcts() == l2e.nclcts()) continue;
+					return l1e.nclcts() > l2e.nclcts();
+				case 'l':
+					if(l1e._layers == l2e._layers) continue;
+					return l1e._layers > l2e._layers;
+				case 'm':
+					if(l1e.multiplicity() == l2e.multiplicity()) continue;
+					return l1e.multiplicity() > l2e.multiplicity();
+				case 'x': //x^2
+					if(l1e._chi2 == l2e._chi2) continue;
+					return l1e._chi2 < l2e._chi2;
+				case 'e': //energy
+					if(l1e.pt() == l2e.pt()) continue;
+					return l1e.pt() > l2e.pt();
+				case 'k': //key
+					if(l1.first == l2.first) continue;
+					return l1.first < l2.first;
+				default:
+					return l1.second < l2.second;
+				}
 			}
-		}
-		return false;
-
+			return false;
+	*/
 		};
 
 
@@ -203,6 +207,11 @@ private:
 	map<LUTKey,LUTEntry> _lut;
 
 	static int convertToPSLLine(const LUTEntry& e);
+
+public:
+	set<pair<LUTKey, LUTEntry>, LUTLambda>::iterator begin() {return _orderedLUT.begin();}
+	set<pair<LUTKey, LUTEntry>, LUTLambda>::iterator end() {return _orderedLUT.end();}
+
 
 };
 

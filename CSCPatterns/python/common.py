@@ -1,4 +1,5 @@
 import ROOT as r
+import os
 
 colors = [r.kBlack, r.kRed-4, r.kGreen+1, r.kBlue+1, r.kMagenta-4, r.kYellow-3, r.kCyan-3, r.kBlue+3, r.kRed+2, r.kOrange+7, r.kBlue-8, 30, 50, 20, r.kYellow, 38]
 
@@ -128,4 +129,23 @@ def loadLUT(filepath):
                 return 
                 
     return lut
+
+
+#not guaranteed to run for funny paths!
+def makeDir(rootpath, folderpath):
+    folders = folderpath.split('/')
+    
+    fcount = 0 
+    foldertocreate = folders[fcount]
+     
+    while(fcount != len(folders)-1): #recursively create folders until we don't need to anymore
+        if not os.path.isdir(rootpath+foldertocreate):
+            path = rootpath+foldertocreate
+            print("Making directory: %s"%path)
+            os.system("mkdir %s"%path)
+            
+        fcount+=1
+        foldertocreate += "/" + folders[fcount]
+    return rootpath+foldertocreate
+
          
