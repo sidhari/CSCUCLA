@@ -57,8 +57,10 @@ int comparatorCodeEmulator(){
 
 
 	//output file stream to write the fits
+	const string outName = "../dat/linearFits.lut";
+
 	ofstream output;
-	output.open("../data/linearFits.lut");
+	output.open(outName.c_str());
 	if(!output.is_open()){
 		cout << "can't open file:" << endl;
 	}
@@ -110,7 +112,9 @@ int comparatorCodeEmulator(){
 			// and offset is off by 0.5 strips, and need to convert to strips
 			//
 
-			double offset = 0.5*fit->GetParameter(0) + 0.25; //offset between the two
+			//double offset = 0.5*fit->GetParameter(0) + 0.25; //offset between the two
+			//double slope = -0.5*fit->GetParameter(1);
+			double offset = 0.5*fit->GetParameter(0) - 0.75; //offset between the two
 			double slope = -0.5*fit->GetParameter(1);
 			double chi2 = fit->GetChisquare();
 			double ndf = fit->GetNDF();
@@ -157,6 +161,7 @@ int comparatorCodeEmulator(){
 		}
 	}
 
+	cout << "Wrote to: " << outName<< endl;
 	output.close();
 	return 0;
 }

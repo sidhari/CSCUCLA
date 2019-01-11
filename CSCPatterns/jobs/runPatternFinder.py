@@ -3,7 +3,7 @@ import os
 
 EOS = '/uscms/home/wnash/eos/'
 #SAMPLE_DIR = 'Charmonium/charmonium2017C/'
-SAMPLE_DIR = 'SingleMuon/zskim2018D-redo/'
+SAMPLE_DIR = 'SingleMuon/zskim2018D/'
 TOP_DIR = EOS+SAMPLE_DIR
 SRC_DIR = '../src/'
 LIB_DIR = '../lib/'

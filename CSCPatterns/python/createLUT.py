@@ -19,8 +19,9 @@ from array import array
 #AFTER NOV 28
 SAMPLEDIR       = "/uscms/home/wnash/eos/"
 #TRAININGFOLDER = "charmonium2017C/"
-TRAININGFOLDER = "Charmonium/charmonium2016F+2017BCEF/"
-TESTFOLDER     = "SingleMuon/zskim2018D-redo/"
+#TRAININGFOLDER = "Charmonium/charmonium2016F+2017BCEF/"
+TRAININGFOLDER = "SingleMuon/zskim2018D/"
+TESTFOLDER     = "SingleMuon/zskim2018D/"
 DATAFILE       = "CLCTMatch-Full.root"
 
 LUTWRITEDIR = "../dat/" + TRAININGFOLDER
@@ -166,10 +167,17 @@ def createDataLUT(chamber):
         if not validSegments % 10000:
             ccCountVsSegmentsX.append(validSegments)
             ccCountVsSegmentsY.append(totalPatterns)
-
+        
+        #if event.patternId == 90:
+        #    print "cc = %i segX =%5.2f, patX = %5.2f --- segX - patX = %5.2f"%(event.ccId, event.segmentX, float(event.patX), event.segmentX-event.patX)
             
         newLCTPositionSums[event.patternId][event.ccId].append(float(event.segmentX)-float(event.patX))
         newLCTSlopeSums[event.patternId][event.ccId].append(float(event.segmentdXdZ))
+        
+        #if event.legacyLctId == 9:
+        #    print "segX =%5.2f, patX = %5.2f --- segX - patX = %5.2f"%(event.segmentX, float(event.legacyLctX), event.segmentX-event.legacyLctX)
+         
+        
         
         legacyLCTPositionSums[event.legacyLctId].append(float(event.segmentX) - float(event.legacyLctX))
         legacyLCTSlopeSums[event.legacyLctId].append(float(event.segmentdXdZ))
@@ -181,6 +189,8 @@ def createDataLUT(chamber):
             position, _ ,nsegments = getStats(newLCTPositionSums, patt, cc)
             slope, _, _ = getStats(newLCTSlopeSums, patt, cc)
             newLUT.addEntry(patt, cc, position, slope, nsegments)
+            #if event.patternId == 100 and event.ccId == 1365:
+            #    print "position = %3.2f"%position
             
     for patt in legacyLCTPositionSums:
             position, _ ,nsegments = getStats2(legacyLCTPositionSums, patt)
@@ -353,8 +363,7 @@ def runTest(chamber, newLUT, legacyLUT, linefitLUT):
             legSlopeDiff = event.segmentdXdZ - legacyLUT.slopes[legacyId]
             h_legLUTPosDiff_Split[legacyId].Fill(legPosDiff)
             
-            
-        if newLUT.positions.has_key(patt) and newLUT.positions[patt].has_key(cc) and newLUT.nsegments > BESTNTHRES:
+        if newLUT.positions.has_key(patt) and newLUT.positions[patt].has_key(cc) and newLUT.nsegments[patt][cc] > BESTNTHRES:
             bestPosDiff = float(event.segmentX) - (newLUT.positions[patt][cc] + float(event.patX))
             bestSlopeDiff = event.segmentdXdZ - newLUT.slopes[patt][cc]
         else:
@@ -466,8 +475,8 @@ chambers = []
 #                name, st, ri
 #chambers.append(["All-Chambers", 0, 0])
 chambers.append(["ME11B", 1,1])
-#chambers.append(["ME11A", 1,4])
-#chambers.append(["ME12", 1,2])
+chambers.append(["ME11A", 1,4])
+chambers.append(["ME12", 1,2])
 #chambers.append(["ME13", 1,3])
 #chambers.append(["ME21", 2,1])
 #chambers.append(["ME22", 2,2])

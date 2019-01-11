@@ -106,6 +106,8 @@ public:
 	int getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const;
 	float keyStrip() const;
 	int keyHalfStrip() const;
+	float position() const;
+	float slope() const;
 	void print3x6Pattern() const;
 	void printCodeInPattern() const;
 	int comparatorCodeId() const;
@@ -144,15 +146,18 @@ public:
 	const unsigned int _chamber;
 	unsigned int minHs() const {return _minHs;}
 	unsigned int maxHs() const {return _maxHs;}
+	unsigned int nhits() const {return _nhits;}
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
 
 	bool shift(unsigned int lay) const;
 
 	int fill(const CSCInfo::Comparators& c);
+	int fill(const CSCInfo::RecHits& r);
 	void print() const;
 
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
+	unsigned int _nhits;
 	unsigned int _minHs;
 	unsigned int _maxHs;
 

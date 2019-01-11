@@ -340,6 +340,25 @@ int CLCTCandidate::keyHalfStrip() const {
 	return _horizontalIndex + MAX_PATTERN_WIDTH/2 - 1;
 }
 
+//local position of clct candidate, accounting for half strips and lut
+float CLCTCandidate::position() const {
+	if( _lutEntry){
+		return keyStrip() + _lutEntry->position();
+	} else {
+		cout << "Warning, no lutEntry set" << endl;
+		return keyStrip();
+	}
+}
+
+float CLCTCandidate::slope() const {
+	if( _lutEntry){
+		return _lutEntry->slope();
+	} else {
+		cout << "Warning, no lutEntry set" << endl;
+		return 0;
+	}
+}
+
 void CLCTCandidate::print3x6Pattern() const{
 	if(_code) _code->printCode();
 	else {
@@ -443,6 +462,7 @@ ChamberHits::ChamberHits(unsigned int station, unsigned int ring,
 				_endcap(endcap),
 				_chamber(chamber)
 {
+	_nhits = 0;
 	_minHs = 0;
 	bool me11a = _station == 1 && _ring == 4;
 	bool me11b = _station == 1 && _ring == 1;
@@ -467,6 +487,7 @@ ChamberHits::ChamberHits(const ChamberHits& c) :
 			_ring(c._ring),
 			_endcap(c._endcap),
 			_chamber(c._chamber) {
+	_nhits = c._nhits;
 	_minHs = c._minHs;
 	_maxHs = c._maxHs;
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
@@ -523,9 +544,45 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 			return -1;
 		} else {
 			_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+			_nhits++;
 		}
 	}
 
+	return 0;
+}
+
+
+//TODO Jan 4, 2019
+int ChamberHits::fill(const CSCInfo::RecHits& r){
+
+
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	bool me11a = (_station == 1 && _ring == 4);
+	bool me11b = (_station == 1 && _ring == 1);
+	for(unsigned int thisRh = 0; thisRh < r.size(); thisRh++)
+	{
+		int thisId = r.ch_id->at(thisRh);
+
+		if(chSid != thisId) continue; //just look at matches
+		//rhLay goes 1-6
+		unsigned int iLay = r.lay->at(thisRh)-1;
+
+		//goes 1-80
+		float thisRhPos = r.pos_x->at(thisRh);
+
+		int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
+		if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
+
+		if((unsigned int)iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
+			printf("ERROR: recHit index %i invalid\n", iRhStrip);
+			return -1;
+		}
+
+		//_hits[iRhStrip][iLay] = true; //store +1, so we dont run into trouble with hexadecimal
+		_hits[iRhStrip][iLay] = r.mu_id->at(thisRh)+2; //store +2, so we dont run into trouble with hexadecimal
+		// rechits not associated with muons have mu_id = -1, and we want them to be positive so we see them -> +2
+		_nhits++;
+	}
 	return 0;
 }
 

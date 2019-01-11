@@ -359,10 +359,11 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 	unsigned int matches = emulationMatching->GetBinContent(5);
 	unsigned int perfectMatches = emulationMatching->GetBinContent(6);
 
+	cout << "-- All CLCTs --" << endl;
 	cout << "        Matches: " << matches << " / " << realCLCTs << " = " << 1.*matches/realCLCTs << endl;
 	cout << "Perfect Matches: " << perfectMatches << " / " << realCLCTs << " = " << 1.*perfectMatches/realCLCTs << endl;
 
-	cout << "-- clct0's --" << endl;
+	cout << "-- First CLCT --" << endl;
 	cout << "        Matches: " << match_clct0 << " / " << clct0 << " = " << 1.*match_clct0/clct0 << endl;
 	cout << "Perfect Matches: " << pmatch_clct0 << " / " << clct0 << " = " << 1.*pmatch_clct0/clct0 << endl;
 

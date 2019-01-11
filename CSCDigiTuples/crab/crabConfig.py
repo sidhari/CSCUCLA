@@ -9,7 +9,7 @@ run = dataset.split('/')[2].split('-')[0]
 selectionString = dataset.split('/')[1]
 outfileName = 'CSCDigiTree_'+run+'_'+selectionString+'.root'
 
-config.General.requestName = 'zskim2018D_redo_CSCDigiTree'
+config.General.requestName = 'zskim2018D_allrh_CSCDigiTree'
 config.General.workArea = 'output'
 config.General.transferOutputs = True
 config.General.transferLogs = False

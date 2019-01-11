@@ -10,6 +10,7 @@
 #include <TFile.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TMath.h>
 
 #include <TTreeReader.h>
 #include <TTreeReaderValue.h>
@@ -92,8 +93,26 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	vector<TH1F*> multiplicities;
 	for(auto& name : CHAMBER_NAMES){
 		//TH1F* cham = new TH1F(name.c_str(), (name+"; CLCT Multiplicity; CLCTs").c_str(), 15, 1,16);
-		TH1F* cham = new TH1F(name.c_str(), (name+"; CLCT Multiplicity; CLCTs").c_str(),nbins, binVals);
+		TH1F* cham = new TH1F(name.c_str(), ("h_"+name+"; CLCT Multiplicity; CLCTs").c_str(),nbins, binVals);
 		multiplicities.push_back(cham);
+	}
+	vector<TH1F*> clctRMS;
+	for(auto& bin : binVals){
+		string name = "h_rmsMult_" + to_string(round(bin));
+		TH1F* rms = new TH1F(name.c_str(), (name+"; Position From Mean [strips]; CLCTs").c_str(), 40, -20, 20);
+		clctRMS.push_back(rms);
+	}
+
+	TH1F* h_nChambersShowered = new TH1F("h_nChambersShowered", "h_nChambersShowered; Amount of Showering (>1 CLCT) Chambers In Event; Events", 20, 0, 20);
+	TH2F* h_multiplicityVsPt = new TH2F("h_multiplicityVsPt", "h_multiplicityVsPt; Pt [GeV]; CLCT Multiplicity",  40, 0, 400,10, 1, 11);
+	TH2F* h_multiplicityVsP = new TH2F("h_multiplicityVsP", "h_multiplicityVsP; P [GeV]; CLCT Multiplicity",  80, 0, 800,10, 1, 11);
+
+	//const unsigned int MAX_CHAMBERS = 4; //max overlapping chambers
+	TH2F* h_energyPerChamberVsP = new TH2F("h_energyPerChamberVsP","h_energyPerChamberVsP; P [GeV]; Energy Per Chamber [?]", 80,0.,800., 100, -100000., -2.);
+	map<int, TH2F*> h_energyPerChamberVsP_byChamber;
+	for(int chamberCount =  1; chamberCount < 6; chamberCount++){
+		h_energyPerChamberVsP_byChamber[chamberCount] = new TH2F(("h_energyPerChamberVsP_"+to_string(chamberCount)).c_str(),
+				("h_energyPerChamberVsP"+to_string(chamberCount) +"; P [GeV]; Energy Per Chamber [?]").c_str(), 80,0.,800., 100, -100000., -2.);
 	}
 
 	//int patternId = 0;
@@ -136,6 +155,50 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 
 		t->GetEntry(i);
 
+
+
+		//iterate through muons
+		for(int m =0; m < (int)muons.size(); m++){
+			float totalEnergy = 0;
+			vector<int> chambers; //all the chambers used to make this muon
+			for(unsigned int rh =0; rh < recHits.size(); rh++){
+				if(recHits.mu_id->at(rh) != m) continue; //only look at rh associated with one muon at a time
+				int chId = recHits.ch_id->at(rh);
+				//keep track of how many chambers we have looked at
+				if(find(chambers.begin(), chambers.end(), chId) == chambers.end()){
+					chambers.push_back(chId);
+				}
+
+			}
+			if(chambers.size()) {
+				for(unsigned int rh=0; rh < recHits.size(); rh++){
+					int chId = recHits.ch_id->at(rh);
+					//add all energy in all the chambers where a segment was tagged
+					//if(find(chambers.begin(), chambers.end(), chId) == chambers.end()){
+					if(find(chambers.begin(), chambers.end(), chId) != chambers.end()){
+						totalEnergy += recHits.e->at(rh);
+					}
+				}
+
+
+				float averageEnergy = totalEnergy / chambers.size();
+				double pt = muons.pt->at(segments.mu_id->at(m));
+				double eta = muons.eta->at(segments.mu_id->at(m));
+				double theta = 2.*TMath::ATan(TMath::Exp(-eta));
+				double p = -1; //default to -1 in case that theta is zero (somehow)
+				if(TMath::Sin(theta)) p = pt/TMath::Sin(theta);
+
+				h_energyPerChamberVsP->Fill(p, averageEnergy);
+				if(chambers.size() < 6){
+					h_energyPerChamberVsP_byChamber[chambers.size()]->Fill(p,averageEnergy);
+				}
+
+			}
+		}
+
+
+		int nShoweringChambers = 0;
+
 		//
 		//Iterate through all possible chambers
 		//
@@ -149,21 +212,109 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
+
+			//
+			// Count all the segments in this chamber
+			//
+			vector<float> segmentPts;
+			vector<float> segmentPs;
+			vector<float> segmentPos;
+			//if(segments.size())cout << "=== New Chamber ===" << endl;
+			for(unsigned int thisSeg =0; thisSeg < segments.size(); thisSeg++){
+				int segmentHash = segments.ch_id->at(thisSeg);
+				if(segmentHash != chamberHash) continue;
+				double pt = muons.pt->at(segments.mu_id->at(thisSeg));
+				double eta = muons.eta->at(segments.mu_id->at(thisSeg));
+				segmentPts.push_back(pt);
+				/* From: https://en.wikipedia.org/wiki/Pseudorapidity
+				 *
+				 */
+				double theta = 2.*TMath::ATan(TMath::Exp(-eta));
+				double p = -1; //default to -1 in case that theta is zero (somehow)
+				if(TMath::Sin(theta)) p = pt/TMath::Sin(theta);
+				//float p = pt
+				/*
+				cout << "thisSeg = " << thisSeg
+						<< " pt = " << pt
+						<< " eta = " << eta
+						<< " theta = " << theta
+						<< " p = " << p << endl;
+				*/
+				segmentPs.push_back(p);
+				segmentPos.push_back(segments.pos_x->at(thisSeg));
+			}
+
 			//
 			// Emulate the TMB to find all the CLCTs
 			//
 
-			ChamberHits compHits(ST, RI, EC, CH);
+			ChamberHits chamberCompHits(ST, RI, EC, CH);
 
-			if(compHits.fill(comparators)) return -1;
+			if(chamberCompHits.fill(comparators)) return -1;
+
+			ChamberHits chamberRecHits(ST,RI,EC,CH);
+
+			if(chamberRecHits.fill(recHits)) return -1;
 
 			vector<CLCTCandidate*> eclcts;
 
 
 			//get all the clcts in the chamber
-			if(searchForMatch(compHits, newPatterns,eclcts)){
+			if(searchForMatch(chamberCompHits, newPatterns,eclcts)){
 				eclcts.clear();
 				continue;
+			}
+			/*
+			if(chamberRecHits.nhits() && eclcts.size() > 1){
+				chamberCompHits.print();
+				chamberRecHits.print();
+			}
+			*/
+
+			if(segmentPts.size()) {
+
+				float normalizedCLCTs = 1.*eclcts.size()/segmentPts.size();
+				//cout << "eclcts: " << eclcts.size() << " segments: " << segmentPts.size() << " normalizedCLCTs: " << normalizedCLCTs << endl;
+				bool testStation = (ST ==2) && (RI==1);
+
+				if(normalizedCLCTs > 1  && testStation){
+					cout << "segment [Pos (strips), Pt, P]" << endl;
+					for(unsigned int iseg = 0; iseg < segmentPts.size(); iseg++){
+						cout << "\t[ " << segmentPos.at(iseg) << ", " << segmentPts.at(iseg) << ", " << segmentPs.at(iseg) << "]" << endl;
+					}
+					for(auto& clct : eclcts){
+						cout << "CLCT Position [strips]: " << clct->keyStrip() << endl;
+					}
+					chamberCompHits.print();
+				}
+				for(auto& pt: segmentPts){
+					h_multiplicityVsPt->Fill( pt,normalizedCLCTs);
+				}
+				for(auto& p : segmentPs){
+					h_multiplicityVsP->Fill(p, normalizedCLCTs);
+				}
+
+
+				//calculate position distribution of clcts, taking a simple case of a single segment to start with
+				int nclcts = eclcts.size();
+				if(nclcts){
+					float meanPos = 0;
+					for(auto& eclct: eclcts){
+						meanPos += eclct->keyStrip();
+					}
+					meanPos /= nclcts;
+					for(auto& eclct: eclcts){
+						float diff = eclct->keyStrip() - meanPos;
+						if(nclcts > 10){
+							clctRMS.back()->Fill(diff);
+						}else {
+							clctRMS.at(nclcts-1)->Fill(diff);
+						}
+					}
+				}
+				if(nclcts > 2){
+					nShoweringChambers++;
+				}
 			}
 
 			if(!eclcts.size()) continue;
@@ -181,15 +332,59 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 
 			eclcts.clear();
 		}
+		h_nChambersShowered->Fill(nShoweringChambers);
 
 
 	}
 	outF->cd();
+	h_nChambersShowered->Write();
+	for(auto& entry : h_energyPerChamberVsP_byChamber) entry.second->Write();
+	h_energyPerChamberVsP->Write();
+	TH2F* h_energyPerChamberVsP_normalized = (TH2F*)h_energyPerChamberVsP->Clone("h_energyPerChamberVsP_norm");
+	for(int i=0; i < h_energyPerChamberVsP_normalized->GetNbinsX()+1; i++){
+		float norm = 0;
+		//calculate integral along pt bin
+		for(int j=0;j < h_energyPerChamberVsP_normalized->GetNbinsY()+1; j++){
+			norm += h_energyPerChamberVsP_normalized->GetBinContent(i,j);
+		}
+		//normalize everything for a given pt
+		if(norm){
+			for(int j=0;j < h_energyPerChamberVsP_normalized->GetNbinsY()+1; j++){
+				float content = h_energyPerChamberVsP_normalized->GetBinContent(i,j);
+				h_energyPerChamberVsP_normalized->SetBinContent(i,j,content/norm);
+				//norm += h_multiplicityVsPt_normalized->GetBinContent(i,j);
+			}
+		}
+	}
+	h_energyPerChamberVsP_normalized->Write();
+
 	for (auto& hist : multiplicities) {
 		//double norm = hist->GetEntries();
 		//if(norm) hist->Scale(1./norm);
 		hist->Write();
 	}
+	for(auto& hist: clctRMS) hist->Write();
+	h_multiplicityVsPt->Write();
+	h_multiplicityVsP->Write();
+
+	TH2F* h_multiplicityVsPt_normalized = (TH2F*)h_multiplicityVsPt->Clone("h_multiplicityVsPt_norm");
+	for(int i=0; i < h_multiplicityVsPt_normalized->GetNbinsX()+1; i++){
+		float norm = 0;
+		//calculate integral along pt bin
+		for(int j=0;j < h_multiplicityVsPt_normalized->GetNbinsY()+1; j++){
+			norm += h_multiplicityVsPt_normalized->GetBinContent(i,j);
+		}
+		//normalize everything for a given pt
+		if(norm){
+			for(int j=0;j < h_multiplicityVsPt_normalized->GetNbinsY()+1; j++){
+				float content = h_multiplicityVsPt_normalized->GetBinContent(i,j);
+				h_multiplicityVsPt_normalized->SetBinContent(i,j,content/norm);
+				//norm += h_multiplicityVsPt_normalized->GetBinContent(i,j);
+			}
+		}
+	}
+	h_multiplicityVsPt_normalized->Write();
+	h_multiplicityVsPt_normalized->GetBinCenter(1);
 	outF->Close();
 
 

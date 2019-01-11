@@ -38,7 +38,10 @@ Description: Pulls CSC digis associated with different types of events,
  */
 
 CSCPatternExtractor::CSCPatternExtractor(const ParameterSet &iConfig) :
-tree(iConfig.getUntrackedParameter<std::string>("NtupleFileName"),"CSCDigiTree","Tree holding CSCDigis"), //set up the tree
+tree(iConfig.getUntrackedParameter<std::string>("NtupleFileName"),
+		"CSCDigiTree",
+		"Tree holding CSCDigis",
+		iConfig.getUntrackedParameter<std::string>("selection")), //set up the tree
 eventInfo(tree), //set branches you want in the tree
 muonInfo(tree),
 segmentInfo(tree),
@@ -64,6 +67,7 @@ compInfo(tree)
 	ddu_token = consumes<CSCDDUStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dduDigiTag"));
 	dmb_token = consumes<CSCDMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dmbDigiTag"));
 	tmb_token = consumes<CSCTMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("tmbDigiTag"));
+	rh_token =  consumes<CSCRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("rhDigiTag"));
 
 	theCSC = 0;
 
@@ -85,9 +89,13 @@ compInfo(tree)
 		}else if(selection == "displacedMuon") {
 			cout <<  "--- Running as DisplacedMuon sample --- " << endl;
 			selectMuons = &selectDisplacedMuons;
+		}else if (selection == "MuonGun") {
+			cout <<  "--- Running as Muon Gun (MC) sample --- " << endl;
+			selectMuons = &selectStandaloneMuons;
 		} else { //default to single muon selection
-			cout <<  "--- Defaulting as singleMu sample --- " << endl;
-			selectMuons = &selectSingleMuMuons;
+			cout <<  "--- Error: Ambiguous Selection --- " << endl;
+			selection = "";
+			//selectMuons = &selectSingleMuMuons;
 		}
 	}
 
@@ -122,13 +130,16 @@ void CSCPatternExtractor::beginJob() {
 // ------------ method called to for each event  ------------
 void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup& iSetup){
 	tree.reset();
+	if(selection == "") return;
 	cout << "Filling Pattern Extractor" << endl;
+
+	const int DEBUG = 0; //TODO: make this better
 
 	Handle<reco::MuonCollection> muons;
 	iEvent.getByToken(mc_token, muons);
-	tree.h_eventCuts->Fill(EVENT_CUTS::allEvents);
-	tree.h_muonCuts->Fill(MUON_CUTS::allMuons, muons->size());
-	tree.h_nAllMuons->Fill(muons->size());
+	tree.h.h_eventCuts->Fill(EVENT_CUTS::allEvents);
+	tree.h.h_muonCuts->Fill(MUON_CUTS::allMuons, muons->size());
+	tree.h.h_nAllMuons->Fill(muons->size());
 	if(!muons->size()){
 		cout << "\n\n\n\n No Muons Found: "<< endl;
 		cout << "Event: " << iEvent.id().event() <<  endl;
@@ -140,9 +151,9 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 	}
 
 	for(const auto& mu: *muons) {
-		tree.h_allMuonsPt->Fill(mu.pt());
-		tree.h_allMuonsEta->Fill(mu.eta());
-		tree.h_allMuonsPhi->Fill(mu.phi());
+		tree.h.h_allMuonsPt->Fill(mu.pt());
+		tree.h.h_allMuonsEta->Fill(mu.eta());
+		tree.h.h_allMuonsPhi->Fill(mu.phi());
 	}
 
 	for(unsigned int i =0; i < muons->size(); i++){
@@ -154,7 +165,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 			TLorentzVector mu2Lorentz;
 			mu2Lorentz.SetPtEtaPhiE(mu2.pt(), mu2.eta(), mu2.phi(), mu2.energy());
 			float invMass = (mu1Lorentz+mu2Lorentz).M();
-			tree.h_allInvMass->Fill(invMass);
+			tree.h.h_allInvMass->Fill(invMass);
 		}
 	}
 
@@ -162,26 +173,46 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     //Get all the segments
     edm::Handle<CSCSegmentCollection> allSegmentsCSC;
     iEvent.getByToken(allSegmentsCSCToken, allSegmentsCSC);
-    tree.h_nAllSegments->Fill(allSegmentsCSC->size());
+    tree.h.h_nAllSegments->Fill(allSegmentsCSC->size());
 
     //only care about events with endcap segments
     if(selectMuons && !allSegmentsCSC->size()) return;
 
-    tree.h_eventCuts->Fill(EVENT_CUTS::hasSegments);
-    tree.h_muonCuts->Fill(MUON_CUTS::eventHasSegments, muons->size());
+    tree.h.h_eventCuts->Fill(EVENT_CUTS::hasSegments);
+    tree.h.h_muonCuts->Fill(MUON_CUTS::eventHasSegments, muons->size());
 
 
     edm::Handle<CSCComparatorDigiCollection> compDigi;
     iEvent.getByToken(cod_token, compDigi);
     if(compDigi->begin() == compDigi->end()) return; //only care about events with comparator data
-    tree.h_eventCuts->Fill(EVENT_CUTS::hasCSCDigis);
-    tree.h_muonCuts->Fill(MUON_CUTS::eventHasCSCDigis, muons->size());
+    tree.h.h_eventCuts->Fill(EVENT_CUTS::hasCSCDigis);
+    tree.h.h_muonCuts->Fill(MUON_CUTS::eventHasCSCDigis, muons->size());
 
     edm::Handle<CSCCorrelatedLCTDigiCollection> cscLCTDigi;
     iEvent.getByToken(ld_token, cscLCTDigi);
 
     edm::Handle<CSCCLCTDigiCollection> cscCLCTDigi;
     iEvent.getByToken(cd_token, cscCLCTDigi);
+
+    /*
+     *  NOT DONE, FINISH THIS TO GET ALL RECHITS
+     *  THEN YOU CAN SEE RELATIONSHIP BETWEEN NRH and P
+     */
+    edm::Handle<CSCRecHit2DCollection> recHits;
+    iEvent.getByToken( rh_token, recHits );
+    //make a vector of all the unmatched rh's in the event
+    //which we will remove from as we go
+    vector<CSCRecHit2D> unmatched_rhs;
+    for(auto& rh : *recHits) unmatched_rhs.push_back(rh);
+    if(DEBUG) cout << "Initial Unmatched RH Count = " << unmatched_rhs.size() << endl;
+    unsigned int matchedRHCount = 0;
+    unsigned int totalSegRHs = 0;
+
+  //  auto test = *recHits;
+  //  for(auto& rh :test){
+
+   // }
+   // recHitInfo.fill(*recHits);
 
     ESHandle<CSCGeometry> cscGeom;
     iSetup.get<MuonGeometryRecord>().get(cscGeom);
@@ -193,8 +224,8 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
         edm::Handle<reco::VertexCollection> vertices;
         iEvent.getByToken(vtx_token, vertices);
     	if(vertices->empty()) return; //only look at events with a PV
-    	tree.h_eventCuts->Fill(EVENT_CUTS::hasVertex);
-    	tree.h_muonCuts->Fill(MUON_CUTS::eventHasVertex, muons->size());
+    	tree.h.h_eventCuts->Fill(EVENT_CUTS::hasVertex);
+    	tree.h.h_muonCuts->Fill(MUON_CUTS::eventHasVertex, muons->size());
 
     	const reco::MuonCollection selected_muons = selectMuons(*muons,vertices->front(),tree);
     	if(!selected_muons.size()) return; //skip events without selected muons
@@ -209,23 +240,43 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     		for(const auto& segment: matchedSegments){
     			segmentInfo.fill(*segment, theCSC, muonInfo.size()-1);
     			recHitInfo.fill(segment->specificRecHits(), muonInfo.size()-1);
+
+    			//remove all the rh's in the full list that are associated with
+    			// this segment
+    			for(auto& mu_rh: segment->specificRecHits()) {
+    				totalSegRHs++;
+    				for(unsigned int un_i = 0; un_i < unmatched_rhs.size(); un_i++) {
+    					if(areEqual(unmatched_rhs.at(un_i), mu_rh)){
+    						unmatched_rhs.erase(unmatched_rhs.begin()+un_i);
+    						//cout << "Found matching RH" << endl;
+    						matchedRHCount++;
+    						break;
+    					}
+    				}
+    			}
     		}
 
     	}
-    	if(muonInCSC) tree.h_eventCuts->Fill(EVENT_CUTS::hasMuonInCSC);
+    	if(muonInCSC) tree.h.h_eventCuts->Fill(EVENT_CUTS::hasMuonInCSC);
     	if(!muonInfo.size()) return; //no muons with csc info
     	//fill only the muons that have csc segments associtaed with them
-    	tree.h_muonCuts->Fill(MUON_CUTS::muonHasSegments,muonInfo.size());
-    	tree.h_nSelectedMuons->Fill(muonInfo.size());
+    	tree.h.h_muonCuts->Fill(MUON_CUTS::muonHasSegments,muonInfo.size());
+    	tree.h.h_nSelectedMuons->Fill(muonInfo.size());
 
     } else { //TODO: can make it so all unmatched segments are written out as well in selected case
     	for(const auto& segment: *allSegmentsCSC){
     		//TODO: might need to do some selection here
     		segmentInfo.fill(segment, theCSC, -1); //default unmatched to -1
-    		recHitInfo.fill(segment.specificRecHits(), -1);
+    		//recHitInfo.fill(segment.specificRecHits(), -1);
     	}
     }
+    if(DEBUG) {
+    	cout << "Total Seg RHs: " << totalSegRHs << endl;
+    	cout << "Matched RHs: " << matchedRHCount << endl;
+    	cout << "Final Unmatched RHs size: " << unmatched_rhs.size() << endl;
+    }
 
+    recHitInfo.fill(unmatched_rhs, -1);
     lctInfo.fill(*cscLCTDigi);
     clctInfo.fill(*cscCLCTDigi);
     compInfo.fill(*compDigi);
@@ -237,34 +288,28 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 
 // ------------ method called once each job just after ending the event loop  ------------
 void CSCPatternExtractor::endJob() {
-	cout << "Wrote to: " << tree.file->GetName() << endl;
+	cout << "Wrote to: " << tree.file->GetName() << endl;	if(selection == "") return;
 	cout << "Finished running CSCPatternExtractor.cc" << endl;
 }
 
-
-const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t){
-	//float minPt = 25.;
-	float minPt = 10.;
-	float massZ = 91.1876;
-	float massWindow = 10;
+const reco::MuonCollection CSCPatternExtractor::selectResonanceMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t,
+		const float minPt, const float resMass, const float massWindow){
 
 	vector<unsigned int> passMassCut;
-	vector<unsigned int> sameSign;
 	vector<unsigned int> oppositeSign;
 	vector<unsigned int> selectedIndices;
 
 	bool foundOS = false; //opposite sign
 	bool foundSS = false; //same sign
-	bool foundZ = false;
+	bool foundResonance = false;
 	for(unsigned int i =0; i < m.size(); i++){
 		const auto& mu1 = m.at(i);
-		//t.h_muonCuts->Fill(MUON_CUTS::allMuonsAfterEventCuts);
 
 		if(!mu1.isStandAloneMuon()) continue;
-		t.h_muonCuts->Fill(MUON_CUTS::isStandAlone);
+		t.h.h_muonCuts->Fill(MUON_CUTS::isStandAlone);
 
 		if(!mu1.isGlobalMuon()) continue;
-		t.h_muonCuts->Fill(MUON_CUTS::isGlobal);
+		t.h.h_muonCuts->Fill(MUON_CUTS::isGlobal);
 
 		if(find(selectedIndices.begin(), selectedIndices.end(), i) != selectedIndices.end()) continue; //only match mu1 once
 		for(unsigned int j =i+1; !foundOS && !foundSS && j < m.size(); j++){
@@ -277,22 +322,20 @@ const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::
 			TLorentzVector mu2Lorentz;
 			mu2Lorentz.SetPtEtaPhiE(mu2.pt(), mu2.eta(), mu2.phi(), mu2.energy());
 			float invMass = (mu1Lorentz+mu2Lorentz).M();
-			t.h_premassCutInvMass->Fill(invMass);
-			if(invMass < massZ - massWindow || invMass > massZ + massWindow) continue; //mass cut
+			t.h.h_premassCutInvMass->Fill(invMass);
+			if(invMass < resMass - massWindow || invMass > resMass + massWindow) continue; //mass cut
 			if(find(passMassCut.begin(), passMassCut.end(), i) == passMassCut.end()) passMassCut.push_back(i);
 			if(find(passMassCut.begin(), passMassCut.end(), j) == passMassCut.end()) passMassCut.push_back(j);
 
 			if(mu1.charge() == mu2.charge()){
-				t.h_ssInvMass->Fill(invMass);
-				if(find(sameSign.begin(), sameSign.end(), i) == sameSign.end()) sameSign.push_back(i);
-				if(find(sameSign.begin(), sameSign.end(), j) == sameSign.end()) sameSign.push_back(j);
+				t.h.h_ssInvMass->Fill(invMass);
 				foundSS = true;
 				continue; //opposite sign cut
 			}
 			else{
-				t.h_osInvMass->Fill(invMass);
+				t.h.h_osInvMass->Fill(invMass);
 				foundOS = true;
-				foundZ = true;
+				foundResonance = true;
 				if(find(oppositeSign.begin(), oppositeSign.end(), i) == oppositeSign.end()) oppositeSign.push_back(i);
 				if(find(oppositeSign.begin(), oppositeSign.end(), j) == oppositeSign.end()) oppositeSign.push_back(j);
 				if(m.at(i).pt() >= minPt) selectedIndices.push_back(i);
@@ -301,23 +344,33 @@ const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::
 		}
 	}
 
-	if(foundZ) t.h_eventCuts->Fill(EVENT_CUTS::hasZ);
+	if(foundResonance) t.h.h_eventCuts->Fill(EVENT_CUTS::hasResonance);
 
-	t.h_muonCuts->Fill(MUON_CUTS::isInMassWindow, passMassCut.size());
-	t.h_muonCuts->Fill(MUON_CUTS::isSS, sameSign.size());
-	t.h_muonCuts->Fill(MUON_CUTS::isOS, oppositeSign.size());
+	t.h.h_muonCuts->Fill(MUON_CUTS::isInMassWindow, passMassCut.size());
+	t.h.h_muonCuts->Fill(MUON_CUTS::isOS, oppositeSign.size());
 
 
 	reco::MuonCollection selectedMuons;
 	for(auto index : selectedIndices) {
 		selectedMuons.push_back(m.at(index));
-		t.h_muonCuts->Fill(MUON_CUTS::isOSAndPtOVerThreshold);
-		t.h_selectedMuonsPt->Fill(m.at(index).pt());
-		t.h_selectedMuonsEta->Fill(m.at(index).eta());
-		t.h_selectedMuonsPhi->Fill(m.at(index).phi());
+		t.h.h_muonCuts->Fill(MUON_CUTS::isOverPtThreshold);
+		t.h.h_selectedMuonsPt->Fill(m.at(index).pt());
+		t.h.h_selectedMuonsEta->Fill(m.at(index).eta());
+		t.h.h_selectedMuonsPhi->Fill(m.at(index).phi());
 	}
 	return selectedMuons;
 }
+
+
+const reco::MuonCollection CSCPatternExtractor::selectSingleMuMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t){
+	float minPt = 10.;
+	float massZ = 91.1876;
+	float massWindow = 10;
+	return selectResonanceMuons(m,vtx,t, minPt, massZ, massWindow);
+
+}
+
+
 
 
 const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::MuonCollection& m,const reco::Vertex& vtx,TreeContainer& t) {
@@ -327,73 +380,20 @@ const reco::MuonCollection CSCPatternExtractor::selectJPsiMuons(const reco::Muon
 	float massJPsi = 3.0969; //GeV
 	float massWindow = 0.1; //GeV
 
-	vector<unsigned int> passMassCut;
-	vector<unsigned int> sameSign;
-	vector<unsigned int> oppositeSign;
-	vector<unsigned int> selectedIndices;
+	return selectResonanceMuons(m,vtx, t, minPt, massJPsi, massWindow);
 
-	/* Double check this before running on Z selector
-	bool foundOS = false; //opposite sign
-	bool foundSS = false; //same sign
-	for(unsigned int i =0; i < m.size(); i++){
-		const auto& mu1 = m.at(i);
-		//t.h_muonCuts->Fill(MUON_CUTS::allMuonsAfterEventCuts);
+}
 
-		if(!mu1.isStandAloneMuon()) continue;
-		t.h_muonCuts->Fill(MUON_CUTS::isStandAlone);
-
-		if(!mu1.isGlobalMuon()) continue;
-		t.h_muonCuts->Fill(MUON_CUTS::isGlobal);
-
-		if(find(selectedIndices.begin(), selectedIndices.end(), i) != selectedIndices.end()) continue; //only match mu1 once
-		for(unsigned int j =i+1; !foundOS && !foundSS && j < m.size(); j++){
-			if(find(selectedIndices.begin(), selectedIndices.end(), j) != selectedIndices.end()) continue; //only match mu2 once
-			const auto& mu2 = m.at(j);
-			if(!mu2.isStandAloneMuon() || !mu2.isGlobalMuon()) continue; //standalone,global 2 cut
-
-			TLorentzVector mu1Lorentz;
-			mu1Lorentz.SetPtEtaPhiE(mu1.pt(), mu1.eta(), mu1.phi(), mu1.energy());
-			TLorentzVector mu2Lorentz;
-			mu2Lorentz.SetPtEtaPhiE(mu2.pt(), mu2.eta(), mu2.phi(), mu2.energy());
-			float invMass = (mu1Lorentz+mu2Lorentz).M();
-			t.h_premassCutInvMass->Fill(invMass);
-			if(invMass < massJPsi - massWindow || invMass > massJPsi + massWindow) continue; //mass cut
-			if(find(passMassCut.begin(), passMassCut.end(), i) == passMassCut.end()) passMassCut.push_back(i);
-			if(find(passMassCut.begin(), passMassCut.end(), j) == passMassCut.end()) passMassCut.push_back(j);
-
-			if(mu1.charge() == mu2.charge()){
-				t.h_ssInvMass->Fill(invMass);
-				if(find(sameSign.begin(), sameSign.end(), i) == sameSign.end()) sameSign.push_back(i);
-				if(find(sameSign.begin(), sameSign.end(), j) == sameSign.end()) sameSign.push_back(j);
-				foundSS = true;
-				continue; //opposite sign cut
-			}
-			else{
-				t.h_osInvMass->Fill(invMass);
-				foundOS = true;
-				if(find(oppositeSign.begin(), oppositeSign.end(), i) == oppositeSign.end()) oppositeSign.push_back(i);
-				if(find(oppositeSign.begin(), oppositeSign.end(), j) == oppositeSign.end()) oppositeSign.push_back(j);
-				if(m.at(i).pt() >= minPt) selectedIndices.push_back(i);
-				if(m.at(j).pt() >= minPt) selectedIndices.push_back(j);
-			}
-		}
-	}
-
-	t.h_muonCuts->Fill(MUON_CUTS::isInMassWindow, passMassCut.size());
-	t.h_muonCuts->Fill(MUON_CUTS::isSS, sameSign.size());
-	t.h_muonCuts->Fill(MUON_CUTS::isOS, oppositeSign.size());
-*/
-
+const reco::MuonCollection CSCPatternExtractor::selectStandaloneMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t) {
 	reco::MuonCollection selectedMuons;
-	for(auto index : selectedIndices) {
-		selectedMuons.push_back(m.at(index));
-		t.h_muonCuts->Fill(MUON_CUTS::isOSAndPtOVerThreshold);
-		t.h_selectedMuonsPt->Fill(m.at(index).pt());
-		t.h_selectedMuonsEta->Fill(m.at(index).eta());
-		t.h_selectedMuonsPhi->Fill(m.at(index).phi());
+	for(const auto& muon : m){
+		if(!muon.isStandAloneMuon()) continue; //selecting on standalone muons (necessary?)
+		t.h.h_muonCuts->Fill(MUON_CUTS::isStandAlone);
+		selectedMuons.push_back(muon);
 	}
 	return selectedMuons;
 }
+
 
 const reco::MuonCollection CSCPatternExtractor::selectDisplacedMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t) {
 	reco::MuonCollection selectedMuons;
@@ -500,6 +500,22 @@ vector<const CSCSegment*> CSCPatternExtractor::matchCSC(const reco::Track& muon,
 	return pointerToCSCSegments;
 
 
+}
+
+
+/* Apporiximate way to test if two rechits are equal,
+ * since there is no operator defined already for the class in CMSSW
+ *
+ */
+bool CSCPatternExtractor::areEqual(const CSCRecHit2D& rh1, const CSCRecHit2D& rh2){
+	int centerId1 = rh1.nStrips()/2;
+	int centerStr1 = rh1.channels(centerId1);
+	int centerId2 = rh2.nStrips()/2;
+	int centerStr2 = rh2.channels(centerId2);
+
+	return (rh1.geographicalId().rawId() == rh2.geographicalId().rawId())
+			&& (rh1.energyDepositedInLayer() == rh2.energyDepositedInLayer())
+			&& (float(centerStr1)+rh1.positionWithinStrip() == float(centerStr2) +rh2.positionWithinStrip());
 }
 
 //define this as a plug-in

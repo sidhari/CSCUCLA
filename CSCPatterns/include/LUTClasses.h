@@ -223,9 +223,9 @@ public:
 	~DetectorLUTs(){};
 
 	int addEntry(const string& name, int station, int ring,
-			const string& lutpath = LINEFIT_LUT_PATH);
+			const string& lutpath = "");
 	int editLUT(int station, int ring, LUT*& lut);
-	int getLUT(int station, int ring, const LUT*& lut);
+	int getLUT(int station, int ring, const LUT*& lut) const;
 	int makeFinal();
 	int writeAll(const string& path);
 	int loadAll(const string& path);

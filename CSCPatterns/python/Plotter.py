@@ -141,7 +141,7 @@ def setStyle(width=800, height=600, font=42, fontsize=0.04):
     style.cd()
     
     #16 colors used for histograms
-COLORS_16 = [R.kBlack, R.kRed-4, R.kGreen+1, R.kBlue+1, R.kMagenta-4, R.kYellow-3, R.kCyan-3, R.kBlue+3, R.kRed+2, R.kOrange+7, R.kBlue-8, 30, 50, 20, R.kYellow, 38]
+COLORS_16 = [R.kBlue+1, R.kBlack, R.kRed-4, R.kGreen+1, R.kBlue+1, R.kMagenta-4, R.kYellow-3, R.kCyan-3, R.kBlue+3, R.kRed+2, R.kOrange+7, R.kBlue-8, 30, 50, 20, R.kYellow, 38]
 
 # wrapper for the Set(Get()) idioms, for shifting, scaling, and moving
 def GETSET(Object, Attr, Value, Op):

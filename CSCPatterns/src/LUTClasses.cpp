@@ -270,6 +270,7 @@ int LUTEntry::makeFinal(){
 			_slopeOffsets.size() != clcts ||
 			_pts.size() != clcts ||
 			_clctMultiplicities.size() != clcts) {
+		throw "Error: incorrect LUTEntry vector sizes";
 		return -1;
 	}
 	unsigned int segments = nsegments();
@@ -314,6 +315,7 @@ LUT::LUT(const string& name, bool isLegacy):
 	_name(name),
 _isLegacy(isLegacy)
 {
+	if(DEBUG > 0) cout << "Making LUT, name: " << name << ", isLegacy: " << isLegacy << endl;
 	_isFinal = false;
 	_nclcts = 0;
 	_nsegments = 0;
@@ -325,7 +327,7 @@ LUT::LUT(const string& name, const string& filepath, bool isLegacy):
 	LUT(name,isLegacy)
 {
 	if(loadText(filepath)){
-		cout << "Error, can't load file" << endl;
+		throw "Error, can't load file";
 	}
 }
 
@@ -342,13 +344,19 @@ int LUT::setEntry(const LUTKey& k,const LUTEntry& e){
  * and -1 if it does not
  */
 int LUT::editEntry(const LUTKey& k, LUTEntry*& e) {
-	if(_isFinal) return -1;
+	if(DEBUG > 0) cout << "In LUT, Looking for: patt:" << k._pattern << " code: "<< k._code << endl;
+	if(_isFinal) {
+		cout << "Error: LUT already final, exiting" << endl;
+		return -1;
+	}
+
 	auto it = _lut.find(k);
 	if(it != _lut.end()) {
 		e = &(it->second);
 		return 0;
 	}
 	if(_isLegacy){ //no default setting for legacy lut
+		if(DEBUG > 0) cout << "Setting Entry in Legacy LUT: patt" << k._pattern << endl;
 		setEntry(k, LUTEntry());
 		return editEntry(k,e);
 	} else { //all other patterns should have a default
@@ -494,6 +502,7 @@ int LUT::loadROOT(const string& rootfile) {
 }
 
 int LUT::loadText(const string& textfile){
+	if(DEBUG > 0) cout << "Loading lut from textfile: " << textfile << endl;
 	if(_isFinal) return -1;
 	string line;
 	ifstream myfile(textfile.c_str());
@@ -566,6 +575,7 @@ int LUT::loadText(const string& textfile){
 		//cout << "Completed loading of line fit table" << endl;
 	} else {
 		cout << "Error: unable to open file:" << textfile << endl;
+		return -1;
 	}
 	if(DEBUG > 1) cout << "lut.size():" << _lut.size() << endl;
 	return 0;
@@ -586,7 +596,7 @@ int LUT::writeToText(const string& filename) {
 
 			// pat code - pos slope nseg qual layers chi2
 			myfile << it.first._pattern << " ";
-			if(_isLegacy) myfile << it.first._code << " ";
+			if(!_isLegacy) myfile << it.first._code << " ";
 			myfile << "~ ";
 			myfile << it.second.position() << " ";
 			myfile << it.second.slope() << " ";
@@ -695,27 +705,13 @@ int LUT::makeFinal(){
 	if(_isFinal) return 0;
 	_nclcts = 0;
 	_nsegments = 0;
-	//int useless = 0;
-	//int counter =0;
-	for(auto& x: _lut) {
-		//counter++;
-		//if(!(counter%100)) cout << "processed: " << counter << endl;
 
-		//useless = x.first._code; //TODO: weird bug that doesn't write the orderedlut unless x.first is mentioned
-		//cout << "inserting: " << x.first._code << endl;
-		//cout << "inserting: " << x.first._isLegacy << endl;
-		//cout << "test" << endl;
-		//x.first._code;
+	for(auto& x: _lut) {
+
 		if(x.second.makeFinal()) return -1;
-		//print.second
 		_nclcts += x.second.nclcts();
-		//cout << "nclcts " << _nclcts << endl;
 		_nsegments += x.second.nsegments();
-		//insert returns <iterator,bool> true if successful
-		//pair<LUTKey,LUTEntry> newPair = x;
-		//bool inserted = _orderedLUT.insert(newPair).second;
 		bool inserted = _orderedLUT.insert(x).second;
-		//cout << "inserted: " << inserted << endl;
 		if(!inserted) {
 			cout << "Error: did not insert into ordered lut" << endl;
 			return -1;
@@ -859,42 +855,50 @@ int DetectorLUTs::addEntry(const string& name, int station, int ring, const stri
 				" " << ring << " , overwriting" <<endl;
 
 	}
-	_luts.insert(make_pair(key, LUT(name,lutpath, _isLegacy)));
-	/*
-	//default to line fits if not legacy
-	if(!_isLegacy){
-		//PRELOADS WITH LINEAR FITS
-		//auto thisLUT = LUT(name, LINEFIT_LUT_PATH);
-		//thisLUT.loadText(lutpath);
-		//_luts.insert(make_pair(key,thisLUT));
+	try {
+		if(DEBUG >0) cout << "Adding LUT: " << lutpath << endl;
+		if(!lutpath.size()) {
+			if(!_isLegacy){ //default to line fits if not legacy
+				_luts.insert(make_pair(key, LUT(name,LINEFIT_LUT_PATH, _isLegacy)));
+			}else {
+				_luts.insert(make_pair(key, LUT(name, _isLegacy)));
+			}
+		} else {
+			_luts.insert(make_pair(key, LUT(name,lutpath, _isLegacy)));
+		}
 
-
-		_luts.insert(make_pair(key, LUT(name, lutpath)));
-	} else {
-		_luts.insert(make_pair(key, LUT(name)));
+	} catch(const char* msg){
+		cerr << msg << endl;
+		return -1;
 	}
-	*/
+
 	return 0;
 }
-
 
 int DetectorLUTs::editLUT(int station, int ring, LUT*& lut){
 	auto k = make_pair(station,ring);
 	auto it = _luts.find(k);
 	if(it != _luts.end()) {
-		it->second.makeFinal();
 		lut = &(it->second);
 		return 0;
 	}else return -1;
 }
 
-int DetectorLUTs::getLUT(int station, int ring, const LUT*& lut){
+int DetectorLUTs::getLUT(int station, int ring, const LUT*& lut) const{
+	auto k = make_pair(station,ring);
+	auto it = _luts.find(k);
+	if(it != _luts.end()) {
+		lut = &(it->second);
+		return 0;
+	}else return -1;
+/*
 	LUT* unconstLUT = 0;
 	if(editLUT(station,ring, unconstLUT)){
 		return -1;
 	}
 	lut = (const LUT*&)unconstLUT;
-	return 0;
+	return 0
+	*/
 }
 
 

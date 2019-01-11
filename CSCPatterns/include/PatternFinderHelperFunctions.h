@@ -45,6 +45,9 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 //makes a LUT out of a properly formatted TTree
 int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs);
 
+//sets the lut entries for all of the candidates we find in a chamber, identified by station and ring
+int setLUTEntries(vector<CLCTCandidate*> candidates, const DetectorLUTs& luts, int station, int ring);
+
 //creates the new set of patterns
 vector<CSCPattern>* createNewPatterns();
 

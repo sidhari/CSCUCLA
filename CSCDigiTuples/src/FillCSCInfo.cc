@@ -11,6 +11,108 @@ void TreeContainer::reset(){
 	for(auto& info: infos) info->reset();
 }
 
+
+SelectionHistograms::SelectionHistograms(TreeContainer& t, const string& selection){
+
+	h_eventCuts = new TH1F("h_eventCuts", "h_eventCuts; ; Events", EVENT_CUTS::EVENT_SIZE, 0, EVENT_CUTS::EVENT_SIZE);
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::allEvents+1, "allEvents");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasSegments+1, "eventHasSegments");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasCSCDigis+1, "eventHasCSCDigis");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasVertex+1, "eventHasVertex");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "eventHasResonance");
+	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasMuonInCSC+1, "eventHasMuonInCSC");
+
+
+	h_muonCuts = new TH1F("h_muonCuts", "h_muonCuts; ; Muons", MUON_CUTS::MUON_SIZE, 0, MUON_CUTS::MUON_SIZE);
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::allMuons+1, "allMuons");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasSegments+1, "eventHasSegments");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasCSCDigis+1, "eventHasCSCDigis");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasVertex+1, "eventHasVertex");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isStandAlone+1, "isStandalone");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isGlobal+1, "isGlobal");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isInMassWindow+1, "isInMassWindow");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOS+1, "isOS");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOverPtThreshold+1, "isOverPtThreshold");
+	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::muonHasSegments+1, "muonHasSegment");
+
+	h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 250, 0,500);
+	h_allMuonsEta = new TH1F("h_allMuonsEta", "h_allMuonsEta; #eta; Muons", 100, -3,3);
+	h_allMuonsPhi = new TH1F("h_allMuonsPhi", "h_allMuonsPhi; #phi; Muons", 100, -3.2,3.2);
+	h_allInvMass = new TH1F("h_allInvMass", "h_allInvMass; Mass [GeV], Dimuons", 130, 0, 130);
+
+	h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 250, 0,500);
+	h_selectedMuonsEta = new TH1F("h_selectedMuonsEta", "h_selectedMuonsEta; #eta; Muons", 100, -3,3);
+	h_selectedMuonsPhi = new TH1F("h_selectedMuonsPhi", "h_selectedMuonsPhi; #phi; Muons", 100, -3.2,3.2);
+	h_nAllMuons = new TH1F("h_nAllMuons", "h_nAllMuons; Muons; Events", 20,0,20);
+	h_nSelectedMuons = new TH1F("h_nSelectedMuons", "h_nSelectedMuons; Muons; Events", 20, 0, 20);
+	h_nAllSegments = new TH1F("h_nAllSegments", "h_nAllSegments; Segments; Count", 25, 0,25);
+
+
+	int invMassBins = 100;
+	if (selection == "ZeroBias"){
+		cout <<  "--- Running as minBias sample --- " << endl;
+		h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "N/A");
+	}else{
+		if (selection == "SingleMuon"){
+			cout <<  "--- Setting up Single Muon Histograms --- " << endl;
+			h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "eventHasZ");
+			float zInvMassMin = 0;
+			float zInvMassMax = 130;
+			h_osInvMass = new TH1F("h_osInvMass", "h_osInvMass; Mass [GeV]; Dimuons", invMassBins,zInvMassMin, zInvMassMax);
+			h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass; Mass [GeV]; Dimuons", invMassBins, zInvMassMin, zInvMassMax);
+			h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", invMassBins,zInvMassMin, zInvMassMax);
+		} else if (selection == "Charmonium") {
+			cout <<  "--- Setting up Charmonium Histograms --- " << endl;
+			h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "eventHasJ/#Psi");
+			float jpsiMassMin = 2;
+			float jpsiMassMax = 5;
+			h_osInvMass = new TH1F("h_osInvMass", "h_osInvMass; Mass [GeV]; Dimuons", invMassBins,jpsiMassMin, jpsiMassMax);
+			h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass; Mass [GeV]; Dimuons", invMassBins,jpsiMassMin, jpsiMassMax);
+			h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", invMassBins,jpsiMassMin, jpsiMassMax);
+		}else if(selection == "MuonGun") {
+			cout <<  "--- Running as DisplacedMuon sample --- " << endl;
+		} else { //default to single muon selection
+			cout <<  "--- Defaulting as singleMu sample --- " << endl;
+		}
+	}
+}
+
+SelectionHistograms::~SelectionHistograms(){
+	if(h_eventCuts) delete h_eventCuts;
+	if(h_muonCuts) delete h_muonCuts;
+	if(h_osInvMass) delete h_osInvMass;
+	if(h_ssInvMass) delete h_ssInvMass;
+	if(h_premassCutInvMass) delete h_premassCutInvMass;
+	if(h_nAllMuons) delete h_nAllMuons;
+	if(h_allMuonsPt) delete h_allMuonsPt;
+	if(h_allMuonsEta) delete h_allMuonsEta;
+	if(h_allMuonsPhi) delete h_allMuonsPhi;
+	if(h_allInvMass) delete h_allInvMass;
+	if(h_selectedMuonsPt) delete h_selectedMuonsPt;
+	if(h_selectedMuonsEta) delete h_selectedMuonsEta;
+	if(h_selectedMuonsPhi) delete h_selectedMuonsPhi;
+	if(h_nSelectedMuons) delete h_nSelectedMuons;
+	if(h_nAllSegments) delete h_nAllSegments;
+}
+
+void SelectionHistograms::write(){
+	if(h_eventCuts) h_eventCuts->Write();
+	if(h_muonCuts) h_muonCuts->Write();
+	if(h_osInvMass) h_osInvMass->Write();
+	if(h_ssInvMass) h_ssInvMass->Write();
+	if(h_premassCutInvMass) h_premassCutInvMass->Write();
+	if(h_nAllMuons) h_nAllMuons->Write();
+	if(h_allMuonsPt) h_allMuonsPt->Write();
+	if(h_allMuonsEta) h_allMuonsEta->Write();
+	if(h_allMuonsPhi) h_allMuonsPhi->Write();
+	if(h_allInvMass) h_allInvMass->Write();
+	if(h_selectedMuonsPt) h_selectedMuonsPt->Write();
+	if(h_selectedMuonsEta) h_selectedMuonsEta->Write();
+	if(h_selectedMuonsPhi) h_selectedMuonsPhi->Write();
+	if(h_nSelectedMuons) h_nSelectedMuons->Write();
+	if(h_nAllSegments) h_nAllSegments->Write();
+}
+
 void FillEventInfo::fill(const edm::Event& iEvent, unsigned int nSegments){
   EventNumber     = iEvent.id().event();
   RunNumber       = iEvent.id().run();

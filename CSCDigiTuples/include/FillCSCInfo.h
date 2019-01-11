@@ -55,7 +55,7 @@ enum EVENT_CUTS {
 	hasSegments,
 	hasCSCDigis,
 	hasVertex,
-	hasZ,
+	hasResonance,
 	hasMuonInCSC,
 	EVENT_SIZE
 };
@@ -69,9 +69,8 @@ enum MUON_CUTS {
 	isStandAlone,
 	isGlobal,
 	isInMassWindow,
-	isSS,
 	isOS,
-	isOSAndPtOVerThreshold,
+	isOverPtThreshold,
 	muonHasSegments,
 	MUON_SIZE
 };
@@ -83,68 +82,47 @@ typedef   unsigned int         size  ; //32 bit 0->4294967296
 
 class FillInfo;
 
+/*
+ * TODO: put all the histograms into this class, and write this on a tree write,
+ * allows you to use multiple selections
+ */
+
+class SelectionHistograms {
+public:
+	SelectionHistograms(TreeContainer& t, const string& selection);
+	~SelectionHistograms();
+	void write();
+
+	TH1F* h_eventCuts = 0;
+	TH1F* h_muonCuts = 0;
+
+	TH1F* h_osInvMass = 0;
+	TH1F* h_ssInvMass = 0;
+	TH1F* h_premassCutInvMass = 0;
+	TH1F* h_nAllMuons = 0;
+	TH1F* h_allMuonsPt = 0;
+	TH1F* h_allMuonsEta = 0;
+	TH1F* h_allMuonsPhi = 0;
+	TH1F* h_allInvMass = 0;
+	TH1F* h_selectedMuonsPt = 0;
+	TH1F* h_selectedMuonsEta = 0;
+	TH1F* h_selectedMuonsPhi = 0;
+	TH1F* h_nSelectedMuons = 0;
+	TH1F* h_nAllSegments = 0;
+};
+
 class TreeContainer {
 public:
-  TreeContainer(TString fileName, TString treeName, TString treeTitle){
+  TreeContainer(TString fileName, TString treeName, TString treeTitle, const string& selection):
+  h(*this, selection){
 	file = new TFile(fileName, "RECREATE");
 	tree = new TTree(treeName,treeTitle);
 
-	h_eventCuts = new TH1F("h_eventCuts", "h_eventCuts; ; Events", EVENT_CUTS::EVENT_SIZE, 0, EVENT_CUTS::EVENT_SIZE);
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::allEvents+1, "allEvents");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasSegments+1, "eventHasSegments");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasCSCDigis+1, "eventHasCSCDigis");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasVertex+1, "eventHasVertex");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasZ+1, "eventHasZ");
-	h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasMuonInCSC+1, "eventHasMuonInCSC");
 
-
-	h_muonCuts = new TH1F("h_muonCuts", "h_muonCuts; ; Muons", MUON_CUTS::MUON_SIZE, 0, MUON_CUTS::MUON_SIZE);
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::allMuons+1, "allMuons");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasSegments+1, "eventHasSegments");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasCSCDigis+1, "eventHasCSCDigis");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::eventHasVertex+1, "eventHasVertex");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isStandAlone+1, "isStandalone");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isGlobal+1, "isGlobal");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isInMassWindow+1, "isInMassWindow");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isSS+1, "isSS");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOS+1, "isOS");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOSAndPtOVerThreshold+1, "isOS+Pt>thres");
-	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::muonHasSegments+1, "muonHasSegment");
-
-	h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 100, 0,100);
-	h_allMuonsEta = new TH1F("h_allMuonsEta", "h_allMuonsEta; #eta; Muons", 100, -3,3);
-	h_allMuonsPhi = new TH1F("h_allMuonsPhi", "h_allMuonsPhi; #phi; Muons", 100, -3.2,3.2);
-	h_allInvMass = new TH1F("h_allInvMass", "h_allInvMass; Mass [GeV], Dimuons", 130, 0, 130);
-	h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 100, 0,100);
-	h_selectedMuonsEta = new TH1F("h_selectedMuonsEta", "h_selectedMuonsEta; #eta; Muons", 100, -3,3);
-	h_selectedMuonsPhi = new TH1F("h_selectedMuonsPhi", "h_selectedMuonsPhi; #phi; Muons", 100, -3.2,3.2);
-
-	h_osInvMass = new TH1F("h_osInvMass", "h_osInvMass; Mass [GeV]; Dimuons", 100,80, 100);
-	h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass; Mass [GeV]; Dimuons", 100,80, 100);
-	h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", 60,60, 120);
-	h_nAllMuons = new TH1F("h_nAllMuons", "h_nAllMuons; Muons; Events", 20,0,20);
-	h_nSelectedMuons = new TH1F("h_nSelectedMuons", "h_nSelectedMuons; Muons; Events", 20, 0, 20);
-	h_nAllSegments = new TH1F("h_nAllSegments", "h_nAllSegments; Segments; Count", 25, 0,25);
   }
   void write() {
     file->cd();
-
-    h_eventCuts->Write();
-    h_muonCuts->Write();
-
-    h_allMuonsPt->Write();
-    h_allMuonsEta->Write();
-    h_allMuonsPhi->Write();
-    h_allInvMass->Write();
-    h_selectedMuonsPt->Write();
-    h_selectedMuonsEta->Write();
-    h_selectedMuonsPhi->Write();
-    h_osInvMass->Write();
-    h_ssInvMass->Write();
-    h_premassCutInvMass->Write();
-    h_nAllMuons->Write();
-    h_nSelectedMuons->Write();
-    h_nAllSegments->Write();
+    h.write();
     tree->Write();
     file->Close();
     delete file;
@@ -153,10 +131,7 @@ public:
   void fill();
 
   void reset();
-  /*{
-	  tree->Fill();
-	  for(auto& info: infos) info->reset();
-  }*/
+
 
   void addInfo(FillInfo* info){
 	  if(info) infos.push_back(info);
@@ -164,29 +139,14 @@ public:
 
   TFile * file;
   TTree * tree;
-
-  TH1F* h_eventCuts;
-  TH1F* h_muonCuts;
-
-  //TODO: Could come up with a cleaner, more general way to do this...
-  TH1F* h_osInvMass;
-  TH1F* h_ssInvMass;
-  TH1F* h_premassCutInvMass;
-  TH1F* h_nAllMuons;
-  TH1F* h_allMuonsPt;
-  TH1F* h_allMuonsEta;
-  TH1F* h_allMuonsPhi;
-  TH1F* h_allInvMass;
-  TH1F* h_selectedMuonsPt;
-  TH1F* h_selectedMuonsEta;
-  TH1F* h_selectedMuonsPhi;
-  TH1F* h_nSelectedMuons;
-  TH1F* h_nAllSegments;
+  SelectionHistograms h;
 
 private:
   std::vector<FillInfo*> infos;
 
 };
+
+
 
 
 class FillInfo {
@@ -463,7 +423,7 @@ public:
 		CFEB = new vector<size8>();
 		BX = new vector<size8>();
 		trkNumber = new vector<size8>();
-		keyStrip = new vector<size8>();
+		keyStrip = new vector<size8>(); //this is in half strips for some reason, following cmssw convention
 		book(GET_VARIABLE_NAME(ch_id), *ch_id);
 		book(GET_VARIABLE_NAME(isValid), *isValid);
 		book(GET_VARIABLE_NAME(quality), *quality);

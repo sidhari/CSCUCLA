@@ -69,21 +69,32 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	if(!t) throw "Can't find tree";
 
 
+
 	//
 	// MAKE LUT
 	//
 
 	string dataset = "Charmonium/charmonium2016F+2017BCEF";
+	//string dataset = "SingleMuon/zskim2018D";
 
 	DetectorLUTs newLUTs;
 	DetectorLUTs legacyLUTs(true);
 
+	/*
+	 * TEMPORARY, should be /luts/ not /linefitluts/
+	 *
+	 *
+	 */
+	const string newLutPath = "dat/"+dataset+"/luts/";
+	const string legacyLutPath = "dat/"+dataset+"/luts/";
+
 	cout << "Loading Luts..." << endl;
 	//check if we have made .lut files already
-	if(newLUTs.loadAll("dat/"+dataset+"/luts/") ||
-			legacyLUTs.loadAll("dat/"+dataset+"/luts/")){
+	if(newLUTs.loadAll(newLutPath) ||
+			legacyLUTs.loadAll(legacyLutPath)){
 		printf("Could not find .lut files, recreating them...\n");
-		string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/"+dataset+"/CLCTMatch-Full.root";
+		//string lutFilepath = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/"+dataset+"/CLCTMatch-Full.root";
+		string lutFilepath = "/uscms/home/wnash/CSCUCLA/CSCPatterns/dat/"+dataset+"/CLCTMatch-Full.root";
 		TFile* lutFile = new TFile(lutFilepath.c_str());
 		if(!lutFile){
 			printf("Failed to open lut file: %s\n", lutFilepath.c_str());
@@ -111,8 +122,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	cout << "Loaded LUTS" << endl;
 
 	//pointers used to look at different LUT's
-	const LUT* thisLUT = 0;
-	const LUTEntry* thisEntry = 0;
+	//const LUT* thisLUT = 0;
+	//const LUTEntry* thisEntry = 0;
 
 
 	//
@@ -132,8 +143,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	//
 
 
-	vector<CSCPattern>* newEnvelopes = createNewPatterns();
-	vector<CSCPattern>* oldEnvelopes = createOldPatterns();
+	vector<CSCPattern>* newPatterns= createNewPatterns();
+	vector<CSCPattern>* oldPatterns = createOldPatterns();
 
 	//
 	// OUTPUT TREE
@@ -146,6 +157,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	int ST = 0; // 1-4
 	int RI = 0; // 1-4
 	int CH = 0;
+	float pt = 0;
 	float segmentX = 0;
 	float segmentdXdZ = 0;
 	float patX = 0;
@@ -165,6 +177,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	plotTree->Branch("patternId", &patternId, "patternId/I");
 	plotTree->Branch("ccId", &ccId, "ccId/I");
 	plotTree->Branch("legacyLctId", &legacyLctId, "legacyLctId/I");
+	plotTree->Branch("pt", &pt, "pt/F");
 	plotTree->Branch("segmentX", &segmentX, "segmentX/F");
 	plotTree->Branch("segmentdXdZ", &segmentdXdZ, "segmentdXdZ/F");
 	plotTree->Branch("patX", &patX, "patX/F");
@@ -178,9 +191,83 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	TH1F* lutSegmentSlopeDiff = new TH1F("h_lutSegmentSlopeDiff", "h_lutSegmentSlopeDiff", 100, -1, 1);
 
 
+	map<pair<int,int>, TH1F*> lutChamberPlots_Pos;
+	map<pair<int,int>, TH1F*> lutChamberPlots_legacy_Pos; //emulated
+	//map<pair<int,int>, TH1F*> lutChamberPlots_legacy_Pos_real; //actual recorded clcts
+	map<pair<int,int>, TH1F*> lutChamberPlots_Slope;
+	map<pair<int,int>, TH1F*> lutChamberPlots_legacy_Slope;
+	for(unsigned int i=0; i < NCHAMBERS; i++){
+		unsigned int station = CHAMBER_ST_RI[i][0];
+		unsigned int ring = CHAMBER_ST_RI[i][1];
+		auto key = make_pair(station,ring);
+
+		string posName = string("h_"+CHAMBER_NAMES[i]) + "_posDiff";
+		string posLegacyName = string("h_"+CHAMBER_NAMES[i]) + "_legacy_posDiff";
+		//string posLegacyRealName = string("h_"+CHAMBER_NAMES[i]) + "_legacy_posDiff_real";
+		string slopeName = string("h_"+CHAMBER_NAMES[i]) + "_legacy_slopeDiff";
+		string slopeLegacyName = string("h_"+CHAMBER_NAMES[i]) + "_slopeDiff";
+		auto posHist = new TH1F(posName.c_str(), string(posName+string("; Seg- LUT [strips]; CLCTs")).c_str(), 100,-1,1);
+		auto posLegacyHist = new TH1F(posLegacyName.c_str(), string(posLegacyName+string("; Seg- LUT [strips]; CLCTs")).c_str(), 100,-1,1);
+		//auto posLegacyRealHist = new TH1F(posLegacyRealName.c_str(), string(posLegacyRealName+string("; Seg- KS [strips]; CLCTs")).c_str(), 100,-1,1);
+		auto slopeHist = new TH1F(slopeName.c_str(), string(slopeName+string("; Seg - LUT [strips]; CLCTs")).c_str(), 100,-1,1);
+		auto slopeLegacyHist = new TH1F(slopeLegacyName.c_str(), string(slopeLegacyName+string("; Seg - LUT [strips]; CLCTs")).c_str(), 100,-1,1);
+		lutChamberPlots_Pos[key] = posHist;
+		lutChamberPlots_legacy_Pos[key] = posLegacyHist;
+		//lutChamberPlots_legacy_Pos_real[key] = posLegacyRealHist;
+		lutChamberPlots_Slope[key] = slopeHist;
+		lutChamberPlots_legacy_Slope[key] = slopeLegacyHist;
+	}
+	map<int, TH1F*> legacyPatterns_pos; //emulated
+	map<int, TH1F*> legacyPatterns_pos_real;
+	map<int, TH1F*> legacyPatterns_slope;
+	for(unsigned int i =0; i < NLEGACYPATTERNS; i++){
+		string name = string("h_legacy_") + to_string(LEGACY_PATTERN_IDS[i]);
+		string posName = name + "_pos";
+		string posRealName = name + "_real_pos";
+		string slopeName = name + "_slope";
+		auto pos = new TH1F(posName.c_str(), posName.c_str(), 100, -1,1);
+		auto posReal = new TH1F(posRealName.c_str(), posName.c_str(), 100, -1,1);
+		auto slope = new TH1F(slopeName.c_str(), slopeName.c_str(), 100, -1,1);
+		legacyPatterns_pos[LEGACY_PATTERN_IDS[i]] = pos;
+		legacyPatterns_pos_real[LEGACY_PATTERN_IDS[i]] = posReal;
+		legacyPatterns_slope[LEGACY_PATTERN_IDS[i]] = slope;
+	}
+
 	TH1F* legacyLUTSegmentPosDiff = new TH1F("h_legacyPosDiff", "h_legacyPosDiff; lut - seg[strips]; segments",100,-1,1);
+	//TH1F* legacyLUTSegmentPosDiff = new TH1F("h_legacyPosDiff", "h_legacyPosDiff; lut - seg[strips]; segments",400,-4,4);
 	TH1F* legacyLUTSegmentSlopeDiff = new TH1F("h_legacySlopeDiff", "h_legacySlopeDiff; lut - seg [strips/lay]", 100, -1,1);
 	TH1F* h_clctLayerCount = new TH1F("h_clctLayerCount", "h_clctlayerCount", 7,0,7);
+
+	map<float, TH1F*> ccPos_pt;
+	map<float, TH1F*> ccSlope_pt;
+	map<float, TH1F*> legacyPos_pt;
+	map<float, TH1F*> legacySlope_pt;
+
+	//looks at region of pt [0 - entry1, entry1- entry2, etc]
+	vector<float> ptRanges;
+	ptRanges.push_back(20);
+	ptRanges.push_back(50);
+	ptRanges.push_back(100);
+	ptRanges.push_back(200);
+	ptRanges.push_back(500);
+
+	for(unsigned int ipt = 0; ipt < ptRanges.size(); ipt++){
+		string lower = (ipt == 0) ? "0" : to_string(round(ptRanges.at(ipt-1)));
+		float thisPt = ptRanges.at(ipt);
+		string upper = to_string(round(thisPt));
+		string rangeStr = "_"+lower+"_"+upper;
+
+		TH1F* ccPos = new TH1F(("h_ccPos"+rangeStr).c_str(), ("h_ccPos"+rangeStr+";Segment-LUT[strips]; Segments").c_str(), 100, -1,1);
+		TH1F* ccSlope = new TH1F(("h_ccSlope"+rangeStr).c_str(), ("h_ccSlope"+rangeStr+";Segment-LUT[strips/layers]; Segments").c_str(), 100, -1,1);
+		TH1F* legPos = new TH1F(("h_legPos"+rangeStr).c_str(), ("h_legPos"+rangeStr+";Segment-LUT[strips]; Segments").c_str(), 100, -1,1);
+		TH1F* legSlope = new TH1F(("h_legSlope"+rangeStr).c_str(), ("h_legSlope"+rangeStr+";Segment-LUT[strips/layer]; Segments").c_str(), 100, -1,1);
+		ccPos_pt[thisPt] = ccPos;
+		ccSlope_pt[thisPt] = ccSlope;
+		legacyPos_pt[thisPt] = legPos;
+		legacySlope_pt[thisPt] = legSlope;
+	}
+
+
 	//t->SetBranchAddress("Event_EventNumber", &evt.EventNumber);
 
 	//CSCInfo::Muons muons;
@@ -223,7 +310,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 		//iterate through segments
 		for(unsigned int thisSeg = 0; thisSeg < segments.size(); thisSeg++){
-			CSCHelper::ChamberId c = CSCHelper::unserialize(segments.ch_id->at(thisSeg));
+			int chamberHash = segments.ch_id->at(thisSeg);
+			CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
 			EC = c.endcap;
 			ST = c.station;
@@ -232,6 +320,10 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			segmentX = segments.pos_x->at(thisSeg); //strips
 			segmentdXdZ = segments.dxdz->at(thisSeg);
+			pt = muons.pt->at(segments.mu_id->at(thisSeg));
+			//if(pt > 12) continue; //REMOVE ME
+			//if(pt < 40) continue; //REMOVE ME
+
 
 
 			// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
@@ -247,17 +339,12 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 				if(segmentX > 79) continue;
 			}
 
-			//REMOVE ME
-			//if(!me11b) continue;
-
-
 			ChamberHits theseRHHits(ST, RI, EC, CH,false);
 			ChamberHits theseCompHits(ST, RI, EC, CH);
 
-			//if(fillCompHits(theseCompHits, comparators)) return -1;
 			if(theseCompHits.fill(comparators)) return -1;
 
-			if (!USE_COMP_HITS || DEBUG > 0) if(fillRecHits(theseRHHits,recHits)) return -1;
+			if (!USE_COMP_HITS && DEBUG > 0) if(fillRecHits(theseRHHits,recHits)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;
@@ -269,7 +356,11 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 			//now run on comparator hits
 			if(DEBUG > 0) printf("~~~~ Matches for Muon: %i,  Segment %i ~~~\n",i,  thisSeg);
-			if(searchForMatch(*testChamber, oldEnvelopes,oldSetMatch) || searchForMatch(*testChamber, newEnvelopes,newSetMatch)) {
+			if(searchForMatch(*testChamber, oldPatterns,oldSetMatch) || searchForMatch(*testChamber, newPatterns,newSetMatch)) {
+			/*Temporary, to test if busy window is effecting strange behavior with pattersn 8 and 9
+			 *
+			 */
+			//if(searchForMatch(*testChamber, oldPatterns,oldSetMatch,true) || searchForMatch(*testChamber, newPatterns,newSetMatch,true)) {
 				oldSetMatch.clear();
 				newSetMatch.clear();
 				nChambersMultipleInOneLayer++;
@@ -289,35 +380,16 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			 *
 			 */
 
-			if(newLUTs.getLUT(ST,RI,thisLUT)) {
-				printf("Error: can't access LUT for: %i %i\n", ST,RI);
-				return -1;
-			}
+			if(setLUTEntries(newSetMatch, newLUTs, ST, RI)) return -1;
 
-			//TODO: make debug printout of this stuff
-			for(auto & clct: newSetMatch){
-				if(thisLUT->getEntry(clct->key(), thisEntry)){
-					printf("Error: unable to get entry for clct: pat: %i cc: %i\n", clct->patternId(), clct->comparatorCodeId());
-					return -1;
-				}
-				//assign the clct the LUT entry we found to be associated with it
-				clct->_lutEntry = thisEntry;
-			}
 
+			/* TODO: use this sorting thing to see what gets you the first candidate as the right segment
+			 * each time a la Nick
+			 */
 			//sort the matches
-			sort(newSetMatch.begin(), newSetMatch.end(), CLCTCandidate::quality);
+			//sort(newSetMatch.begin(), newSetMatch.end(), CLCTCandidate::quality);
 
-			if(DEBUG > 0){
-				printf("segmentX: %f - segmentdXdZ: %f\n", segmentX,segmentdXdZ);
-				for(auto & clct : newSetMatch){
-					thisEntry = clct->_lutEntry;
 
-					float thisLutX = clct->keyStrip() + thisEntry->position();
-					float thisLutSlope = thisEntry->slope();
-					printf("\t\tlutx: %f, lut dxdz: %f layers: %i, chi2: %f, slope: %f\n",
-							thisLutX, thisLutSlope, thisEntry->_layers, thisEntry->_chi2, thisEntry->slope());
-				}
-			}
 
 			// fill the numerator if it is within our capture window
 			//float posCaptureWindow = 0.30; //strips
@@ -333,29 +405,23 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			float mindXdZ = 1e5;
 
 			//look through all the candidates, until we find the first match
-			for(unsigned int iclct = 0; !foundMatchingCandidate && iclct < newSetMatch.size(); iclct++){
+			for(auto& clct: newSetMatch){
 				//depending on how many clcts were allowed to look at,
 				// look until we find one
-				const LUTEntry* iEntry = newSetMatch.at(iclct)->_lutEntry;
+				//const LUTEntry* iEntry = newSetMatch.at(iclct)->_lutEntry;
 
 
-				float lutX = newSetMatch.at(iclct)->keyStrip() + iEntry->position()-1;
-				float lutdXdZ =iEntry->slope();
+				float lutX = clct->position();
+				float lutdXdZ =clct->slope();
 
-				//only fill the best candidate
-/*
-				if(iclct == 0){
-					lutSegmentPosDiff->Fill(lutX - segmentX);
-					lutSegmentSlopeDiff->Fill(lutdXdZ - segmentdXdZ);
-				}
-*/
-				float xDiff = lutX - segmentX;
-				float xDiff_halfStrip = round(2.*lutX)/2. - segmentX;
-				float xDiff_quarterStrip = round(4.*lutX)/4. - segmentX;
-				float xDiff_eighthStrip = round(8.*lutX)/8. - segmentX;
-				float xDiff_sixteenthStrip = round(16.*lutX)/16. - segmentX;
-				float dxdzDiff = lutdXdZ - segmentdXdZ;
-				//cout << " EC " << EC << "ST: " << ST << endl;
+
+				float xDiff = segmentX - lutX;
+				float xDiff_halfStrip = segmentX-round(2.*lutX)/2.;
+				float xDiff_quarterStrip =  segmentX- round(4.*lutX)/4.;
+				float xDiff_eighthStrip = segmentX - round(8.*lutX)/8.;
+				float xDiff_sixteenthStrip = segmentX - round(16.*lutX)/16.;
+				float dxdzDiff = segmentdXdZ - lutdXdZ;
+				//cout << " EC " << EC << "ST: " <<ST << endl;
 				//cout << "xDiff " << xDiff << "nsegs " << newSetMatch.at(iclct)->_lutEntry->nsegments() <<endl;
 
 				if(abs(xDiff) < abs(minX)){
@@ -368,19 +434,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 					foundMatchingCandidate = true;
 				}
 
-
-/*
-				if(abs(lutX - segmentX) < posCaptureWindow &&
-						abs(lutdXdZ -segmentdXdZ) < slopeCaptureWindow){
-
-					foundMatchingCandidate = true;
-					//segEffNums.at(iclct)->Fill(Pt);
-					//segEffDen->Fill(Pt);
-					//lutSegmentPosDiff->Fill(lutX - segmentX);
-					//lutSegmentSlopeDiff->Fill(lutdXdZ - segmentdXdZ);
-				}
-*/
-				//segEffNums.at(isegeff)->Fill(Pt);
 			}
 			if(foundMatchingCandidate ){
 				lutSegmentPosDiff->Fill(minX);
@@ -389,6 +442,22 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 				lutSegmentPosDiff_eighthStrip->Fill(minX_eighthStrip);
 				lutSegmentPosDiff_sixteenthStrip->Fill(minX_sixteenthStrip);
 				lutSegmentSlopeDiff->Fill(mindXdZ);
+
+				//fill chamber specific stuff
+				auto chamberKey = make_pair(ST,RI);
+				lutChamberPlots_Pos[chamberKey]->Fill(minX);
+				lutChamberPlots_Slope[chamberKey]->Fill(mindXdZ);
+
+				for(unsigned int ipt = 0; ipt < ptRanges.size(); ipt++){
+					float lower = (ipt == 0) ? 0 : ptRanges.at(ipt-1);
+					float upper = ptRanges.at(ipt);
+					if(pt >= lower && pt < upper){
+						ccPos_pt[upper]->Fill(minX);
+						ccSlope_pt[upper]->Fill(mindXdZ);
+					}
+				}
+
+
 			}
 
 			//if(foundMatchingCandidate) foundOneMatchEffNum->Fill(Pt);
@@ -396,43 +465,95 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			/*
 			 *  OLD LUTS
 			 */
-			if(legacyLUTs.getLUT(ST,RI,thisLUT)) {
-				printf("Error: can't access LUT for: %i %i\n", ST,RI);
-				return -1;
-			}
-
-			for(auto & clct : oldSetMatch){
-				if(thisLUT->getEntry(clct->key(), thisEntry)){
-					printf("Error: unable to get entry for clct: pat: %i cc: %i\n", clct->patternId(), clct->comparatorCodeId());
-					return -1;
-				}
-				//assign the clct the LUT entry we found to be associated with it
-				clct->_lutEntry = thisEntry;
-
-
-			}
+			if(setLUTEntries(oldSetMatch, legacyLUTs, ST,RI)) return -1;
 
 			bool foundMatchingCandidate_legacy = false;
 			float minX_legacy = 1e5;
 			float mindXdZ_legacy = 1e5;
-			for(unsigned int iclct=0; !foundMatchingCandidate_legacy &&iclct < oldSetMatch.size(); iclct++) {
-				const LUTEntry* iEntry = oldSetMatch.at(iclct)->_lutEntry;
 
-				float lutX = oldSetMatch.at(iclct)->keyStrip() + iEntry->position()-1;
-				float lutdXdZ = iEntry->slope();
+			int bestLegacyPattern = -1;
+			for(auto& clct: oldSetMatch){
+				float lutX = clct->position();
+				float lutdXdZ = clct->slope();
 
-				float xDiff = lutX - segmentX;
-				float dxdzDiff = lutdXdZ - segmentdXdZ;
-
+				float xDiff = segmentX-lutX;
+				float dxdzDiff = segmentdXdZ - lutdXdZ;
 				if(abs(xDiff) < abs(minX_legacy)){
-					minX_legacy = xDiff;
-					mindXdZ_legacy = dxdzDiff;
-					foundMatchingCandidate_legacy = true;
-				}
+				//if(abs(xDiff) < abs(minX_legacy) && abs(dxdzDiff) < abs(mindXdZ_legacy)){
+						minX_legacy = xDiff;
+						mindXdZ_legacy = dxdzDiff;
+						bestLegacyPattern = clct->_pattern._id;
+						foundMatchingCandidate_legacy = true;
+					}
 			}
 			if(foundMatchingCandidate_legacy){
 				legacyLUTSegmentPosDiff->Fill(minX_legacy);
 				legacyLUTSegmentSlopeDiff->Fill(mindXdZ_legacy);
+
+				auto chamberKey = make_pair(ST,RI);
+				lutChamberPlots_legacy_Pos[chamberKey]->Fill(minX_legacy);
+				lutChamberPlots_legacy_Slope[chamberKey]->Fill(mindXdZ_legacy);
+
+				legacyPatterns_pos[bestLegacyPattern]->Fill(minX_legacy);
+				legacyPatterns_slope[bestLegacyPattern]->Fill(mindXdZ_legacy);
+
+				for(unsigned int ipt = 0; ipt < ptRanges.size(); ipt++){
+					float lower = (ipt == 0) ? 0 : ptRanges.at(ipt-1);
+					float upper = ptRanges.at(ipt);
+					if(pt >= lower && pt < upper){
+						legacyPos_pt[upper]->Fill(minX_legacy);
+						legacySlope_pt[upper]->Fill(mindXdZ_legacy);
+					}
+				}
+
+
+				//compare 21 and 31, one should be flipped, the other not
+				/*
+				if((ST == 2 && RI == 1) || (ST == 3 && RI == 1)) {
+					if(abs(minX_legacy) > 0.3){
+						theseCompHits.print();
+						for(auto& clct: oldSetMatch){
+							printPattern(clct->_pattern);
+						}
+						cout << "--- Segment Position: " << segmentX << " [strips] Slope: " << segmentdXdZ << " [strips/layer]---" << endl;
+						cout << "Legacy Match: (";
+						for(auto& clct: oldSetMatch){
+							cout << clct->keyStrip() << ", ";
+						}
+						cout << ") [strips]" << endl;
+						cout << "Legacy Match LUT: (";
+						for(auto& clct: oldSetMatch){
+							cout << "[" << clct->position() << ", " << clct->slope() << "], ";
+						}
+						cout << ") [strips]" << endl;
+
+					}
+				}
+				*/
+			}
+
+
+			//
+			// Iterate over real clcts
+			//
+			bool foundMatchingCandidate_real = false;
+			float minX_real = 1e5;
+			int bestRealPattern = -1;
+			for(unsigned int iclct=0; iclct < clcts.size(); iclct++){
+				int clctHash = clcts.ch_id->at(iclct);
+				if(clctHash != chamberHash) continue;
+				float clctHSPos = clcts.keyStrip->at(iclct);
+				float clctSPos = clctHSPos/2. + 1; //conver to real strips...
+
+				float xDiff= segmentX - clctSPos;
+				if(abs(xDiff) < abs(minX_real)){
+					minX_real = xDiff;
+					bestRealPattern = clcts.pattern->at(iclct);
+					foundMatchingCandidate_real = true;
+				}
+			}
+			if(foundMatchingCandidate_real){
+				legacyPatterns_pos_real[bestRealPattern]->Fill(minX_real);
 			}
 
 
@@ -461,27 +582,11 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 			//CLCTCandidate* bestCLCT = newSetMatch.at(closestNewMatchIndex);
 
 
-			//unsigned int layers = bestCLCT->_lutEntry->_layers;
-
-/*
-			int code_hits [MAX_PATTERN_WIDTH][NLAYERS];
-			if(bestCLCT->getHits(code_hits)){
-				printf("Error: can't recover hits\n");
-				return -1;
-			}
-*/
-			//float hs_clctkeyhs = 2*bestCLCT->keyStrip();
-
-
-
 
 			//Clear everything
 
 			oldSetMatch.clear();
 			newSetMatch.clear();
-
-			//temp
-			//return 0;
 		}
 
 	}
@@ -489,6 +594,7 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 
 	printf("fraction with >1 in layer is %i/%i = %f\n", nChambersMultipleInOneLayer, nChambersRanOver, 1.*nChambersMultipleInOneLayer/nChambersRanOver);
+
 
 	outF->cd();
 	plotTree->Write();
@@ -501,6 +607,19 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	legacyLUTSegmentPosDiff->Write();
 	legacyLUTSegmentSlopeDiff->Write();
+
+	for(auto entry: ccPos_pt) entry.second->Write();
+	for(auto entry: ccSlope_pt) entry.second->Write();
+	for(auto entry: legacyPos_pt) entry.second->Write();
+	for(auto entry: legacySlope_pt) entry.second->Write();
+
+	for(auto entry: lutChamberPlots_Pos) entry.second->Write();
+	for(auto entry: lutChamberPlots_legacy_Pos) entry.second->Write();
+	for(auto entry: lutChamberPlots_Slope) entry.second->Write();
+	for(auto entry: lutChamberPlots_legacy_Slope) entry.second->Write();
+	for(auto entry: legacyPatterns_pos) entry.second->Write();
+	for(auto entry: legacyPatterns_pos_real) entry.second->Write();
+	for(auto entry: legacyPatterns_slope) entry.second->Write();
 	h_clctLayerCount->Write();
 	/*
 	lutSegmentPosDiff->Write();
@@ -514,10 +633,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	//defined as : for every segment, we have at least one clct matched within the range
 	foundOneMatchEffNum->Write();
 	foundOneMatchEffDen->Write();
-
-	for(auto hist : chi2PosDiffs) hist->Write();
-	for(auto hist : chi2Distributions) hist->Write();
-	for(auto hist : chi2VsSlope) hist->Write();
 */
 	outF->Close();
 

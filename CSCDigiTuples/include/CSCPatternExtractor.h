@@ -15,6 +15,7 @@
 #include <DataFormats/CSCDigi/interface/CSCDDUStatusDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCDMBStatusDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCTMBStatusDigiCollection.h>
+#include <DataFormats/CSCRecHit/interface/CSCRecHit2DCollection.h>
 #include "Geometry/CSCGeometry/interface/CSCGeometry.h"
 #include "Geometry/CSCGeometry/interface/CSCChamber.h"
 #include "Geometry/CSCGeometry/interface/CSCLayer.h"
@@ -74,8 +75,10 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         const reco::MuonCollection (*selectMuons)(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t);
 
         //TODO: could come up with a nicer way to pass arguments, static definition is tricky...
+        static const reco::MuonCollection selectResonanceMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t, const float minPt, const float resMass, const float massWindow);
         static const reco::MuonCollection selectSingleMuMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t);
         static const reco::MuonCollection selectJPsiMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t);
+        static const reco::MuonCollection selectStandaloneMuons(const reco::MuonCollection& m, const reco::Vertex& vtx, TreeContainer& t);
         static const reco::MuonCollection selectDisplacedMuons(const reco::MuonCollection& m,const reco::Vertex& vtx, TreeContainer& t);
 
         vector<const CSCSegment*> matchCSC(const reco::Track& muon, edm::Handle<CSCSegmentCollection> allSegmentsCSC);
@@ -100,6 +103,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         edm::EDGetTokenT<CSCDDUStatusDigiCollection> ddu_token;
         edm::EDGetTokenT<CSCDMBStatusDigiCollection> dmb_token;
         edm::EDGetTokenT<CSCTMBStatusDigiCollection> tmb_token;
+        edm::EDGetTokenT<CSCRecHit2DCollection> rh_token;
 
         const CSCGeometry *theCSC;
         MuonServiceProxy *theService;
@@ -137,6 +141,8 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
        // string filename;
         edm::EDGetTokenT<CSCSegmentCollection> allSegmentsCSCToken;
 
+        //should be member of CSCRecHit2D, but...
+        static bool areEqual(const CSCRecHit2D& rh1, const CSCRecHit2D& rh2);
 
 
 };

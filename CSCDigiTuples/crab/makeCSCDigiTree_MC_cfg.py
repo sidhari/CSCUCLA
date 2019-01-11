@@ -5,7 +5,7 @@ import subprocess
 #CHECK ERA, GLOBALTAG, GEOMETRY
 
 from Configuration.StandardSequences.Eras import eras
-process = cms.Process("TEST",eras.Run2_2018)
+process = cms.Process("TEST")
 
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
@@ -29,7 +29,8 @@ process.load("TrackPropagation.SteppingHelixPropagator.SteppingHelixPropagatorAn
 
 from Configuration.AlCa.GlobalTag import GlobalTag
 
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_data_promptlike', '')
+#different between reco - mc
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:mc', '')
 
 
 #
@@ -216,6 +217,7 @@ process.lctreader = cms.EDAnalyzer("CSCTriggerPrimitivesReader",
 # TO USE WITH --- RECO ---
 # nICK THINKS i CAN REMOVE ALMOST EVERYTHING BUT NTUPLIZER
 process.p = cms.Path(process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
+#process.p = cms.Path(process.cscTriggerPrimitiveDigis * process.MakeNtuple)
 process.schedule = cms.Schedule(process.p)
 
 #process.p = cms.Path(process.RawToDigi * process.L1Reco * process.reconstruction * process.gtDigis * process.muonCSCDigis * process.csc2DRecHits * process.cscSegments * process.cscTriggerPrimitiveDigis * process.MakeNtuple)
@@ -358,8 +360,8 @@ from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 
 
-from Configuration.DataProcessing.RecoTLR import customisePostEra_Run2_2018 
-process = customisePostEra_Run2_2018(process)
+#from Configuration.DataProcessing.RecoTLR import customisePostEra_Run2_2018 
+#process = customisePostEra_Run2_2018(process)
 #process.schedule = cms.Schedule(process.p)
 
 
