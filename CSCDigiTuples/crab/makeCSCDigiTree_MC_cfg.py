@@ -46,7 +46,7 @@ process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:mc', '')
 #process.inputs.lumisToProcess.extend(myList)
 
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 
 # example samples:
 #   singlemu: '/store/data/Run2018A/SingleMuon/RAW-RECO/ZMu-PromptReco-v3/000/316/995/00000/FAAE6734-BA66-E811-8D2D-02163E019EBA.root',
@@ -84,7 +84,7 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 #Muon Gun Dec 24
 #dataset = ' /store/group/phys_muon/abbiendi/MuonGun/MuonGun_PTOT-5-2500/crab_MuonGun_step3_asympt_FixedGT-TrkAli2017-v3/181215_114558/0000/step3_asympt_APE_FixedGT-TrackerAlignment-Upgrade2017-realistic-v3_99.root'
 #self-made sample
-dataset = 'file:/uscms/home/wnash/eos/MuonGun/MuonGunPt100.root'
+dataset = 'file:/uscms/home/wnash/eos/MuonGun/MuonGunPt1000.root'
 
 #dataset = 'file:step3_RAW2DIGI_L1Reco_RECO.root'
 
@@ -139,7 +139,7 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
              muonCollection = cms.InputTag("muons"),
              
         trigBits                        = cms.InputTag('TriggerResults','','HLT'),
-        trigPrescales                   = cms.InputTag('patTrigger'),       
+        trigPrescales                   = cms.InputTag('patTrigger'),      
              
         offlineBeamSpotTag = cms.InputTag("offlineBeamSpot"),
         csctfDigiTag = cms.InputTag("csctfDigis"),
@@ -155,6 +155,7 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         dmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDMBStatusDigi"),
         tmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCTMBStatusDigi"),
         rhDigiTag = cms.InputTag("csc2DRecHits"),
+        genDigiTag = cms.InputTag("genParticles"),
         selection = cms.untracked.string(selectionString),
         MatchParameters = cms.PSet(
             DTsegments = cms.InputTag("dt4DSegments"),
@@ -175,9 +176,6 @@ process.load("L1Trigger.CSCTriggerPrimitives.cscTriggerPrimitiveDigis_cfi")
 process.cscTriggerPrimitiveDigis.CSCComparatorDigiProducer = "muonCSCDigis:MuonCSCComparatorDigi"
 process.cscTriggerPrimitiveDigis.CSCWireDigiProducer = "muonCSCDigis:MuonCSCWireDigi"
 
-
-#nick change
-#process.cscTriggerPrimitiveDigis.tmbParam.mpcBlockMe1a = 0
 
 process.load("L1TriggerConfig.L1CSCTPConfigProducers.L1CSCTriggerPrimitivesConfig_cff")
 #test if something exists by doing python -i <filename>, then typing the object you're curious about

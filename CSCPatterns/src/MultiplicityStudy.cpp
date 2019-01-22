@@ -66,6 +66,7 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	CSCInfo::LCTs lcts(t);
 	CSCInfo::CLCTs clcts(t);
 	CSCInfo::Comparators comparators(t);
+	CSCInfo::GenParticles gen(t);
 
 	//
 	// MAKE ALL THE PATTERNS
@@ -110,10 +111,27 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	//const unsigned int MAX_CHAMBERS = 4; //max overlapping chambers
 	TH2F* h_energyPerChamberVsP = new TH2F("h_energyPerChamberVsP","h_energyPerChamberVsP; P [GeV]; Energy Per Chamber [?]", 80,0.,800., 100, -100000., -2.);
 	map<int, TH2F*> h_energyPerChamberVsP_byChamber;
-	for(int chamberCount =  1; chamberCount < 6; chamberCount++){
+	map<int, TH2F*> h_compHitsPerChamberVsGenP_byChamber;
+	//map<int, TH2F*> h_compHitsPerChamberVsGenP_byChamber;
+	for(int chamberCount =  1; chamberCount < 7; chamberCount++){
 		h_energyPerChamberVsP_byChamber[chamberCount] = new TH2F(("h_energyPerChamberVsP_"+to_string(chamberCount)).c_str(),
 				("h_energyPerChamberVsP"+to_string(chamberCount) +"; P [GeV]; Energy Per Chamber [?]").c_str(), 80,0.,800., 100, -100000., -2.);
+		h_compHitsPerChamberVsGenP_byChamber[chamberCount] = new TH2F(("h_compHitsPerChamberVsGenP_"+to_string(chamberCount)).c_str(),
+				("h_compHitsPerChamberVsGenP"+to_string(chamberCount) +"; Gen P [GeV]; Comparator Hits").c_str(),60 ,100.,6000., 20, 0, 100);
 	}
+
+	//take slices of p, of size 100 GeV
+	map<double, TH1F*> h_compHitsPSlices_4chambers;
+	map<double, TH1F*> h_compHitsPSlices_4chambers_perChamber; //how many hits each chamber has individually
+	vector<double> p_slices;
+	for(double dist_p = 0; dist_p <= 2000; dist_p += 500){
+		p_slices.push_back(dist_p);
+		h_compHitsPSlices_4chambers[dist_p] = new TH1F(("h_compHitsPSlice_4chambers_"+to_string((int)round(dist_p))).c_str(),
+				("h_compHitsPSlice_4chambers_"+to_string((int)round(dist_p))).c_str(), 100,0,100);
+		h_compHitsPSlices_4chambers_perChamber[dist_p] = new TH1F(("h_compHitsPSlice_4chambers_perChamber_"+to_string((int)round(dist_p))).c_str(),
+						("h_compHitsPSlice_4chambers_perChamber_"+to_string((int)round(dist_p))).c_str(), 100,0,100);
+	}
+
 
 	//int patternId = 0;
 	//int ccId = 0;
@@ -154,6 +172,24 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 		if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
+
+		float genP = 0;
+
+
+
+		//cout << "-- Printing Gen Information --" << endl;
+		if(gen.size() > 1){
+			cout << "Error more than one gen particle. quitting..." << endl;
+			continue;
+		}
+
+		for(unsigned int ig  =0; ig < gen.size(); ig++){
+			//cout << "Gen ID: " << gen.pdg_id->at(ig) << " pt = " << gen.pt->at(ig) << endl;
+			double pt = gen.pt->at(ig);
+			double eta = gen.eta->at(ig);
+			double theta = 2.*TMath::ATan(TMath::Exp(-eta));
+			if(TMath::Sin(theta)) genP = pt/TMath::Sin(theta);
+		}
 
 
 
@@ -198,6 +234,9 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 
 
 		int nShoweringChambers = 0;
+		int nChambersWithHits = 0;
+		int nCompHits = 0;
+		vector<int> compHitsPerChamber;
 
 		//
 		//Iterate through all possible chambers
@@ -259,11 +298,22 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 			vector<CLCTCandidate*> eclcts;
 
 
+
+
+
 			//get all the clcts in the chamber
 			if(searchForMatch(chamberCompHits, newPatterns,eclcts)){
+				//cout << "Search for match failed!" << endl;
 				eclcts.clear();
 				continue;
 			}
+
+			/*
+			if(chamberCompHits.nhits()){
+				cout << "-- Found " << eclcts.size() << " matches" << endl;
+				chamberCompHits.print();
+			}
+			*/
 			/*
 			if(chamberRecHits.nhits() && eclcts.size() > 1){
 				chamberCompHits.print();
@@ -275,8 +325,9 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 
 				float normalizedCLCTs = 1.*eclcts.size()/segmentPts.size();
 				//cout << "eclcts: " << eclcts.size() << " segments: " << segmentPts.size() << " normalizedCLCTs: " << normalizedCLCTs << endl;
-				bool testStation = (ST ==2) && (RI==1);
+				//bool testStation = (ST ==2) && (RI==1);
 
+				/*
 				if(normalizedCLCTs > 1  && testStation){
 					cout << "segment [Pos (strips), Pt, P]" << endl;
 					for(unsigned int iseg = 0; iseg < segmentPts.size(); iseg++){
@@ -287,6 +338,7 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 					}
 					chamberCompHits.print();
 				}
+				*/
 				for(auto& pt: segmentPts){
 					h_multiplicityVsPt->Fill( pt,normalizedCLCTs);
 				}
@@ -317,6 +369,8 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 				}
 			}
 
+
+
 			if(!eclcts.size()) continue;
 
 			for(unsigned int c =0; c < NCHAMBERS; c++){
@@ -331,6 +385,19 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 			}
 
 			eclcts.clear();
+		}
+		if(nChambersWithHits && nChambersWithHits < 7){
+			h_compHitsPerChamberVsGenP_byChamber[nChambersWithHits]->Fill(genP, nCompHits);
+			if(nChambersWithHits == 4){
+				for(auto& p : p_slices){
+					if(genP > p && genP <= p + 100){
+						h_compHitsPSlices_4chambers[p]->Fill(nCompHits);
+						for(auto hits: compHitsPerChamber){
+							h_compHitsPSlices_4chambers_perChamber[p]->Fill(hits);
+						}
+					}
+				}
+			}
 		}
 		h_nChambersShowered->Fill(nShoweringChambers);
 
@@ -363,6 +430,15 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 		//if(norm) hist->Scale(1./norm);
 		hist->Write();
 	}
+	for(auto& entry : h_compHitsPSlices_4chambers) {
+		entry.second->Scale(1./entry.second->GetEntries());
+		entry.second->Write();
+	}
+	for(auto& entry: h_compHitsPSlices_4chambers_perChamber) {
+		entry.second->Scale(1./entry.second->GetEntries());
+		entry.second->Write();
+	}
+
 	for(auto& hist: clctRMS) hist->Write();
 	h_multiplicityVsPt->Write();
 	h_multiplicityVsP->Write();
@@ -385,6 +461,10 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	}
 	h_multiplicityVsPt_normalized->Write();
 	h_multiplicityVsPt_normalized->GetBinCenter(1);
+	for(auto& h : h_compHitsPerChamberVsGenP_byChamber){
+		h.second->Write();
+	}
+
 	outF->Close();
 
 

@@ -48,7 +48,8 @@ segmentInfo(tree),
 recHitInfo(tree),
 lctInfo(tree),
 clctInfo(tree),
-compInfo(tree)
+compInfo(tree),
+genInfo(tree)
 {
 	cout << "-- Starting CSCPatternExtractor --" << endl;
 
@@ -92,6 +93,7 @@ compInfo(tree)
 		}else if (selection == "MuonGun") {
 			cout <<  "--- Running as Muon Gun (MC) sample --- " << endl;
 			selectMuons = &selectStandaloneMuons;
+			gen_token = consumes<vector<reco::GenParticle>>(iConfig.getParameter<edm::InputTag>("genDigiTag"));
 		} else { //default to single muon selection
 			cout <<  "--- Error: Ambiguous Selection --- " << endl;
 			selection = "";
@@ -167,6 +169,13 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 			float invMass = (mu1Lorentz+mu2Lorentz).M();
 			tree.h.h_allInvMass->Fill(invMass);
 		}
+	}
+
+	//if this is MC, look at gen particles
+	if(selection == "MuonGun"){
+		edm::Handle<vector<reco::GenParticle>> genParticles;
+		iEvent.getByToken(gen_token, genParticles);
+		genInfo.fill(*genParticles);
 	}
 
 
@@ -262,6 +271,11 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     	//fill only the muons that have csc segments associtaed with them
     	tree.h.h_muonCuts->Fill(MUON_CUTS::muonHasSegments,muonInfo.size());
     	tree.h.h_nSelectedMuons->Fill(muonInfo.size());
+    	for(unsigned int im =0 ; im < muonInfo.size(); im++){
+    		tree.h.h_selectedMuonsPt->Fill(muonInfo.pt->at(im));
+    		tree.h.h_selectedMuonsEta->Fill(muonInfo.eta->at(im));
+    		tree.h.h_selectedMuonsPhi->Fill(muonInfo.phi->at(im));
+    	}
 
     } else { //TODO: can make it so all unmatched segments are written out as well in selected case
     	for(const auto& segment: *allSegmentsCSC){
@@ -354,9 +368,6 @@ const reco::MuonCollection CSCPatternExtractor::selectResonanceMuons(const reco:
 	for(auto index : selectedIndices) {
 		selectedMuons.push_back(m.at(index));
 		t.h.h_muonCuts->Fill(MUON_CUTS::isOverPtThreshold);
-		t.h.h_selectedMuonsPt->Fill(m.at(index).pt());
-		t.h.h_selectedMuonsEta->Fill(m.at(index).eta());
-		t.h.h_selectedMuonsPhi->Fill(m.at(index).phi());
 	}
 	return selectedMuons;
 }

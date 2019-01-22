@@ -104,6 +104,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         edm::EDGetTokenT<CSCDMBStatusDigiCollection> dmb_token;
         edm::EDGetTokenT<CSCTMBStatusDigiCollection> tmb_token;
         edm::EDGetTokenT<CSCRecHit2DCollection> rh_token;
+        edm::EDGetTokenT<vector<reco::GenParticle>> gen_token;
 
         const CSCGeometry *theCSC;
         MuonServiceProxy *theService;
@@ -122,6 +123,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         FillLCTInfo lctInfo;
         FillCLCTInfo clctInfo;
         FillCompInfo compInfo;
+        FillGenParticleInfo genInfo;
         /*
         SegmentData segs;
         RecHitData recHits;

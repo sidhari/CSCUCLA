@@ -479,6 +479,8 @@ ChamberHits::ChamberHits(unsigned int station, unsigned int ring,
 			_hits[i][j] = 0;
 		}
 	}
+	_meanHS = -1;
+	_stdHS = -1;
 }
 
 ChamberHits::ChamberHits(const ChamberHits& c) :
@@ -495,6 +497,28 @@ ChamberHits::ChamberHits(const ChamberHits& c) :
 			_hits[i][j] = c._hits[i][j];
 		}
 	}
+	_meanHS = c._meanHS;
+	_stdHS = c._stdHS;
+}
+
+float ChamberHits::hitMeanHS() {
+	if(_meanHS != -1) return _meanHS;
+	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
+			for(unsigned int j = 0; j < NLAYERS; j++){
+				//TODO
+			}
+		}
+	return _meanHS;
+}
+
+float ChamberHits::hitStdHS() {
+	if(_stdHS != -1) return _stdHS;
+	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
+			for(unsigned int j = 0; j < NLAYERS; j++){
+				//TODO
+			}
+		}
+	return _stdHS;
 }
 
 //odd layers shift down an extra half strip
@@ -586,6 +610,7 @@ int ChamberHits::fill(const CSCInfo::RecHits& r){
 	return 0;
 }
 
+
 void ChamberHits::print() const {
 	printf("==== Printing Chamber  ST = %i, RI = %i, CH = %i, EC = %i====\n", _station, _ring, _chamber, _endcap);
 	for(unsigned int y = 0; y < NLAYERS; y++) {
@@ -603,6 +628,30 @@ void ChamberHits::print() const {
 		else printf(" ");
 	}
 	printf("\n");
+}
+
+
+ostream& operator<<(ostream& os, const ChamberHits& c){
+	os << "==== Printing Chamber  ST = " << c._station <<
+			", RI = "<< c._ring <<
+			", CH = "<< c._chamber <<
+			", EC = "<< c._endcap << " ====\n";
+	for(unsigned int y = 0; y < NLAYERS; y++) {
+		if(c.shift(y)) os << " ";
+		for(unsigned int x = c.minHs() + c.shift(y); x < c.maxHs()+c.shift(y); x++){
+			if(!((x-c.shift(y))%CFEB_HS)) os <<"|";
+			if(c._hits[x][y]) os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
+			else os <<"-";
+		}
+		os <<"|\n";
+	}
+	if(c.shift(0)) os << " ";
+	for(unsigned int x = c.minHs();x < c.maxHs()+1; x++){
+		if(!(x%(CFEB_HS+1))) os <<  (int)(x/(CFEB_HS+1));
+		else os << " ";
+	}
+	os << "\n";
+	return os;
 }
 
 //takes the hits associated with clct "mi" out of the chamber

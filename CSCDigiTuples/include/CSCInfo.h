@@ -72,6 +72,40 @@ public:
 
 };
 
+class GenParticles : public Object{
+public:
+	GenParticles() : Object("gen") {
+		pdg_id = 0;
+		pt = 0;
+		eta = 0;
+		phi = 0;
+		q = 0;
+	}
+
+	GenParticles(TTree* t) : GenParticles() {
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pdg_id))).c_str(),
+				&pdg_id);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pt))).c_str(),
+				&pt);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
+				&eta);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
+				&phi);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(q))).c_str(),
+				&q);
+	}
+
+	unsigned int size() const {
+		return pt ? pt->size() : 0;
+	}
+	std::vector<int>* pdg_id;
+	std::vector<float>* pt;
+	std::vector<float>* eta;
+	std::vector<float>* phi;
+	std::vector<int>* q; //charge
+};
+
+
 class Muons : public Object{
 public:
 	Muons() :Object("muon") {

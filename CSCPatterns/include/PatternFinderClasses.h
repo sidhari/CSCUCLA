@@ -147,19 +147,25 @@ public:
 	unsigned int minHs() const {return _minHs;}
 	unsigned int maxHs() const {return _maxHs;}
 	unsigned int nhits() const {return _nhits;}
+	float hitMeanHS();
+	float hitStdHS();
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
 
 	bool shift(unsigned int lay) const;
 
 	int fill(const CSCInfo::Comparators& c);
 	int fill(const CSCInfo::RecHits& r);
-	void print() const;
+	void print() const; //deprecated
+	friend ostream& operator<<(ostream& os, const ChamberHits& c);
 
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
 	unsigned int _nhits;
 	unsigned int _minHs;
 	unsigned int _maxHs;
+
+	float _meanHS;
+	float _stdHS;
 
 };
 

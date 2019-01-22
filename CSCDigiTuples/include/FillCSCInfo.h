@@ -20,6 +20,7 @@
 #include <DataFormats/CSCDigi/interface/CSCCLCTDigiCollection.h>
 #include <DataFormats/CSCDigi/interface/CSCALCTDigiCollection.h>
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 
 //muon
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
@@ -210,6 +211,43 @@ public:
 
   void fill(const edm::Event& iEvent, unsigned int nSegments);
 
+};
+
+class FillGenParticleInfo : public CSCInfo::GenParticles, public FillInfo {
+public:
+	FillGenParticleInfo(TreeContainer& tree) :
+		GenParticles(),
+		FillInfo(name, tree)
+{
+		//might want to make a constructor for the object here...
+		pdg_id = new std::vector<int>();
+		pt = new std::vector<float>();
+		eta = new std::vector<float>();
+		phi = new std::vector<float>();
+		q = new std::vector<int>();
+		book(GET_VARIABLE_NAME(pdg_id), *pdg_id);
+		book(GET_VARIABLE_NAME(pt), *pt);
+		book(GET_VARIABLE_NAME(eta), *eta);
+		book(GET_VARIABLE_NAME(phi), *phi);
+		book(GET_VARIABLE_NAME(q), *q);
+}
+	virtual ~FillGenParticleInfo() {
+		delete pdg_id;
+		delete pt;
+		delete eta;
+		delete phi;
+		delete q;
+	}
+	virtual void reset() {
+		pdg_id->clear();
+		pt->clear();
+		eta->clear();
+		phi->clear();
+		q->clear();
+	}
+
+public:
+	void fill(const vector<reco::GenParticle>& gen);
 };
 
 
