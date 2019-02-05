@@ -21,6 +21,12 @@
 #include <DataFormats/CSCDigi/interface/CSCALCTDigiCollection.h>
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
+#include "SimDataFormats/CaloHit/interface/PCaloHit.h"
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
+#include "Geometry/EcalAlgo/interface/EcalEndcapGeometry.h"
+#include "Geometry/Records/interface/EcalEndcapGeometryRecord.h"
+#include "Geometry/HcalTowerAlgo/interface/HcalGeometry.h"
 
 //muon
 #include "DataFormats/MuonReco/interface/MuonFwd.h"
@@ -132,7 +138,6 @@ public:
   void fill();
 
   void reset();
-
 
   void addInfo(FillInfo* info){
 	  if(info) infos.push_back(info);
@@ -250,6 +255,131 @@ public:
 	void fill(const vector<reco::GenParticle>& gen);
 };
 
+class FillSimHitsInfo : public CSCInfo::SimHits, public FillInfo {
+public:
+	FillSimHitsInfo(TreeContainer& tree) :
+		SimHits(),
+		FillInfo(name, tree)
+{
+		ch_id = new std::vector<int>();
+		pdg_id = new std::vector<int>();
+		layer = new std::vector<int>();
+		energyLoss = new std::vector<float>();
+		thetaAtEntry = new std::vector<float>();
+		phiAtEntry = new std::vector<float>();
+		pAtEntry = new std::vector<float>();
+		book(GET_VARIABLE_NAME(ch_id), *ch_id);
+		book(GET_VARIABLE_NAME(pdg_id), *pdg_id);
+		book(GET_VARIABLE_NAME(layer), *layer);
+		book(GET_VARIABLE_NAME(energyLoss), *energyLoss);
+		book(GET_VARIABLE_NAME(thetaAtEntry), *thetaAtEntry);
+		book(GET_VARIABLE_NAME(phiAtEntry), *phiAtEntry);
+		book(GET_VARIABLE_NAME(pAtEntry), *pAtEntry);
+}
+
+	virtual ~FillSimHitsInfo() {
+		delete ch_id;
+		delete pdg_id;
+		delete layer;
+		delete energyLoss;
+		delete thetaAtEntry;
+		delete phiAtEntry;
+		delete pAtEntry;
+	}
+
+	virtual void reset() {
+		ch_id->clear();
+		pdg_id->clear();
+		layer->clear();
+		energyLoss->clear();
+		thetaAtEntry->clear();
+		phiAtEntry->clear();
+		pAtEntry->clear();
+	}
+public:
+	void fill(const vector<PSimHit>& simhits);
+};
+
+class FillCaloHitsInfo : public CSCInfo::CaloHit, public FillInfo {
+public:
+	//pref = ecal, hcal, etc
+	FillCaloHitsInfo(const string& pref, TreeContainer& tree) :
+		CaloHit(pref),
+		FillInfo(name,tree)
+	{
+		energyEM = new std::vector<float>();
+		energyHad = new std::vector<float>();
+		eta =  new std::vector<float>();
+		phi = new std::vector<float>();
+		book(GET_VARIABLE_NAME(energyEM), *energyEM);
+		book(GET_VARIABLE_NAME(energyHad), *energyHad);
+		book(GET_VARIABLE_NAME(eta), *eta);
+		book(GET_VARIABLE_NAME(phi), *phi);
+	}
+
+	virtual ~FillCaloHitsInfo() {
+		delete energyEM;
+		delete energyHad;
+		delete eta;
+		delete phi;
+	}
+
+	virtual void reset() {
+		energyEM->clear();
+		energyHad->clear();
+		eta->clear();
+		phi->clear();
+	}
+public:
+	virtual void fill(const vector<PCaloHit>& calHits, const EcalEndcapGeometry* theEcal) ;
+	virtual void fill(const vector<PCaloHit>& calHits, const HcalGeometry* theHcal) ;
+};
+
+
+class FillPFInfo : public CSCInfo::PFCandidate, public FillInfo {
+public:
+	FillPFInfo(TreeContainer& tree):
+		PFCandidate(),
+		FillInfo(name,tree)
+	{
+		pdg_id = new std::vector<int>();
+		particleId = new std::vector<int>();
+		eta = new std::vector<float>();
+		phi = new std::vector<float>();
+		ecalEnergy = new std::vector<float>();
+		hcalEnergy = new std::vector<float>();
+		h0Energy = new std::vector<float>();
+		book(GET_VARIABLE_NAME(pdg_id), *pdg_id);
+		book(GET_VARIABLE_NAME(particleId), *particleId);
+		book(GET_VARIABLE_NAME(eta), *eta);
+		book(GET_VARIABLE_NAME(phi), *phi);
+		book(GET_VARIABLE_NAME(ecalEnergy), *ecalEnergy);
+		book(GET_VARIABLE_NAME(hcalEnergy), *hcalEnergy);
+		book(GET_VARIABLE_NAME(h0Energy), *h0Energy);
+	}
+
+	virtual ~FillPFInfo() {
+		delete pdg_id;
+		delete particleId;
+		delete eta;
+		delete phi;
+		delete ecalEnergy;
+		delete hcalEnergy;
+		delete h0Energy;
+	}
+
+	virtual void reset() {
+		pdg_id->clear();
+		particleId->clear();
+		eta->clear();
+		phi->clear();
+		ecalEnergy->clear();
+		hcalEnergy->clear();
+		h0Energy->clear();
+	}
+public:
+	void fill(const vector<reco::PFCandidate>& pfCand);
+};
 
 class FillMuonInfo : public CSCInfo::Muons, public FillInfo {
 public:

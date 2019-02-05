@@ -18,6 +18,7 @@
 <use   name="EventFilter/CSCRawToDigi"/>
 <use   name="RecoMuon/TrackingTools"/>
 <use   name="DataFormats/MuonReco"/>
+<use   name="Geometry/EcalAlgo"/>
 <export>
   <lib   name="1"/>
 </export>

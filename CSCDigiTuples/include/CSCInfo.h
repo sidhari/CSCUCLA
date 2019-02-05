@@ -105,6 +105,122 @@ public:
 	std::vector<int>* q; //charge
 };
 
+class SimHits : public Object {
+public:
+	SimHits() : Object("sim_hits") {
+		ch_id = 0;
+		pdg_id = 0;
+		layer = 0;
+		energyLoss = 0;
+		thetaAtEntry = 0;
+		phiAtEntry = 0;
+		pAtEntry = 0;
+	}
+	SimHits(TTree* t) : SimHits() {
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(),
+				&ch_id);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pdg_id))).c_str(),
+				&pdg_id);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(layer))).c_str(),
+				&layer);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(energyLoss))).c_str(),
+				&energyLoss);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(thetaAtEntry))).c_str(),
+				&thetaAtEntry);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phiAtEntry))).c_str(),
+				&phiAtEntry);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pAtEntry))).c_str(),
+				&pAtEntry);
+
+	}
+	unsigned int size() const {
+		return ch_id ? ch_id->size() : 0;
+	}
+
+	std::vector<int>* ch_id;
+	std::vector<int>* pdg_id;
+	std::vector<int>* layer;
+	std::vector<float>* energyLoss;
+	std::vector<float>* thetaAtEntry;
+	std::vector<float>* phiAtEntry;
+	std::vector<float>* pAtEntry;
+};
+
+class CaloHit : public Object {
+public:
+	CaloHit(const string& pref) : Object(string(pref+"_calo_hits").c_str()){
+		energyEM = 0;
+		energyHad = 0;
+		eta = 0;
+		phi = 0;
+	}
+
+	CaloHit(const string& pref, TTree* t) : CaloHit(pref) {
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(energyEM))).c_str(),
+								&energyEM);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(energyHad))).c_str(),
+								&energyHad);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
+								&eta);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
+								&phi);
+	}
+	unsigned int size() const {
+		return energyEM? energyEM->size() : 0;
+	}
+
+	std::vector<float>* energyEM;
+	std::vector<float>* energyHad;
+	std::vector<float>* eta;
+	std::vector<float>* phi;
+
+	static std::string ecal(){return "ecal";}
+	static std::string hcal(){return "hcal";}
+};
+
+class PFCandidate : public Object {
+public:
+	PFCandidate() : Object("pfcand") {
+		pdg_id = 0;
+		particleId = 0;
+		eta = 0;
+		phi = 0;
+		ecalEnergy = 0;
+		hcalEnergy = 0;
+		h0Energy = 0;
+	}
+
+	unsigned int size() const {
+		return pdg_id ? pdg_id->size() : 0;
+	}
+
+
+	PFCandidate(TTree* t) : PFCandidate() {
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pdg_id))).c_str(),
+				&pdg_id);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(particleId))).c_str(),
+						&particleId);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
+						&eta);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
+						&phi);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ecalEnergy))).c_str(),
+						&ecalEnergy);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(hcalEnergy))).c_str(),
+						&hcalEnergy);
+		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(h0Energy))).c_str(),
+								&h0Energy);
+	}
+
+	std::vector<int>* pdg_id;
+	std::vector<int>* particleId; //internal id
+	std::vector<float>* eta;
+	std::vector<float>* phi;
+	std::vector<float>* ecalEnergy;
+	std::vector<float>* hcalEnergy;
+	std::vector<float>* h0Energy;
+};
+
 
 class Muons : public Object{
 public:

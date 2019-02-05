@@ -197,10 +197,24 @@ CSCPattern CSCPattern::makeFlipped(string name, unsigned int id) const{
 	return CSCPattern(name, id, _isLegacy, flippedPattern);
 }
 
+/*
+
+  Pattern: 10  Pattern: 9   Pattern: 8   Pattern: 7   Pattern: 6   Pattern: 5   Pattern: 4   Pattern: 3   Pattern: 2
+  ----xxx----  ---xxx-----  -----xxx---  --xxx------  ------xxx--  -xxx-------  -------xxx-  xxx--------  --------xxx
+  -----x-----  ----xx-----  -----xx----  ----xx-----  -----xx----  ---xx------  ------xx---  ---xx------  ------xx---
+  -----x-----  -----x-----  -----x-----  -----x-----  -----x-----  -----x-----  -----x-----  -----x-----  -----x-----
+  -----x-----  -----xx----  ----xx-----  -----xx----  ----xx-----  ------xx---  ---xx------  -----xxx---  ---xxx-----
+  ----xxx----  -----xxx---  ---xxx-----  ------xx---  ---xx------  -------xxx-  -xxx-------  -------xxx-  -xxx-------
+  ----xxx----  -----xxx---  ---xxx-----  ------xxx--  --xxx------  -------xxx-  -xxx-------  --------xxx  xxx--------
+
+ *
+ */
+
 
 //given a code, prints out how it looks within the pattern
 void CSCPattern::printCode(int code) const{
-	printf("For Pattern: %i - printing code: %i (layer 1->6)\n", _id,code);
+	printf("Pattern: %i\n", _id);
+	if(code != -1)printf("Code: %i\n",code);
 	if(code >= 4096) {//2^12
 		printf("Error: invalid pattern code\n");
 		return;
@@ -567,8 +581,10 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 			printf("Error timeOn is an invalid number: %i\n", timeOn);
 			return -1;
 		} else {
-			_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
-			_nhits++;
+			if(!_hits[halfStripVal][lay]){
+				_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+				_nhits++;
+			}
 		}
 	}
 
@@ -603,9 +619,11 @@ int ChamberHits::fill(const CSCInfo::RecHits& r){
 		}
 
 		//_hits[iRhStrip][iLay] = true; //store +1, so we dont run into trouble with hexadecimal
-		_hits[iRhStrip][iLay] = r.mu_id->at(thisRh)+2; //store +2, so we dont run into trouble with hexadecimal
-		// rechits not associated with muons have mu_id = -1, and we want them to be positive so we see them -> +2
-		_nhits++;
+		if(!_hits[iRhStrip][iLay]){
+			_hits[iRhStrip][iLay] = r.mu_id->at(thisRh)+2; //store +2, so we dont run into trouble with hexadecimal
+			// rechits not associated with muons have mu_id = -1, and we want them to be positive so we see them -> +2
+			_nhits++;
+		}
 	}
 	return 0;
 }

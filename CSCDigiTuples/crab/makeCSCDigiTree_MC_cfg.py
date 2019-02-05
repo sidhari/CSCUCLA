@@ -84,7 +84,9 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #Muon Gun Dec 24
 #dataset = ' /store/group/phys_muon/abbiendi/MuonGun/MuonGun_PTOT-5-2500/crab_MuonGun_step3_asympt_FixedGT-TrkAli2017-v3/181215_114558/0000/step3_asympt_APE_FixedGT-TrackerAlignment-Upgrade2017-realistic-v3_99.root'
 #self-made sample
-dataset = 'file:/uscms/home/wnash/eos/MuonGun/MuonGunPt1000.root'
+#dataset = 'file:/uscms/home/wnash/eos/MuonGun/MuonGunPt1000.root'
+dataset = 'file:/uscms/home/wnash/eos/MuonGun/MuonEGun-Jan2019/190117_224028/0000/GenRawRecoE0-4000_MuonGun_1.root'
+#dataset = 'file:/uscms/home/wnash/eos/MuonGun/MuonEGun-Jan2019/190117_224028/0000/GenRawRecoE0-4000_MuonGun_69.root'
 
 #dataset = 'file:step3_RAW2DIGI_L1Reco_RECO.root'
 
@@ -154,8 +156,12 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
         dduDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDDUStatusDigi"),
         dmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCDMBStatusDigi"),
         tmbDigiTag = cms.InputTag("muonCSCDigis", "MuonCSCTMBStatusDigi"),
+        pfCandTag = cms.InputTag("particleFlow"),
         rhDigiTag = cms.InputTag("csc2DRecHits"),
         genDigiTag = cms.InputTag("genParticles"),
+        simDigiTag = cms.InputTag("g4SimHits:MuonCSCHits"),
+        eeCaloDigiTag = cms.InputTag("g4SimHits:EcalHitsEE"),
+        hCaloDigiTag = cms.InputTag("g4SimHits:HcalHits"),
         selection = cms.untracked.string(selectionString),
         MatchParameters = cms.PSet(
             DTsegments = cms.InputTag("dt4DSegments"),
@@ -169,6 +175,10 @@ process.MakeNtuple = cms.EDAnalyzer("CSCPatternExtractor",
             RPCLayers = cms.bool(True)
             )
         )
+
+"""Customise digi/reco geometry to use unganged ME1/a channels"""
+process.CSCGeometryESModule.useGangedStripsInME1a = False
+process.idealForDigiCSCGeometry.useGangedStripsInME1a = False
 
 
 process.load("L1Trigger.CSCTriggerPrimitives.cscTriggerPrimitiveDigis_cfi")

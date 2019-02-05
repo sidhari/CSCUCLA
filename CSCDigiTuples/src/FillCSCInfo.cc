@@ -2,6 +2,14 @@
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
 
 #include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
+#include "DataFormats/EcalDetId/interface/EEDetId.h"
+#include "DataFormats/EcalDetId/interface/ESDetId.h"
+#include "DataFormats/HcalDetId/interface/HcalDetId.h"
+
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
+#include "SimDataFormats/CaloHit/interface/PCaloHit.h"
+
 
 void TreeContainer::fill(){
 	  tree->Fill();
@@ -35,12 +43,10 @@ SelectionHistograms::SelectionHistograms(TreeContainer& t, const string& selecti
 	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::isOverPtThreshold+1, "isOverPtThreshold");
 	h_muonCuts->GetXaxis()->SetBinLabel(MUON_CUTS::muonHasSegments+1, "muonHasSegment");
 
-	h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 250, 0,500);
 	h_allMuonsEta = new TH1F("h_allMuonsEta", "h_allMuonsEta; #eta; Muons", 100, -3,3);
 	h_allMuonsPhi = new TH1F("h_allMuonsPhi", "h_allMuonsPhi; #phi; Muons", 100, -3.2,3.2);
 	h_allInvMass = new TH1F("h_allInvMass", "h_allInvMass; Mass [GeV], Dimuons", 130, 0, 130);
 
-	h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 250, 0,500);
 	h_selectedMuonsEta = new TH1F("h_selectedMuonsEta", "h_selectedMuonsEta; #eta; Muons", 100, -3,3);
 	h_selectedMuonsPhi = new TH1F("h_selectedMuonsPhi", "h_selectedMuonsPhi; #phi; Muons", 100, -3.2,3.2);
 	h_nAllMuons = new TH1F("h_nAllMuons", "h_nAllMuons; Muons; Events", 20,0,20);
@@ -50,11 +56,13 @@ SelectionHistograms::SelectionHistograms(TreeContainer& t, const string& selecti
 
 	int invMassBins = 100;
 	if (selection == "ZeroBias"){
-		cout <<  "--- Running as minBias sample --- " << endl;
+		cout <<  "--- Tree instantiated as minBias sample --- " << endl;
 		h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "N/A");
 	}else{
 		if (selection == "SingleMuon"){
 			cout <<  "--- Setting up Single Muon Histograms --- " << endl;
+			h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 250, 0,500);
+			h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 250, 0,500);
 			h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "eventHasZ");
 			float zInvMassMin = 0;
 			float zInvMassMax = 130;
@@ -63,6 +71,8 @@ SelectionHistograms::SelectionHistograms(TreeContainer& t, const string& selecti
 			h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", invMassBins,zInvMassMin, zInvMassMax);
 		} else if (selection == "Charmonium") {
 			cout <<  "--- Setting up Charmonium Histograms --- " << endl;
+			h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 100, 0,200);
+			h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 100, 0,200);
 			h_eventCuts->GetXaxis()->SetBinLabel(EVENT_CUTS::hasResonance+1, "eventHasJ/#Psi");
 			float jpsiMassMin = 2;
 			float jpsiMassMax = 5;
@@ -70,7 +80,9 @@ SelectionHistograms::SelectionHistograms(TreeContainer& t, const string& selecti
 			h_ssInvMass = new TH1F("h_ssInvMass", "h_ssInvMass; Mass [GeV]; Dimuons", invMassBins,jpsiMassMin, jpsiMassMax);
 			h_premassCutInvMass = new TH1F("h_premassCutInvMass", "h_preMassCutInvMass;Mass [GeV]; Dimuons", invMassBins,jpsiMassMin, jpsiMassMax);
 		}else if(selection == "MuonGun") {
-			cout <<  "--- Running as DisplacedMuon sample --- " << endl;
+			cout <<  "--- Tree instantiated as MuonGun sample --- " << endl;
+			h_allMuonsPt = new TH1F("h_allMuonsPt", "h_allMuonsPt; Pt [GeV]; Muons", 400, 0,4000);
+			h_selectedMuonsPt = new TH1F("h_selectedMuonsPt", "h_selectedMuonsPt; Pt [GeV]; Muons", 400, 0,4000);
 		} else { //default to single muon selection
 			cout <<  "--- Defaulting as singleMu sample --- " << endl;
 		}
@@ -121,6 +133,82 @@ void FillEventInfo::fill(const edm::Event& iEvent, unsigned int nSegments){
   NSegmentsInEvent = nSegments;
 }
 
+void FillGenParticleInfo::fill(const vector<reco::GenParticle>& gen){
+	for(const auto& g :gen){
+		pdg_id->push_back(g.pdgId());
+		pt->push_back(g.pt());
+		eta->push_back(g.eta());
+		phi->push_back(g.phi());
+		q->push_back(g.charge());
+	}
+}
+
+void FillSimHitsInfo::fill(const vector<PSimHit>& simhits) {
+	for(auto& sim : simhits){
+		CSCDetId id(sim.detUnitId());
+		ch_id->push_back(CSCHelper::serialize(id.station(),id.ring(), id.chamber(),id.endcap()));
+		pdg_id->push_back(sim.particleType());
+		layer->push_back(id.layer());
+		energyLoss->push_back(sim.energyLoss());
+		thetaAtEntry->push_back(sim.thetaAtEntry());
+		phiAtEntry->push_back(sim.phiAtEntry());
+		pAtEntry->push_back(sim.pabs());
+	}
+}
+
+
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalEndcapGeometry* theEcal) {
+	for(auto& cal : calohits) {
+
+		auto id = EEDetId(cal.id());
+		if(!theEcal->present(id)){
+			cout << "DetId not present" << endl;
+		}
+
+		auto geo = theEcal->getGeometry(id);
+		if(!geo){
+			cout << "Not an ECAL!" << endl;
+			return;
+		}
+		energyEM->push_back(cal.energyEM());
+		energyHad->push_back(cal.energyHad());
+		eta->push_back(geo->etaPos());
+		phi->push_back(geo->phiPos());
+
+	}
+}
+
+//TODO: could merge ECAL / HCAL fill functions
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const HcalGeometry* theHcal){
+	for(auto& cal: calohits){
+		auto id = HcalDetId(cal.id());
+		if(!theHcal->present(id)){
+			cout << "DetId not present" << endl;
+		}
+		auto geo = theHcal->getGeometry(id);
+		if(!geo) {
+			cout << "Not an HCAL!" << endl;
+			return;
+		}
+		energyEM->push_back(cal.energyEM());
+		energyHad->push_back(cal.energyHad());
+		eta->push_back(geo->etaPos());
+		phi->push_back(geo->phiPos());
+	}
+}
+
+
+void FillPFInfo::fill(const vector<reco::PFCandidate>& pfCand) {
+	for(const auto& cand : pfCand) {
+		pdg_id->push_back(cand.pdgId());
+		particleId->push_back(cand.particleId());
+		eta->push_back(cand.eta());
+		phi->push_back(cand.phi());
+		ecalEnergy->push_back(cand.rawEcalEnergy());
+		hcalEnergy->push_back(cand.rawHcalEnergy());
+		h0Energy->push_back(cand.rawHoEnergy());
+	}
+}
 
 void FillMuonInfo::fill(const reco::MuonCollection& muons){
 	for(const auto& muon: muons) fill(muon);

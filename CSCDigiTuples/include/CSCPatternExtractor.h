@@ -35,7 +35,8 @@
 #include "CondFormats/DataRecord/interface/L1GtTriggerMenuRcd.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "CSCUCLA/CSCDigiTuples/include/MuonQualityCuts.h"
-
+#include "SimDataFormats/TrackingHit/interface/PSimHit.h"
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/GeometryVector/interface/GlobalPoint.h"
 #include "DataFormats/GeometryVector/interface/GlobalVector.h"
 #include "DataFormats/GeometryVector/interface/LocalPoint.h"
@@ -46,6 +47,10 @@
 
 #include "CSCUCLA/CSCDigiTuples/include/FillCSCInfo.h"
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
+
+//temp
+#include "Geometry/EcalAlgo/interface/EcalEndcapGeometry.h"
+#include "Geometry/HcalTowerAlgo/interface/HcalGeometry.h"
 
 
 #include "TFile.h"
@@ -84,9 +89,6 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         vector<const CSCSegment*> matchCSC(const reco::Track& muon, edm::Handle<CSCSegmentCollection> allSegmentsCSC);
         bool cscTightMatch;
 
-        //int chamberSerial( CSCDetId id );
-        //double FindAnodeTime(std::vector<CSCRecHit2D>::const_iterator  hiti,  const edm::Handle<CSCWireDigiCollection> cscWireDigi, double local_t0);
-
     private:
 
         edm::EDGetTokenT<reco::MuonCollection> mc_token;
@@ -104,9 +106,17 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         edm::EDGetTokenT<CSCDMBStatusDigiCollection> dmb_token;
         edm::EDGetTokenT<CSCTMBStatusDigiCollection> tmb_token;
         edm::EDGetTokenT<CSCRecHit2DCollection> rh_token;
+        edm::EDGetTokenT<vector<reco::PFCandidate>> pf_token;
+        //gen
         edm::EDGetTokenT<vector<reco::GenParticle>> gen_token;
+        edm::EDGetTokenT<vector<PSimHit>> sim_token;
+        edm::EDGetTokenT<vector<PCaloHit>> eeCalo_token;
+        edm::EDGetTokenT<vector<PCaloHit>> hCalo_token;
 
         const CSCGeometry *theCSC;
+        const EcalEndcapGeometry* theEcal;
+        const HcalGeometry* theHcal;
+
         MuonServiceProxy *theService;
         MuonQualityCuts *muonQualityCuts;
         string selection;
@@ -123,24 +133,13 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         FillLCTInfo lctInfo;
         FillCLCTInfo clctInfo;
         FillCompInfo compInfo;
+        FillPFInfo pfInfo;
+        //gen
         FillGenParticleInfo genInfo;
-        /*
-        SegmentData segs;
-        RecHitData recHits;
-        LCTData lcts;
-        LCTData csctfLcts;
-        LCTData emtfLcts;
-        CLCTData clcts;
-        ALCTData alcts;
-        ComparatorData comps;
-        WireData wires;
-        StripData strips;
-        StatusData ddus;
-        StatusData dmbs;
-        StatusData tmbs;
-        */
+        FillSimHitsInfo  simHitInfo;
+        FillCaloHitsInfo eeCaloInfo;
+        FillCaloHitsInfo hCaloInfo;
 
-       // string filename;
         edm::EDGetTokenT<CSCSegmentCollection> allSegmentsCSCToken;
 
         //should be member of CSCRecHit2D, but...

@@ -57,6 +57,16 @@ int printPatternCC(unsigned int pattID,int cc){
 		}
 	}
 
+	//all the new patterns
+	vector<CSCPattern>* oldPatterns = createOldPatterns();
+
+	for(auto patt = oldPatterns->begin(); patt != oldPatterns->end(); ++patt){
+		if(patt->_id == pattID)	{
+			patt->printCode(cc);
+			break;
+		}
+	}
+
 	return 0;
 }
 

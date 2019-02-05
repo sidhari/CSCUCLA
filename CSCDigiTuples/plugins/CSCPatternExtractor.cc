@@ -49,7 +49,11 @@ recHitInfo(tree),
 lctInfo(tree),
 clctInfo(tree),
 compInfo(tree),
-genInfo(tree)
+pfInfo(tree),
+genInfo(tree),
+simHitInfo(tree),
+eeCaloInfo(CSCInfo::CaloHit::ecal(),tree),
+hCaloInfo(CSCInfo::CaloHit::hcal(),tree)
 {
 	cout << "-- Starting CSCPatternExtractor --" << endl;
 
@@ -69,8 +73,11 @@ genInfo(tree)
 	dmb_token = consumes<CSCDMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("dmbDigiTag"));
 	tmb_token = consumes<CSCTMBStatusDigiCollection>(iConfig.getParameter<edm::InputTag>("tmbDigiTag"));
 	rh_token =  consumes<CSCRecHit2DCollection>(iConfig.getParameter<edm::InputTag>("rhDigiTag"));
+	pf_token = consumes<vector<reco::PFCandidate>>(iConfig.getParameter<edm::InputTag>("pfCandTag"));
 
 	theCSC = 0;
+	theEcal = 0;
+	theHcal = 0;
 
 	/* Choose if we are going to write data by selecting muons,
 	 * and if so, which selector to use
@@ -94,6 +101,9 @@ genInfo(tree)
 			cout <<  "--- Running as Muon Gun (MC) sample --- " << endl;
 			selectMuons = &selectStandaloneMuons;
 			gen_token = consumes<vector<reco::GenParticle>>(iConfig.getParameter<edm::InputTag>("genDigiTag"));
+			sim_token = consumes<vector<PSimHit>>(iConfig.getParameter<edm::InputTag>("simDigiTag"));
+			eeCalo_token = consumes<vector<PCaloHit>>(iConfig.getParameter<edm::InputTag>("eeCaloDigiTag"));
+			hCalo_token = consumes<vector<PCaloHit>>(iConfig.getParameter<edm::InputTag>("hCaloDigiTag"));
 		} else { //default to single muon selection
 			cout <<  "--- Error: Ambiguous Selection --- " << endl;
 			selection = "";
@@ -171,11 +181,39 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 		}
 	}
 
+    ESHandle<CSCGeometry> cscGeom;
+    iSetup.get<MuonGeometryRecord>().get(cscGeom);
+    theCSC = cscGeom.product();
+
+    ESHandle<CaloSubdetectorGeometry> ecalGeom;
+    iSetup.get<EcalEndcapGeometryRecord>().get("EcalEndcap",ecalGeom);
+    theEcal = (const EcalEndcapGeometry*)ecalGeom.product();
+
+    ESHandle<CaloSubdetectorGeometry> hcalGeom;
+    iSetup.get<HcalGeometryRecord>().get(HcalGeometry::producerTag(),hcalGeom);
+    theHcal = (const HcalGeometry*)hcalGeom.product();
+
+	edm::Handle<vector<reco::PFCandidate>> pfCandidates;
+	iEvent.getByToken(pf_token, pfCandidates);
+	pfInfo.fill(*pfCandidates);
+
 	//if this is MC, look at gen particles
 	if(selection == "MuonGun"){
 		edm::Handle<vector<reco::GenParticle>> genParticles;
 		iEvent.getByToken(gen_token, genParticles);
 		genInfo.fill(*genParticles);
+
+		edm::Handle<vector<PSimHit>> simHits;
+		iEvent.getByToken(sim_token, simHits);
+		simHitInfo.fill(*simHits);
+
+		edm::Handle<vector<PCaloHit>> eeCaloHits;
+		iEvent.getByToken(eeCalo_token, eeCaloHits);
+		eeCaloInfo.fill(*eeCaloHits, theEcal);
+
+		edm::Handle<vector<PCaloHit>> hCaloHits;
+		iEvent.getByToken(hCalo_token, hCaloHits);
+		hCaloInfo.fill(*hCaloHits, theHcal);
 	}
 
 
@@ -203,10 +241,6 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     edm::Handle<CSCCLCTDigiCollection> cscCLCTDigi;
     iEvent.getByToken(cd_token, cscCLCTDigi);
 
-    /*
-     *  NOT DONE, FINISH THIS TO GET ALL RECHITS
-     *  THEN YOU CAN SEE RELATIONSHIP BETWEEN NRH and P
-     */
     edm::Handle<CSCRecHit2DCollection> recHits;
     iEvent.getByToken( rh_token, recHits );
     //make a vector of all the unmatched rh's in the event
@@ -217,15 +251,6 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     unsigned int matchedRHCount = 0;
     unsigned int totalSegRHs = 0;
 
-  //  auto test = *recHits;
-  //  for(auto& rh :test){
-
-   // }
-   // recHitInfo.fill(*recHits);
-
-    ESHandle<CSCGeometry> cscGeom;
-    iSetup.get<MuonGeometryRecord>().get(cscGeom);
-    theCSC = cscGeom.product();
 
 	eventInfo.fill(iEvent, allSegmentsCSC->size());
 
@@ -281,7 +306,6 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     	for(const auto& segment: *allSegmentsCSC){
     		//TODO: might need to do some selection here
     		segmentInfo.fill(segment, theCSC, -1); //default unmatched to -1
-    		//recHitInfo.fill(segment.specificRecHits(), -1);
     	}
     }
     if(DEBUG) {
