@@ -219,7 +219,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 		// Oct. 29 Skipping all events past new firmware update
 		//
 		//
-		// Nov. 6 CHANGE ME BACK, NOW LOOKING AT LAER ERA!
+		// Nov. 6 CHANGE ME BACK, NOW LOOKING AT LATER ERA!
 		//
 		if(evt.RunNumber <= 323362) continue;
 		//if(evt.RunNumber > 323362) continue; //correct

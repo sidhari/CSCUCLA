@@ -156,13 +156,54 @@ void FillSimHitsInfo::fill(const vector<PSimHit>& simhits) {
 	}
 }
 
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalBarrelGeometry* theEcal) {
+	for(auto& cal : calohits) {
+
+		auto id = EBDetId(cal.id());
+		if(!theEcal->present(id)){
+			cout << "Barrel DetId not present" << endl;
+		}
+
+		auto geo = theEcal->getGeometry(id);
+		if(!geo){
+			cout << "Not an ECAL!" << endl;
+			return;
+		}
+		energyEM->push_back(cal.energyEM());
+		energyHad->push_back(cal.energyHad());
+		eta->push_back(geo->etaPos());
+		phi->push_back(geo->phiPos());
+
+	}
+}
 
 void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalEndcapGeometry* theEcal) {
 	for(auto& cal : calohits) {
 
 		auto id = EEDetId(cal.id());
 		if(!theEcal->present(id)){
-			cout << "DetId not present" << endl;
+			cout << "Endcap DetId not present" << endl;
+		}
+
+		auto geo = theEcal->getGeometry(id);
+		if(!geo){
+			cout << "Not an ECAL!" << endl;
+			return;
+		}
+		energyEM->push_back(cal.energyEM());
+		energyHad->push_back(cal.energyHad());
+		eta->push_back(geo->etaPos());
+		phi->push_back(geo->phiPos());
+
+	}
+}
+
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalPreshowerGeometry* theEcal) {
+	for(auto& cal : calohits) {
+
+		auto id = ESDetId(cal.id());
+		if(!theEcal->present(id)){
+			cout << "Preshower DetId not present" << endl;
 		}
 
 		auto geo = theEcal->getGeometry(id);
@@ -183,7 +224,7 @@ void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const HcalGeometry
 	for(auto& cal: calohits){
 		auto id = HcalDetId(cal.id());
 		if(!theHcal->present(id)){
-			cout << "DetId not present" << endl;
+			cout << "HCAL DetId not present" << endl;
 		}
 		auto geo = theHcal->getGeometry(id);
 		if(!geo) {

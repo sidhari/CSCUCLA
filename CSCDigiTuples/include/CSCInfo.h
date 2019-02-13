@@ -169,12 +169,14 @@ public:
 		return energyEM? energyEM->size() : 0;
 	}
 
-	std::vector<float>* energyEM;
-	std::vector<float>* energyHad;
+	std::vector<float>* energyEM; //GeV
+	std::vector<float>* energyHad; //GeV
 	std::vector<float>* eta;
 	std::vector<float>* phi;
 
-	static std::string ecal(){return "ecal";}
+	static std::string ecalBarrel(){return "ecalBarrel";}
+	static std::string ecalEndcap(){return "ecalEndcap";}
+	static std::string ecalPreshower(){return "ecalPreshower";}
 	static std::string hcal(){return "hcal";}
 };
 

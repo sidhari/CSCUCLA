@@ -25,11 +25,10 @@
 #include <chrono>
 #include <time.h>
 
-
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
-#include "../include/LUTClasses.h"
+#include "../../CSCPatterns/include/PatternConstants.h"
+#include "../../CSCPatterns/include/PatternFinderClasses.h"
+#include "../../CSCPatterns/include/PatternFinderHelperFunctions.h"
+#include "../../CSCPatterns/include/LUTClasses.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
@@ -73,23 +72,6 @@ TH2F* makeNormalizedInXSlices(const TH2F* hist){
 			}
 		}
 	}
-	/*
-	for(int i=0; i < normalized->GetNbinsY()+1; i++){
-		float norm = 0;
-		//calculate integral along p bin
-		for(int j=0;j < normalized->GetNbinsX()+1; j++){
-			norm += normalized->GetBinContent(j,i);
-		}
-		//normalize everything for a given p
-		if(norm){
-			for(int j=0;j < normalized->GetNbinsX()+1; j++){
-				float content = normalized->GetBinContent(i,j);
-				normalized->SetBinContent(j,i,content/norm);
-				//norm += h_multiplicityVsPt_normalized->GetBinContent(i,j);
-			}
-		}
-	}
-	*/
 	return normalized;
 }
 
@@ -125,7 +107,7 @@ int GenStudy(string inputfile, string outputfile, int start=0, int end=-1) {
 	CSCInfo::Comparators comparators(t);
 	CSCInfo::GenParticles gen(t);
 	CSCInfo::SimHits simHits(t);
-	CSCInfo::CaloHit ecaloHits(CSCInfo::CaloHit::ecal(),t);
+	//CSCInfo::CaloHit ecaloHits(CSCInfo::CaloHit::ecal(),t);
 	CSCInfo::CaloHit hcaloHits(CSCInfo::CaloHit::hcal(),t);
 	CSCInfo::PFCandidate pfCand(t);
 
@@ -296,6 +278,7 @@ int GenStudy(string inputfile, string outputfile, int start=0, int end=-1) {
 					}
 				}
 				//cout << "== genEta = " << eta << " genPhi = " << phi << endl;
+				/*
 				for(unsigned int ic = 0; ic < ecaloHits.size(); ic++){
 					//float eEta = ecaloHits.eta->at(ic);
 					//float ePhi = ecaloHits.phi->at(ic);
@@ -303,6 +286,7 @@ int GenStudy(string inputfile, string outputfile, int start=0, int end=-1) {
 					totalECal_emEnergy += ecaloHits.energyEM->at(ic);
 					totalECal_hEnergy += ecaloHits.energyHad->at(ic);
 				}
+				*/
 				for(unsigned int ic = 0; ic < hcaloHits.size(); ic++){
 					//float eEta = hcaloHits.eta->at(ic);
 					//float ePhi = hcaloHits.phi->at(ic);
@@ -841,7 +825,7 @@ int GenStudy(string inputfile, string outputfile, int start=0, int end=-1) {
 		printf("%5s ", CHAMBER_NAMES[ich].c_str());
 		for(unsigned int iich=0; iich < NCHAMBERS; iich++){
 			float prob_iich_given_ich = 0;
-			for(auto ishow: p_showers_correlation_lowPt[ich][iich]) prob_iich_given_ich +=ishow;
+			for(auto ishow: p_showers_correlation_lowPt[ich][iich]) prob_iich_given_ich += ishow;
 			if(prob_iich_given_ich) prob_iich_given_ich /= p_showers_correlation_lowPt[ich][iich].size();
 			printf("%5.3f ", prob_iich_given_ich);
 		}

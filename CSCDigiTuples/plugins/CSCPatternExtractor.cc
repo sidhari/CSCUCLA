@@ -52,7 +52,9 @@ compInfo(tree),
 pfInfo(tree),
 genInfo(tree),
 simHitInfo(tree),
-eeCaloInfo(CSCInfo::CaloHit::ecal(),tree),
+ebCaloInfo(CSCInfo::CaloHit::ecalBarrel(),tree),
+eeCaloInfo(CSCInfo::CaloHit::ecalEndcap(),tree),
+esCaloInfo(CSCInfo::CaloHit::ecalPreshower(),tree),
 hCaloInfo(CSCInfo::CaloHit::hcal(),tree)
 {
 	cout << "-- Starting CSCPatternExtractor --" << endl;
@@ -76,7 +78,9 @@ hCaloInfo(CSCInfo::CaloHit::hcal(),tree)
 	pf_token = consumes<vector<reco::PFCandidate>>(iConfig.getParameter<edm::InputTag>("pfCandTag"));
 
 	theCSC = 0;
-	theEcal = 0;
+	theEcalBarrel = 0;
+	theEcalEndcap = 0;
+	theEcalPreshower = 0;
 	theHcal = 0;
 
 	/* Choose if we are going to write data by selecting muons,
@@ -102,7 +106,9 @@ hCaloInfo(CSCInfo::CaloHit::hcal(),tree)
 			selectMuons = &selectStandaloneMuons;
 			gen_token = consumes<vector<reco::GenParticle>>(iConfig.getParameter<edm::InputTag>("genDigiTag"));
 			sim_token = consumes<vector<PSimHit>>(iConfig.getParameter<edm::InputTag>("simDigiTag"));
+			ebCalo_token = consumes<vector<PCaloHit>>(iConfig.getParameter<edm::InputTag>("ebCaloDigiTag"));
 			eeCalo_token = consumes<vector<PCaloHit>>(iConfig.getParameter<edm::InputTag>("eeCaloDigiTag"));
+			esCalo_token = consumes<vector<PCaloHit>>(iConfig.getParameter<edm::InputTag>("esCaloDigiTag"));
 			hCalo_token = consumes<vector<PCaloHit>>(iConfig.getParameter<edm::InputTag>("hCaloDigiTag"));
 		} else { //default to single muon selection
 			cout <<  "--- Error: Ambiguous Selection --- " << endl;
@@ -185,9 +191,26 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     iSetup.get<MuonGeometryRecord>().get(cscGeom);
     theCSC = cscGeom.product();
 
-    ESHandle<CaloSubdetectorGeometry> ecalGeom;
-    iSetup.get<EcalEndcapGeometryRecord>().get("EcalEndcap",ecalGeom);
-    theEcal = (const EcalEndcapGeometry*)ecalGeom.product();
+    //
+    // ECAL
+    //
+
+    ESHandle<CaloSubdetectorGeometry> ecalBarrelGeom;
+    iSetup.get<EcalBarrelGeometryRecord>().get(EcalBarrelGeometry::producerTag(),ecalBarrelGeom);
+    theEcalBarrel = (const EcalBarrelGeometry*)ecalBarrelGeom.product();
+
+    ESHandle<CaloSubdetectorGeometry> ecalEndcapGeom;
+    iSetup.get<EcalEndcapGeometryRecord>().get(EcalEndcapGeometry::producerTag(),ecalEndcapGeom);
+    theEcalEndcap = (const EcalEndcapGeometry*)ecalEndcapGeom.product();
+
+    ESHandle<CaloSubdetectorGeometry> ecalPreshowerGeom;
+    iSetup.get<EcalPreshowerGeometryRecord>().get(EcalPreshowerGeometry::producerTag(), ecalPreshowerGeom);
+    theEcalPreshower = (const EcalPreshowerGeometry*)ecalPreshowerGeom.product();
+
+
+    //
+    // HCAL
+    //
 
     ESHandle<CaloSubdetectorGeometry> hcalGeom;
     iSetup.get<HcalGeometryRecord>().get(HcalGeometry::producerTag(),hcalGeom);
@@ -207,9 +230,17 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 		iEvent.getByToken(sim_token, simHits);
 		simHitInfo.fill(*simHits);
 
+		edm::Handle<vector<PCaloHit>> ebCaloHits;
+		iEvent.getByToken(ebCalo_token, ebCaloHits);
+		ebCaloInfo.fill(*ebCaloHits, theEcalBarrel);
+
 		edm::Handle<vector<PCaloHit>> eeCaloHits;
 		iEvent.getByToken(eeCalo_token, eeCaloHits);
-		eeCaloInfo.fill(*eeCaloHits, theEcal);
+		eeCaloInfo.fill(*eeCaloHits, theEcalEndcap);
+
+		edm::Handle<vector<PCaloHit>> esCaloHits;
+		iEvent.getByToken(esCalo_token, esCaloHits);
+		esCaloInfo.fill(*esCaloHits, theEcalPreshower);
 
 		edm::Handle<vector<PCaloHit>> hCaloHits;
 		iEvent.getByToken(hCalo_token, hCaloHits);

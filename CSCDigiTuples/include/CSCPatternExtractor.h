@@ -49,7 +49,9 @@
 #include "CSCUCLA/CSCDigiTuples/include/CSCHelper.h"
 
 //temp
+#include "Geometry/EcalAlgo/interface/EcalBarrelGeometry.h"
 #include "Geometry/EcalAlgo/interface/EcalEndcapGeometry.h"
+#include "Geometry/EcalAlgo/interface/EcalPreshowerGeometry.h"
 #include "Geometry/HcalTowerAlgo/interface/HcalGeometry.h"
 
 
@@ -110,11 +112,15 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         //gen
         edm::EDGetTokenT<vector<reco::GenParticle>> gen_token;
         edm::EDGetTokenT<vector<PSimHit>> sim_token;
-        edm::EDGetTokenT<vector<PCaloHit>> eeCalo_token;
+        edm::EDGetTokenT<vector<PCaloHit>> ebCalo_token; //barrel
+        edm::EDGetTokenT<vector<PCaloHit>> eeCalo_token; //endcap
+        edm::EDGetTokenT<vector<PCaloHit>> esCalo_token; //preshower
         edm::EDGetTokenT<vector<PCaloHit>> hCalo_token;
 
         const CSCGeometry *theCSC;
-        const EcalEndcapGeometry* theEcal;
+        const EcalBarrelGeometry* theEcalBarrel;
+        const EcalEndcapGeometry* theEcalEndcap;
+        const EcalPreshowerGeometry* theEcalPreshower;
         const HcalGeometry* theHcal;
 
         MuonServiceProxy *theService;
@@ -137,7 +143,9 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         //gen
         FillGenParticleInfo genInfo;
         FillSimHitsInfo  simHitInfo;
+        FillCaloHitsInfo ebCaloInfo;
         FillCaloHitsInfo eeCaloInfo;
+        FillCaloHitsInfo esCaloInfo;
         FillCaloHitsInfo hCaloInfo;
 
         edm::EDGetTokenT<CSCSegmentCollection> allSegmentsCSCToken;

@@ -24,7 +24,9 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 #include "SimDataFormats/CaloHit/interface/PCaloHit.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
+#include "Geometry/EcalAlgo/interface/EcalBarrelGeometry.h"
 #include "Geometry/EcalAlgo/interface/EcalEndcapGeometry.h"
+#include "Geometry/EcalAlgo/interface/EcalPreshowerGeometry.h"
 #include "Geometry/Records/interface/EcalEndcapGeometryRecord.h"
 #include "Geometry/HcalTowerAlgo/interface/HcalGeometry.h"
 
@@ -331,7 +333,9 @@ public:
 		phi->clear();
 	}
 public:
+	virtual void fill(const vector<PCaloHit>& calHits, const EcalBarrelGeometry* theEcal) ;
 	virtual void fill(const vector<PCaloHit>& calHits, const EcalEndcapGeometry* theEcal) ;
+	virtual void fill(const vector<PCaloHit>& calHits, const EcalPreshowerGeometry* theEcal) ;
 	virtual void fill(const vector<PCaloHit>& calHits, const HcalGeometry* theHcal) ;
 };
 
