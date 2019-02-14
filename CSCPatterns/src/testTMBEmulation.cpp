@@ -164,13 +164,11 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 
 			ChamberHits compHits(ST, RI, EC, CH);
 
-			//if(fillCompHits(compHits, comparators)) return -1;
 			if(compHits.fill(comparators)) return -1;
 
 			vector<CLCTCandidate*> emulatedCLCTs;
 
 			if(searchForMatch(compHits,oldPatterns, emulatedCLCTs,true)){
-			//if(searchForMatch(compHits,oldPatterns, emulatedCLCTs,false)){
 				emulatedCLCTs.clear();
 				//cout << "Something broke" << endl;
 				//return;
@@ -178,27 +176,6 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 				continue;
 			}
 
-			/*
-			if(evt.EventNumber ==1245089719){
-			//if(evt.EventNumber ==1235325654){
-
-			//if(evt.EventNumber ==1246883624){
-				if(emulatedCLCTs.size()){
-				cout << "Printing stuff for shower evt, clcts: " << emulatedCLCTs.size() << endl;
-				printChamber(compHits);
-				//i6098951
-				}
-			}
-
-			if(emulatedCLCTs.size() > 5){
-				cout << "Crazy Event:" << evt.EventNumber << endl;
-				cout << "Run:" << evt.RunNumber << endl;
-				cout << "Lumi:" << evt.LumiSection << endl;
-				cout << "EMU COUNT:" << emulatedCLCTs.size() << endl;
-				cout << "i" << i <<endl;
-				printChamber(compHits);
-			}
-			*/
 
 			//remove 3 layer emulated clcts
 			bool threeLayerChamber = (me11a || me11b) && CH == 11 && EC ==1;
@@ -210,8 +187,9 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 					}
 				}
 			}
+
 			//only take two leading clcts
-			//while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
+			while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
 
 			for(auto emu : emulatedCLCTs){
@@ -234,7 +212,6 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 
 			unsigned int clctsInChamber = 0;
 
-
 			//
 			// Iterate over real clcts
 			//
@@ -252,7 +229,6 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 				float minDistanceToCLCT = 1e5;
 				for(unsigned int iemu=0; iemu < emulatedCLCTs.size(); iemu++){
 					if(find(matchedIndices.begin(), matchedIndices.end(), iemu) != matchedIndices.end()) continue;
-					//float distance = 2.*(clctStripPos - emulatedCLCTs.at(iemu)->keyStrip());
 					float distance = clctHSPos - emulatedCLCTs.at(iemu)->keyHalfStrip();
 					if(abs(distance) <  abs(minDistanceToCLCT)){
 						minDistanceToCLCT = distance;
@@ -289,7 +265,6 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 					cout << "Real CLCT: pat: " << (int)clcts.pattern->at(iclct) << " layers: "<< clcts.quality->at(iclct)<< " pos: "<< clctHSPos <<" [hs]"<< endl;
 					if(closestEmu != -1) {
 						cout << "Emulated: pat: " << emulatedCLCTs.at(closestEmu)->patternId() << " layers: " <<  emulatedCLCTs.at(closestEmu)->layerCount() <<
-								//" pos: " << 2.*emulatedCLCTs.at(closestEmu)->keyStrip() << " [hs]" << endl;
 								" pos: " << emulatedCLCTs.at(closestEmu)->keyHalfStrip() << " [hs]" << endl;
 						printPattern(emulatedCLCTs.at(closestEmu)->_pattern);
 					}else{

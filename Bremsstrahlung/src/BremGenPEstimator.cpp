@@ -105,7 +105,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	// MAKE THE PDFS
 	//
 
-	const unsigned int nPBins = 4;
+	const unsigned int nPBins = 16;
 	const float pLow = 0;
 	const float pHigh = 4000;
 
@@ -121,7 +121,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	vector<EnergyDistributions> distributions;
 	//maps.push_back(ProbabilityMap(0,100));
 
-	float pBinSize = 500;
+	float pBinSize = (pHigh-pLow)/nPBins;
 	for(unsigned int i =0; i < 4000; i+=pBinSize){
 		ProbabilityMap map(i, i+pBinSize);
 		maps.push_back(map);
@@ -272,7 +272,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	// TEMP
 	//
 	start = 0;
-	end = 5;
+	end = 50;
 
 	outF->cd();
 
@@ -350,46 +350,82 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 			hcalProj->SetName(("h_HCAL"+to_string(i)).c_str());
 			hcalProj->Write();
 
-			//ECAL.fill(genP, totalEcalEnergy);
-			//HCAL.fill(genP, totalHcalEnergy);
 
 			//
 			//Iterate through all possible chambers
 			//
-			for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
-				CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
+			for(auto cham: CHAMBER_ST_RI){
 
-				unsigned int EC = c.endcap;
-				unsigned int ST = c.station;
-				unsigned int RI = c.ring;
-				unsigned int CH = c.chamber;
+				/* Since there is sometimes overlap between chambers with the same ring / station
+				 * we currently pick the the chamber in the ring station combination that has the
+				 * largest energy deposit. For instance
+				 *
+				 * ME12-1 : energy = 0.2 10^-3 [units]
+				 * ME12-2 : energy = 0.5 10^-3 [units]
+				 *
+				 * So we pick the larger one. Eventually, want to check overlap region of 5 strips
+				 * and see if one can put together shower that spans multiple chambers
+				 *
+				 */
+				float largestEnergyDeposit = 0;
+				for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
+					CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
-				if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+					unsigned int EC = c.endcap;
+					unsigned int ST = c.station;
+					unsigned int RI = c.ring;
+					unsigned int CH = c.chamber;
 
-				if(ST==1 && RI == 4) continue; //avoid ME11A, since there is weird stuff going on there
+					if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
-				float chamberSimHitEnergyLoss = 0;
-				for(unsigned int isim=0; isim < simHits.size(); isim++){
-					if(simHits.ch_id->at(isim) != chamberHash) continue;
-					chamberSimHitEnergyLoss += simHits.energyLoss->at(isim);
+					if(ST==1 && RI == 4) continue; //avoid ME11A, since there is weird stuff going on there
+
+					//only look at chamber type we are considering
+					if(!(cham[0]==ST && cham[1]==RI)) continue;
+					float chamberSimHitEnergyLoss = 0;
+					for(unsigned int isim=0; isim < simHits.size(); isim++){
+						if(simHits.ch_id->at(isim) != chamberHash) continue;
+						chamberSimHitEnergyLoss += simHits.energyLoss->at(isim);
+
+					}
+
+					if(chamberSimHitEnergyLoss > largestEnergyDeposit) largestEnergyDeposit = chamberSimHitEnergyLoss;
 
 				}
+				if(!largestEnergyDeposit) continue; //if no energy deposit
+				TH1D* hist = MuonChamberPdfs[cham]->projection(largestEnergyDeposit);
+				hist->SetName(("h_ME"+to_string(cham[0])+to_string(cham[1])+"_"+to_string(i)).c_str());
+				bestGuess->Multiply(hist);
+				hist->Write();
+			}
+			//normalize the best guess
+			//double scale = bestGuess->GetXaxis()->GetBinWidth(1)/bestGuess->GetIntegral();
+			Double_t scale = 1./bestGuess->Integral();
+			bestGuess->Scale(scale);
+			bestGuess->Write();
+			/* Look at integral of bestGuess distribution,
+			 * calculate momentum at which it is 90% likely to be higher than
+			 *
+			 * print this momentum and gen momentum, and see how often you are correct
+			 *
+			 */
+			auto bestGuessIntegral = bestGuess->GetIntegral();
 
-				if(!chamberSimHitEnergyLoss) continue;
-				for(auto cham: CHAMBER_ST_RI){
-					if(cham[0]==ST && cham[1]==RI){
-						//cout << "EC " << EC << " CH " << CH << endl;
-						TH1D* hist = MuonChamberPdfs[cham]->projection(chamberSimHitEnergyLoss);
-						hist->SetName(("h_ME"+to_string(ST)+to_string(RI)+"_"+to_string(i)).c_str());
-						bestGuess->Multiply(hist);
-						hist->Write();
-						//MuonChamberPdfs[cham]->projection(chamberSimHitEnergyLoss)->Write();
-						//MuonChamberPdfs[cham]->fill(genP, chamberSimHitEnergyLoss);
-					}
+			float probThreshold = 0.1; //guess momentum at which likelihood true momentum being higher than threshold is 90%
+
+			for(unsigned int ibin=0; ibin < bestGuess->GetNbinsX(); ibin++){
+				float thisP = bestGuess->GetBinCenter(ibin);
+
+				//cout << "p: " << thisP << " int: " << bestGuessIntegral[ibin] << endl;
+				if(bestGuessIntegral[ibin] > probThreshold){
+					cout << "Limit is :" << thisP << " genP = " << genP ;
+					if(thisP < genP) cout << "\033[1;32m right\033[0m";
+					else cout << "\033[1;31m wrong \033[0m";
+					cout << endl;
+					break;
 				}
 			}
-			bestGuess->Write();
-		}
+	}
 
 	for(auto& map : maps){
 		map.print();
@@ -406,13 +442,24 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 		float probError[msize];
 		float pError[msize];
 
+
+		TH1F* num = new TH1F((DETECTOR_NAMES[i]+"_num").c_str(),"",nPBins, pLow,pHigh);
+		TH1F* den = new TH1F((DETECTOR_NAMES[i]+"_den").c_str(),"",nPBins, pLow,pHigh);
+
 		for(unsigned int im=0; im < maps.size(); im++){
 			prob[im] = maps.at(im).probabilities()[i];
 			p[im] = maps.at(im).midP();
 			probError[im] = 0;
 			pError[im] = pBinSize/2.;
+
+			//cout << "Filling bin " << num->GetBin(maps.at(im).midP()) << " with val: " << maps.at(im).numerators()[i] << endl;
+
+			num->SetBinContent(im+1, maps.at(im).numerators()[i]);
+			den->SetBinContent(im+1, maps.at(im).denominators()[i]);
 		}
 
+		num->Write();
+		den->Write();
 		TGraphErrors* g = new TGraphErrors(msize, p, prob, pError, probError);
 		g->SetName(DETECTOR_NAMES[i].c_str());
 		g->SetTitle(DETECTOR_NAMES[i].c_str());

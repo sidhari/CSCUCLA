@@ -113,6 +113,7 @@ def binomial_divide(h1, h2, confint=clopper_pearson, force_lt_1=True):
         y.append(p_hat)
         eyl.append(p_hat - a)
         eyh.append(b - p_hat)
+
     eff = ROOT.TGraphAsymmErrors(len(x), *[array('d', obj) for obj in (x,y,exl,exh,eyl,eyh)])
     return eff, y, eyl, eyh
 

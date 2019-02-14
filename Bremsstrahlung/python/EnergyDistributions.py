@@ -25,6 +25,9 @@ for P in range(0, maxP+pBinSize, pBinSize):
     pBins.append(P)
 
 
+
+
+fits =[]
 for detector in detectors:
     can = p.Canvas(lumi='')
     
@@ -35,10 +38,18 @@ for detector in detectors:
         #detector + '_energy'+ pBins[i]+'_'+pBins[i+1]
     
         plot = p.Plot(h_name,f,'',legType='l', option='hist')
+        
+        
+        fit = r.TF1("f%s_%i"%(detector, i),"landau",0,0.3*plot.GetXaxis().GetXmax())
+        fits.append(fit)
         plot.legName = '#splitline{#bf{%4i #leq P < %4i}}{Entries: %i}'%(pBins[i], pBins[i+1], plot.GetEntries())
         #plot.GetYaxis().SetRangeUser(0,0.5)
         #plot.Fit("landau")
         can.addMainPlot(plot)
+        fit.SetParameter(0,plot.GetMaximum())
+        fit.SetParameter(1,plot.GetXaxis().GetBinCenter(plot.GetMaximumBin()))
+        plot.Fit("f%s_%i"%(detector, i), 'R')
+        fit.Draw('same')
         #plot.Fit("landau")
 
     

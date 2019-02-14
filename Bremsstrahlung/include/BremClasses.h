@@ -317,6 +317,8 @@ private:
 	bool _isCalculated;
 
 	float _probabilities[NDETECTORS];
+	unsigned int _numerators[NDETECTORS];
+	unsigned int _denominators[NDETECTORS];
 	float _correlations [NDETECTORS][NDETECTORS];
 	/*
 	float _showerThresholds[NDETECTORS] = {1.5,
@@ -338,6 +340,14 @@ private:
 public:
 	const float* probabilities() const{
 		return _probabilities;
+	}
+
+	const unsigned int* numerators() const{
+		return _numerators;
+	}
+
+	const unsigned int* denominators() const {
+		return _denominators;
 	}
 
 	/*

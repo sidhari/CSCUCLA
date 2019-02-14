@@ -12,6 +12,15 @@ ProbabilityMap::ProbabilityMap(float pLow, float pHigh) {
 	_pLow = pLow;
 	_pHigh = pHigh;
 	_isCalculated = false;
+
+	for(unsigned int i =0; i < NDETECTORS; i++){
+		_probabilities[i] = 0;
+		_numerators[i] = 0;
+		_denominators[i] = 0;
+		for(unsigned int j=0; j < NDETECTORS; j++){
+			_correlations[i][j] = 0;
+		}
+	}
 	/*
 	_showerThresholds = {1.5,
 						0.25,
@@ -69,9 +78,13 @@ void ProbabilityMap::calculate(){
 		 */
 
 		for(unsigned int i=0; i < NDETECTORS; i++){
-			if(eventHasEnergy[i]) hasShower[i].push_back(eventHasShower[i]);
-			for(unsigned int j=0; j < NDETECTORS; j++){
-				if(eventHasShower[i] && eventHasEnergy[j]) hasShowerCorrelation[i][j].push_back(eventHasShower[j]);
+			if(eventHasEnergy[i]) {
+				hasShower[i].push_back(eventHasShower[i]);
+				_denominators[i]++;
+				if(eventHasShower[i]) _numerators[i]++;
+				for(unsigned int j=0; j < NDETECTORS; j++){
+					if(eventHasShower[i] && eventHasEnergy[j]) hasShowerCorrelation[i][j].push_back(eventHasShower[j]);
+				}
 			}
 		}
 	}
