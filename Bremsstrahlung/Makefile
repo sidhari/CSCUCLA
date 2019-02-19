@@ -12,7 +12,7 @@ CSCPROJLIBS=$(CSCLIBDIR)/PatternFinderClasses_cpp.so $(CSCLIBDIR)/PatternFinderH
 
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
-all: sub-make $(PROJLIBS) $(SRCDIR)/BremGenPEstimator $(SRCDIR)/GenStudy $(SRCDIR)/SimVsRecSanityCheck
+all: sub-make $(PROJLIBS) $(SRCDIR)/BremGenPEstimator $(SRCDIR)/GenStudy $(SRCDIR)/SimVsRecSanityCheck $(SRCDIR)/BremPDFBuilder
 
 
 # Make shared libraries to minimize code compilation, but primarily to

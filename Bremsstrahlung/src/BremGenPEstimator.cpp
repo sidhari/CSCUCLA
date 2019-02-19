@@ -32,13 +32,14 @@
 #include "../../CSCPatterns/include/PatternFinderHelperFunctions.h"
 #include "../../CSCPatterns/include/LUTClasses.h"
 #include "../include/BremClasses.h"
+#include "../include/BremConstants.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
 using namespace std;
-
+using namespace brem;
 
 
 float dr(float eta1, float phi1, float eta2, float phi2){
@@ -80,14 +81,14 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	//
 
 	//const float PI = 3.14159;
-	const float DR_CUT = 0.6;
+	//const float DR_CUT = 0.6;
 
 	//
 	// SET INPUT BRANCHES
 	//
 
 	CSCInfo::Event evt(t);
-	//CSCInfo::Muons muons(t);
+	CSCInfo::Muons muons(t);
 	//CSCInfo::Segments segments(t);
 	CSCInfo::RecHits recHits(t);
 	//CSCInfo::LCTs lcts(t);
@@ -105,23 +106,24 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	// MAKE THE PDFS
 	//
 
-	const unsigned int nPBins = 16;
-	const float pLow = 0;
-	const float pHigh = 4000;
-
-	PDF ECAL(nPBins, pLow,pHigh,20, 0, 20); //sim energy deposited in ecal
-	PDF HCAL(nPBins, pLow,pHigh,20, 0, 5);
+	TFile* pdfFile = TFile::Open("/uscms/home/wnash/eos/MuonGun/PDF-FullSans6.root");
+	if(!pdfFile){
+		cout << "Error, can't load PDFs" << endl;
+		return -1;
+	}
+	PDF ECAL("ECAL",pdfFile); //sim energy deposited in ecal
+	PDF HCAL("HCAL",pdfFile);
 
 	map<const unsigned int*, PDF*> MuonChamberPdfs;
-	for(auto cham: CHAMBER_ST_RI){
-		MuonChamberPdfs[cham] = new PDF(nPBins, pLow, pHigh,20,0,1e-3);
+	for(unsigned int im=0; im < NCHAMBERS; im++) {
+		MuonChamberPdfs[CHAMBER_ST_RI[im]] = new PDF(CHAMBER_NAMES[im],pdfFile);
 	}
 
 	vector<ProbabilityMap> maps;
 	vector<EnergyDistributions> distributions;
-	//maps.push_back(ProbabilityMap(0,100));
 
-	float pBinSize = (pHigh-pLow)/nPBins;
+
+	float pBinSize = (P_HIGH-P_LOW)/NPBINS;
 	for(unsigned int i =0; i < 4000; i+=pBinSize){
 		ProbabilityMap map(i, i+pBinSize);
 		maps.push_back(map);
@@ -129,12 +131,36 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 		distributions.push_back(e);
 	}
 
-	//ProbabilityMap highP(3000,4000);
+	//
+	// Normalize the PDFs
+	//
+	ECAL.normalize();
+	HCAL.normalize();
+	for(auto& cham : MuonChamberPdfs) {
+		cham.second->normalize();
+	}
 
+
+	TH1F* pullDistribution = new TH1F("pullDistribution", "PullDistribution; (GenP-EstP) / SigmaEst; Muons", 100, -5, 5);
+
+	TH1F* sigmaDistribution = new TH1F("sigmaDistribution", "SigmaDistribution; SigEstimate [GeV]; Muons", NPBINS-1,P_LOW,P_HIGH);
+	TH2F* genPVsSigma = new TH2F("genPVsSigma","genPVSigma; SigEstimate [GeV]; gen P [GeV]", NPBINS-1, P_LOW, P_HIGH, NPBINS, P_LOW, P_HIGH);
+
+	//threshold for pdf
+	const unsigned int nlevels = 4;
+	const float  confLevels[nlevels] = {0.6827, 0.90, 0.95,0.99};
+	//dChi2 = -2D ln L levels
+	const float  dChi2[nlevels] = {1, 2.71, 3.84,6.63};
+	unsigned int nGenMuons = 0;
+	//unsigned int nInLimits[nlevels] = {0,0,0,0};
+
+	outF->cd();
+	const int PRINT_LIMIT = 50;
 
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
+
 
 	for(int i = start; i < end; i++) {
 		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
@@ -152,6 +178,12 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 			continue;
 		}
 
+		//
+		// RECO P
+		//
+
+		float recoP = -1;
+
 		float totalEcalEnergy = 0;
 		float totalHcalEnergy = 0;
 
@@ -162,7 +194,25 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 			double theta = 2.*TMath::ATan(TMath::Exp(-eta));
 			if(TMath::Sin(theta)) genP = pt/TMath::Sin(theta);
 
+
+			//find associated reco muon momentum
+			float smallestRecoDr = 1e4;
+			for(unsigned int im=0; im < muons.size(); im++){
+				double reco_pt = muons.pt->at(im);
+				double reco_phi = muons.phi->at(im);
+				double reco_eta = muons.eta->at(im);
+				double reco_theta = 2.*TMath::ATan(TMath::Exp(reco_eta));
+				if(TMath::Sin(reco_theta)) {
+					float thisReco_P = reco_pt/TMath::Sin(reco_theta);
+					if(dr(eta,phi, reco_eta, reco_phi) < smallestRecoDr){
+						smallestRecoDr = dr(eta,phi, reco_eta, reco_phi);
+						recoP = thisReco_P;
+					}
+				}
+			}
+
 			//find energy associated with muon in ECAL
+
 			for(unsigned int ic = 0; ic < ebcaloHits.size(); ic++){
 				float ephi =ebcaloHits.phi->at(ic);
 				float eeta =ebcaloHits.eta->at(ic);
@@ -197,240 +247,177 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 			}
 		}
 
-		ECAL.fill(genP, totalEcalEnergy);
-		HCAL.fill(genP, totalHcalEnergy);
-
 		energyDeposits.setDetector("ECAL", totalEcalEnergy);
 		energyDeposits.setDetector("HCAL", totalHcalEnergy);
 
-		/*
-		for(auto& map: maps){
-			map.fill(genP, "ECAL", totalEcalEnergy);
-			map.fill(genP, "HCAL", totalHcalEnergy);
-		}
-		*/
+		bool WRITE_INDIVIDUAL_HISTS = true;
 
-		//highP.fill(genP,"ECAL",totalEcalEnergy);
-		//highP.fill(genP,"HCAL",totalHcalEnergy);
+		TH1F* h_genP = new TH1F(("h_genP"+to_string(i)).c_str(), "h_genP; Gen P [GeV]; Probability", NPBINS, P_LOW, P_HIGH);
+		h_genP->Fill(genP);
+		if(WRITE_INDIVIDUAL_HISTS)h_genP->Write();
+
+		TH1D* ecalProj = ECAL.projection(totalEcalEnergy);
+		TH1D* bestGuess = (TH1D*)ecalProj->Clone(("h_bestGuess"+to_string(i)).c_str());
+		ecalProj->SetName(("h_ECAL"+to_string(i)).c_str());
+		if(WRITE_INDIVIDUAL_HISTS) ecalProj->Write();
+		TH1D* hcalProj = HCAL.projection(totalHcalEnergy);
+		bestGuess->Multiply(hcalProj);
+		hcalProj->SetName(("h_HCAL"+to_string(i)).c_str());
+		if(WRITE_INDIVIDUAL_HISTS) hcalProj->Write();
+
 
 		//
 		//Iterate through all possible chambers
 		//
-		for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
-			CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
+		for(unsigned int im=0; im < NCHAMBERS; im++){
+			auto cham = CHAMBER_ST_RI[im];
 
-			unsigned int EC = c.endcap;
-			unsigned int ST = c.station;
-			unsigned int RI = c.ring;
-			unsigned int CH = c.chamber;
+			/* Since there is sometimes overlap between chambers with the same ring / station
+			 * we currently pick the the chamber in the ring station combination that has the
+			 * largest energy deposit. For instance
+			 *
+			 * ME12-1 : energy = 0.2 10^-3 [units]
+			 * ME12-2 : energy = 0.5 10^-3 [units]
+			 *
+			 * So we pick the larger one. Eventually, want to check overlap region of 5 strips
+			 * and see if one can put together shower that spans multiple chambers
+			 *
+			 */
+			float largestEnergyDeposit = 0;
+			for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
+				CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
-			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+				unsigned int EC = c.endcap;
+				unsigned int ST = c.station;
+				unsigned int RI = c.ring;
+				unsigned int CH = c.chamber;
 
-			if(ST==1 && RI == 4) continue; //avoid ME11A, since there is weird stuff going on there
+				if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
-			float chamberSimHitEnergyLoss = 0;
-			for(unsigned int isim=0; isim < simHits.size(); isim++){
-				if(simHits.ch_id->at(isim) != chamberHash) continue;
-				chamberSimHitEnergyLoss += simHits.energyLoss->at(isim);
+				if(ST==1 && RI == 4) continue; //avoid ME11A, since there is weird stuff going on there
 
-			}
-			if(!chamberSimHitEnergyLoss) continue;
-			//for(auto cham: CHAMBER_ST_RI){
-			for(unsigned int ic=0; ic < NCHAMBERS;ic++){
-				auto cham = CHAMBER_ST_RI[ic];
-				if(cham[0]==ST && cham[1]==RI){
-					MuonChamberPdfs[cham]->fill(genP, chamberSimHitEnergyLoss);
+				//only look at chamber type we are considering
+				if(!(cham[0]==ST && cham[1]==RI)) continue;
+				float chamberSimHitEnergyLoss = 0;
+				for(unsigned int isim=0; isim < simHits.size(); isim++){
+					if(simHits.ch_id->at(isim) != chamberHash) continue;
+					chamberSimHitEnergyLoss += simHits.energyLoss->at(isim);
 
-					energyDeposits.setDetector(CHAMBER_NAMES[ic], chamberSimHitEnergyLoss);
-					/*
-					for(auto& map: maps){
-						map.fill(genP, CHAMBER_NAMES[ic], chamberSimHitEnergyLoss);
-					}
-					*/
-					//highP.fill(genP, CHAMBER_NAMES[ic], chamberSimHitEnergyLoss);
 				}
+
+				if(chamberSimHitEnergyLoss > largestEnergyDeposit) largestEnergyDeposit = chamberSimHitEnergyLoss;
+
 			}
+			if(!largestEnergyDeposit) continue; //if no energy deposit
+
+
+			energyDeposits.setDetector(CHAMBER_NAMES[im], largestEnergyDeposit);
+			/*
+				for(auto& map: maps){
+					map.fill(genP, CHAMBER_NAMES[ic], chamberSimHitEnergyLoss);
+				}
+			 */
+			//highP.fill(genP, CHAMBER_NAMES[ic], chamberSimHitEnergyLoss);
+
+
+
+			TH1D* hist = MuonChamberPdfs[cham]->projection(largestEnergyDeposit);
+			hist->SetName(("h_ME"+to_string(cham[0])+to_string(cham[1])+"_"+to_string(i)).c_str());
+			bestGuess->Multiply(hist);
+			if(WRITE_INDIVIDUAL_HISTS)hist->Write();
 		}
+
 		for(auto& map: maps){
 			map.fill(genP, energyDeposits);
 		}
 		for(auto& d : distributions){
 			d.fill(genP, energyDeposits);
 		}
-	}
-
-	//
-	// Normalize the PDFs
-	//
-	ECAL.normalize();
-	HCAL.normalize();
-	for(auto& cham : MuonChamberPdfs) {
-		cham.second->normalize();
-	}
-
-	//
-	// TEMP
-	//
-	start = 0;
-	end = 50;
-
-	outF->cd();
+		//normalize the best guess
+		//double scale = bestGuess->GetXaxis()->GetBinWidth(1)/bestGuess->GetIntegral();
+		//Double_t scale = 1./bestGuess->Integral();
+		//bestGuess->Scale(scale);
+		if(WRITE_INDIVIDUAL_HISTS)bestGuess->Write();
+		/* Look at integral of bestGuess distribution,
+		 * calculate momentum at which it is 90% likely to be higher than
+		 *
+		 * print this momentum and gen momentum, and see how often you are correct
+		 *
+		 */
+		//auto bestGuessIntegral = bestGuess->GetIntegral();
 
 
-	for(int i = start; i < end; i++) {
-			if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
-
-			t->GetEntry(i);
-
-			//
-			// GET GEN P
-			//
-			float genP = 0;
-			if(gen.size() > 1){
-				cout << "Error more than one gen particle. quitting..." << endl;
-				continue;
-			}
-
-			float totalEcalEnergy = 0;
-			float totalHcalEnergy = 0;
-
-			for(unsigned int ig  =0; ig < gen.size(); ig++){
-				double pt = gen.pt->at(ig);
-				double phi = gen.phi->at(ig);
-				double eta = gen.eta->at(ig);
-				double theta = 2.*TMath::ATan(TMath::Exp(-eta));
-				if(TMath::Sin(theta)) genP = pt/TMath::Sin(theta);
-
-				//find energy associated with muon in ECAL
-
-				for(unsigned int ic = 0; ic < ebcaloHits.size(); ic++){
-					float ephi =ebcaloHits.phi->at(ic);
-					float eeta =ebcaloHits.eta->at(ic);
-					if(dr(eta,phi, eeta,ephi) < DR_CUT){
-						totalEcalEnergy += ebcaloHits.energyEM->at(ic);
-						totalEcalEnergy += ebcaloHits.energyHad->at(ic);
-					}
-				}
-
-				for(unsigned int ic = 0; ic < eecaloHits.size(); ic++){
-					float ephi =eecaloHits.phi->at(ic);
-					float eeta =eecaloHits.eta->at(ic);
-					if(dr(eta,phi, eeta,ephi) < DR_CUT){
-						totalEcalEnergy += eecaloHits.energyEM->at(ic);
-						totalEcalEnergy += eecaloHits.energyHad->at(ic);
-					}
-				}
-
-				for(unsigned int ic = 0; ic < escaloHits.size(); ic++){
-					float ephi =escaloHits.phi->at(ic);
-					float eeta =escaloHits.eta->at(ic);
-					if(dr(eta,phi, eeta,ephi) < DR_CUT){
-						totalEcalEnergy += escaloHits.energyEM->at(ic);
-						totalEcalEnergy += escaloHits.energyHad->at(ic);
-					}
-				}
-
-				//find energy associted with muon in HCAL
-				for(unsigned int ic = 0; ic < hcaloHits.size(); ic++){
-					totalHcalEnergy += hcaloHits.energyEM->at(ic);
-					totalHcalEnergy += hcaloHits.energyHad->at(ic);
-				}
-			}
-
-			TH1F* h_genP = new TH1F(("h_genP"+to_string(i)).c_str(), "h_genP; Gen P [GeV]; Probability", nPBins, pLow, pHigh);
-			h_genP->Fill(genP);
-			h_genP->Write();
-
-			TH1D* ecalProj = ECAL.projection(totalEcalEnergy);
-			TH1D* bestGuess = (TH1D*)ecalProj->Clone(("h_bestGuess"+to_string(i)).c_str());
-			ecalProj->SetName(("h_ECAL"+to_string(i)).c_str());
-			ecalProj->Write();
-			TH1D* hcalProj = HCAL.projection(totalHcalEnergy);
-			bestGuess->Multiply(hcalProj);
-			hcalProj->SetName(("h_HCAL"+to_string(i)).c_str());
-			hcalProj->Write();
 
 
-			//
-			//Iterate through all possible chambers
-			//
-			for(auto cham: CHAMBER_ST_RI){
 
-				/* Since there is sometimes overlap between chambers with the same ring / station
-				 * we currently pick the the chamber in the ring station combination that has the
-				 * largest energy deposit. For instance
-				 *
-				 * ME12-1 : energy = 0.2 10^-3 [units]
-				 * ME12-2 : energy = 0.5 10^-3 [units]
-				 *
-				 * So we pick the larger one. Eventually, want to check overlap region of 5 strips
-				 * and see if one can put together shower that spans multiple chambers
-				 *
-				 */
-				float largestEnergyDeposit = 0;
-				for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
-					CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
+		if(i < PRINT_LIMIT)cout << "Generated P: \033[1m" << genP << "\033[0m" << endl;
+		nGenMuons++;
+		if(i < PRINT_LIMIT)cout << " Reco P: " << recoP << endl;
 
-					unsigned int EC = c.endcap;
-					unsigned int ST = c.station;
-					unsigned int RI = c.ring;
-					unsigned int CH = c.chamber;
+		//
+		// most likely p, according to likelihood including all our chambers
+		//
 
-					if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+		const unsigned int mostProbableBin = bestGuess->GetMaximumBin();
+		float mostProbableP = bestGuess->GetBinCenter(mostProbableBin);
+		float likelihoodAtMostProbableP = bestGuess->GetMaximum();
+		float minLnLikelihood = -2* TMath::Log(likelihoodAtMostProbableP);
+		if(i < PRINT_LIMIT)cout << "Most Probable P: " << mostProbableP << endl;
 
-					if(ST==1 && RI == 4) continue; //avoid ME11A, since there is weird stuff going on there
+		//TODO: smart iteration...
+		for(unsigned int it=0; it < nlevels; it++){
 
-					//only look at chamber type we are considering
-					if(!(cham[0]==ST && cham[1]==RI)) continue;
-					float chamberSimHitEnergyLoss = 0;
-					for(unsigned int isim=0; isim < simHits.size(); isim++){
-						if(simHits.ch_id->at(isim) != chamberHash) continue;
-						chamberSimHitEnergyLoss += simHits.energyLoss->at(isim);
+			//initialize to edges of histograms
+			//float lowEdgeP = bestGuess->GetBinLowEdge(1);
+			float lowEdgeP = bestGuess->GetBinCenter(1);
+			//float highEdgeP = bestGuess->GetBinLowEdge(bestGuess->GetNbinsX()+1);
+			float highEdgeP = bestGuess->GetBinCenter(bestGuess->GetNbinsX());
 
-					}
+			//find lower bound of confidence interval
+			for(unsigned int ibin =mostProbableBin; ibin > 0; ibin--){
+				float likelihood = bestGuess->GetBinContent(ibin);
+				float lnLikelihood = -2*TMath::Log(likelihood);
+				float deltaLnLikelihood = lnLikelihood - minLnLikelihood;
 
-					if(chamberSimHitEnergyLoss > largestEnergyDeposit) largestEnergyDeposit = chamberSimHitEnergyLoss;
-
-				}
-				if(!largestEnergyDeposit) continue; //if no energy deposit
-				TH1D* hist = MuonChamberPdfs[cham]->projection(largestEnergyDeposit);
-				hist->SetName(("h_ME"+to_string(cham[0])+to_string(cham[1])+"_"+to_string(i)).c_str());
-				bestGuess->Multiply(hist);
-				hist->Write();
-			}
-			//normalize the best guess
-			//double scale = bestGuess->GetXaxis()->GetBinWidth(1)/bestGuess->GetIntegral();
-			Double_t scale = 1./bestGuess->Integral();
-			bestGuess->Scale(scale);
-			bestGuess->Write();
-			/* Look at integral of bestGuess distribution,
-			 * calculate momentum at which it is 90% likely to be higher than
-			 *
-			 * print this momentum and gen momentum, and see how often you are correct
-			 *
-			 */
-			auto bestGuessIntegral = bestGuess->GetIntegral();
-
-			float probThreshold = 0.1; //guess momentum at which likelihood true momentum being higher than threshold is 90%
-
-			for(unsigned int ibin=0; ibin < bestGuess->GetNbinsX(); ibin++){
-				float thisP = bestGuess->GetBinCenter(ibin);
-
-				//cout << "p: " << thisP << " int: " << bestGuessIntegral[ibin] << endl;
-				if(bestGuessIntegral[ibin] > probThreshold){
-					cout << "Limit is :" << thisP << " genP = " << genP ;
-					if(thisP < genP) cout << "\033[1;32m right\033[0m";
-					else cout << "\033[1;31m wrong \033[0m";
-					cout << endl;
+				//lowEdgeP = bestGuess->GetBinLowEdge(ibin);
+				lowEdgeP = bestGuess->GetBinCenter(ibin);
+				//cout << "lowEdge: " << lowEdgeP << " deltaLnLikelihood = " << deltaLnLikelihood << endl;
+				if(deltaLnLikelihood > dChi2[it]){
 					break;
 				}
 			}
+
+
+			//find upper bound of confidence interval
+			for(unsigned int ibin =mostProbableBin; (int)ibin < bestGuess->GetNbinsX()+1; ibin++){
+				float likelihood = bestGuess->GetBinContent(ibin);
+				float lnLikelihood = -2*TMath::Log(likelihood);
+				float deltaLnLikelihood = lnLikelihood -minLnLikelihood ;
+
+				//highEdgeP = bestGuess->GetBinLowEdge(ibin+1);
+				highEdgeP = bestGuess->GetBinCenter(ibin);
+				//cout << "highEdge: " << highEdgeP << " deltaLnLikelihood = " << deltaLnLikelihood << endl;
+				if(deltaLnLikelihood > dChi2[it]){
+					break;
+				}
+			}
+
+			if(i < PRINT_LIMIT)cout << " Brem " << 100*confLevels[it] << "% P Limits: [ " << lowEdgeP<< ", " << highEdgeP << " ]" << endl;
+			if(it == 0){
+				float sigmaEst = (highEdgeP-lowEdgeP)/2.;
+				pullDistribution->Fill((genP-mostProbableP)/sigmaEst);
+				sigmaDistribution->Fill(sigmaEst);
+				genPVsSigma->Fill(sigmaEst, genP);
+			}
+		}
+
+
 	}
 
 	for(auto& map : maps){
 		map.print();
 	}
-	//highP.print();
+
 
 	outF->cd();
 
@@ -443,8 +430,8 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 		float pError[msize];
 
 
-		TH1F* num = new TH1F((DETECTOR_NAMES[i]+"_num").c_str(),"",nPBins, pLow,pHigh);
-		TH1F* den = new TH1F((DETECTOR_NAMES[i]+"_den").c_str(),"",nPBins, pLow,pHigh);
+		TH1F* num = new TH1F((DETECTOR_NAMES[i]+"_num").c_str(),"",NPBINS, P_LOW,P_HIGH);
+		TH1F* den = new TH1F((DETECTOR_NAMES[i]+"_den").c_str(),"",NPBINS, P_LOW,P_HIGH);
 
 		for(unsigned int im=0; im < maps.size(); im++){
 			prob[im] = maps.at(im).probabilities()[i];
@@ -481,6 +468,10 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 			hist->Write();
 		}
 	}
+
+	pullDistribution->Write();
+	sigmaDistribution->Write();
+	genPVsSigma->Write();
 
 	outF->Close();
 

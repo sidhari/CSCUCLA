@@ -118,8 +118,12 @@ public:
 		_isNormalized = false;
 	}
 
-	PDF(unsigned int xBins, float xLow, float xHigh, unsigned int yBins, float yLow, float yHigh) : PDF(){
-		_scatterPlot = new TH2F("","",xBins, xLow, xHigh, yBins, yLow,yHigh);
+	PDF(const std::string& name,unsigned int xBins, float xLow, float xHigh, unsigned int yBins, float yLow, float yHigh) : PDF(){
+		_scatterPlot = new TH2F(name.c_str(),name.c_str(),xBins, xLow, xHigh, yBins, yLow,yHigh);
+	}
+
+	PDF(const std::string& name, TFile* f) : PDF(){
+		_scatterPlot = (TH2F*)f->Get(name.c_str());
 	}
 
 	~PDF(){
@@ -138,7 +142,7 @@ public:
 	int normalize() {
 		if(_isNormalized) return 0;
 		//normalized in Y first, then in X
-		_scatterPlotNorm = makeNormalizedInXSlices(makeNormalizedInYSlices(_scatterPlot));
+		_scatterPlotNorm = makeNormalizedInYSlices(_scatterPlot);
 		_isNormalized = true;
 		return 0;
 	}

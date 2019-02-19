@@ -42,20 +42,22 @@ for detector in detectors:
         
         fit = r.TF1("f%s_%i"%(detector, i),"landau",0,0.3*plot.GetXaxis().GetXmax())
         fits.append(fit)
-        plot.legName = '#splitline{#bf{%4i #leq P < %4i}}{Entries: %i}'%(pBins[i], pBins[i+1], plot.GetEntries())
+        plot.legName = '#splitline{#bf{%4i #leq P < %4i}}{Entries: %i, Overflow: %i}'%(pBins[i], pBins[i+1], plot.GetEntries(), plot.GetBinContent(plot.GetXaxis().GetNbins()+1))
         #plot.GetYaxis().SetRangeUser(0,0.5)
         #plot.Fit("landau")
+        #add overflow to last bin
+        plot.AddBinContent(plot.GetXaxis().GetNbins(), plot.GetBinContent(plot.GetXaxis().GetNbins()+1))
         can.addMainPlot(plot)
         fit.SetParameter(0,plot.GetMaximum())
         fit.SetParameter(1,plot.GetXaxis().GetBinCenter(plot.GetMaximumBin()))
-        plot.Fit("f%s_%i"%(detector, i), 'R')
-        fit.Draw('same')
+        #plot.Fit("f%s_%i"%(detector, i), 'R')
+        #fit.Draw('same')
         #plot.Fit("landau")
 
     
     leg = can.makeLegend(pos='tr')
     leg.resizeHeight(2)
-    leg.moveLegend(X=-0.4)
+    leg.moveLegend(X=-0.3)
     if detector in ['ECAL', 'HCAL']:
         can.firstPlot.GetXaxis().SetTitle('Energy Deposition [GeV]')
     else:
