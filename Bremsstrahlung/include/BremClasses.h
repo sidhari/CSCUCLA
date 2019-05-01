@@ -9,6 +9,7 @@
 #define CSCPATTERNS_INCLUDE_BREMCLASSES_H_
 
 #include <TH2F.h>
+#include <TGraphAsymmErrors.h>
 #include <TFile.h>
 #include <iostream>
 
@@ -24,7 +25,8 @@ const float CSC_SHOWER_THRESHOLD = 0.0001; //PULLED OUT OF THIN AIR, NEED TO TUN
 
 const unsigned int NDETECTORS = NCHAMBERS+2; //all muon chambers + ECAL and HCAL
 //not done in the smartest way...
-const std::string DETECTOR_NAMES[NDETECTORS] = {"ECAL",
+const std::string DETECTOR_NAMES[NDETECTORS] = {
+		"ECAL",
 		"HCAL",
 		"ME11B",
 		"ME11A",
@@ -39,7 +41,8 @@ const std::string DETECTOR_NAMES[NDETECTORS] = {"ECAL",
 };
 
 //TODO: all made up, come up with definition!
-const float SHOWER_THRESHOLDS[NDETECTORS] = {1.5,
+const float SHOWER_THRESHOLDS[NDETECTORS] = {
+		1.5,
 		0.15,
 		0.0001,
 		0.0001,
@@ -53,44 +56,73 @@ const float SHOWER_THRESHOLDS[NDETECTORS] = {1.5,
 		0.0001
 };
 
+//describes (energy) boundaries, used for creating histograms if you want log binning, etc
+class LogBounds {
+public:
+	LogBounds(float minPow10, float maxPow10);
+    float* bins(unsigned int nbins) const;
+	float max() const {return _maxPow10;}
+	float min() const {return _minPow10;}
+
+private:
+	float _minPow10;
+	float _maxPow10;
+};
+
+static const LogBounds MOMENTUM_BOUNDARIES(0, 4);
+
+//empirical boundaries of energy deposition in each detector
+static const LogBounds DETECTOR_ENERGY_BOUNDARIES[NDETECTORS] = {
+		LogBounds(-1.5,3), //ECAL
+		LogBounds(-3,1), //HCAL
+		LogBounds(-5.5,-3), //ME Chambers
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+		LogBounds(-5.5,-3),
+};
+
+
+
+
+
 //makes a histogram with normalized slices in y
-TH2F* makeNormalizedInYSlices(const TH2F* hist){
-	TH2F* normalized = (TH2F*)hist->Clone((string(hist->GetName())+"_normY").c_str());
-	for(int i=0; i < normalized->GetNbinsX()+1; i++){
-		float norm = 0;
-		//calculate integral along p bin
-		for(int j=0;j < normalized->GetNbinsY()+1; j++){
-			norm += normalized->GetBinContent(i,j);
-		}
-		//normalize everything for a given p
-		if(norm){
-			for(int j=0;j < normalized->GetNbinsY()+1; j++){
-				float content = normalized->GetBinContent(i,j);
-				normalized->SetBinContent(i,j,content/norm);
-				//norm += h_multiplicityVsPt_normalized->GetBinContent(i,j);
-			}
-		}
-	}
-	return normalized;
+TH2F* makeNormalizedInYSlices(const TH2F* hist);
 
-}
+TH2F* makeNormalizedInXSlices(const TH2F* hist);
 
-TH2F* makeNormalizedInXSlices(const TH2F* hist){
-	TH2F* normalized = (TH2F*)hist->Clone((string(hist->GetName())+"_normX").c_str());
-	for(int i =0; i < normalized->GetNbinsY()+1; i++){
-		float norm =0;
-		for(int j=0;j < normalized->GetNbinsX()+1; j++){
-			norm += normalized->GetBinContent(j,i);
-		}
-		if(norm) {
-			for(int j=0; j < normalized->GetNbinsX()+1;j++){
-				float content = normalized->GetBinContent(j,i);
-				normalized->SetBinContent(j,i,content/norm);
-			}
-		}
+class PointEstimate {
+public:
+	PointEstimate(){
+		_estimate = 0;
+		_lower = 0;
+		_upper = 0;
 	}
-	return normalized;
-}
+	PointEstimate(float estimate, float lower, float upper){
+		_estimate = estimate;
+		_lower = lower;
+		_upper = upper;
+	}
+
+	void set(float estimate, float lower, float upper){
+		_estimate = estimate;
+		_lower = lower;
+		_upper = upper;
+	}
+	float estimate() const { return _estimate;}
+	float lower() const {return _lower;}
+	float upper() const {return _upper;}
+private:
+	float _estimate;
+	float _lower;
+	float _upper;
+};
+
 
 /* Idea: Want to fill these with Hits in detector vs gen P,
  * with that information, once everything is filled, normalized in
@@ -122,6 +154,10 @@ public:
 		_scatterPlot = new TH2F(name.c_str(),name.c_str(),xBins, xLow, xHigh, yBins, yLow,yHigh);
 	}
 
+	PDF(const std::string& name,unsigned int xBins, float* xbins, unsigned int yBins, float* ybins) : PDF(){
+			_scatterPlot = new TH2F(name.c_str(),name.c_str(),xBins, xbins, yBins, ybins);
+		}
+
 	PDF(const std::string& name, TFile* f) : PDF(){
 		_scatterPlot = (TH2F*)f->Get(name.c_str());
 	}
@@ -131,35 +167,13 @@ public:
 		//if(_scatterPlot) delete _scatterPlot;
 	}
 
-	int fill(float x, float y){
-		if(!_scatterPlot) return -1;
-		if(_isNormalized){
-			cout << "Already Normalized!" << endl;
-			return -1;
-		}
-		return _scatterPlot->Fill(x,y);
-	}
-	int normalize() {
-		if(_isNormalized) return 0;
-		//normalized in Y first, then in X
-		_scatterPlotNorm = makeNormalizedInYSlices(_scatterPlot);
-		_isNormalized = true;
-		return 0;
-	}
+	int fill(float x, float y);
+	int normalize();
 
-	TH1D* projection(float y) {
-		normalize();
-		int ybin = _scatterPlot->GetYaxis()->FindBin(y);
-		return _scatterPlotNorm->ProjectionX("_px",ybin,ybin);
-	}
+	TH1D* projection(float y);
+	//TGraphAsymmErrors* projection(float y);
 
-	int write(TFile* f){
-		f->cd();
-		normalize();
-		if(_scatterPlot)_scatterPlot->Write();
-		if(_scatterPlotNorm)_scatterPlotNorm->Write();
-		return 0;
-	}
+	int write(TFile* f, const string& xaxis, const string& yaxis);
 
 private:
 	bool _isNormalized;
@@ -213,41 +227,26 @@ public:
 			_deposits[i] = deposits[i];
 		}
 	}
-	void setDetector(const std::string& detector, float deposit){
-		for(unsigned int i=0; i < NDETECTORS; i++){
-			auto det = DETECTOR_NAMES[i];
-			if(detector != det) continue;
-			/* Temporary.
-			 *
-			 * TODO: Need to figure how to combine energy
-			 * deposits from same station/ring chambers
-			 *
-			 * temporarily taking the highest energy deposit
-			 * and forgetting about the other deposits.
-			 *
-			 */
-			if(_deposits[i] > deposit) break;
-			_deposits[i] = deposit;
-			break;
+	void setDetector(const std::string& detector, float deposit);
+
+	float getDeposit(const std::string& detector);
+
+
+	//returns the amount of non-zero energy deposits
+	unsigned int nDeposits(){
+		unsigned int ndeposits = 0;
+		for(auto dep : _deposits){
+			//cout << dep << endl;
+			if(dep) ndeposits++;
 		}
+		//cout << "deposits: " << ndeposits << endl;
+		return ndeposits;
 	}
 
 	//returns if the detector has any energy deposit at all
-	const array<bool,NDETECTORS> hasEnergy() const{
-		array<bool,NDETECTORS> energy;
-		for(unsigned int i=0; i < NDETECTORS; i++){
-			energy[i] = _deposits[i] > 0;
-		}
-		return energy;
-	}
+	const array<bool,NDETECTORS> hasEnergy() const;
 	//returns if the detector had a shower, as defined by the thresholds
-	const array<bool, NDETECTORS> hasShower() const {
-		array<bool,NDETECTORS> shower;
-		for(unsigned int i=0; i < NDETECTORS; i++){
-			shower[i] = _deposits[i] > SHOWER_THRESHOLDS[i];
-		}
-		return shower;
-	}
+	const array<bool, NDETECTORS> hasShower() const;
 
 
 private:
@@ -264,30 +263,12 @@ public:
 		_pHigh= pHigh;
 	}
 
-	void fill(float p, const EnergyDeposits& e){
-		if(p >= _pHigh || p < _pLow) return; //only look in correct range
-		for(unsigned int i =0; i < NDETECTORS;i++){
-			if(e._deposits[i]) _energies[i].push_back(e._deposits[i]);
-		}
-	}
+	void fill(float p, const EnergyDeposits& e);
 
 
 	vector<float> _energies[NDETECTORS];
 
-	vector<TH1F*> plots(){
-		vector<TH1F*> plots;
-		for(unsigned int i =0; i < NDETECTORS; i++){
-			TH1F* p = new TH1F((DETECTOR_NAMES[i]+"_energy"+to_string((int)_pLow)+"_"+to_string((int)_pHigh)).c_str(),
-					DETECTOR_NAMES[i].c_str(), 100, 0, 2*SHOWER_THRESHOLDS[i]);
-			for(auto energy : _energies[i]){
-				p->Fill(energy);
-			}
-			plots.push_back(p);
-		}
-
-
-		return plots;
-	}
+	vector<TH1F*> plots();
 private:
 	float _pLow;
 	float _pHigh;
@@ -340,7 +321,7 @@ private:
 			};*/
 
 	vector<EnergyDeposits> _events;
-	//std::vector<int> _hasShower [NDETECTORS];
+
 public:
 	const float* probabilities() const{
 		return _probabilities;

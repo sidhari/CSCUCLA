@@ -23,8 +23,6 @@ int findClosestToSegment(vector<CLCTCandidate*> matches, float segmentX);
 
 void printPattern(const CSCPattern &p);
 
-//void printChamber(const ChamberHits &c);
-
 //TODO: these functions could be put together in a better way
 int printPatternCC(unsigned int pattID,int cc=-1);
 

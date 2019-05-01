@@ -33,6 +33,7 @@
 #include "../../CSCPatterns/include/LUTClasses.h"
 #include "../include/BremClasses.h"
 #include "../include/BremConstants.h"
+#include "../include/BremHelperFunctions.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
@@ -106,11 +107,14 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	// MAKE THE PDFS
 	//
 
-	TFile* pdfFile = TFile::Open("/uscms/home/wnash/eos/MuonGun/PDF-FullSans6.root");
+	//TFile* pdfFile = TFile::Open("/uscms/home/wnash/eos/MuonGun/PDF-FullSans6.root");
+	//TFile* pdfFile = TFile::Open("/uscms/home/wnash/eos/MuonGun/PDF-FullSans6.root");
+	TFile* pdfFile = TFile::Open("/uscms/home/wnash/eos/MuonGun/PDF-FullLog12.root");
 	if(!pdfFile){
 		cout << "Error, can't load PDFs" << endl;
 		return -1;
 	}
+
 	PDF ECAL("ECAL",pdfFile); //sim energy deposited in ecal
 	PDF HCAL("HCAL",pdfFile);
 
@@ -134,6 +138,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	//
 	// Normalize the PDFs
 	//
+
 	ECAL.normalize();
 	HCAL.normalize();
 	for(auto& cham : MuonChamberPdfs) {
@@ -141,21 +146,39 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	}
 
 
+
 	TH1F* pullDistribution = new TH1F("pullDistribution", "PullDistribution; (GenP-EstP) / SigmaEst; Muons", 100, -5, 5);
+	TH1F* resolution = new TH1F("pResolution", "Momentum Resolution; (1/p_{R}- 1/p_{G})/1/p_{G}; Muons", 100, -3, 3);
+	TH1F* logPResolution = new TH1F("logPResolution", "Momentum Resolution; (log(p_{R})- log(p_{G}))/log(p_{G}); Muons", 100, -1, 1);
+
+	TH2F* resolution2D = new TH2F("pResolution2D", "Momentum Resolution; GenP [GeV]; (1/p_{R}- 1/p_{G})/1/p_{G}", NPBINS,P_LOW,P_HIGH, 100, -5, 5);
+
+	TH2F* logBremVsLogGen = new TH2F("logBremVsLogGen", "; log p_{G}; log p_{R}", 30, 1, 4, 30, 1, 4);
 
 	TH1F* sigmaDistribution = new TH1F("sigmaDistribution", "SigmaDistribution; SigEstimate [GeV]; Muons", NPBINS-1,P_LOW,P_HIGH);
 	TH2F* genPVsSigma = new TH2F("genPVsSigma","genPVSigma; SigEstimate [GeV]; gen P [GeV]", NPBINS-1, P_LOW, P_HIGH, NPBINS, P_LOW, P_HIGH);
 
+	TH1F* genMinusReco = new TH1F("genMinusReco", "genMinusReco; Gen - Reco [GeV]; Muons", 100, -2000,2000);
+	TH1F* genMinusBrem = new TH1F("genMinusBrem", "genMinusBrem; Gen - Brem [GeV]; Muons", 100, -2000,2000);
+
+	TH2F* estimateVsGenP = new TH2F("estimateVsGenP", "estimateVsGenP; Gen P [GeV]; Brem P [GeV]", NPBINS, P_LOW, P_HIGH, NPBINS, P_LOW,P_HIGH);
+	TH2F* upperintervalVsGenP = new TH2F("upperIntervalVsGenP", "upperIntervalVsGenP; Gen P [GeV]; Upper Brem P Interval [GeV]", NPBINS, P_LOW, P_HIGH, NPBINS, P_LOW,P_HIGH);
+	TH2F* lowintervalVsGenP = new TH2F("lowIntervalVsGenP", "lowIntervalVsGenP; Gen P [GeV]; Lower Brem P Interval [GeV]", NPBINS, P_LOW, P_HIGH, NPBINS, P_LOW,P_HIGH);
+
+	TH1F* recoMinusGenOverGen = new TH1F("recoMinusGenOverGen","recoMinusGenOverGen; (Reco - Gen)/ Gen; Muons", 100, -2,2);
+	TH1F* bremMinusGenOverGen = new TH1F("bremMinusGenOverGen","bremMinusGenOverGen; (Brem - Gen)/ Gen; Muons", 100, -2,2);
+
 	//threshold for pdf
-	const unsigned int nlevels = 4;
-	const float  confLevels[nlevels] = {0.6827, 0.90, 0.95,0.99};
+	//const unsigned int nlevels = 4;
+	//const float  confLevels[nlevels] = {0.6827, 0.90, 0.95,0.99};
 	//dChi2 = -2D ln L levels
-	const float  dChi2[nlevels] = {1, 2.71, 3.84,6.63};
-	unsigned int nGenMuons = 0;
+	//const float  dChi2[nlevels] = {1, 2.71, 3.84,6.63};
 	//unsigned int nInLimits[nlevels] = {0,0,0,0};
 
+	unsigned int nGenMuons = 0;
+
 	outF->cd();
-	const int PRINT_LIMIT = 50;
+	const int WRITE_LIMIT = 50;
 
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
@@ -242,28 +265,34 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 
 			//find energy associted with muon in HCAL
 			for(unsigned int ic = 0; ic < hcaloHits.size(); ic++){
-				totalHcalEnergy += hcaloHits.energyEM->at(ic);
-				totalHcalEnergy += hcaloHits.energyHad->at(ic);
+				float hphi = hcaloHits.phi->at(ic);
+				float heta = hcaloHits.eta->at(ic);
+				if(dr(eta,phi, heta,hphi) < DR_CUT){
+					totalHcalEnergy += hcaloHits.energyEM->at(ic);
+					totalHcalEnergy += hcaloHits.energyHad->at(ic);
+				}
 			}
 		}
 
 		energyDeposits.setDetector("ECAL", totalEcalEnergy);
 		energyDeposits.setDetector("HCAL", totalHcalEnergy);
 
-		bool WRITE_INDIVIDUAL_HISTS = true;
+		//bool WRITE_INDIVIDUAL_HISTS = false;
 
 		TH1F* h_genP = new TH1F(("h_genP"+to_string(i)).c_str(), "h_genP; Gen P [GeV]; Probability", NPBINS, P_LOW, P_HIGH);
 		h_genP->Fill(genP);
-		if(WRITE_INDIVIDUAL_HISTS)h_genP->Write();
+		if(i < WRITE_LIMIT)h_genP->Write();
 
 		TH1D* ecalProj = ECAL.projection(totalEcalEnergy);
+		//TGraphAsymmErrors* ecalProj = ECAL.projection(totalEcalEnergy);
 		TH1D* bestGuess = (TH1D*)ecalProj->Clone(("h_bestGuess"+to_string(i)).c_str());
 		ecalProj->SetName(("h_ECAL"+to_string(i)).c_str());
-		if(WRITE_INDIVIDUAL_HISTS) ecalProj->Write();
+		if(i < WRITE_LIMIT) ecalProj->Write();
 		TH1D* hcalProj = HCAL.projection(totalHcalEnergy);
+		//TGraphAsymmErrors* hcalProj = HCAL.projection(totalHcalEnergy);
 		bestGuess->Multiply(hcalProj);
 		hcalProj->SetName(("h_HCAL"+to_string(i)).c_str());
-		if(WRITE_INDIVIDUAL_HISTS) hcalProj->Write();
+		if(i < WRITE_LIMIT) hcalProj->Write();
 
 
 		//
@@ -302,6 +331,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 				for(unsigned int isim=0; isim < simHits.size(); isim++){
 					if(simHits.ch_id->at(isim) != chamberHash) continue;
 					chamberSimHitEnergyLoss += simHits.energyLoss->at(isim);
+					//simHits.pAtEntry
 
 				}
 
@@ -322,10 +352,31 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 
 
 			TH1D* hist = MuonChamberPdfs[cham]->projection(largestEnergyDeposit);
+			//TGraphAsymmErrors* hist = MuonChamberPdfs[cham]->projection(largestEnergyDeposit);
 			hist->SetName(("h_ME"+to_string(cham[0])+to_string(cham[1])+"_"+to_string(i)).c_str());
 			bestGuess->Multiply(hist);
-			if(WRITE_INDIVIDUAL_HISTS)hist->Write();
+			if(i < WRITE_LIMIT)hist->Write();
+
+			delete hist;
 		}
+		delete  h_genP;
+		delete ecalProj;
+		//delete bestGuess;
+		delete hcalProj;
+
+
+		/*
+		 * Only look at events with at
+		 * least 6 chambers, for now...
+		 */
+
+		/*
+		if(energyDeposits.nDeposits() < 6) {
+			//cout << "Skipping event: " << i << endl;
+			continue;
+		}
+		*/
+
 
 		for(auto& map: maps){
 			map.fill(genP, energyDeposits);
@@ -337,7 +388,10 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 		//double scale = bestGuess->GetXaxis()->GetBinWidth(1)/bestGuess->GetIntegral();
 		//Double_t scale = 1./bestGuess->Integral();
 		//bestGuess->Scale(scale);
-		if(WRITE_INDIVIDUAL_HISTS)bestGuess->Write();
+
+		if(i < WRITE_LIMIT)bestGuess->Write();
+
+
 		/* Look at integral of bestGuess distribution,
 		 * calculate momentum at which it is 90% likely to be higher than
 		 *
@@ -349,21 +403,72 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 
 
 
+		//if(energyDeposits.nDeposits() > 5) {
+			if(i < WRITE_LIMIT)cout << "\nGenerated P: \033[1m" << genP << "\033[0m" << endl;
+			nGenMuons++;
+			if(i < WRITE_LIMIT)cout << " Tracking P: " << recoP << endl;
 
-		if(i < PRINT_LIMIT)cout << "Generated P: \033[1m" << genP << "\033[0m" << endl;
-		nGenMuons++;
-		if(i < PRINT_LIMIT)cout << " Reco P: " << recoP << endl;
+			//
+			// most likely p, according to likelihood including all our chambers
+			//
 
-		//
-		// most likely p, according to likelihood including all our chambers
-		//
 
+
+
+			PointEstimate est;
+			if(!calculateMomentumEstimate(est, bestGuess)){
+				return -1;
+			}
+			if(i < WRITE_LIMIT)cout << " Brem P:  "<< est.estimate()<< " - " << 100*0.68 << "% P Limits: [ " << est.lower()<< ", " << est.upper() << " ]" << endl;
+			if(i < WRITE_LIMIT)cout << " using nSamplingDetectors: " << energyDeposits.nDeposits() << endl;
+
+
+			genMinusBrem->Fill(genP-est.estimate());
+			genMinusReco->Fill(genP-recoP);
+
+			recoMinusGenOverGen->Fill((recoP-genP)/genP);
+			bremMinusGenOverGen->Fill((est.estimate()-genP)/genP);
+			logPResolution->Fill((TMath::Log10(est.estimate())-TMath::Log10(genP))/TMath::Log10(genP));
+
+			logBremVsLogGen->Fill(TMath::Log10(genP), TMath::Log10(est.estimate()));
+
+			float sigmaEst = (est.upper()-est.lower())/2.;
+			pullDistribution->Fill((genP-est.estimate())/sigmaEst);
+			sigmaDistribution->Fill(sigmaEst);
+			genPVsSigma->Fill(sigmaEst, genP);
+
+			if(sigmaEst < 200 && energyDeposits.nDeposits() > 5) {
+				estimateVsGenP->Fill(genP, est.estimate());
+				upperintervalVsGenP->Fill(genP, est.upper());
+				lowintervalVsGenP->Fill(genP, est.lower());
+			}
+		//}
+		/*
 		const unsigned int mostProbableBin = bestGuess->GetMaximumBin();
 		float mostProbableP = bestGuess->GetBinCenter(mostProbableBin);
 		float likelihoodAtMostProbableP = bestGuess->GetMaximum();
 		float minLnLikelihood = -2* TMath::Log(likelihoodAtMostProbableP);
-		if(i < PRINT_LIMIT)cout << "Most Probable P: " << mostProbableP << endl;
+		if(i < WRITE_LIMIT)cout << "Most Probable P: " << mostProbableP << endl;
 
+
+
+
+		//make -2lnL distributions
+		TH1F* lnLikelihood = (TH1F*)bestGuess->Clone(("h_likelihood"+to_string(i)).c_str());
+		for(unsigned int i=0; (int)i < lnLikelihood->GetNbinsX()+1; i++){
+			lnLikelihood->SetBinContent(i, -2.*TMath::Log(lnLikelihood->GetBinContent(i)));
+		}
+		if(i < WRITE_LIMIT)lnLikelihood->Write();
+
+
+		genMinusBrem->Fill(genP-mostProbableP);
+		genMinusReco->Fill(genP-recoP);
+
+		recoMinusGenOverGen->Fill((recoP-genP)/genP);
+		bremMinusGenOverGen->Fill((mostProbableP-genP)/genP);
+		logPResolution->Fill((TMath::Log10(mostProbableP)-TMath::Log10(genP))/TMath::Log10(genP));
+
+		logBremVsLogGen->Fill(TMath::Log10(genP), TMath::Log10(mostProbableP));
 		//TODO: smart iteration...
 		for(unsigned int it=0; it < nlevels; it++){
 
@@ -402,7 +507,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 				}
 			}
 
-			if(i < PRINT_LIMIT)cout << " Brem " << 100*confLevels[it] << "% P Limits: [ " << lowEdgeP<< ", " << highEdgeP << " ]" << endl;
+			if(i < WRITE_LIMIT)cout << " Brem " << 100*confLevels[it] << "% P Limits: [ " << lowEdgeP<< ", " << highEdgeP << " ]" << endl;
 			if(it == 0){
 				float sigmaEst = (highEdgeP-lowEdgeP)/2.;
 				pullDistribution->Fill((genP-mostProbableP)/sigmaEst);
@@ -410,7 +515,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 				genPVsSigma->Fill(sigmaEst, genP);
 			}
 		}
-
+	*/
 
 	}
 
@@ -454,6 +559,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 
 	}
 
+	/*
 	ECAL.write(outF);
 	HCAL.write(outF);
 
@@ -461,6 +567,7 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 	for(auto& cham : MuonChamberPdfs) {
 		cham.second->write(outF);
 	}
+	*/
 
 	for(auto& d : distributions){
 		auto hists = d.plots();
@@ -471,7 +578,18 @@ int BremGenPEstimator(string inputfile, string outputfile, int start=0, int end=
 
 	pullDistribution->Write();
 	sigmaDistribution->Write();
+	logPResolution->Write();
+	logBremVsLogGen->Write();
 	genPVsSigma->Write();
+	resolution->Write();
+	resolution2D->Write();
+	genMinusBrem->Write();
+	genMinusReco->Write();
+	recoMinusGenOverGen->Write();
+	bremMinusGenOverGen->Write();
+	estimateVsGenP->Write();
+	upperintervalVsGenP->Write();
+	lowintervalVsGenP->Write();
 
 	outF->Close();
 

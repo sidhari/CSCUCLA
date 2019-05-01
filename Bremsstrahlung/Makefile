@@ -6,19 +6,19 @@ CSCLIBDIR=../CSCPatterns/lib
 LIBDIR=lib
 SRCDIR=src
 INCDIR=include
-PROJLIBS=$(LIBDIR)/BremClasses_cpp.so
+PROJLIBS=$(LIBDIR)/BremClasses_cpp.so $(LIBDIR)/BremHelperFunctions_cpp.so
 #TODO: surely a simpler way to handle this...
 CSCPROJLIBS=$(CSCLIBDIR)/PatternFinderClasses_cpp.so $(CSCLIBDIR)/PatternFinderHelperFunctions_cpp.so $(CSCLIBDIR)/LUTClasses_cpp.so $(CSCLIBDIR)/StlCollectionProxy_cpp.so
 
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
-all: sub-make $(PROJLIBS) $(SRCDIR)/BremGenPEstimator $(SRCDIR)/GenStudy $(SRCDIR)/SimVsRecSanityCheck $(SRCDIR)/BremPDFBuilder
+all: sub-make $(PROJLIBS) $(SRCDIR)/BremGenPEstimator $(SRCDIR)/GenStudy $(SRCDIR)/SimVsRecSanityCheck $(SRCDIR)/BremPDFBuilder $(SRCDIR)/BremCentralLimit
 
 
 # Make shared libraries to minimize code compilation, but primarily to
 # allow access of C++ classes / functions through python using
 #
-#  >> ROOT.gSystem.Load(<lib>)  //without .so
+#  >> ROOT.gSystem.Load("<lib>")  //without .so
 #
 # then access with
 #
@@ -38,7 +38,7 @@ sub-make:
 	$(MAKE) -C ../CSCPatterns/
 
 #Makes whatever script you name, add $(ROOTLIBS) after -L$(ROOTSYS)/lib if you need it
-$(SRCDIR)/%: $(SRCDIR)/%.cpp $(PROJLIBS)
+$(SRCDIR)/%: $(SRCDIR)/%.cpp $(PROJLIBS) $(INCDIR)/BremConstants.h
 	##### Making executable #####
 	$(shell export LD_LIBRARY_PATH=$(CSCLIBDIR):${LD_LIBRARY_PATH})
 	$(shell export LD_LIBRARY_PATH=$(LIBDIR):${LD_LIBRARY_PATH})

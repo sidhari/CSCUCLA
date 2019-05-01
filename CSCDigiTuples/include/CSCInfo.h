@@ -59,8 +59,10 @@ public:
 						&LumiSection);
 		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(BXCrossing))).c_str(),
 						&BXCrossing);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(NSegmentsInEvent))).c_str(),
+		if(t->GetBranch((name+'_'+string(GET_VARIABLE_NAME(NSegmentsInEvent))).c_str())) { //in the event you are using legacy trees, defaults the value to 0
+			t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(NSegmentsInEvent))).c_str(),
 						&NSegmentsInEvent);
+		}
 	}
 
 

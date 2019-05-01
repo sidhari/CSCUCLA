@@ -138,10 +138,15 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 	printf("Starting Event = %i, Ending Event = %i\n", start, end);
 
 	for(int i = start; i < end; i++) {
-		if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
-
+		/*
+		if(evt.EventNumber != 648972225
+				&& evt.EventNumber != 640297869
+				&& evt.EventNumber != 650469080
+				) continue;
+		*/
 		//
 		//Iterate through all possible chambers
 		//
@@ -161,7 +166,6 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 			// Emulate the TMB to find all the CLCTs
 			//
 
-
 			ChamberHits compHits(ST, RI, EC, CH);
 
 			if(compHits.fill(comparators)) return -1;
@@ -177,7 +181,7 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 			}
 
 
-			//remove 3 layer emulated clcts
+			//remove 3 layer emulated clcts from chambers that don't
 			bool threeLayerChamber = (me11a || me11b) && CH == 11 && EC ==1;
 			if(!threeLayerChamber) {
 				for(unsigned int iemu =0; iemu < emulatedCLCTs.size(); iemu++){
@@ -253,7 +257,7 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 							if(minDistanceToCLCT == 0) {
 								perfectMatches.push_back(closestEmu);
 								perfMatch = true;
-								if(clctsInChamber==1)pmatch_clct0++;
+								if(clctsInChamber==1) pmatch_clct0++;
 							}
 						}
 

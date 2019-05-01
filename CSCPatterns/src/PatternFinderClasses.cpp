@@ -207,7 +207,6 @@ CSCPattern CSCPattern::makeFlipped(string name, unsigned int id) const{
   ----xxx----  -----xxx---  ---xxx-----  ------xx---  ---xx------  -------xxx-  -xxx-------  -------xxx-  -xxx-------
   ----xxx----  -----xxx---  ---xxx-----  ------xxx--  --xxx------  -------xxx-  -xxx-------  --------xxx  xxx--------
 
- *
  */
 
 
