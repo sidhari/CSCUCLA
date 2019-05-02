@@ -3,7 +3,7 @@
 *.root
 *.txt
 plots/*
-../papers
+papers/*
 src/CLCTLayerAnalyzer
 src/PatternFinder
 src/printPatternCC
@@ -27,10 +27,8 @@ src/BayesPatternAnalysis
 src/BremGenPEstimator
 src/GenStudy
 src/MultiplicityStudy
-CSCPatterns/src/PatternFinderMT.cpp
-CSCPatterns/src/ThreeLayerCLCTEmulationAnalyzer
-CSCPatterns/src/testTMBEmulation
+src/ThreeLayerCLCTEmulationAnalyzer
+src/testTMBEmulation
+src/PatternFinderMT.cpp
 papers/
-../Bremsstrahlung/src/BremGenPEstimator
-../Bremsstrahlung/src/GenStudy
-../Bremsstrahlung/src/SimVsRecSanityCheck
+
