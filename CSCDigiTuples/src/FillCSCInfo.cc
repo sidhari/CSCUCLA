@@ -397,10 +397,12 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 		for (CSCCLCTDigiCollection::const_iterator digiItr = range.first;
 				digiItr != range.second; ++digiItr) {
 
-			if(st == 1 && ri == 1){
+			if(st == 1 && (ri == 1|| ri ==4)){
 				//we need to manually adjust this because they don't for us
 				//getStrip returns a half strip (who knows why)
-				if(digiItr->getKeyStrip() > CSCHelper::MAX_ME11A_HALF_STRIP) ri = 4;
+				if(digiItr->getKeyStrip() > CSCHelper::MAX_ME11A_HALF_STRIP) {
+					ri = 4;
+				} else ri = 1; //resets ring in case where multiple clcts in ME11
 			}
 			ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			isValid->push_back(
