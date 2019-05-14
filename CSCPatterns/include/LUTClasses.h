@@ -162,9 +162,9 @@ private:
 
 			//cout << "sorting: l1.pat: "<< l1.first._pattern << " l1.code: " << l1.first._code << " l2.pat" << l2.first._pattern <<
 			//		" l2.code: " << l2.first._code << endl;
-			return l1.first < l2.first;
+			//return l1.first < l2.first;
 			//TODO: some bug here, doesn't work for first lut??
-			/*
+			//May 14: Ignoring old warning, not sure where this would be happening, will keep an eye out
 			auto& l1e = l1.second;
 			auto& l2e = l2.second;
 			for(auto c: _sortOrder){
@@ -199,7 +199,6 @@ private:
 				}
 			}
 			return false;
-	*/
 		};
 
 
