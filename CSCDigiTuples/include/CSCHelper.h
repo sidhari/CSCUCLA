@@ -110,8 +110,10 @@ ChamberId unserialize(unsigned int serial){
 
 }
 
-int MAX_ME11A_HALF_STRIP = 127;
-int MAX_ME11A_STRIP = 64;
+/* first 128 hs are in ME11B, remaining 96 are in ME11A
+ */
+int MAX_ME11B_HALF_STRIP = 127;
+int MAX_ME11B_STRIP = 64;
 
 /*
 //returns the bounds [lowest, highest] in strips of the given chamber.
