@@ -2,7 +2,7 @@
 
 First run 
 
-$. setup.sh
+`$. setup.sh`
 
 Then go to:  
 
