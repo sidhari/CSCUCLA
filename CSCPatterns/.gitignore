@@ -22,7 +22,7 @@ include/CSCHelper.h
 include/CSCInfo.h
 jobs/Charmonium/
 ../papers/
-CSCPatterns/dat/
+dat/
 src/BayesPatternAnalysis
 src/BremGenPEstimator
 src/GenStudy

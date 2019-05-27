@@ -152,6 +152,8 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
 
         //should be member of CSCRecHit2D, but...
         static bool areEqual(const CSCRecHit2D& rh1, const CSCRecHit2D& rh2);
+       //similarly for the segments, but no such operator
+        static bool areEqual(const CSCSegment& seg1, const CSCSegment& seg2);
 
 
 };

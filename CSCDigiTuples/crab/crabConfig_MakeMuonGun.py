@@ -4,8 +4,6 @@ config = config()
 #CRAB COPIES ALL FOLDERS NAMED "data" IN YOUR CMSSW DIRECTORY
 
 
-#dataset = '/SingleMuon/Run2018D-ZMu-PromptReco-v2/RAW-RECO'
-#run = dataset.split('/')[2].split('-')[0]
 selectionString = 'MuonGun'
 outfileName = 'GenRawRecoE0-4000_'+selectionString+'.root'
 
@@ -28,8 +26,7 @@ config.Data.outLFNDirBase = '/store/user/%s' % (getUsernameFromSiteDB())
 config.Data.publication = True
 config.Data.outputDatasetTag = 'MuonEGun-Apr2019'
 config.Data.outputPrimaryDataset = 'MuonGun'
-#config.Data.ignoreLocality = True
+
 
 config.Site.storageSite = 'T3_US_FNALLPC'
-#config.Site.ignoreGlobalBlacklist = True
-#config.Site.whitelist = ['T2_RU_JINR','T2_CH_CERN']
+
