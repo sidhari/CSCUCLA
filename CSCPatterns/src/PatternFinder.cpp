@@ -327,17 +327,8 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 
 			// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
-			if(segmentX < 1) continue;
-			bool me11a = (ST == 1 && RI == 4);
-			bool me11b = (ST == 1 && RI == 1);
-			bool me13 = (ST == 1 && RI == 3);
-			if(me11a){
-				if(segmentX > 47) continue;
-			} else if (me11b || me13) {
-				if(segmentX > 63) continue;
-			} else {
-				if(segmentX > 79) continue;
-			}
+			if(CSCHelper::segmentIsOnEdgeOfChamber(segmentX, ST,RI)) continue;
+
 
 			ChamberHits theseRHHits(ST, RI, EC, CH,false);
 			ChamberHits theseCompHits(ST, RI, EC, CH);

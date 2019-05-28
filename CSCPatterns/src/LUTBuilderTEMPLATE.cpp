@@ -35,8 +35,6 @@
 
 using namespace std;
 
-
-
 struct SegmentMatch {
 	int clctIndex;
 	float posOffset;
@@ -45,12 +43,7 @@ struct SegmentMatch {
 };
 
 
-
-/* Calculates probability of a muon given a comparator code.
- * See slides: https://indico.cern.ch/event/744948/
- */
-
-int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int end=-1) {
+int LUTBuilderTEMPLATE(string inputfile, string outputfile, int start=0, int end=-1) {
 
 	//TODO: change everythign printf -> cout
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -82,45 +75,14 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 
 	vector<CSCPattern>* newEnvelopes = createNewPatterns();
-	vector<CSCPattern>* oldEnvelopes = createOldPatterns();
-
 
 	//
-	// Map to look at probability
-	// TODO: incorporate this functionality into LUT class once it is more figured out
+	// LUT
 	//
-	LUT bayesLUT("bayes", LINEFIT_LUT_PATH);
-
-	//
-	// OUTPUT TREE
-	//
-
-	//int patternId = 0;
-	//int ccId = 0;
-	//int layers = 0;
-	//float closestCLCT
-	//bool matchedSegment = false;
-	//int nMultiplicity = 0;
-
-	/*
-	TTree* outTree = new TTree("clctTree", "TTree for analysis of probability if a CLCT will result in a real muon or not");
-	outTree->Branch("patternId", &patternId, "patternId/I");
-	outTree->Branch("ccId", &ccId, "ccId/I");
-	outTree->Branch("matchedSegment", &matchedSegment);
-	outTree->Branch("nMultiplicity", &nMultiplicity, "nMultiplicity/I");
-	*/
+	//TODO: need to fix to use LINEFIT_LUT_PATH and make it capable on LXPLUS as well as LPC
+	LUT demoLUT("demo", "dat/linearFits.lut");
 
 
-	/*
-	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
-	if(!outF){
-		printf("Failed to open output file: %s\n", outputfile.c_str());
-		return -1;
-	}
-
-	TH1F* h_clctPatterns_real = new TH1F("h_clctPatterns_real","Recorded CLCT Pattern IDs; Pattern ID; CLCTs", 11,0,11);
-	TH1F* h_clctPatterns_emulated = new TH1F("h_clctPatterns_emulated","Emulated CLCT Pattern IDs; Pattern ID; CLCTs", 11,0,11);
-*/
 	//
 	// TREE ITERATION
 	//
@@ -154,33 +116,24 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 			ChamberHits compHits(ST, RI, EC, CH);
 
-			//if(fillCompHits(compHits, comparators)) return -1;
 			if(compHits.fill(comparators)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
-			vector<CLCTCandidate*> oldSetMatch;
 
 			//get all the clcts in the chamber
 
-
-			if(searchForMatch(compHits, oldEnvelopes,oldSetMatch) || searchForMatch(compHits, newEnvelopes,newSetMatch)) {
-				oldSetMatch.clear();
+			if(searchForMatch(compHits, newEnvelopes,newSetMatch)) {
 				newSetMatch.clear();
 				continue;
 			}
 
-			//TODO: currently no implementation dealing with cases where we find one and not other
-			if(!oldSetMatch.size() || !newSetMatch.size()) {
-				oldSetMatch.clear();
+			if(!newSetMatch.size()) {
 				newSetMatch.clear();
 				continue;
 			}
 
 
 			vector<int> matchedNewId;
-			vector<int> matchedOldId;
-
-
 			vector<SegmentMatch> matchedNew;
 
 
@@ -192,24 +145,19 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 				float segmentX = segments.pos_x->at(thisSeg); //strips
 				float segmentdXdZ = segments.dxdz->at(thisSeg);
+
+				//TODO: figure out way to deal with non-muon associated segments
+				if(segments.mu_id->at(thisSeg) == -1) continue;
 				float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
-				/*
-				// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
+				//avoid segments at the edge of the chamber
 				if(CSCHelper::segmentIsOnEdgeOfChamber(segmentX, ST,RI)) continue;
-
-				*/
 
 				//
 				// find all the clcts that are in the chamber, and match
 				//
 
 				if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
-				if(DEBUG > 0) cout << "Legacy Match: (";
-				int closestOldMatchIndex = findClosestToSegment(oldSetMatch,segmentX);
-				if(DEBUG > 0) cout << ") [strips]" << endl;
-
-
 				if(DEBUG > 0)cout << "New Match: (";
 				int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
 				if(DEBUG > 0) cout << ") [strips]" << endl;
@@ -223,14 +171,6 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 					auto& clct = newSetMatch.at(closestNewMatchIndex);
 
 					float clctX = clct->keyStrip();
-					/*
-					LUTEntry* entry = 0;
-
-					if(bayesLUT.editEntry(clct->key(),entry)){
-						return -1;
-					}
-					entry->addSegment(segmentX-clctX, segmentdXdZ,Pt);
-					*/
 
 					SegmentMatch thisMatch;
 					thisMatch.clctIndex = closestNewMatchIndex;
@@ -242,16 +182,18 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 					matchedNew.push_back(thisMatch); //not the most elegant, but fuck it
 
 				}
-				if(find(matchedOldId.begin(),matchedOldId.end(), closestOldMatchIndex) == matchedOldId.end()){
-					matchedOldId.push_back(closestOldMatchIndex);
-				}
 			}
 
+
+			/*
+			 * Look through all the clcts we made, see if we have associated segments,
+			 * then add then to our LUT
+			 */
 			for(int iclct=0; iclct < (int)newSetMatch.size(); iclct++){
 				auto& clct = newSetMatch.at(iclct);
 				LUTEntry* entry = 0;
 
-				if(bayesLUT.editEntry(clct->key(),entry)){
+				if(demoLUT.editEntry(clct->key(),entry)){
 					return -1;
 				}
 
@@ -269,41 +211,26 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 					entry->addCLCT(newSetMatch.size());
 				}
 
-				/*
-				//if we matched to a segment
-				if(find(matchedNewId.begin(), matchedNewId.end(), iclct) != matchedNewId.end()){
-					cout << "here1" << endl;
-					float pt = matchedNew.at(iclct).pt;
-					float pos = matchedNew.at(iclct).posOffset;
-					float slope = matchedNew.at(iclct).slopeOffset;
-
-					cout << "here2" << endl;
-					entry->addCLCT(newSetMatch.size(), pt, pos,slope);
-				}else{ //if we didn't match to a segment
-					entry->addCLCT(newSetMatch.size());
-				}
-				*/
-
 			}
 
 
-			oldSetMatch.clear();
 			newSetMatch.clear();
 		}
 
 
 	}
 
-	//cout << "got here" << endl;
-	//bayesLUT.print();
-	bayesLUT.writeToROOT(outputfile);
-
-	/*
-
-	outF->cd();
-	h_clctPatterns_emulated->Write();
-	h_clctPatterns_real->Write();
+	/* Manipulate LUT here
+	*
 	*/
+
+	//sort the LUT however you want
+	demoLUT.sort("sclxp");
+
+	//print it out
+	demoLUT.print(10); //print all the entries with at least 10 clcts
+
+	demoLUT.writeToROOT(outputfile);
 
 
 	printf("Wrote to file: %s\n",outputfile.c_str());
@@ -321,14 +248,14 @@ int main(int argc, char* argv[])
 	try {
 		switch(argc){
 		case 3:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]));
+			return LUTBuilderTEMPLATE(string(argv[1]), string(argv[2]));
 		case 4:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
+			return LUTBuilderTEMPLATE(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
 		case 5:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
+			return LUTBuilderTEMPLATE(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
 		default:
 			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./PatternFinder inputFile outputFile (events)" << endl;
+			cout << "./LUTBuilderTEMPLATE inputFile outputFile (events)" << endl;
 			return -1;
 		}
 	}catch( const char* msg) {

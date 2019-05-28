@@ -29,6 +29,7 @@ src/GenStudy
 src/MultiplicityStudy
 src/ThreeLayerCLCTEmulationAnalyzer
 src/testTMBEmulation
+src/LUTBuilderTEMPLATE
 src/PatternFinderMT.cpp
 papers/
 

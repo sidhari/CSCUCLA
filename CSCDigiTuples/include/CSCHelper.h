@@ -52,6 +52,21 @@ bool isValidChamber(unsigned int st, unsigned int ri, unsigned int ch, unsigned 
 	 return true;
 }
 
+bool segmentIsOnEdgeOfChamber(float strip, unsigned int ST, unsigned int RI){
+	if(strip < 1) return true;
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
+	bool me13 = (ST == 1 && RI == 3);
+	if(me11a){
+		if(strip > 47) return true;
+	} else if (me11b || me13) {
+		if(strip > 63) return true;
+	} else {
+		if(strip > 79) return true;
+	}
+	return false;
+}
+
 //written to remove ambiguity between ME11A and ME11B
 unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
 	//sanity check

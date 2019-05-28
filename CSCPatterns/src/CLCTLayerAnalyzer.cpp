@@ -165,7 +165,6 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 		//
 		// Nov. 6 CHANGE ME BACK, NOW LOOKING AT LATER ERA!
 		//
-		cout << evt.RunNumber << endl;
 		/* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
 		 * installed on September 12
 		 */
@@ -193,21 +192,14 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 
 			// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
-			if(segmentX < 1) continue;
+			if(CSCHelper::segmentIsOnEdgeOfChamber(segmentX, ST,RI)) continue;
+
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
-			bool me13 = (ST == 1 && RI == 3);
-			if(me11a){
-				if(segmentX > 47) continue;
-			} else if (me11b || me13) {
-				if(segmentX > 63) continue;
-			} else {
-				if(segmentX > 79) continue;
-			}
-
 			if(!(me11b || me11a)) continue;
 
 			//Selecting only CLCTs in these chambers
+			if(segments.mu_id->at(thisSeg) == -1) continue; //skip segments without a muon
 			float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
 			/*
