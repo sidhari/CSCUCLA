@@ -464,6 +464,56 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 };
 
 //
+// CLCTCandidateCollection
+//
+
+void CLCTCandidateCollection::Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash)
+{
+
+
+	for(unsigned int i = 0; i < emulatedCLCTs.size(); i++)
+	{
+		//_pattern.push_back(emulatedCLCTs.at(i)->_pattern);
+		_horizontalIndex.push_back(emulatedCLCTs.at(i)->_horizontalIndex);
+		_startTime.push_back(emulatedCLCTs.at(i)->_startTime);
+		//_lutEntry.push_back(emulatedCLCTs.at(i)->_lutEntry);
+		keyStrip.push_back(emulatedCLCTs.at(i)->keyStrip());
+		keyHalfStrip.push_back(emulatedCLCTs.at(i)->keyHalfStrip());
+		//position.push_back(emulatedCLCTs.at(i)->position());
+		//slope.push_back(emulatedCLCTs.at(i)->slope());
+		comparatorCodeId.push_back(emulatedCLCTs.at(i)->comparatorCodeId());
+		layerCount.push_back(emulatedCLCTs.at(i)->layerCount());
+		patternId.push_back(emulatedCLCTs.at(i)->patternId());
+		//key.push_back(emulatedCLCTs.at(i)->key());
+		ch_id.push_back(chamberHash);
+		
+	} 		
+	
+}
+
+void CLCTCandidateCollection::Erase()
+{
+	//_pattern.clear();
+	_horizontalIndex.clear();
+	_startTime.clear();
+	//_lutEntry.clear();
+	keyStrip.clear();
+	keyHalfStrip.clear();
+	//position.clear();
+	//slope.clear();
+	comparatorCodeId.clear();
+	layerCount.clear();
+	patternId.clear();
+	//key.clear();
+	ch_id.clear();
+}
+
+void CLCTCandidateCollection::FillTree(TTree *t)
+{
+	t->Fill();
+}
+
+//
 // ChamberHits
 //
 

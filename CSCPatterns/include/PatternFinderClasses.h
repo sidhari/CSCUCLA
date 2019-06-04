@@ -128,6 +128,116 @@ private:
 
 };
 
+class CLCTCandidateCollection
+{
+	public:
+
+	//std::vector<CSCPattern> _pattern;
+	std::vector<int> _horizontalIndex;
+	std::vector<int> _startTime;
+	//std::vector<const LUTEntry*> _lutEntry;	
+	std::vector<float> keyStrip;
+	std::vector<int> keyHalfStrip;
+	//std::vector<float> position;
+	//std::vector<float> slope;
+	std::vector<int> comparatorCodeId;
+	std::vector<int> layerCount;
+	std::vector<int> patternId;
+	//std::vector<LUTKey> key;
+	std::vector<int> ch_id;	
+
+	CLCTCandidateCollection(TTree *t)
+	{	
+		//t->Branch("_pattern", &_pattern);
+		t->Branch("_horizontalIndex", &_horizontalIndex);
+		t->Branch("_startTime", &_startTime);
+		//t->Branch("_lutEntry", &_lutEntry);		
+		t->Branch("KeyStrip", &keyStrip);
+		t->Branch("KeyHalfStrip", &keyHalfStrip);
+		//t->Branch("position", &position);
+		//t->Branch("slope", &slope);
+		t->Branch("comparatorCodeId", &comparatorCodeId);
+		t->Branch("layerCount", &layerCount);
+		t->Branch("patternId", &patternId);
+		//t->Branch("key", &key);
+		t->Branch("ch_id", &ch_id);
+	}
+
+	void Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash);	
+	void Erase();
+	void FillTree(TTree *t);
+};
+
+class EmulatedCLCTs 
+{
+	public:
+
+	EmulatedCLCTs() 
+	{	
+		//_pattern = 0
+		_horizontalIndex = 0;
+		_startTime = 0;
+		//_lutEntry = 0;
+		keyStrip = 0;
+		keyHalfStrip = 0;
+		//position = 0;
+		//slope = 0;
+		comparatorCodeId = 0;
+		layerCount = 0;
+		patternId = 0;
+		//key = 0;
+		ch_id = 0;
+	}
+
+	EmulatedCLCTs(TTree* t) : EmulatedCLCTs()
+	{
+		//t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(_pattern))).c_str(), &_pattern);
+		t->SetBranchAddress("_horizontalIndex", &_horizontalIndex);
+		t->SetBranchAddress("_startTime", &_startTime);
+		//t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(_lutEntry))).c_str(), &_lutEntry);
+		t->SetBranchAddress("KeyStrip", &keyStrip);
+		t->SetBranchAddress("KeyHalfStrip", &keyHalfStrip);
+		//t->SetBranchAddress("position", &position);
+		//t->SetBranchAddress("slope", &slope);
+		t->SetBranchAddress("comparatorCodeId", &comparatorCodeId);
+		t->SetBranchAddress("layerCount", &layerCount);
+		t->SetBranchAddress("patternId", &patternId);
+		//t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(key))).c_str(), &key);
+		t->SetBranchAddress("ch_id", &ch_id);
+	}
+
+	unsigned int size() const 
+	{
+		return ch_id ? ch_id->size() : 0;
+	}
+
+	unsigned int size(int chamber_index) const 
+	{
+		if(!ch_id) return 0;
+		unsigned int count =0;
+		for(auto id : *ch_id)
+		{
+			if(chamber_index == id) count++;
+		}
+		return count;
+	}
+
+	//std::vector<CSCPattern>* _pattern;
+	std::vector<int>* _horizontalIndex;
+	std::vector<int>* _startTime;
+	//std::vector<const LUTEntry*>* _lutEntry;	
+	std::vector<float>* keyStrip;
+	std::vector<int>* keyHalfStrip;
+	//std::vector<float>* position;
+	//std::vector<float>* slope;
+	std::vector<int>* comparatorCodeId;
+	std::vector<int>* layerCount;
+	std::vector<int>* patternId;
+	//std::vector<LUTKey>* key;
+	std::vector<int>* ch_id;
+
+};
+
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber
