@@ -131,41 +131,65 @@ private:
 class CLCTCandidateCollection
 {
 	public:
-
-	//std::vector<CSCPattern> _pattern;
+	
 	std::vector<int> _horizontalIndex;
-	std::vector<int> _startTime;
-	//std::vector<const LUTEntry*> _lutEntry;	
+	std::vector<int> _startTime;	
 	std::vector<float> keyStrip;
 	std::vector<int> keyHalfStrip;
-	//std::vector<float> position;
-	//std::vector<float> slope;
 	std::vector<int> comparatorCodeId;
 	std::vector<int> layerCount;
-	std::vector<int> patternId;
-	//std::vector<LUTKey> key;
+	std::vector<int> patternId;	
 	std::vector<int> ch_id;	
 
-	CLCTCandidateCollection(TTree *t)
-	{	
-		//t->Branch("_pattern", &_pattern);
-		t->Branch("_horizontalIndex", &_horizontalIndex);
-		t->Branch("_startTime", &_startTime);
-		//t->Branch("_lutEntry", &_lutEntry);		
-		t->Branch("KeyStrip", &keyStrip);
-		t->Branch("KeyHalfStrip", &keyHalfStrip);
-		//t->Branch("position", &position);
-		//t->Branch("slope", &slope);
-		t->Branch("comparatorCodeId", &comparatorCodeId);
-		t->Branch("layerCount", &layerCount);
-		t->Branch("patternId", &patternId);
-		//t->Branch("key", &key);
-		t->Branch("ch_id", &ch_id);
-	}
+	TBranch* B_horizontalIndexOP;
+	TBranch* B_startTimeOP;		
+	TBranch* BKeyStripOP;
+	TBranch* BKeyHalfStripOP;	
+	TBranch* BcomparatorCodeIdOP;
+	TBranch* BlayerCountOP;
+	TBranch* BpatternIdOP;	
+	TBranch* Bch_idOP;
+
+	TBranch* B_horizontalIndexNP;
+	TBranch* B_startTimeNP;		
+	TBranch* BKeyStripNP;
+	TBranch* BKeyHalfStripNP;	
+	TBranch* BcomparatorCodeIdNP;
+	TBranch* BlayerCountNP;
+	TBranch* BpatternIdNP;	
+	TBranch* Bch_idNP;
+
+	CLCTCandidateCollection(TTree *t, int i)
+	{
+		if(i == 1)
+		{
+			B_horizontalIndexOP = t->Branch("OP_horizontalIndex", &_horizontalIndex);
+			B_startTimeOP = t->Branch("OP_startTime", &_startTime);			
+			BKeyStripOP = t->Branch("OPKeyStrip", &keyStrip);
+			BKeyHalfStripOP = t->Branch("OPKeyHalfStrip", &keyHalfStrip);		
+			BcomparatorCodeIdOP = t->Branch("OPcomparatorCodeId", &comparatorCodeId);
+			BlayerCountOP = t->Branch("OPlayerCount", &layerCount);
+			BpatternIdOP = t->Branch("OPpatternId", &patternId);		
+			Bch_idOP = t->Branch("OPch_id", &ch_id);	
+		}				
+			
+		if(i==2)
+		{
+			B_horizontalIndexNP = t->Branch("NP_horizontalIndex", &_horizontalIndex);
+			B_startTimeNP = t->Branch("NP_startTime", &_startTime);			
+			BKeyStripNP = t->Branch("NPKeyStrip", &keyStrip);
+			BKeyHalfStripNP = t->Branch("NPKeyHalfStrip", &keyHalfStrip);		
+			BcomparatorCodeIdNP = t->Branch("NPcomparatorCodeId", &comparatorCodeId);
+			BlayerCountNP = t->Branch("NPlayerCount", &layerCount);
+			BpatternIdNP = t->Branch("NPpatternId", &patternId);		
+			Bch_idNP = t->Branch("NPch_id", &ch_id);	
+		}
+
+	}	
 
 	void Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash);	
 	void Erase();
-	void FillTree(TTree *t);
+	void FillTree(TTree *t, int i);
 };
 
 class EmulatedCLCTs 
@@ -174,35 +198,26 @@ class EmulatedCLCTs
 
 	EmulatedCLCTs() 
 	{	
-		//_pattern = 0
+		
 		_horizontalIndex = 0;
-		_startTime = 0;
-		//_lutEntry = 0;
+		_startTime = 0;		
 		keyStrip = 0;
-		keyHalfStrip = 0;
-		//position = 0;
-		//slope = 0;
+		keyHalfStrip = 0;	
 		comparatorCodeId = 0;
 		layerCount = 0;
-		patternId = 0;
-		//key = 0;
+		patternId = 0;		
 		ch_id = 0;
 	}
 
 	EmulatedCLCTs(TTree* t) : EmulatedCLCTs()
-	{
-		//t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(_pattern))).c_str(), &_pattern);
+	{		
 		t->SetBranchAddress("_horizontalIndex", &_horizontalIndex);
-		t->SetBranchAddress("_startTime", &_startTime);
-		//t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(_lutEntry))).c_str(), &_lutEntry);
+		t->SetBranchAddress("_startTime", &_startTime);		
 		t->SetBranchAddress("KeyStrip", &keyStrip);
-		t->SetBranchAddress("KeyHalfStrip", &keyHalfStrip);
-		//t->SetBranchAddress("position", &position);
-		//t->SetBranchAddress("slope", &slope);
+		t->SetBranchAddress("KeyHalfStrip", &keyHalfStrip);		
 		t->SetBranchAddress("comparatorCodeId", &comparatorCodeId);
 		t->SetBranchAddress("layerCount", &layerCount);
-		t->SetBranchAddress("patternId", &patternId);
-		//t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(key))).c_str(), &key);
+		t->SetBranchAddress("patternId", &patternId);		
 		t->SetBranchAddress("ch_id", &ch_id);
 	}
 
@@ -221,23 +236,17 @@ class EmulatedCLCTs
 		}
 		return count;
 	}
-
-	//std::vector<CSCPattern>* _pattern;
+	
 	std::vector<int>* _horizontalIndex;
-	std::vector<int>* _startTime;
-	//std::vector<const LUTEntry*>* _lutEntry;	
+	std::vector<int>* _startTime;		
 	std::vector<float>* keyStrip;
 	std::vector<int>* keyHalfStrip;
-	//std::vector<float>* position;
-	//std::vector<float>* slope;
 	std::vector<int>* comparatorCodeId;
 	std::vector<int>* layerCount;
-	std::vector<int>* patternId;
-	//std::vector<LUTKey>* key;
+	std::vector<int>* patternId;	
 	std::vector<int>* ch_id;
 
 };
-
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber

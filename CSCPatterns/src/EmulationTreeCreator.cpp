@@ -23,25 +23,18 @@ using namespace std;
 #include "../include/CSCHelper.h"
 
 
-int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int end=-1) {
+int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int end=-1) 
+{
 
 	auto t1 = std::chrono::high_resolution_clock::now();
 
 	cout << endl << "Running over file: " << inputfile << endl;
 
-	TFile* f = TFile::Open(inputfile.c_str());
+	TFile* f = TFile::Open(inputfile.c_str(), "UPDATE");
 	if(!f) throw "Can't open file";
 
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
-
-	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
-	if(!outF){
-		cout << "Failed to open output file: " << outputfile << endl;
-		return -1;
-	}
-
-    TTree* t_emu = new TTree ("EmulationResults", "EmulationResults");   
     
 
 	//
@@ -56,11 +49,11 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 	CSCInfo::CLCTs clcts(t);
 	CSCInfo::Comparators comparators(t);
 
-    CLCTCandidateCollection EmulatedCLCTs(t_emu);	
-
-	//vector<CSCPattern>* newPatterns = createNewPatterns();
+    CLCTCandidateCollection OldPatternsEmulatedCLCTs(t,1);	
+	CLCTCandidateCollection NewPatternsEmulatedCLCTs(t,2);
+	
 	vector<CSCPattern>* oldPatterns = createOldPatterns();
-
+	vector<CSCPattern>* newPatterns = createNewPatterns();
 
 	//
 	// EVENT LOOP
@@ -86,7 +79,8 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 		 */
 		//if(evt.RunNumber <= 323362) continue;
 
-		EmulatedCLCTs.Erase();
+		OldPatternsEmulatedCLCTs.Erase();
+		NewPatternsEmulatedCLCTs.Erase();
 
 		for(unsigned int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
 		{
@@ -105,45 +99,62 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
 
-			bool threeLayerChamber = ((me11a || me11b) && CH == 11);
+			bool threeLayerChamber = ((me11a || me11b) && CH == 11 && EC==1);
 
-			vector<CLCTCandidate*> emulatedCLCTs;
+			//Old Patterns
 
-			if(searchForMatch(compHits,oldPatterns, emulatedCLCTs,true))
+			vector<CLCTCandidate*> OPemulatedCLCTs;
+
+			if(searchForMatch(compHits,oldPatterns, OPemulatedCLCTs,true))
 			{
-				emulatedCLCTs.clear();
+				OPemulatedCLCTs.clear();
 				//cout << "Something broke" << endl;
 				//return;
 
 				continue;
 			}
 
-			if(!threeLayerChamber) 
+			if(!threeLayerChamber) //4 Layer min
 			{
-				for(unsigned int iemu =0; iemu < emulatedCLCTs.size(); iemu++)
+				for(unsigned int iemu =0; iemu < OPemulatedCLCTs.size(); iemu++)
 				{
-					if(emulatedCLCTs.at(iemu)->layerCount() == 3) 
+					if(OPemulatedCLCTs.at(iemu)->layerCount() == 3) 
 					{
-						emulatedCLCTs.erase(emulatedCLCTs.begin()+iemu);
+						OPemulatedCLCTs.erase(OPemulatedCLCTs.begin()+iemu);
 						iemu--;
 					}
 				}
+			}			
+
+			OldPatternsEmulatedCLCTs.Fill(OPemulatedCLCTs, chamberHash); 	
+
+			//New Patterns
+
+			vector<CLCTCandidate*> NPemulatedCLCTs;
+
+			if(searchForMatch(compHits,newPatterns, NPemulatedCLCTs,true))
+			{
+				NPemulatedCLCTs.clear();
+				//cout << "Something broke" << endl;
+				//return;
+
+				continue;
 			}
 
-			while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
+			NewPatternsEmulatedCLCTs.Fill(NPemulatedCLCTs, chamberHash);
 
-			EmulatedCLCTs.Fill(emulatedCLCTs, chamberHash); 	
 
 		}
 
-		EmulatedCLCTs.FillTree(t_emu);
+		OldPatternsEmulatedCLCTs.FillTree(t,1);
+		NewPatternsEmulatedCLCTs.FillTree(t,2);		
 		
 	}
 
-	outF->cd();
-	t_emu->Write();	
+	f->cd();
+	t->Write("", TObject::kOverwrite);	
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
+	printf("Wrote to file: %s\n",inputfile.c_str());
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
@@ -154,8 +165,10 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 
 int main(int argc, char* argv[])
 {
-	try {
-		switch(argc){
+	try 
+	{
+		switch(argc)
+		{
 		case 3:
 			return EmulationTreeCreator(string(argv[1]), string(argv[2]));
 		case 4:
@@ -167,7 +180,8 @@ int main(int argc, char* argv[])
 			cout << "./EmulationTreeCreator inputFile outputFile (events)" << endl;
 			return -1;
 		}
-	}catch( const char* msg) {
+	}catch( const char* msg) 
+	{
 		cerr << "ERROR: " << msg << endl;
 		return -1;
 	}

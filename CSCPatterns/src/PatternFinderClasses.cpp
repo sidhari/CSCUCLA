@@ -469,48 +469,58 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 
 void CLCTCandidateCollection::Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash)
 {
-
-
 	for(unsigned int i = 0; i < emulatedCLCTs.size(); i++)
-	{
-		//_pattern.push_back(emulatedCLCTs.at(i)->_pattern);
+	{		
 		_horizontalIndex.push_back(emulatedCLCTs.at(i)->_horizontalIndex);
-		_startTime.push_back(emulatedCLCTs.at(i)->_startTime);
-		//_lutEntry.push_back(emulatedCLCTs.at(i)->_lutEntry);
+		_startTime.push_back(emulatedCLCTs.at(i)->_startTime);		
 		keyStrip.push_back(emulatedCLCTs.at(i)->keyStrip());
 		keyHalfStrip.push_back(emulatedCLCTs.at(i)->keyHalfStrip());
-		//position.push_back(emulatedCLCTs.at(i)->position());
-		//slope.push_back(emulatedCLCTs.at(i)->slope());
 		comparatorCodeId.push_back(emulatedCLCTs.at(i)->comparatorCodeId());
 		layerCount.push_back(emulatedCLCTs.at(i)->layerCount());
-		patternId.push_back(emulatedCLCTs.at(i)->patternId());
-		//key.push_back(emulatedCLCTs.at(i)->key());
-		ch_id.push_back(chamberHash);
-		
+		patternId.push_back(emulatedCLCTs.at(i)->patternId());		
+		ch_id.push_back(chamberHash);		
 	} 		
 	
 }
 
 void CLCTCandidateCollection::Erase()
-{
-	//_pattern.clear();
+{	
 	_horizontalIndex.clear();
-	_startTime.clear();
-	//_lutEntry.clear();
+	_startTime.clear();	
 	keyStrip.clear();
 	keyHalfStrip.clear();
-	//position.clear();
-	//slope.clear();
 	comparatorCodeId.clear();
 	layerCount.clear();
-	patternId.clear();
-	//key.clear();
+	patternId.clear();	
 	ch_id.clear();
 }
 
-void CLCTCandidateCollection::FillTree(TTree *t)
+void CLCTCandidateCollection::FillTree(TTree *t, int i)
 {
-	t->Fill();
+	if(i == 1)
+	{
+		B_horizontalIndexOP->Fill();
+		B_startTimeOP->Fill();		
+		BKeyStripOP->Fill();
+		BKeyHalfStripOP->Fill();	
+		BcomparatorCodeIdOP->Fill();
+		BlayerCountOP->Fill();
+		BpatternIdOP->Fill();		
+		Bch_idOP->Fill();
+	}
+	
+	if(i==2)
+	{
+		B_horizontalIndexNP->Fill();
+		B_startTimeNP->Fill();		
+		BKeyStripNP->Fill();
+		BKeyHalfStripNP->Fill();		
+		BcomparatorCodeIdNP->Fill();
+		BlayerCountNP->Fill();
+		BpatternIdNP->Fill();		
+		Bch_idNP->Fill();
+	}
+
 }
 
 //
