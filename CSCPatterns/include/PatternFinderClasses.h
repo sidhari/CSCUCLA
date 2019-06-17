@@ -141,55 +141,36 @@ class CLCTCandidateCollection
 	std::vector<int> patternId;	
 	std::vector<int> ch_id;	
 
-	TBranch* B_horizontalIndexOP;
-	TBranch* B_startTimeOP;		
-	TBranch* BKeyStripOP;
-	TBranch* BKeyHalfStripOP;	
-	TBranch* BcomparatorCodeIdOP;
-	TBranch* BlayerCountOP;
-	TBranch* BpatternIdOP;	
-	TBranch* Bch_idOP;
-
-	TBranch* B_horizontalIndexNP;
-	TBranch* B_startTimeNP;		
-	TBranch* BKeyStripNP;
-	TBranch* BKeyHalfStripNP;	
-	TBranch* BcomparatorCodeIdNP;
-	TBranch* BlayerCountNP;
-	TBranch* BpatternIdNP;	
-	TBranch* Bch_idNP;
-
 	CLCTCandidateCollection(TTree *t, int i)
-	{
-		if(i == 1)
+	{	
+		if(i==1)
 		{
-			B_horizontalIndexOP = t->Branch("OP_horizontalIndex", &_horizontalIndex);
-			B_startTimeOP = t->Branch("OP_startTime", &_startTime);			
-			BKeyStripOP = t->Branch("OPKeyStrip", &keyStrip);
-			BKeyHalfStripOP = t->Branch("OPKeyHalfStrip", &keyHalfStrip);		
-			BcomparatorCodeIdOP = t->Branch("OPcomparatorCodeId", &comparatorCodeId);
-			BlayerCountOP = t->Branch("OPlayerCount", &layerCount);
-			BpatternIdOP = t->Branch("OPpatternId", &patternId);		
-			Bch_idOP = t->Branch("OPch_id", &ch_id);	
-		}				
-			
+			t->Branch("OP_horizontalIndex", &_horizontalIndex);
+			t->Branch("OP_startTime", &_startTime);			
+			t->Branch("OPKeyStrip", &keyStrip);
+			t->Branch("OPKeyHalfStrip", &keyHalfStrip);		
+			t->Branch("OPcomparatorCodeId", &comparatorCodeId);
+			t->Branch("OPlayerCount", &layerCount);
+			t->Branch("OPpatternId", &patternId);		
+			t->Branch("OPch_id", &ch_id);	
+		}	
+				
 		if(i==2)
 		{
-			B_horizontalIndexNP = t->Branch("NP_horizontalIndex", &_horizontalIndex);
-			B_startTimeNP = t->Branch("NP_startTime", &_startTime);			
-			BKeyStripNP = t->Branch("NPKeyStrip", &keyStrip);
-			BKeyHalfStripNP = t->Branch("NPKeyHalfStrip", &keyHalfStrip);		
-			BcomparatorCodeIdNP = t->Branch("NPcomparatorCodeId", &comparatorCodeId);
-			BlayerCountNP = t->Branch("NPlayerCount", &layerCount);
-			BpatternIdNP = t->Branch("NPpatternId", &patternId);		
-			Bch_idNP = t->Branch("NPch_id", &ch_id);	
+			t->Branch("NP_horizontalIndex", &_horizontalIndex);
+			t->Branch("NP_startTime", &_startTime);			
+			t->Branch("NPKeyStrip", &keyStrip);
+			t->Branch("NPKeyHalfStrip", &keyHalfStrip);		
+			t->Branch("NPcomparatorCodeId", &comparatorCodeId);
+			t->Branch("NPlayerCount", &layerCount);
+			t->Branch("NPpatternId", &patternId);		
+			t->Branch("NPch_id", &ch_id);	
 		}
-
 	}	
 
 	void Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash);	
 	void Erase();
-	void FillTree(TTree *t, int i);
+	//void FillTree(TTree* t);
 };
 
 class EmulatedCLCTs 

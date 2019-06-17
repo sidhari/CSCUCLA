@@ -5,14 +5,21 @@
  *      Author: Siddharth Hariprakash
  */
 
+#include <string>
+#include <vector>
+#include <iostream>
+#include <stdio.h>
+#include <algorithm>
+#include <chrono>
+#include <time.h>
 #include <stdio.h>
 #include <time.h>
-
-using namespace std;
+#include<map>
 
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
+#include <TH2F.h>
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
@@ -22,6 +29,7 @@ using namespace std;
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+using namespace std;
 
 int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int end=-1) 
 {
@@ -30,13 +38,21 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 
 	cout << endl << "Running over file: " << inputfile << endl;
 
-	TFile* f = TFile::Open(inputfile.c_str(), "UPDATE");
+	TFile* f = TFile::Open(inputfile.c_str());
 	if(!f) throw "Can't open file";
 
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
-    
 
+	TFile* outF = new TFile(outputfile.c_str(),"RECREATE");
+	if(!outF)
+	{
+		printf("Failed to open output file: %s\n", outputfile.c_str());
+		return -1;
+	}
+
+	TTree* t_emu = new TTree("EmulationResults", "EmulationResults");	  
+	
 	//
 	// SET INPUT BRANCHES
 	//
@@ -49,8 +65,8 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 	CSCInfo::CLCTs clcts(t);
 	CSCInfo::Comparators comparators(t);
 
-    CLCTCandidateCollection OldPatternsEmulatedCLCTs(t,1);	
-	CLCTCandidateCollection NewPatternsEmulatedCLCTs(t,2);
+    CLCTCandidateCollection OldPatternsEmulatedCLCTs(t_emu,1);	
+	CLCTCandidateCollection NewPatternsEmulatedCLCTs(t_emu,2);
 	
 	vector<CSCPattern>* oldPatterns = createOldPatterns();
 	vector<CSCPattern>* newPatterns = createNewPatterns();
@@ -146,15 +162,16 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 
 		}
 
-		OldPatternsEmulatedCLCTs.FillTree(t,1);
-		NewPatternsEmulatedCLCTs.FillTree(t,2);		
-		
+		//OldPatternsEmulatedCLCTs.FillTree(1);
+		//NewPatternsEmulatedCLCTs.FillTree(2);		
+		t_emu->Fill();
 	}
 
-	f->cd();
-	t->Write("", TObject::kOverwrite);	
+	outF->cd();
+	t_emu->Write();
+	//delete outF;
 
-	printf("Wrote to file: %s\n",inputfile.c_str());
+	printf("Wrote to file: %s\n",outputfile.c_str());
 
 	auto t2 = std::chrono::high_resolution_clock::now();
 	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;

@@ -495,33 +495,10 @@ void CLCTCandidateCollection::Erase()
 	ch_id.clear();
 }
 
-void CLCTCandidateCollection::FillTree(TTree *t, int i)
+/*void CLCTCandidateCollection::FillTree(TTree* t)
 {
-	if(i == 1)
-	{
-		B_horizontalIndexOP->Fill();
-		B_startTimeOP->Fill();		
-		BKeyStripOP->Fill();
-		BKeyHalfStripOP->Fill();	
-		BcomparatorCodeIdOP->Fill();
-		BlayerCountOP->Fill();
-		BpatternIdOP->Fill();		
-		Bch_idOP->Fill();
-	}
-	
-	if(i==2)
-	{
-		B_horizontalIndexNP->Fill();
-		B_startTimeNP->Fill();		
-		BKeyStripNP->Fill();
-		BKeyHalfStripNP->Fill();		
-		BcomparatorCodeIdNP->Fill();
-		BlayerCountNP->Fill();
-		BpatternIdNP->Fill();		
-		Bch_idNP->Fill();
-	}
-
-}
+	t->Fill();
+}*/
 
 //
 // ChamberHits
