@@ -20,7 +20,7 @@
 
 #include "TTree.h"
 
-#include "../include/PatternFinderClasses.h"
+#include "../include/CSCClasses.h"
 
 
 using namespace std;

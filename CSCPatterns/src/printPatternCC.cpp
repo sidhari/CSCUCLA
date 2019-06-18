@@ -5,9 +5,9 @@
  *      Author: wnash
  */
 
+#include <CSCHelperFunctions.h>
 #include <iostream>
 
-#include "../include/PatternFinderHelperFunctions.h"
 
 
 int main(int argc, char* argv[])

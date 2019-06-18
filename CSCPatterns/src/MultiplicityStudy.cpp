@@ -6,6 +6,8 @@
  */
 
 
+#include <CSCClasses.h>
+#include <CSCHelperFunctions.h>
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -26,8 +28,6 @@
 
 
 #include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>

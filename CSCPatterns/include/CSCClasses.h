@@ -19,7 +19,7 @@
 //lambda
 #include <functional>
 
-#include "PatternConstants.h"
+#include "../include/CSCConstants.h"
 #include "../include/LUTClasses.h"
 #include "../include/CSCInfo.h"
 

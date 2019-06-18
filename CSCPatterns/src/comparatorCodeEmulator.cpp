@@ -5,9 +5,7 @@
  *      Author: williamnash
  */
 
-#include "../include/PatternFinderHelperFunctions.h"
-
-//root
+#include <CSCHelperFunctions.h>
 #include <TGraph.h>
 #include <TF1.h>
 #include <TSystem.h>

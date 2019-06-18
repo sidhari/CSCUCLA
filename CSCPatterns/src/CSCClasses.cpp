@@ -6,10 +6,9 @@
  */
 
 
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include <stdlib.h>
-
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
 
 #include "../include/CSCHelper.h"
 

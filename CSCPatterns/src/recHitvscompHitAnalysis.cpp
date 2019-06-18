@@ -8,6 +8,7 @@
 
 
 //c++
+#include <CSCConstants.h>
 #include <vector>
 
 //root
@@ -16,7 +17,6 @@
 #include <TH2F.h>
 
 //project
-#include "../include/PatternConstants.h"
 
 #ifdef __MAKECINT__
 #pragma link C++ class vector<vector<int> >+;

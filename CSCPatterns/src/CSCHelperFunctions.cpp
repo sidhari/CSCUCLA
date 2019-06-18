@@ -6,7 +6,7 @@
  */
 
 
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/CSCHelper.h"
 
 

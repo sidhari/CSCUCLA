@@ -1,41 +1,23 @@
 /*
- * PatternFinder.cpp
+ * LUTBuilder.cpp
  *
- *  Created on: Nov. 7 2018
- *      Author: root
+ *  Created on: Jun 18, 2019
+ *      Author: wnash
  */
 
+#include "../include/LUTBuilder.h"
 
-#include <CSCClasses.h>
-#include <CSCHelperFunctions.h>
 #include <TTree.h>
 #include <TFile.h>
-#include <TH1F.h>
-#include <TH2F.h>
 
-#include <TTreeReader.h>
-#include <TTreeReaderValue.h>
-
-
-#include <string>
-#include <vector>
-#include <iostream>
-#include <stdio.h>
-#include <algorithm>
-#include <chrono>
-#include <time.h>
-
-
-#include "../include/PatternConstants.h"
-#include "../include/LUTClasses.h"
-
-//using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+#include "../include/CSCHelperFunctions.h"
 
-using namespace std;
-
-
+int main(int argc, char* argv[]){
+	LUTBuilder p;
+	return p.main(argc,argv);
+}
 
 struct SegmentMatch {
 	int clctIndex;
@@ -44,18 +26,9 @@ struct SegmentMatch {
 	float pt;
 };
 
+int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, int end) {
 
-
-/* Calculates probability of a muon given a comparator code.
- * See slides: https://indico.cern.ch/event/744948/
- */
-
-int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int end=-1) {
-
-	//TODO: change everythign printf -> cout
-	auto t1 = std::chrono::high_resolution_clock::now();
-
-	printf("Running over file: %s\n", inputfile.c_str());
+	cout << "Running over file: " << inputfile << endl;
 
 
 	TFile* f = TFile::Open(inputfile.c_str());
@@ -91,36 +64,7 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 	//
 	LUT bayesLUT("bayes", LINEFIT_LUT_PATH);
 
-	//
-	// OUTPUT TREE
-	//
 
-	//int patternId = 0;
-	//int ccId = 0;
-	//int layers = 0;
-	//float closestCLCT
-	//bool matchedSegment = false;
-	//int nMultiplicity = 0;
-
-	/*
-	TTree* outTree = new TTree("clctTree", "TTree for analysis of probability if a CLCT will result in a real muon or not");
-	outTree->Branch("patternId", &patternId, "patternId/I");
-	outTree->Branch("ccId", &ccId, "ccId/I");
-	outTree->Branch("matchedSegment", &matchedSegment);
-	outTree->Branch("nMultiplicity", &nMultiplicity, "nMultiplicity/I");
-	*/
-
-
-	/*
-	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
-	if(!outF){
-		printf("Failed to open output file: %s\n", outputfile.c_str());
-		return -1;
-	}
-
-	TH1F* h_clctPatterns_real = new TH1F("h_clctPatterns_real","Recorded CLCT Pattern IDs; Pattern ID; CLCTs", 11,0,11);
-	TH1F* h_clctPatterns_emulated = new TH1F("h_clctPatterns_emulated","Emulated CLCT Pattern IDs; Pattern ID; CLCTs", 11,0,11);
-*/
 	//
 	// TREE ITERATION
 	//
@@ -154,14 +98,12 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 
 			ChamberHits compHits(ST, RI, EC, CH);
 
-			//if(fillCompHits(compHits, comparators)) return -1;
 			if(compHits.fill(comparators)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;
 
 			//get all the clcts in the chamber
-
 
 			if(searchForMatch(compHits, oldEnvelopes,oldSetMatch) || searchForMatch(compHits, newEnvelopes,newSetMatch)) {
 				oldSetMatch.clear();
@@ -194,11 +136,9 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				float segmentdXdZ = segments.dxdz->at(thisSeg);
 				float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
-				/*
+
 				// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
 				if(CSCHelper::segmentIsOnEdgeOfChamber(segmentX, ST,RI)) continue;
-
-				*/
 
 				//
 				// find all the clcts that are in the chamber, and match
@@ -223,14 +163,6 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 					auto& clct = newSetMatch.at(closestNewMatchIndex);
 
 					float clctX = clct->keyStrip();
-					/*
-					LUTEntry* entry = 0;
-
-					if(bayesLUT.editEntry(clct->key(),entry)){
-						return -1;
-					}
-					entry->addSegment(segmentX-clctX, segmentdXdZ,Pt);
-					*/
 
 					SegmentMatch thisMatch;
 					thisMatch.clctIndex = closestNewMatchIndex;
@@ -268,79 +200,16 @@ int BayesPatternAnalysis(string inputfile, string outputfile, int start=0, int e
 				if(!foundSegment){
 					entry->addCLCT(newSetMatch.size());
 				}
-
-				/*
-				//if we matched to a segment
-				if(find(matchedNewId.begin(), matchedNewId.end(), iclct) != matchedNewId.end()){
-					cout << "here1" << endl;
-					float pt = matchedNew.at(iclct).pt;
-					float pos = matchedNew.at(iclct).posOffset;
-					float slope = matchedNew.at(iclct).slopeOffset;
-
-					cout << "here2" << endl;
-					entry->addCLCT(newSetMatch.size(), pt, pos,slope);
-				}else{ //if we didn't match to a segment
-					entry->addCLCT(newSetMatch.size());
-				}
-				*/
-
 			}
 
 
 			oldSetMatch.clear();
 			newSetMatch.clear();
 		}
-
-
 	}
 
-	//cout << "got here" << endl;
-	//bayesLUT.print();
 	bayesLUT.writeToROOT(outputfile);
 
-	/*
-
-	outF->cd();
-	h_clctPatterns_emulated->Write();
-	h_clctPatterns_real->Write();
-	*/
-
-
-	printf("Wrote to file: %s\n",outputfile.c_str());
-
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
-
-	return 0;
-
-}
-
-
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]));
-		case 4:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return BayesPatternAnalysis(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./PatternFinder inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
+	cout << "Wrote to file: " << outputfile << endl;
 	return 0;
 }
-
-
-
-
-
-
-

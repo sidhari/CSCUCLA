@@ -1,39 +1,28 @@
 /*
- * PatternFinder.cpp
+ * LUTBuilder_TEMPLATE.cpp
  *
- *  Created on: Nov. 7 2018
- *      Author: root
+ *  Created on: Jun 18, 2019
+ *      Author: wnash
  */
 
 
-#include <CSCClasses.h>
-#include <CSCHelperFunctions.h>
+#include "../include/LUTBuilder_TEMPLATE.h"
+
+#include <iostream>
+
 #include <TTree.h>
 #include <TFile.h>
-#include <TH1F.h>
-#include <TH2F.h>
 
-#include <TTreeReader.h>
-#include <TTreeReaderValue.h>
-
-
-#include <string>
-#include <vector>
-#include <iostream>
-#include <stdio.h>
-#include <algorithm>
-#include <chrono>
-#include <time.h>
-
-
-#include "../include/CSCConstants.h"
-#include "../include/LUTClasses.h"
-
-//using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
+#include "../include/LUTClasses.h"
 
-using namespace std;
+int main(int argc, char* argv[]){
+	LUTBuilder_TEMPLATE p;
+	return p.main(argc,argv);
+}
 
 struct SegmentMatch {
 	int clctIndex;
@@ -42,13 +31,8 @@ struct SegmentMatch {
 	float pt;
 };
 
-/*
-int LUTBuilderTEMPLATE(string inputfile, string outputfile, int start=0, int end=-1) {
-
-	//TODO: change everythign printf -> cout
-	auto t1 = std::chrono::high_resolution_clock::now();
-
-	printf("Running over file: %s\n", inputfile.c_str());
+int LUTBuilder_TEMPLATE::run(std::string inputfile, std::string outputfile, int start, int end){
+	cout << "Running over file: " << inputfile << endl;
 
 
 	TFile* f = TFile::Open(inputfile.c_str());
@@ -184,8 +168,6 @@ int LUTBuilderTEMPLATE(string inputfile, string outputfile, int start=0, int end
 				}
 			}
 
-
-
 			//  Look through all the clcts we made, see if we have associated segments,
 			//  then add then to our LUT
 
@@ -231,43 +213,6 @@ int LUTBuilderTEMPLATE(string inputfile, string outputfile, int start=0, int end
 	demoLUT.writeToROOT(outputfile);
 
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
-
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
-
+	cout << "Wrote to file: " << outputfile << endl;
 	return 0;
 }
-
-
-
-
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return LUTBuilderTEMPLATE(string(argv[1]), string(argv[2]));
-		case 4:
-			return LUTBuilderTEMPLATE(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return LUTBuilderTEMPLATE(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./LUTBuilderTEMPLATE inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}
-*/
-
-
-
-
-
-
-

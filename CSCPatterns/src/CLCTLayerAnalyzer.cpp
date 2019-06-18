@@ -17,17 +17,23 @@
 
 using namespace std;
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
-
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+#include "../include/CLCTLayerAnalyzer.h"
+
+int main(int argc, char* argv[]){
+	CLCTLayerAnalyzer p;
+	return p.main(argc,argv);
+}
+
 
 //looks at a map of histograms, if it contains the key, fills the corresponding histogram with "histValue"
-void fillHist(map<unsigned int, TH1F*> hists, unsigned int key, float histValue){
+void CLCTLayerAnalyzer::fillHist(map<unsigned int, TH1F*> hists, unsigned int key, float histValue){
 	//look to see if we care about this chamber
 	auto it = hists.find(key);
 	if(it != hists.end()){
@@ -35,20 +41,8 @@ void fillHist(map<unsigned int, TH1F*> hists, unsigned int key, float histValue)
 		it->second->Fill(histValue);
 	}
 }
-/*
-void addContentToHist(map<unsigned int, TH1F*> hists, unsigned int key, unsigned int bin){
-	//look to see if we care about this chamber
-	auto it = hists.find(key);
-	if(it != hists.end()){
-		//fill the correct histogram
-		it->second->AddBinContent(bin);
-	}
-}
-*/
 
-//vector<pair<int,int>> RING_ENDCAP_PERMUTATIONS{make_pair(4,1), make_pair(1,1), make_pair(4,2), make_pair(1,2)};
-
-map<unsigned int, TH1F*> makeHistPermutation(string name, string title, unsigned int bins, unsigned int low, unsigned int high){
+map<unsigned int, TH1F*> CLCTLayerAnalyzer::makeHistPermutation(string name, string title, unsigned int bins, unsigned int low, unsigned int high){
 	TH1F* h_me11a_plus = new TH1F((name+"_me_p11a_11").c_str(),("me_p11a_11 " +title).c_str(),bins,low,high);
 	TH1F* h_me11b_plus = new TH1F((name+"_me_p11b_11").c_str(),("me_p11b_11" +title).c_str(),bins,low,high);
 	TH1F* h_me11a_minus = new TH1F((name+"_me_m11a_11").c_str(),("me_m11a_11 "+title).c_str(),bins,low,high);
@@ -68,12 +62,10 @@ map<unsigned int, TH1F*> makeHistPermutation(string name, string title, unsigned
 }
 
 
-int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=-1) {
+int CLCTLayerAnalyzer::run(string inputfile, string outputfile, int start, int end) {
 
-	//TODO: change everythign printf -> cout
-	auto t1 = std::chrono::high_resolution_clock::now();
 
-	printf("Running over file: %s\n", inputfile.c_str());
+	cout << "Running over file: " << inputfile << endl;
 
 
 	TFile* f = TFile::Open(inputfile.c_str());
@@ -316,13 +308,7 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 			int qual = lcts.quality->at(ilct);
 			fillHist(allLctQuality, thisLctId, qual);
 		}
-
-
-
-
 	}
-
-
 
 
 	for(auto hist : allClctLayerCounts) hist.second->Write();
@@ -340,32 +326,8 @@ int CLCTLayerAnalyzer(string inputfile, string outputfile, int start=0, int end=
 
 	outF->Close();
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
+	cout << "Wrote to file: " << outputfile << endl;
 
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
-	return 0;
-}
-
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return CLCTLayerAnalyzer(string(argv[1]), string(argv[2]));
-		case 4:
-			return CLCTLayerAnalyzer(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return CLCTLayerAnalyzer(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./PatternFinder inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
 	return 0;
 }
 
