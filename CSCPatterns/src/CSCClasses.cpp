@@ -367,6 +367,15 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[
 	_lutEntry = 0;
 }
 
+CLCTCandidate::CLCTCandidate(CSCPattern p,ComparatorCode c, int horInd, int startTime):
+				_pattern(p),
+				_horizontalIndex(horInd),
+				_startTime(startTime) {
+	_code = new ComparatorCode(c);
+	_layerMatchCount = _code->getLayersMatched();
+	_lutEntry = 0;
+}
+
 CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 		int layMatCount) :
 				_pattern(p),

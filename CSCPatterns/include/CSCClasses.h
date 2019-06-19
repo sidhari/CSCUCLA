@@ -96,6 +96,7 @@ private:
 class CLCTCandidate {
 public:
 	CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[NLAYERS][3]);
+	CLCTCandidate(CSCPattern p, ComparatorCode c, int horInd, int startTime);
 	CLCTCandidate(CSCPattern p, int horInd, int startTime, int layMatCount);
 
 	~CLCTCandidate();
