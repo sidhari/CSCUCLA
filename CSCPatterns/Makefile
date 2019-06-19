@@ -10,7 +10,7 @@ PROJLIBS=$(LIBDIR)/CSCClasses_cpp.so $(LIBDIR)/CSCHelperFunctions_cpp.so $(LIBDI
 #TODO: Wildcards here!!
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
 #all: $(PROJLIBS) $(SRCDIR)/PatternFinder $(SRCDIR)/printPatternCC $(SRCDIR)/CLCTLayerAnalyzer $(SRCDIR)/BayesPatternAnalysis $(SRCDIR)/testTMBEmulation $(SRCDIR)/MultiplicityStudy $(SRCDIR)/ThreeLayerCLCTEmulationAnalyzer $(SRCDIR)/LUTBuilderTEMPLATE
-all: $(PROJLIBS) $(SRCDIR)/*TEMPLATE $(SRCDIR)/LUTBuilder $(SRCDIR)/*Analyzer
+all: $(PROJLIBS) $(SRCDIR)/LUTBuilder $(SRCDIR)/*Analyzer $(SRCDIR)/*TEMPLATE
 
 
 # Make shared libraries to minimize code compilation, but primarily to

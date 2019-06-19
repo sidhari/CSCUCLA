@@ -481,7 +481,7 @@ vector<CSCPattern>* createOldPatterns(){
 
 	return thisVector;
 }
-
+/* Deprecated
 int chamberSerial( int ec, int st, int ri, int ch ) {
 
     int kSerial = ch;
@@ -499,41 +499,4 @@ int chamberSerial( int ec, int st, int ri, int ch ) {
 
     return kSerial;
 }
-
-/*
-int fillRecHits(ChamberHits& theseRecHits,
-		const CSCInfo::RecHits& r){
-	int EC = (int)theseRecHits._endcap;
-	int ST = (int)theseRecHits._station;
-	int RI = (int)theseRecHits._ring;
-	int CH = (int)theseRecHits._chamber;
-
-
-	int chSid = CSCHelper::serialize(ST, RI, CH, EC);
-	bool me11a = (ST == 1 && RI == 4);
-	bool me11b = (ST == 1 && RI == 1);
-	for(unsigned int thisRh = 0; thisRh < r.size(); thisRh++)
-	{
-		int thisId = r.ch_id->at(thisRh);
-
-		if(chSid != thisId) continue; //just look at matches
-		//rhLay goes 1-6
-		unsigned int iLay = r.lay->at(thisRh)-1;
-
-		//goes 1-80
-		float thisRhPos = r.pos_x->at(thisRh);
-
-		int iRhStrip = round(2.*thisRhPos-.5)-1; //round and shift to start at zero
-		if(me11a ||me11b || !(iLay%2)) iRhStrip++; // add one to account for staggering, if even layer
-
-		if((unsigned int)iRhStrip >= N_MAX_HALF_STRIPS || iRhStrip < 0){
-			printf("ERROR: recHit index %i invalid\n", iRhStrip);
-			return -1;
-		}
-
-		theseRecHits._hits[iRhStrip][iLay] = true;
-	}
-	return 0;
-}
 */
-

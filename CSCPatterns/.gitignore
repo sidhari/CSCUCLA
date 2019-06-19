@@ -10,6 +10,7 @@ src/printPatternCC
 src/root/*
 src/LUTBuilder
 src/LUTBuilder_TEMPLATE
+src/Analyzer_TEMPLATE
 python/quick_hacks/*
 ../CSCDigiTuples/test/makeCSCDigiTree_dummy_cfg.py
 ../CSCDigiTuples/test/makeCSCDigiTree_testCameron_cfg.py

@@ -27,6 +27,12 @@ ComparatorCode::ComparatorCode(bool hits[NLAYERS][3]) {
 	calculateLayersMatched();
 };
 
+ComparatorCode::ComparatorCode(unsigned int comparatorCode) : ComparatorCode(){
+	bool hits[NLAYERS][3];
+	if(!getHits(comparatorCode,hits)) return;
+	*this = ComparatorCode(hits);
+}
+
 ComparatorCode::ComparatorCode(const ComparatorCode& c){
 	for(unsigned int i = 0; i < NLAYERS; i++){
 		for(int j = 0; j < 3; j++){
@@ -82,6 +88,52 @@ string ComparatorCode::getStringInBase4(int code){
 	return getStringInBase4(div) + to_string(rem);
 }
 
+//given a comparator code (unsigned int) fills in the array
+//of hits that it comes from, returns false if it fails
+bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYERS][3]){
+	if(comparatorCode >= 4096) {//2^12
+		cout << "Error: invalid pattern code" << endl;
+		return false;
+	}
+
+	//initialize
+	for(unsigned int ilay=0; ilay < NLAYERS; ilay++){
+		for(unsigned int iwindow=0; iwindow < 3; iwindow++){
+			hits[ilay][iwindow] = 0;
+		}
+	}
+	for(unsigned int ilay=0, ibit=1; ilay< NLAYERS; ilay++, ibit = ibit << 2){
+		//0,1,2,3 for each layer
+		int layerPattern = (comparatorCode & (ibit|ibit<<1))/ibit;
+		if(layerPattern <0 || layerPattern > 3){
+			cout << "Error: invalid  layer code" << endl;
+			return false;
+		}
+
+		switch(layerPattern){
+		//0 -> 000
+		case 0: //already set to zero
+			break;
+			//1 -> 001
+		case 1:
+			hits[ilay][2] = 1;
+			break;
+			//2 -> 010
+		case 2:
+			hits[ilay][1] = 1;
+			break;
+			//3 -> 100
+		case 3:
+			hits[ilay][0] = 1;
+			break;
+		default:
+			cout << "Error: invalid  layer code" << endl;
+			return false;
+		}
+
+	}
+	return true;
+}
 
 //calculates the id based on location of hits
 void ComparatorCode::calculateId(){
