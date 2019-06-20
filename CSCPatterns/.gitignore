@@ -5,8 +5,8 @@
 plots/*
 papers/*
 src/CLCTLayerAnalyzer
-src/PatternFinder
-src/printPatternCC
+src/LUTResolutionAnalyzer
+src/PatternPrinter
 src/root/*
 src/LUTBuilder
 src/LUTBuilder_TEMPLATE
@@ -26,12 +26,9 @@ include/CSCInfo.h
 jobs/Charmonium/
 ../papers/
 dat/
-src/BayesPatternAnalysis
-src/BremGenPEstimator
-src/GenStudy
-src/MultiplicityStudy
+src/ComparatorMultiplicityAnalyzer
 src/ThreeLayerCLCTEmulationAnalyzer
-src/testTMBEmulation
+src/TMBEmulationTester
 src/LUTBuilderTEMPLATE
 src/PatternFinderMT.cpp
 papers/

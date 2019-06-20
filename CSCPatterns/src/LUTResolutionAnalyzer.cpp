@@ -6,8 +6,6 @@
  */
 
 
-#include <CSCClasses.h>
-#include <CSCHelperFunctions.h>
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -29,12 +27,16 @@
 #include <time.h>
 
 
-#include "../include/PatternConstants.h"
-#include "../include/LUTClasses.h"
-
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
+#include "../include/LUTClasses.h"
+#include "../include/LUTResolutionAnalyzer.h"
+
 
 using namespace std;
 
@@ -53,13 +55,16 @@ using namespace std;
  *
  */
 
+int main(int argc, char* argv[]){
+	LUTResolutionAnalyzer p;
+	return p.main(argc,argv);
+}
 
-int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) {
 
-	//TODO: change everythign printf -> cout
-	auto t1 = std::chrono::high_resolution_clock::now();
 
-	printf("Running over file: %s\n", inputfile.c_str());
+int LUTResolutionAnalyzer::run(string inputfile, string outputfile, int start, int end) {
+
+	cout << "Running over file: " << inputfile << endl;
 
 
 	TFile* f = TFile::Open(inputfile.c_str());
@@ -67,8 +72,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
-
-
 
 	//
 	// MAKE LUT
@@ -80,11 +83,6 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 	DetectorLUTs newLUTs;
 	DetectorLUTs legacyLUTs(true);
 
-	/*
-	 * TEMPORARY, should be /luts/ not /linefitluts/
-	 *
-	 *
-	 */
 	const string newLutPath = "dat/"+dataset+"/luts/";
 	const string legacyLutPath = "dat/"+dataset+"/luts/";
 
@@ -627,47 +625,14 @@ int PatternFinder(string inputfile, string outputfile, int start=0, int end=-1) 
 */
 	outF->Close();
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
-
-
-	// print program timing information
-	//cout << "Time elapsed: " << float(clock()- c_start) / CLOCKS_PER_SEC << " s" << endl;
-
-	//return 0;
+	cout << "Wrote to file: " << outputfile << endl;
 
 //	cout << "Fraction with >1 in layer is " <<  (*nChambersMultipleInOneLayer.Get()) << "/" <<
 //			(*nChambersRanOver.Get()) << " = " << 1.*(*nChambersMultipleInOneLayer.Get())/(*nChambersRanOver.Get()) << endl;
 
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
-
 	return 0;
 
 }
-
-
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return PatternFinder(string(argv[1]), string(argv[2]));
-		case 4:
-			return PatternFinder(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return PatternFinder(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./PatternFinder inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}
-
 
 
 

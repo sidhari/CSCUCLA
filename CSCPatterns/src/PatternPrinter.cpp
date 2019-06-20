@@ -5,7 +5,7 @@
  *      Author: wnash
  */
 
-#include <CSCHelperFunctions.h>
+#include "../include/CSCHelperFunctions.h"
 #include <iostream>
 
 
