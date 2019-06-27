@@ -175,8 +175,8 @@ int LUTBuilder(string inputfile, string outputfile, int start = 0, int end = -1)
                 
             }
 
-            while(newSetMatch.size() > 2)
-            newSetMatch.pop_back();
+            //while(newSetMatch.size() > 2)
+            //newSetMatch.pop_back();
 
             vector<int> matchedNewId;
             vector<SegmentMatch> matchedNew;            
