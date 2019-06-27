@@ -37,26 +37,24 @@ using namespace std;
 
 std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplitter(int CFEBcount, vector<CLCTCandidate*> emuCLCTs)
 {
-	vector<CLCTCandidate*> CFEB1;
-	vector<CLCTCandidate*> CFEB2;
-	vector<CLCTCandidate*> CFEB3;
-	vector<CLCTCandidate*> CFEB4;
-	vector<CLCTCandidate*> CFEB5;
 	
 	map<int,vector<CLCTCandidate*>> DetCFEB;
-	DetCFEB[0] = CFEB1;
-	DetCFEB[1] = CFEB2;
-	DetCFEB[2] = CFEB3;
-	DetCFEB[3] = CFEB4;
-	DetCFEB[4] = CFEB5;
-
-
+	
 	for(int j = 0; j < emuCLCTs.size(); j++)
 	{
 		float keystrip = emuCLCTs.at(j)->keyStrip();
 		int CFEB = (keystrip/16);
 		DetCFEB[CFEB].push_back(emuCLCTs.at(j));
 	}	
+
+	std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplit;
+	std::get<0>(CFEBSplit) = DetCFEB[0];
+	std::get<1>(CFEBSplit) = DetCFEB[1];
+	std::get<2>(CFEBSplit) = DetCFEB[2];
+	std::get<3>(CFEBSplit) = DetCFEB[3];
+	std::get<4>(CFEBSplit) = DetCFEB[4];
+
+	return CFEBSplit;
 
 }
 
