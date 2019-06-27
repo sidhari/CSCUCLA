@@ -1,8 +1,8 @@
 /*
- * ThreeLayerCLCTEmulationAnalyzer.cpp
+ * CLCTSelector.cpp
  *
- *  Created on: May 1, 2019
- *      Author: wnash
+ *  Created on: June 27, 2019
+ *      Author: Siddharth Hariprakash
  */
 
 #include <TTree.h>
