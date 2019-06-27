@@ -94,6 +94,7 @@ private:
 class CLCTCandidate {
 public:
 	CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[NLAYERS][3]);
+	CLCTCandidate(CSCPattern p, ComparatorCode c, int horInd, int startTime);
 	CLCTCandidate(CSCPattern p, int horInd, int startTime, int layMatCount);
 
 	~CLCTCandidate();
@@ -140,6 +141,7 @@ class CLCTCandidateCollection
 	std::vector<int> layerCount;
 	std::vector<int> patternId;	
 	std::vector<int> ch_id;	
+	std::vector<int> IndexInChamber;
 
 	CLCTCandidateCollection(TTree *t, int i)
 	{	
@@ -153,6 +155,7 @@ class CLCTCandidateCollection
 			t->Branch("OPlayerCount", &layerCount);
 			t->Branch("OPpatternId", &patternId);		
 			t->Branch("OPch_id", &ch_id);	
+			t->Branch("OPIndexInChamber", &IndexInChamber);
 		}	
 				
 		if(i==2)
@@ -165,12 +168,12 @@ class CLCTCandidateCollection
 			t->Branch("NPlayerCount", &layerCount);
 			t->Branch("NPpatternId", &patternId);		
 			t->Branch("NPch_id", &ch_id);	
+			t->Branch("NPIndexInChamber", &IndexInChamber);
 		}
 	}	
 
 	void Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash);	
-	void Erase();
-	//void FillTree(TTree* t);
+	void Erase();	
 };
 
 class EmulatedCLCTs 
@@ -188,18 +191,37 @@ class EmulatedCLCTs
 		layerCount = 0;
 		patternId = 0;		
 		ch_id = 0;
+		IndexInChamber = 0;
 	}
 
-	EmulatedCLCTs(TTree* t) : EmulatedCLCTs()
-	{		
-		t->SetBranchAddress("_horizontalIndex", &_horizontalIndex);
-		t->SetBranchAddress("_startTime", &_startTime);		
-		t->SetBranchAddress("KeyStrip", &keyStrip);
-		t->SetBranchAddress("KeyHalfStrip", &keyHalfStrip);		
-		t->SetBranchAddress("comparatorCodeId", &comparatorCodeId);
-		t->SetBranchAddress("layerCount", &layerCount);
-		t->SetBranchAddress("patternId", &patternId);		
-		t->SetBranchAddress("ch_id", &ch_id);
+	EmulatedCLCTs(TTree* t, int i) : EmulatedCLCTs()
+	{	
+		if(i==1)
+		{
+			t->SetBranchAddress("OP_horizontalIndex", &_horizontalIndex);
+			t->SetBranchAddress("OP_startTime", &_startTime);		
+			t->SetBranchAddress("OPKeyStrip", &keyStrip);
+			t->SetBranchAddress("OPKeyHalfStrip", &keyHalfStrip);		
+			t->SetBranchAddress("OPcomparatorCodeId", &comparatorCodeId);
+			t->SetBranchAddress("OPlayerCount", &layerCount);
+			t->SetBranchAddress("OPpatternId", &patternId);		
+			t->SetBranchAddress("OPch_id", &ch_id);
+			t->SetBranchAddress("OPIndexInChamber", &IndexInChamber);
+		}
+
+		if(i==2)
+		{
+			t->SetBranchAddress("NP_horizontalIndex", &_horizontalIndex);
+			t->SetBranchAddress("NP_startTime", &_startTime);		
+			t->SetBranchAddress("NPKeyStrip", &keyStrip);
+			t->SetBranchAddress("NPKeyHalfStrip", &keyHalfStrip);		
+			t->SetBranchAddress("NPcomparatorCodeId", &comparatorCodeId);
+			t->SetBranchAddress("NPlayerCount", &layerCount);
+			t->SetBranchAddress("NPpatternId", &patternId);		
+			t->SetBranchAddress("NPch_id", &ch_id);
+			t->SetBranchAddress("NPIndexInChamber", &IndexInChamber);
+		}
+		
 	}
 
 	unsigned int size() const 
@@ -207,7 +229,7 @@ class EmulatedCLCTs
 		return ch_id ? ch_id->size() : 0;
 	}
 
-	unsigned int size(int chamber_index) const 
+	unsigned int size(unsigned int chamber_index) const 
 	{
 		if(!ch_id) return 0;
 		unsigned int count =0;
@@ -215,6 +237,8 @@ class EmulatedCLCTs
 		{
 			if(chamber_index == id) count++;
 		}
+		if(count > 2)
+		count  = 2;
 		return count;
 	}
 	
@@ -225,7 +249,8 @@ class EmulatedCLCTs
 	std::vector<int>* comparatorCodeId;
 	std::vector<int>* layerCount;
 	std::vector<int>* patternId;	
-	std::vector<int>* ch_id;
+	std::vector<unsigned int>* ch_id;
+	std::vector<int>* IndexInChamber;
 
 };
 

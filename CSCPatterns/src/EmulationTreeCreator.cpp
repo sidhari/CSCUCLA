@@ -90,7 +90,7 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 		/* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
 		 * installed on September 12
 		 */
-		if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
+		//if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
 		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
 		 */
 		//if(evt.RunNumber <= 323362) continue;
@@ -115,13 +115,13 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
 
-			bool threeLayerChamber = ((me11a || me11b) && CH == 11 && EC==1);
+			//bool threeLayerChamber = ((me11a || me11b) && CH == 11 && EC==1);
 
 			//Old Patterns
 
 			vector<CLCTCandidate*> OPemulatedCLCTs;
 
-			if(searchForMatch(compHits,oldPatterns, OPemulatedCLCTs,true))
+			if(searchForMatch(compHits, oldPatterns, OPemulatedCLCTs, true))
 			{
 				OPemulatedCLCTs.clear();
 				//cout << "Something broke" << endl;
@@ -130,7 +130,7 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 				continue;
 			}
 
-			if(!threeLayerChamber) //4 Layer min
+			/*if(!threeLayerChamber) //4 Layer min
 			{
 				for(unsigned int iemu =0; iemu < OPemulatedCLCTs.size(); iemu++)
 				{
@@ -140,7 +140,7 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 						iemu--;
 					}
 				}
-			}			
+			}*/			
 
 			OldPatternsEmulatedCLCTs.Fill(OPemulatedCLCTs, chamberHash); 	
 
@@ -148,7 +148,7 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 
 			vector<CLCTCandidate*> NPemulatedCLCTs;
 
-			if(searchForMatch(compHits,newPatterns, NPemulatedCLCTs,true))
+			if(searchForMatch(compHits, newPatterns, NPemulatedCLCTs, true))
 			{
 				NPemulatedCLCTs.clear();
 				//cout << "Something broke" << endl;

@@ -326,6 +326,16 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 	_lutEntry = 0;
 }
 
+CLCTCandidate::CLCTCandidate(CSCPattern p,ComparatorCode c, int horInd, int startTime):
+				_pattern(p),
+				_horizontalIndex(horInd),
+				_startTime(startTime) {
+	_code = new ComparatorCode(c);
+	_layerMatchCount = _code->getLayersMatched();
+	_lutEntry = 0;
+}
+
+
 CLCTCandidate::~CLCTCandidate() {
 	if(_code) delete _code;
 }
@@ -468,7 +478,7 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 //
 
 void CLCTCandidateCollection::Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigned int chamberHash)
-{
+{	
 	for(unsigned int i = 0; i < emulatedCLCTs.size(); i++)
 	{		
 		_horizontalIndex.push_back(emulatedCLCTs.at(i)->_horizontalIndex);
@@ -479,8 +489,9 @@ void CLCTCandidateCollection::Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigne
 		layerCount.push_back(emulatedCLCTs.at(i)->layerCount());
 		patternId.push_back(emulatedCLCTs.at(i)->patternId());		
 		ch_id.push_back(chamberHash);		
-	} 		
-	
+		IndexInChamber.push_back(i);
+	} 
+		
 }
 
 void CLCTCandidateCollection::Erase()
@@ -493,12 +504,8 @@ void CLCTCandidateCollection::Erase()
 	layerCount.clear();
 	patternId.clear();	
 	ch_id.clear();
+	IndexInChamber.clear();
 }
-
-/*void CLCTCandidateCollection::FillTree(TTree* t)
-{
-	t->Fill();
-}*/
 
 //
 // ChamberHits
