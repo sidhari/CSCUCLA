@@ -54,7 +54,7 @@ std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*
 	for(int j = 0; j < emuCLCTs.size(); j++)
 	{
 		float keystrip = emuCLCTs.at(j)->keyStrip();
-		int CFEB = (keystrip % 16);
+		int CFEB = (keystrip/16);
 		DetCFEB[CFEB].push_back(emuCLCTs.at(j));
 	}	
 
