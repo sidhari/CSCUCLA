@@ -116,9 +116,9 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 	unsigned int SecondCLCTMatch = 0;
 	unsigned int OtherIndexCLCTMatch = 0;
 
-	TH1F* FirstCLCTMatchesvsPt = new TH1F ("First CLCT matches", "First CLCT matches", 20, 0, 100);
-	TH1F* SecondCLCTMatchesvsPt = new TH1F ("Second CLCT matches", "Second CLCT matches", 20, 0, 100);
-	TH1F* OtherCLCTMatchesvsPt = new TH1F ("Other index CLCT matches", "Other Index CLCT matches", 20, 0, 100);
+	TH1F* FirstCLCTMatchesvsPt = new TH1F ("First CLCT matches", "First CLCT matches", 50, 0, 100);
+	TH1F* SecondCLCTMatchesvsPt = new TH1F ("Second CLCT matches", "Second CLCT matches", 50, 0, 100);
+	TH1F* OtherCLCTMatchesvsPt = new TH1F ("Other index CLCT matches", "Other Index CLCT matches", 50, 0, 100);
 
 	for(int i = start; i < end; i++) 
     {
@@ -290,6 +290,12 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 				FinalCandidates.push_back(QualMap[QualVec.at(i)]);
 				
 			}
+
+			for(int i = 0; i < FinalCandidates.size(); i++)
+			{
+				if(FinalCandidates.at(i)->layerCount() < 3)
+				FinalCandidates.erase(i);
+			}
 			
 
 			vector<int> matchedCLCTs;
@@ -308,7 +314,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 				float segmentX = segments.pos_x->at(iseg);
 				float pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
-					if(me11a)
+				if(me11a)
 				{
 					if(segmentX > 47) continue;
 				}
@@ -320,15 +326,12 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 				{
 					if(segmentX > 79) continue;
 				}
-
+				
 				int closestCLCTtoSegmentIndex = -1;
 				float minDistanceSegmentToClosestCLCT = 1e5;
 
 				for(int iclct = 0; iclct < FinalCandidates.size(); iclct++)
-				{
-					if(FinalCandidates.at(iclct)->layerCount() < 3)
-					continue;
-
+				{	 
 					if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), iclct) != matchedCLCTs.end())
 					continue;
 
