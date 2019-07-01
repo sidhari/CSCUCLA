@@ -31,57 +31,6 @@
 
 using namespace std;
 
-void fillHist(map<pair<int,int>, TH2D*> hists, auto key, float histValue1, float histValue2)
-{
-	//look to see if we care about this chamber
-	auto it = hists.find(key);
-	if(it != hists.end())
-	{
-		//fill the correct histogram
-		it->second->Fill(histValue1, histValue2);
-	}
-}
-
-map<pair<int,int>, TH2D*> makeHistPermutation(string name, string title, unsigned int bins1, unsigned int low1, unsigned int high1, unsigned int bins2, unsigned int low2, unsigned int high2)
-{
-	TH2D* h_me11 = new TH2D(("ME11: " + name).c_str(),("ME11: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me14 = new TH2D(("ME14: " + name).c_str(),("ME14: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me12 = new TH2D(("ME12: " + name).c_str(),("ME12: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me13 = new TH2D(("ME13: " + name).c_str(),("ME13: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me21 = new TH2D(("ME21: " + name).c_str(),("ME21: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me22 = new TH2D(("ME22: " + name).c_str(),("ME22: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me31 = new TH2D(("ME31: " + name).c_str(),("ME31: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me32 = new TH2D(("ME32: " + name).c_str(),("ME32: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me41 = new TH2D(("ME41: " + name).c_str(),("ME41: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-	TH2D* h_me42 = new TH2D(("ME42: " + name).c_str(),("ME42: " + title).c_str(),bins1,low1,high1,bins2,low2,high2);
-
-	auto me_11 = make_pair(1,1);
-	auto me_14 = make_pair(1,4);
-	auto me_12 = make_pair(1,2);
-	auto me_13 = make_pair(1,3);
-	auto me_21 = make_pair(2,1);
-	auto me_22 = make_pair(2,2);
-	auto me_31 = make_pair(3,1);
-	auto me_32 = make_pair(3,2);
-	auto me_41 = make_pair(4,1);
-	auto me_42 = make_pair(4,2);
-
-	map<pair<int,int>, TH2D*> hists;
-
-	hists[me_11] = h_me11;
-	hists[me_14] = h_me14;
-	hists[me_12] = h_me12;
-	hists[me_13] = h_me13;
-	hists[me_21] = h_me21;
-	hists[me_22] = h_me22;
-	hists[me_31] = h_me31;
-	hists[me_32] = h_me32;
-	hists[me_41] = h_me41;
-	hists[me_42] = h_me42;
-
-	return hists;
-} 
-
 int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end=-1) 
 {
 
@@ -123,6 +72,8 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 		return -1;
 	}
 
+	TH2D* SegNoMuon = new TH2D ("Segments not associated to a muon, Chamber Type", "Segments not associated to a muon, Chamber Type", 4,1,5,4,1,5);
+
 	TH1F* OPMatchedPt = new TH1F ("CLCT matched to muon's segment, Pt (OP)", "CLCT matched to muon's segment, Pt (OP);Pt [GeV]; Count", 20, 0, 100);
 	TH1F* OPMatchedEta = new TH1F ("CLCT matched to muon's segment, Eta (OP)", "CLCT matched to muon's segment, Eta (OP);Eta; Count", 50, -3, 3);
 	TH1F* OPMatchedPhi = new TH1F ("CLCT matched to muon's segment, Phi (OP)", "CLCT matched to muon's segment, Phi (OP);Phi; Count", 50, -3, 3);
@@ -153,8 +104,10 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	unsigned long long int x = 0;
 	unsigned long long int y = 0;
 
-	unsigned long long int OPTotal = 0;
-	unsigned long long int OPTotalThreeLayerMin = 0;
+	unsigned long long int seg_muon = 0;
+	unsigned long long int seg_nomuon = 0;
+
+  unsigned long long int OPTotalThreeLayerMin = 0;
 	unsigned long long int OPTotalMatches = 0;
 	unsigned long long int OPSignal = 0;
 	unsigned long long int OPMuonBGCounter = 0;
@@ -164,8 +117,6 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	unsigned long long int OPsegmorethanclcts = 0;
 	unsigned long long int OPclctsmorethanseg = 0;
 
-
-	unsigned long long int NPTotal = 0;
 	unsigned long long int NPTotalThreeLayerMin = 0;
 	unsigned long long int NPTotalMatches = 0;
 	unsigned long long int NPSignal = 0;
@@ -175,9 +126,6 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	unsigned long long int NPCLCTsu = 0;
 	unsigned long long int NPsegmorethanclcts = 0;
 	unsigned long long int NPclctsmorethanseg = 0;
-
-	map<pair<int,int>,TH2D*> OPSignalvsNoise = makeHistPermutation("Signal vs Noise (OP)", "Signal vs Noise per Event (OP);CLCTs matched to a muon's segment in chamber (signal);Muon Background in chamber", 3, 0, 3, 3, 0, 3 );
-	map<pair<int,int>,TH2D*> NPSignalvsNoise = makeHistPermutation("Signal vs Noise (NP)", "Signal vs Noise per Event (NP);CLCTs matched to a muon's segment in chamber (signal);Muon Background in chamber", 3, 0, 3, 3, 0, 3 );
 
 	for(int i = start; i < end; i++) 
   {
@@ -221,19 +169,9 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 			vector<unsigned int> matchedNPseg;
 
 			vector<unsigned int> matchedOPCLCTs;
-			vector<unsigned int> matchedNPCLCTs;				
-			
-			int OPnumberinchamber = OldEmulatedclcts.size(chamberHash);
-			if(OPnumberinchamber > 2)
-			OPnumberinchamber = 2;
-
-			int NPnumberinchamber = NewEmulatedclcts.size(chamberHash);
-			if(NPnumberinchamber > 2)
-			NPnumberinchamber = 2;
-
-			OPTotal+=OPnumberinchamber;
-			NPTotal+=NPnumberinchamber;
-
+			vector<unsigned int> matchedNPCLCTs;
+	
+			//total segments in chamber
 			unsigned int segcount = 0;
 			for(unsigned int i = 0; i < segments.size(); i++)
 			{
@@ -242,6 +180,28 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 				segcount++;
 			}
 
+
+			//segments associated to muons
+			unsigned int segcount_muon = 0;
+			for(unsigned int i = 0; i < segments.size(); i++)
+			{
+				if((unsigned int)segments.ch_id->at(i) != chamberHash)				
+				continue;
+
+				if(segments.mu_id->at(i) == -1)
+				{
+					seg_nomuon++;	
+					SegNoMuon->Fill(ST,RI);
+				}
+				else
+				{					
+					seg_muon++;
+				}	
+				
+			}
+
+
+			//CLCT count in chamber
 			unsigned int OPCLCTCount = 0;
 			unsigned int NPCLCTCount = 0;
 
@@ -292,22 +252,24 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 			OPTotalThreeLayerMin+=OPCLCTCount;
 			NPTotalThreeLayerMin+=NPCLCTCount;
 
+			//_____ Background: segcount > CLCTcount, Other Background: CLCTCount > segcount
+
 			if(segcount > OPCLCTCount)
 			{
 				OPsegmorethanclcts++;
-				OPSegMoreThanCLCTs->Fill(ST,RI);
+				OPSegMoreThanCLCTs->Fill(ST,RI);				
 			}
 
 			if(segcount < OPCLCTCount)
 			{
 				OPclctsmorethanseg++;
-				OPCLCTsMoreThanSeg->Fill(ST,RI);
+				OPCLCTsMoreThanSeg->Fill(ST,RI);		
 			}			
 
 			if(segcount > NPCLCTCount)
 			{
 				NPsegmorethanclcts++;
-				NPSegMoreThanCLCTs->Fill(ST,RI);
+				NPSegMoreThanCLCTs->Fill(ST,RI);				
 			}
 			
 			if(segcount < NPCLCTCount)
@@ -333,7 +295,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 				
 				float segmentX = segments.pos_x->at(iseg);			
 					
-
+				//ignore segments at edges of chamber
 				if(me11a)
 				{
 					if(segmentX > 47) continue;
@@ -350,17 +312,14 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 				int closestOPCLCTtoSegmentIndex = -1;
 				float minDistanceSegmentToClosestOPCLCT = 1e5;
 
-				int counter0 = 0;
+				int counter0 = 0; //2 CLCTs sent out
 
 				for(unsigned int iclct = 0; iclct < OldEmulatedclcts.size(); iclct++)
 				{
 					
 					if(OldEmulatedclcts.ch_id->at(iclct) != chamberHash)					
-					continue;
-					
-					/*if(OldEmulatedclcts.IndexInChamber->at(iclct) > 1)					
-					continue;*/	
-					
+					continue;					
+				
 					if(OldEmulatedclcts.layerCount->at(iclct) < 3) 					
 					continue;
 
@@ -384,14 +343,14 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 				}
 
-				if(closestOPCLCTtoSegmentIndex != -1) 
+				if(closestOPCLCTtoSegmentIndex != -1) //match
 				{
 					matchedOPCLCTs.push_back(closestOPCLCTtoSegmentIndex);
 					matchedOPseg.push_back(iseg);
 
 					OPTotalMatches++;
 				 
-					if(segments.mu_id->at(iseg) == -1)
+					if(segments.mu_id->at(iseg) == -1) //not a muon
 					{
 						OPBGCounter++;
 						OPMuonBGCounter++;
@@ -419,15 +378,12 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 				int closestNPCLCTtoSegmentIndex = -1;
 				float minDistanceSegmenttoClosestNPCLCT = 1e5;
 
-				int counter1 = 0;
+				int counter1 = 0; //2 CLCTs sent out
 
 				for(unsigned int iclct = 0; iclct < NewEmulatedclcts.size(); iclct++)
 				{					
 					if(NewEmulatedclcts.ch_id->at(iclct) != chamberHash)
-					continue;
-					
-					/*if(NewEmulatedclcts.IndexInChamber->at(iclct) > 1)
-					continue;*/	
+					continue;				
 					
 					if(NewEmulatedclcts.layerCount->at(iclct) < 3)
 					continue;
@@ -451,7 +407,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 				}
 
-				if(closestNPCLCTtoSegmentIndex != -1) 
+				if(closestNPCLCTtoSegmentIndex != -1) //match
 				{
 					matchedNPCLCTs.push_back(closestNPCLCTtoSegmentIndex);
 					matchedNPseg.push_back(iseg);
@@ -495,15 +451,12 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 			int counter0 = 0;
 
-			if(OldEmulatedclcts.size(chamberHash) > segcount)
+			if(OldEmulatedclcts.size(chamberHash) > segcount) //see how many of the CLCTs went unmatched (max 2)
 			{				
 				for(unsigned int iclct = 0; iclct < OldEmulatedclcts.size(); iclct++)
 				{
 					if(OldEmulatedclcts.ch_id->at(iclct) != chamberHash)
-					continue;
-
-					/*if(OldEmulatedclcts.IndexInChamber->at(iclct) > 1)
-					continue;*/
+					continue;			
 
 					if(OldEmulatedclcts.layerCount->at(iclct) < 3)
 					continue;
@@ -526,7 +479,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 			}
 
-			if(segcount > OldEmulatedclcts.size(chamberHash))
+			if(segcount > OldEmulatedclcts.size(chamberHash)) //see how many of the segments went unmatched
 			{			
 
 				for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
@@ -546,15 +499,12 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 			
 			int counter1 = 0;
 
-			if(NewEmulatedclcts.size(chamberHash) > segcount)
+			if(NewEmulatedclcts.size(chamberHash) > segcount) //see how many of the CLCTs went unmatched (max 2)
 			{
 				for(unsigned int i = 0; i < NewEmulatedclcts.size(); i++)
 				{
 					if(NewEmulatedclcts.ch_id->at(i) != chamberHash)
 					continue;
-
-					/*if(NewEmulatedclcts.IndexInChamber->at(i) > 1)
-					continue;*/
 
 					if(NewEmulatedclcts.layerCount->at(i) < 3)
 					continue;
@@ -577,7 +527,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 			}
 
-			if(segcount > NewEmulatedclcts.size(chamberHash))
+			if(segcount > NewEmulatedclcts.size(chamberHash)) //see how many of the segments went unmatched
 			{
 				for(unsigned int i = 0; i < segments.size(); i++)
 				{					
@@ -591,11 +541,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 				}
 
-			}
-
-			auto key = make_pair(ST,RI);
-			fillHist(OPSignalvsNoise, key, OPSignalCounter, OPBGCounter);
-			fillHist(NPSignalvsNoise, key, NPSignalCounter, NPBGCounter); 
+			}					
 
 		}	
 
@@ -605,6 +551,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	}
 
 	outF->cd();
+	SegNoMuon->Write();
 	OPMatchedPt->Write();
 	OPMatchedEta->Write();
 	OPMatchedPhi->Write();
@@ -613,7 +560,6 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	OPOtherBGPI->Write();
 	OPCLCTsMoreThanSeg->Write();
 	OPSegMoreThanCLCTs->Write();
-	for(auto hist: OPSignalvsNoise) hist.second->Write();
 	NPMatchedPt->Write();
 	NPMatchedEta->Write();
 	NPMatchedPhi->Write();
@@ -622,12 +568,13 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	NPOtherBGPI->Write();
 	NPCLCTsMoreThanSeg->Write();
 	NPSegMoreThanCLCTs->Write();
-	for(auto hist: NPSignalvsNoise) hist.second->Write();
 
+	cout << "Segments associated to muons: " << seg_muon << endl;
+	cout << "Segments not associated to muons: " << seg_nomuon << endl << endl;
 
 	cout << "Old Patterns: " << endl;
 	cout << "--------------------------------------------------" << endl;
-	cout << "Total # of CLCTs: " << OPTotal << endl;
+	//cout << "Total # of CLCTs: " << OPTotal << endl;
 	cout << "Total # of CLCTs (3 Layer Min): " << OPTotalThreeLayerMin << endl;
 	cout << "Total # of segment matches: " << OPTotalMatches << endl;
 	cout << "Matches to muon segments: " << OPSignal << endl;
@@ -640,7 +587,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
 	cout << "New Patterns: " << endl;
 	cout << "--------------------------------------------------" << endl;
-	cout << "Total # of CLCTs: " << NPTotal << endl;
+	//cout << "Total # of CLCTs: " << NPTotal << endl;
 	cout << "Total # of CLCTs (3 Layer Min): " << NPTotalThreeLayerMin << endl;
 	cout << "Total # of segment matches: " << NPTotalMatches << endl;
 	cout << "Matches to muon segments: " << NPSignal << endl;

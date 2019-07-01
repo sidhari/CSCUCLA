@@ -473,6 +473,65 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 	return false;
 };
 
+CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
+		[](CLCTCandidate* c1, CLCTCandidate* c2){
+
+	//const LUTEntry* l1 = c1->_lutEntry;
+	//const LUTEntry* l2 = c2->_lutEntry;
+
+	/*We want this function to sort the CLCT's
+	 * in a way that puts the best quality candidate
+	 * the lowest in the list, i.e. return true
+	 * if the parameters associated with c1 are
+	 * better than those of c2
+	 */
+
+	//priority (layers, PID, KeyHalfStrip)
+	if (c1->layerCount() > c2->layerCount()) return true;
+	else if(c1->layerCount() == c2->layerCount())
+	{
+		if(c1->patternId() > c2->patternId()) return true;
+		else if (c1->patternId() == c2->patternId())
+		{
+			if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;
+		}
+	}
+	return false;
+};
+
+CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
+		[](CLCTCandidate* c1, CLCTCandidate* c2){
+
+	const LUTEntry* l1 = c1->_lutEntry;
+	const LUTEntry* l2 = c2->_lutEntry;
+
+	/*We want this function to sort the CLCT's
+	 * in a way that puts the best quality candidate
+	 * the lowest in the list, i.e. return true
+	 * if the parameters associated with c1 are
+	 * better than those of c2
+	 */
+
+
+	// we don't have an entry for c2,
+	// so take c1 as being better
+	if(!l2) return true;
+
+	// we know we have something for c2,
+	// which should be by default better than nothing
+	if(!l1) return false;
+
+
+	//priority (layers, chi2, slope)
+	if (l1->quality() < l2->quality()) return true;
+	else if(l1->quality() == l2->quality())
+	{
+		if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;		
+		
+	}
+	return false;
+};
+
 //
 // CLCTCandidateCollection
 //

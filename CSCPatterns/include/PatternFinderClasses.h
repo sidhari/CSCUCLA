@@ -119,8 +119,10 @@ public:
 	const LUTKey key() const;
 
 	//declare a function pointer used to sort the CLCT Candidates
-	typedef function<bool(CLCTCandidate*, CLCTCandidate*)> QUALITY_SORT;
+	typedef function<bool(CLCTCandidate*, CLCTCandidate*)> QUALITY_SORT;	
 	static QUALITY_SORT quality;
+	static QUALITY_SORT cfebquality;
+	static QUALITY_SORT LUTquality;
 
 private:
 	ComparatorCode* _code;

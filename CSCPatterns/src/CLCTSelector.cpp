@@ -43,7 +43,7 @@ std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*
 	for(int j = 0; j < emuCLCTs.size(); j++)
 	{
 		float keystrip = emuCLCTs.at(j)->keyStrip();
-		int CFEB = (keystrip/16);
+		int CFEB = ((keystrip-1)/16);
 		DetCFEB[CFEB].push_back(emuCLCTs.at(j));
 	}	
 
@@ -97,7 +97,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 		return -1;
 	}
 
-	LUT lut("lut", "dat/luts/linearFits.lut");
+	LUT lut("lut");
 	lut.loadROOT("dat/luts/lut.root");
 
 
@@ -162,8 +162,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
 			if(compHits.fill(comparators)) return -1;
 
-			vector<CLCTCandidate*> newSetMatch;
-			vector<CLCTCandidate*> FinalCandidates;
+			vector<CLCTCandidate*> newSetMatch;			
             
             unsigned int PID;    			        
 
@@ -176,41 +175,32 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
                if(PID == 100)
                {
-                   CSCPattern p = newEnvelopes->at(0);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
-                   CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   CSCPattern p = newEnvelopes->at(0);                   
                }
                if(PID == 90)
                {
-                   CSCPattern p = newEnvelopes->at(1);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
-                   CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   CSCPattern p = newEnvelopes->at(1);                   
                }
                if(PID == 80)
                {
-                   CSCPattern p = newEnvelopes->at(2);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
-                   CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   CSCPattern p = newEnvelopes->at(2);                   
                }
                if(PID == 70)
                {
-                   CSCPattern p = newEnvelopes->at(3);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
-                   CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   CSCPattern p = newEnvelopes->at(3);                   
                }
                if(PID == 60)
                {
-                   CSCPattern p = newEnvelopes->at(4);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
-                   CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   CSCPattern p = newEnvelopes->at(4);                   
                }
+
+			   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+               CLCTCandidate *c = &clct;
+               newSetMatch.push_back(c);
                 
             }
+
+			//split CLCTs by CFEB
            
 
 			std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> newSetMatchbyCFEB = CFEBSplitter(newSetMatch);
@@ -220,82 +210,96 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 			vector<CLCTCandidate*> CFEB4 = std::get<3>(newSetMatchbyCFEB);
 			vector<CLCTCandidate*> CFEB5 = std::get<4>(newSetMatchbyCFEB);
 
-			map<int,CLCTCandidate*> QualMap;
+			compHits.print();
 
-			//int size  = CFEB1.size() + CFEB2.size() + CFEB3.size() + CFEB4.size() + CFEB5.size();
-			vector<int> QualVec;
-
-
-			for(int i = 0; i < CFEB1.size(); i++)
+			for(int i = 0; i < 5; i++)
 			{
-				int PID = CFEB1.at(i)->patternId();
-				int CCID = CFEB1.at(i)->comparatorCodeId();
-				auto key = make_pair(PID,CCID);
-				LUTEntry* e = 0;
-				lut.getEntry(key, e);
-				QualVec.push_back(e->quality());
-				QualMap[e->quality()] = CFEB1.at(i);
+				cout << endl << "CFEB " << i+1 << endl;
+
+				vector<CLCTCandidate*> CFEB = std::get<i>(newSetMatchbyCFEB);
+
+				for(int j = 0; j < CFEB.size(); j++)
+				{
+					cout << "CLCT#" << j+1 << ": " << "KeyHalfStrip: " << CFEB.at(j)->keyHalfStrip() << "Pattern ID: " << CFEB.at(j)->patternId() << " Comparator Code ID: " << CFEB.at(j)->comparatorCodeId() <<" Layer Count: " << CFEB.at(j)->layerCount() << endl;
+				}
+
 			}
 
-			for(int i = 0; i < CFEB2.size(); i++)
-			{
-				int PID = CFEB2.at(i)->patternId();
-				int CCID = CFEB2.at(i)->comparatorCodeId();
-				auto key = make_pair(PID,CCID);
-				LUTEntry* e = 0;
-				lut.getEntry(key, e);
-				QualVec.push_back(e->quality());
-				QualMap[e->quality()] = CFEB2.at(i);
-			}
+			cout << endl;
 
-			for(int i = 0; i < CFEB3.size(); i++)
-			{
-				int PID = CFEB3.at(i)->patternId();
-				int CCID = CFEB3.at(i)->comparatorCodeId();
-				auto key = make_pair(PID,CCID);
-				LUTEntry* e = 0;
-				lut.getEntry(key, e);
-				QualVec.push_back(e->quality());
-				QualMap[e->quality()] = CFEB3.at(i);
-			}
+			//sort clcts within each CFEB using cfebquality	
 
-			for(int i = 0; i < CFEB4.size(); i++)
-			{
-				int PID = CFEB4.at(i)->patternId();
-				int CCID = CFEB4.at(i)->comparatorCodeId();
-				auto key = make_pair(PID,CCID);
-				LUTEntry* e = 0;
-				lut.getEntry(key, e);
-				QualVec.push_back(e->quality());
-				QualMap[e->quality()] = CFEB4.at(i);
-			}
+			sort(CFEB1.begin(),CFEB1.end(),CLCTCandidate::cfebquality);
+			sort(CFEB2.begin(),CFEB2.end(),CLCTCandidate::cfebquality);
+			sort(CFEB3.begin(),CFEB3.end(),CLCTCandidate::cfebquality);
+			sort(CFEB4.begin(),CFEB4.end(),CLCTCandidate::cfebquality);
+			sort(CFEB5.begin(),CFEB5.end(),CLCTCandidate::cfebquality);
 
-			for(int i = 0; i < CFEB5.size(); i++)
-			{
-				int PID = CFEB5.at(i)->patternId();
-				int CCID = CFEB5.at(i)->comparatorCodeId();
-				auto key = make_pair(PID,CCID);
-				LUTEntry* e = 0;
-				lut.getEntry(key, e);
-				QualVec.push_back(e->quality());
-				QualMap[e->quality()] = CFEB5.at(i);
-			}
-
-			sort(QualVec.begin(), QualVec.end());		
+			std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> newSetMatchbyCFEB_sorted;
+			std::get<0>(newSetMatchbyCFEB_sorted) = CFEB1;
+			std::get<1>(newSetMatchbyCFEB_sorted) = CFEB2;
+			std::get<2>(newSetMatchbyCFEB_sorted) = CFEB3;
+			std::get<3>(newSetMatchbyCFEB_sorted) = CFEB4;
+			std::get<4>(newSetMatchbyCFEB_sorted) = CFEB5;
 			
+			compHits.print();
 
-			for(i = 0; i < QualVec.size(); i++)
-			{	
-
-				FinalCandidates.push_back(QualMap[QualVec.at(i)]);
-				
-			}
-
-			for(int i = 0; i < FinalCandidates.size(); i++)
+			for(int i = 0; i < 5; i++)
 			{
-				if(FinalCandidates.at(i)->layerCount() < 3)
-				FinalCandidates.erase(i);
+				cout << endl << "CFEB " << i+1 << endl;
+
+				vector<CLCTCandidate*> CFEB = std::get<i>(newSetMatchbyCFEB_sorted);
+
+				for(int j = 0; j < CFEB.size(); j++)
+				{
+					cout << "CLCT#" << j+1 << ": " << "KeyHalfStrip: " << CFEB.at(j)->keyHalfStrip() << "Pattern ID: " << CFEB.at(j)->patternId() << " Comparator Code ID: " << CFEB.at(j)->comparatorCodeId() <<" Layer Count: " << CFEB.at(j)->layerCount() << endl;
+				}
+
 			}
+
+			cout << endl;					
+
+			//take first from each cfeb, find best, add to final list, delete from this list, keep going till all cfeb vectors are empty
+
+			vector<CLCTCandidate*> FinalCandidates;
+
+			int size = CFEB1.size() + CFEB2.size() + CFEB3.size() + CFEB4.size() + CFEB5.size();
+
+			for(int i = 0; i < size; i++)
+			{
+				if(CFEB1.size() != 0)
+				FinalCandidates.push_back(CFEB1.at(0));
+
+				if(CFEB2.size() != 0)
+				FinalCandidates.push_back(CFEB2.at(0));
+
+				if(CFEB3.size() != 0)
+				FinalCandidates.push_back(CFEB3.at(0));
+
+				if(CFEB4.size() != 0)
+				FinalCandidates.push_back(CFEB4.at(0));
+
+				if(CFEB5.size() != 0)
+				FinalCandidates.push_back(CFEB5.at(0));
+
+				sort(FinalCandidates.begin()+i, FinalCandidates.end(), CLCTCandidate::LUTquality);
+
+				if(CFEB1.size() != 0)
+				CFEB1.erase(0);
+
+				if(CFEB2.size() != 0)
+				CFEB2.erase(0);
+
+				if(CFEB3.size() != 0)
+				CFEB3.erase(0);
+
+				if(CFEB4.size() != 0)
+				CFEB4.erase(0);
+
+				if(CFEB5.size() != 0)
+				CFEB5.erase(0);		
+								
+			}	
 			
 
 			vector<int> matchedCLCTs;
@@ -345,7 +349,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
 				}
 
-				if(closestCLCTtoSegmentIndex != -1)
+				if(closestCLCTtoSegmentIndex != -1) //match
 				{							
 					matchedCLCTs.push_back(closestCLCTtoSegmentIndex);
 					totalmatches++;
@@ -374,7 +378,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
 	}
 
-	outF->Close();
+	outF->cd();
 	FirstCLCTMatchesvsPt->Write();
 	SecondCLCTMatchesvsPt->Write();
 	OtherCLCTMatchesvsPt->Write();
@@ -411,3 +415,4 @@ int main(int argc, char* argv[])
 	}
 	return 0;
 }
+
