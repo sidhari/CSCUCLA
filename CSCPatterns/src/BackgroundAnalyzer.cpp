@@ -439,7 +439,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 					NPMismatchCounter++;
 				}			
 
-				//printing out chambers with Old Patterns matching nut not the New ones (try to explain the difference in total matches to muon segments)
+				//printing out chambers with Old Patterns matching to muon segments but not the New ones (try to explain the difference in total matches to muon segments)
 
 				/*if(closestOPCLCTtoSegmentIndex != -1 && closestNPCLCTtoSegmentIndex == -1 && segments.mu_id->at(iseg) != -1)
 				{					
