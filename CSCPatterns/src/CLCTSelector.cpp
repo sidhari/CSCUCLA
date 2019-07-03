@@ -16,6 +16,7 @@
 
 #include <string>
 #include <vector>
+#include <tuple>
 #include <iostream>
 #include <stdio.h>
 #include <algorithm>
@@ -35,12 +36,12 @@
 
 using namespace std;
 
-std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplitter(int CFEBcount, vector<CLCTCandidate*> emuCLCTs)
+std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplitter(vector<CLCTCandidate*> emuCLCTs)
 {
 	
 	map<int,vector<CLCTCandidate*>> DetCFEB;
 	
-	for(int j = 0; j < emuCLCTs.size(); j++)
+	for(unsigned int j = 0; j < emuCLCTs.size(); j++)
 	{
 		float keystrip = emuCLCTs.at(j)->keyStrip();
 		int CFEB = ((keystrip-1)/16);
@@ -59,7 +60,7 @@ std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*
 }
 
 
-int CLCTSelector(string inputfile, string outputfile, int start, int end) 
+int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -1) 
 {
 
 	cout << endl << "Running over file: " << inputfile << endl << endl;
@@ -87,15 +88,9 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 	CSCInfo::CLCTs clcts(t);
 	CSCInfo::Comparators comparators(t);
 
-    EmulatedCLCTs emulatedclcts(t_emu,2)
+    EmulatedCLCTs emulatedclcts(t_emu,2);	
 
-
-
-	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
-	if(!outF){
-		cout << "Failed to open output file: " << outputfile << endl;
-		return -1;
-	}
+	vector<CSCPattern>* newEnvelopes = createNewPatterns();	
 
 	LUT lut("lut");
 	lut.loadROOT("dat/luts/lut.root");
@@ -136,7 +131,8 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 		//if(evt.RunNumber <= 323362) continue;
 
         for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
-        {
+        {		
+
 			CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
 			unsigned int EC = c.endcap;
@@ -148,15 +144,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
             bool me11a = (ST==1 && RI==4);
             bool me11b = (ST==1 && RI == 1);
-            bool me13 = (ST==1 && RI==3);
-			bool me12 = (ST==1 && RI==2);
-			bool me21 = (ST==2 && RI==1);
-			bool me22 = (ST==2 && RI==2);
-			bool me31 = (ST==3 && RI==1);
-			bool me32 = (ST==3 && RI==2);
-			bool me41 = (ST==4 && RI==1);
-			bool me42 = (ST==4 && RI==2);		
-
+            bool me13 = (ST==1 && RI==3);	
 
             ChamberHits compHits(ST, RI, EC, CH);
 
@@ -174,30 +162,43 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
                PID = emulatedclcts.patternId->at(i);
 
                if(PID == 100)
-               {
-                   CSCPattern p = newEnvelopes->at(0);                   
+               {				   	
+                   	CSCPattern p = newEnvelopes->at(0);      
+				  	CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+              	  	CLCTCandidate *c = &clct;
+              		newSetMatch.push_back(c);
+                             
                }
                if(PID == 90)
-               {
-                   CSCPattern p = newEnvelopes->at(1);                   
+               {	
+                   CSCPattern p = newEnvelopes->at(1);      
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+              	   CLCTCandidate *c = &clct;
+              	   newSetMatch.push_back(c);                   
                }
                if(PID == 80)
-               {
-                   CSCPattern p = newEnvelopes->at(2);                   
+               {	
+                   CSCPattern p = newEnvelopes->at(2);      
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+              	   CLCTCandidate *c = &clct;
+              	   newSetMatch.push_back(c);                   
                }
                if(PID == 70)
-               {
-                   CSCPattern p = newEnvelopes->at(3);                   
+               {	
+                   CSCPattern p = newEnvelopes->at(3);      
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+              	   CLCTCandidate *c = &clct;
+              	   newSetMatch.push_back(c);                  
                }
                if(PID == 60)
-               {
-                   CSCPattern p = newEnvelopes->at(4);                   
+               {	
+                   CSCPattern p = newEnvelopes->at(4);      
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+              	   CLCTCandidate *c = &clct;
+              	   newSetMatch.push_back(c);                   
                }
 
-			   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
-               CLCTCandidate *c = &clct;
-               newSetMatch.push_back(c);
-                
+			   
             }
 
 			//split CLCTs by CFEB
@@ -210,7 +211,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 			vector<CLCTCandidate*> CFEB4 = std::get<3>(newSetMatchbyCFEB);
 			vector<CLCTCandidate*> CFEB5 = std::get<4>(newSetMatchbyCFEB);
 
-			compHits.print();
+			/*compHits.print();
 
 			for(int i = 0; i < 5; i++)
 			{
@@ -225,7 +226,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
 			}
 
-			cout << endl;
+			cout << endl;*/
 
 			//sort clcts within each CFEB using cfebquality	
 
@@ -242,7 +243,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 			std::get<3>(newSetMatchbyCFEB_sorted) = CFEB4;
 			std::get<4>(newSetMatchbyCFEB_sorted) = CFEB5;
 			
-			compHits.print();
+			/*compHits.print();
 
 			for(int i = 0; i < 5; i++)
 			{
@@ -250,14 +251,14 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
 				vector<CLCTCandidate*> CFEB = std::get<i>(newSetMatchbyCFEB_sorted);
 
-				for(int j = 0; j < CFEB.size(); j++)
+				for(unsigned int j = 0; j < CFEB.size(); j++)
 				{
 					cout << "CLCT#" << j+1 << ": " << "KeyHalfStrip: " << CFEB.at(j)->keyHalfStrip() << "Pattern ID: " << CFEB.at(j)->patternId() << " Comparator Code ID: " << CFEB.at(j)->comparatorCodeId() <<" Layer Count: " << CFEB.at(j)->layerCount() << endl;
 				}
 
 			}
 
-			cout << endl;					
+			cout << endl;	*/				
 
 			//take first from each cfeb, find best, add to final list, delete from this list, keep going till all cfeb vectors are empty
 
@@ -285,29 +286,29 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 				sort(FinalCandidates.begin()+i, FinalCandidates.end(), CLCTCandidate::LUTquality);
 
 				if(CFEB1.size() != 0)
-				CFEB1.erase(0);
+				CFEB1.erase(CFEB1.begin());
 
 				if(CFEB2.size() != 0)
-				CFEB2.erase(0);
+				CFEB2.erase(CFEB2.begin());
 
 				if(CFEB3.size() != 0)
-				CFEB3.erase(0);
+				CFEB3.erase(CFEB3.begin());
 
 				if(CFEB4.size() != 0)
-				CFEB4.erase(0);
+				CFEB4.erase(CFEB4.begin());
 
 				if(CFEB5.size() != 0)
-				CFEB5.erase(0);		
-								
+				CFEB5.erase(CFEB5.begin());		
+
 			}	
 			
 
 			vector<int> matchedCLCTs;
 
-			for(int thisSeg = 0; thisSeg < segments.size(); thisSeg++)
+			for(unsigned int thisSeg = 0; thisSeg < segments.size(); thisSeg++)
 			{
 				
-				if(chamberHash != segments.ch_id->at(thisSeg))
+				if(chamberHash != (unsigned int)segments.ch_id->at(thisSeg))
 				continue;
 
 				if(segments.mu_id->at(thisSeg) == -1)
@@ -315,7 +316,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
 				SegCount++;			
 
-				float segmentX = segments.pos_x->at(iseg);
+				float segmentX = segments.pos_x->at(thisSeg);
 				float pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
 				if(me11a)
@@ -334,7 +335,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 				int closestCLCTtoSegmentIndex = -1;
 				float minDistanceSegmentToClosestCLCT = 1e5;
 
-				for(int iclct = 0; iclct < FinalCandidates.size(); iclct++)
+				for(unsigned int iclct = 0; iclct < FinalCandidates.size(); iclct++)
 				{	 
 					if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), iclct) != matchedCLCTs.end())
 					continue;
@@ -356,7 +357,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 					if(closestCLCTtoSegmentIndex == 0)
 					{
 						FirstCLCTMatch++;
-						FirstCLCTMatchesvsPt->Fill(pt)
+						FirstCLCTMatchesvsPt->Fill(pt);
 					}					
 					else if(closestCLCTtoSegmentIndex == 1)
 					{
@@ -366,7 +367,7 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 					else
 					{
 						OtherIndexCLCTMatch++;
-						OtherCLCTmatchesvsPt->Fill(pt);
+						OtherCLCTMatchesvsPt->Fill(pt);
 					}
 
 				}		
@@ -376,6 +377,13 @@ int CLCTSelector(string inputfile, string outputfile, int start, int end)
 
         }
 
+	}
+
+	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
+	if(!outF)
+	{
+		cout << "Failed to open output file: " << outputfile << endl;
+		return -1;
 	}
 
 	outF->cd();

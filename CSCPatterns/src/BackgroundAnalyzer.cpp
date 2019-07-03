@@ -61,78 +61,82 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 	CSCInfo::CLCTs clcts(t);
 	CSCInfo::Comparators comparators(t);
 
-  EmulatedCLCTs OldEmulatedclcts(t_emu,1);
-	EmulatedCLCTs NewEmulatedclcts(t_emu,2);
+    EmulatedCLCTs OPemulatedclcts(t_emu,1);
+	EmulatedCLCTs NPemulatedclcts(t_emu,2);	
 
+    //
+    //COUNTERS
+    //
 
-	TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
-	if(!outF)
-    {
-		cout << "Failed to open output file: " << outputfile << endl;
-		return -1;
-	}
+    unsigned long long int totalsegments = 0; //total segments
+    unsigned long long int totalmuonsegments = 0; //total segments associated to muons
+    unsigned long long int totalnotmuonsegments = 0; //total segments not associated to muons
 
-	TH2D* SegNoMuon = new TH2D ("Segments not associated to a muon, Chamber Type", "Segments not associated to a muon, Chamber Type", 4,1,5,4,1,5);
+    unsigned long long int OPtotalclcts = 0; //total OP CLCTs (3 Layer min)
+    unsigned long long int OPtotalmatchestosegments = 0; //total OP CLCT - Segments matches
+    unsigned long long int OPtotalmatchestomuonsegments = 0; //total OP CLCT - Muon Segment matches (signal)
+    unsigned long long int OPmuonbackgroundcounter = 0; //total OP CLCT - Segments not associated to muons matches
+    unsigned long long int OPtotalunmatchedclcts = 0; //total unmatched OP CLCTs (Other Background)
+    unsigned long long int OPclctsonedgeofchamber = 0; //total OP clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
+    unsigned long long int OPtotalunmatchedsegments = 0; //total unmatched segments with OP (CLCT Screw Ups)
+    unsigned long long int OPtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with OP
+        
+    unsigned long long int NPtotalclcts = 0; //total NP CLCTs (3 Layer min)
+    unsigned long long int NPtotalmatchestosegments = 0; //total NP CLCT-Segments matches
+    unsigned long long int NPtotalmatchestomuonsegments = 0; //total NP CLCT - Muon Segment matches (signal)
+    unsigned long long int NPmuonbackgroundcounter = 0; //total NP CLCT - Segments not associated to muons matches
+    unsigned long long int NPtotalunmatchedclcts = 0; //total unmatched NP CLCTs (Other Background)
+    unsigned long long int NPclctsonedgeofchamber = 0; //total NP clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
+    unsigned long long int NPtotalunmatchedsegments = 0; //total unmatched segments with NP (CLCT Screw Ups)
+    unsigned long long int NPtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with NP
 
-	TH1F* OPMatchedPt = new TH1F ("CLCT matched to muon's segment, Pt (OP)", "CLCT matched to muon's segment, Pt (OP);Pt [GeV]; Count", 20, 0, 100);
-	TH1F* OPMatchedEta = new TH1F ("CLCT matched to muon's segment, Eta (OP)", "CLCT matched to muon's segment, Eta (OP);Eta; Count", 50, -3, 3);
-	TH1F* OPMatchedPhi = new TH1F ("CLCT matched to muon's segment, Phi (OP)", "CLCT matched to muon's segment, Phi (OP);Phi; Count", 50, -3, 3);
-	TH2D* OPMuonBGCT = new TH2D ("Muon BG Chamber Type (OP)", "Muon BG Chamber Type (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
-	TH1F* OPOtherBGLC = new TH1F ("Other BG Layer Count (OP)", "Other BG Layer Count (OP);Layers;Count", 7, 0, 7);
-	TH1F* OPOtherBGPI = new TH1F ("Other BG Pattern ID (OP)", "Other BG Pattern ID (OP);PID;Count", 9, 2, 11);
-	TH2D* OPSegMoreThanCLCTs = new TH2D ("_____ Background Chamber Type (OP)", "_____ Background Chamber Type (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
-	TH2D* OPCLCTsMoreThanSeg = new TH2D ("Other Background Chamber Type (OP)", "Other Background Chamber Type (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    //
+    //HISTOGRAMS
+    //
 
-	TH1F* NPMatchedPt = new TH1F ("CLCT matched to muon's segment, Pt (NP)", "CLCT matched to muon's segment, Pt (NP);Pt [GeV]; Count", 20, 0, 100);
-	TH1F* NPMatchedEta = new TH1F ("CLCT matched to muon's segment, Eta (NP)", "CLCT matched to muon's segment, Eta (NP);Eta; Count", 50, -3, 3);
-	TH1F* NPMatchedPhi = new TH1F ("CLCT matched to muon's segment, Phi (NP)", "CLCT matched to muon's segment, Phi (NP);Phi; Count", 50, -3, 3);
-	TH2D* NPMuonBGCT = new TH2D ("Muon BG Chamber Type (NP)", "Muon BG Chamber Type (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
-	TH1F* NPOtherBGLC = new TH1F ("Other BG Layer Count (NP)", "Other BG Layer Count (NP);Layers;Count", 7, 0, 7);
-	TH1F* NPOtherBGPI = new TH1F ("Other BG Pattern ID (NP)", "Other BG Pattern ID (NP);PID/10;Count", 5, 6, 11);
-	TH2D* NPSegMoreThanCLCTs = new TH2D ("_____ Background Chamber Type (NP)", "_____ Background Chamber Type (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
-	TH2D* NPCLCTsMoreThanSeg = new TH2D ("Other Background Chamber Type (NP)", "Other Background Chamber Type (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* OPmatchedmuonsegmentspt = new TH1F ("Matched Muon Segments (OP): Pt", "Matched Muon Segments (OP): Pt;Pt [GeV];Count", 20, 0, 100);
+    TH1F* OPmatchedmuonsegmentseta = new TH1F ("Matched Muon Segments (OP): Eta", "Matched Muon Segments (OP): Eta;Eta;Count", 50, -3, 3);
+    TH1F* OPmatchedmuonsegmentsphi = new TH1F ("Matched Muon Segments (OP): Phi", "Matched Muon Segments (OP): Phi;Phi;Count", 50, -5, 5);
+    TH1F* OPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (OP)", "Matched Segment, CLCT postion difference (OP);Position Difference;Count", 50, -20, 20);
+    TH1F* OPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (OP)", "Matched Muon Segment, CLCT postion difference (OP);Position Difference;Count", 50, -20, 20);
+    TH2D* OPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (OP)", "Muon Background: Chamber Type Distribution (OP);Station;Ring", 4, 1, 5, 4, 1, 5 );
+    TH2D* OPunmatchedclctschambertype = new TH2D ("Unmatched CLCTs: Chamber Type Distribution (OP)", "Unmatched CLCTs: Chamber Type (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* OPunmatchedclctslayercount = new TH1F ("Unmatched CLCTs: Layer Count Distribution (OP)", "Unmatched CLCTs: Layer Count Distribution (OP);Layer Count;Count", 7, 0, 7);
+    TH1F* OPunmatchedclctspatternid = new TH1F ("Unmatched CLCTs: Pattern ID Distribution (OP)", "Unmatched CLCTs: Pattern ID Distribution (OP);PID;Count", 9, 2, 11);
+    TH2D* OPunmatchedsegmentschambertype = new TH2D ("Unmatched Segments: Chamber Type Distribution (OP)", "Unmatched Segments: Chamber Type Distribution (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* OPunmatchedsegmentsdxdz = new TH1F ("Unmatched Segments: dx/dz (OP)", "Unmatched Segments: dx/dz (OP)", 50, -4, 4);
+    TH1F* OPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dy/dz (OP)", "Unmatched Segments: dy/dz (OP)", 50, -4, 4);
+    TH1F* OPunmatchedsegmentsnhits = new TH1F ("Unmatched Segments: nhits (OP)", "Unmatched Segments: nhits (OP);nhits;Count", 7, 0, 7);
 
+    TH1F* NPmatchedmuonsegmentspt = new TH1F ("Matched Muon Segments (NP): Pt", "Matched Muon Segments (NP): Pt;Pt [GeV];Count", 20, 0, 100);
+    TH1F* NPmatchedmuonsegmentseta = new TH1F ("Matched Muon Segments (NP): Eta", "Matched Muon Segments (NP): Eta;Eta;Count", 50, -3, 3);
+    TH1F* NPmatchedmuonsegmentsphi = new TH1F ("Matched Muon Segments (NP): Phi", "Matched Muon Segments (NP): Phi;Phi;Count", 50, -5, 5);
+    TH1F* NPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (NP)", "Matched Segment, CLCT postion difference (NP);Position Difference;Count", 50, -20, 20);
+    TH1F* NPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (NP)", "Matched Muon Segment, CLCT postion difference (NP);Position Difference;Count", 50, -20, 20);
+    TH2D* NPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (NP)", "Muon Background: Chamber Type Distribution (NP);Station;Ring", 4, 1, 5, 4, 1, 5 );
+    TH2D* NPunmatchedclctschambertype = new TH2D ("Unmatched CLCTs: Chamber Type Distribution (NP)", "Unmatched CLCTs: Chamber Type (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* NPunmatchedclctslayercount = new TH1F ("Unmatched CLCTs: Layer Count Distribution (NP)", "Unmatched CLCTs: Layer Count Distribution (NP);Layer Count;Count", 7, 0, 7);
+    TH1F* NPunmatchedclctspatternid = new TH1F ("Unmatched CLCTs: Pattern ID Distribution (NP)", "Unmatched CLCTs: Pattern ID Distribution (NP);PID/10;Count", 5, 6, 11);
+    TH2D* NPunmatchedsegmentschambertype = new TH2D ("Unmatched Segments: Chamber Type Distribution (NP)", "Unmatched Segments: Chamber Type Distribution (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* NPunmatchedsegmentsdxdz = new TH1F ("Unmatched Segments: dx/dz (NP)", "Unmatched Segments: dx/dz (NP)", 50, -4, 4);
+    TH1F* NPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dy/dz (NP)", "Unmatched Segments: dy/dz (NP)", 50, -4, 4);
+    TH1F* NPunmatchedsegmentsnhits = new TH1F ("Unmatched Segments: nhits (NP)", "Unmatched Segments: nhits (NP);nhits;Count", 7, 0, 7);
 
-	//
-	// EVENT LOOP
-	//
+    //
+    //EVENT LOOP
+    //
 
-	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
+    if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 	
 	cout << "Starting Event: " << start << " Ending Event: " << endl << endl;
 
-	unsigned long long int x = 0;
-	unsigned long long int y = 0;
-
-	unsigned long long int seg_muon = 0;
-	unsigned long long int seg_nomuon = 0;
-
-  unsigned long long int OPTotalThreeLayerMin = 0;
-	unsigned long long int OPTotalMatches = 0;
-	unsigned long long int OPSignal = 0;
-	unsigned long long int OPMuonBGCounter = 0;
-	unsigned long long int OPOtherBGCounter = 0;
-	unsigned long long int OPMismatchCounter = 0;
-	unsigned long long int OPCLCTsu = 0;
-	unsigned long long int OPsegmorethanclcts = 0;
-	unsigned long long int OPclctsmorethanseg = 0;
-
-	unsigned long long int NPTotalThreeLayerMin = 0;
-	unsigned long long int NPTotalMatches = 0;
-	unsigned long long int NPSignal = 0;
-	unsigned long long int NPMuonBGCounter = 0;
-	unsigned long long int NPOtherBGCounter = 0;
-	unsigned long long int NPMismatchCounter = 0;
-	unsigned long long int NPCLCTsu = 0;
-	unsigned long long int NPsegmorethanclcts = 0;
-	unsigned long long int NPclctsmorethanseg = 0;
-
-	for(int i = start; i < end; i++) 
-  {
+    for(int i = start; i < end; i++) 
+    {
 		if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);		
 		t_emu->GetEntry(i);		
+
 		/* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
 		 * installed on September 12
 		 */
@@ -141,14 +145,18 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 		 */
 		//if(evt.RunNumber <= 323362) continue;
 
-		for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
+        totalsegments += segments.size();
+
+        for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+        {
+            if(segments.mu_id->at(iseg) == -1)
+            totalnotmuonsegments++;
+            else
+            totalmuonsegments++;
+        }
+
+        for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
 		{
-			int OPSignalCounter = 0;
-			int OPBGCounter = 0;
-
-			int NPSignalCounter = 0;
-			int NPBGCounter = 0;
-
 			CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
 			unsigned int EC = c.endcap;
@@ -165,451 +173,565 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 			bool me11b = (ST == 1 && RI == 1);
 			bool me13 = (ST == 1 && RI == 3);
 
-			vector<unsigned int> matchedOPseg;
-			vector<unsigned int> matchedNPseg;
+            unsigned int segmentsinchamber = 0; //number of segments in current chamber
+            unsigned int muonsegmentsinchamber = 0; //number of muon segments in current chamber
 
-			vector<unsigned int> matchedOPCLCTs;
-			vector<unsigned int> matchedNPCLCTs;
-	
-			//total segments in chamber
-			unsigned int segcount = 0;
-			for(unsigned int i = 0; i < segments.size(); i++)
-			{
-				if((unsigned int)segments.ch_id->at(i) != chamberHash)				
-				continue;
-				segcount++;
-			}
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
 
+                segmentsinchamber++;
 
-			//segments associated to muons
-			unsigned int segcount_muon = 0;
-			for(unsigned int i = 0; i < segments.size(); i++)
-			{
-				if((unsigned int)segments.ch_id->at(i) != chamberHash)				
-				continue;
+                if(segments.mu_id->at(iseg) == -1)
+                continue;
 
-				if(segments.mu_id->at(i) == -1)
-				{
-					seg_nomuon++;	
-					SegNoMuon->Fill(ST,RI);
-				}
-				else
-				{					
-					seg_muon++;
-				}	
-				
-			}
+                muonsegmentsinchamber++;
+                
+            }
 
+            unsigned int OPclctcountinchamber = 0; //number of OP clcts in current chamber 
+            unsigned int NPclctcountinchamber = 0; //number of NP clcts in current chamber            
 
-			//CLCT count in chamber
-			unsigned int OPCLCTCount = 0;
-			unsigned int NPCLCTCount = 0;
+            for(unsigned int iclct = 0; iclct < (unsigned int)OPemulatedclcts.size(); iclct++)
+            {
 
-			int counter = 0;
-			
-			for(unsigned int i = 0; i < OldEmulatedclcts.size(); i++)
-			{
-				if(OldEmulatedclcts.ch_id->at(i) != chamberHash)
-				continue;
+                if(OPemulatedclcts.ch_id->at(iclct) != chamberHash)
+                continue;
 
-				if(OldEmulatedclcts.layerCount->at(i) < 3)
-				continue;
+                if(OPemulatedclcts.layerCount->at(iclct) < 3)
+                continue;
 
-				if(counter > 1)
-				{
-					continue;
-				}
-				else
-				{
-					counter++;
-				}
+                OPclctcountinchamber++;
 
-				OPCLCTCount++;
-			}
+            }
 
-			counter = 0;
+            for(unsigned int iclct = 0; iclct < (unsigned int)NPemulatedclcts.size(); iclct++)
+            {
 
-			for(unsigned int i = 0; i < NewEmulatedclcts.size(); i++)
-			{
-				if(NewEmulatedclcts.ch_id->at(i) != chamberHash)
-				continue;
+                if(NPemulatedclcts.ch_id->at(iclct) != chamberHash)
+                continue;
 
-				if(NewEmulatedclcts.layerCount->at(i) < 3)
-				continue;
+                if(NPemulatedclcts.layerCount->at(iclct) < 3)
+                continue;
 
-				if(counter > 1)
-				{
-					continue;
-				}
-				else
-				{
-					counter++;
-				}
+                NPclctcountinchamber++;
 
-				NPCLCTCount++;
-			}
+            }
 
-			OPTotalThreeLayerMin+=OPCLCTCount;
-			NPTotalThreeLayerMin+=NPCLCTCount;
+            if(OPclctcountinchamber > 2)
+            OPclctcountinchamber = 2;
 
-			//_____ Background: segcount > CLCTcount, Other Background: CLCTCount > segcount
+            if(NPclctcountinchamber > 2)
+            NPclctcountinchamber = 2;   
 
-			if(segcount > OPCLCTCount)
-			{
-				OPsegmorethanclcts++;
-				OPSegMoreThanCLCTs->Fill(ST,RI);				
-			}
+            OPtotalclcts += OPclctcountinchamber;
+            NPtotalclcts += NPclctcountinchamber;        
 
-			if(segcount < OPCLCTCount)
-			{
-				OPclctsmorethanseg++;
-				OPCLCTsMoreThanSeg->Fill(ST,RI);		
-			}			
+            if(segmentsinchamber > OPclctcountinchamber)
+            OPunmatchedsegmentschambertype->Fill(ST,RI);
 
-			if(segcount > NPCLCTCount)
-			{
-				NPsegmorethanclcts++;
-				NPSegMoreThanCLCTs->Fill(ST,RI);				
-			}
-			
-			if(segcount < NPCLCTCount)
-			{
-				NPclctsmorethanseg++;
-				NPCLCTsMoreThanSeg->Fill(ST,RI);
-			}
+            if(OPclctcountinchamber > segmentsinchamber)
+            OPunmatchedclctschambertype->Fill(ST,RI);
 
-			if(OPCLCTCount > NPCLCTCount)
-			{
-				y++;
-				/*compHits.print();
-				cout << OPCLCTCount << " " << NPCLCTCount << endl;
-				cout << endl;*/
-			}
-			
+            if(segmentsinchamber > NPclctcountinchamber)
+            NPunmatchedsegmentschambertype->Fill(ST,RI);
 
-			for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
-			{
+            if(NPclctcountinchamber > segmentsinchamber)
+            NPunmatchedclctschambertype->Fill(ST,RI);
 
-				if((unsigned int)segments.ch_id->at(iseg) != chamberHash)				
-				continue;
-				
-				float segmentX = segments.pos_x->at(iseg);			
-					
-				//ignore segments at edges of chamber
+            vector<unsigned int> matchedOPclctindex; //stores indices of OP clcts matched to a segment
+            vector<unsigned int> matchedNPclctindex; //stores indices of NP clcts matched to a segment
+
+            vector<unsigned int> matchedOPsegmentindex; //stores indices of segments matched to OP clcts
+            vector<unsigned int> matchedNPsegmentindex; //stores indices of segments matched to NP clcts            
+
+            //iterate through all segments in chamber
+
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+               	//ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
 				if(me11a)
 				{
-					if(segmentX > 47) continue;
+					if(segmentx > 47) continue;
 				}
 				else if (me11b || me13) 
 				{
-					if(segmentX > 63) continue;
+					if(segmentx > 63) continue;
 				} 
 				else 
 				{
-					if(segmentX > 79) continue;
+					if(segmentx > 79) continue;
 				}
 
-				int closestOPCLCTtoSegmentIndex = -1;
-				float minDistanceSegmentToClosestOPCLCT = 1e5;
+                int closestOPclcttosegmentindex = -1;
+                float closestOPclcttosegmentdistance = 1e5;
 
-				int counter0 = 0; //2 CLCTs sent out
+                int flag = 0;
 
-				for(unsigned int iclct = 0; iclct < OldEmulatedclcts.size(); iclct++)
+                //iterate through all OP CLCTs in chamber
+
+                for(unsigned int iclct = 0; iclct < OPemulatedclcts.size(); iclct++)
+                {
+                    if(OPemulatedclcts.ch_id->at(iclct) != chamberHash)
+                    continue;
+
+                    if(OPemulatedclcts.layerCount->at(iclct) < 3)
+                    continue;
+
+                    if(flag > 1) //first 2 clcts only
+                    {
+                        continue;
+                    }                    
+                    else
+                    {
+                        flag++;
+                    }
+
+                    if(std::find(matchedOPclctindex.begin(), matchedOPclctindex.end(), iclct) != matchedNPclctindex.end())
+                    continue;
+
+                    float clctposx = OPemulatedclcts.keyStrip->at(iclct);
+                    
+                    if(abs(clctposx - segmentx) < closestOPclcttosegmentdistance)
+                    {
+                        closestOPclcttosegmentdistance = abs(clctposx - segmentx);
+                        closestOPclcttosegmentindex = iclct;
+                    }
+
+                }
+
+                if(closestOPclcttosegmentindex != -1) // found an OP clct match to the segment
+                {
+                    matchedOPclctindex.push_back(closestOPclcttosegmentindex);
+                    matchedOPsegmentindex.push_back(iseg);
+
+                    OPtotalmatchestosegments++;
+
+                    OPsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);                   
+
+                    if(segments.mu_id->at(iseg) == -1) // matched to a segment not associated to a muon
+                    {
+                        OPmuonbackgroundcounter++;
+                        OPmuonbackgroundchambertype->Fill(ST,RI);
+                    }
+                    else // matched to a muon's segment
+                    {
+                        OPtotalmatchestomuonsegments++;
+                        float pt = muons.pt->at(segments.mu_id->at(iseg));
+                        OPmatchedmuonsegmentspt->Fill(pt);
+                        float eta = muons.eta->at(segments.mu_id->at(iseg));
+                        OPmatchedmuonsegmentseta->Fill(eta);
+                        float phi = muons.phi->at(segments.mu_id->at(iseg));
+                        OPmatchedmuonsegmentsphi->Fill(phi);
+                        OPmuonsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);
+
+                    }
+                    
+                }
+
+                int closestNPclcttosegmentindex = -1;
+                float closestNPclcttosegmentdistance = 1e5;
+
+                flag = 0;
+
+                // iterate through all NP CLCTs in chamber
+                
+                for(unsigned int iclct = 0; iclct < NPemulatedclcts.size(); iclct++)
+                {
+                    if(NPemulatedclcts.ch_id->at(iclct) != chamberHash)
+                    continue;
+
+                    if(NPemulatedclcts.layerCount->at(iclct) < 3)
+                    continue;
+
+                    if(flag > 1) //first 2 clcts only
+                    {
+                        continue;
+                    }                    
+                    else
+                    {
+                        flag++;
+                    }
+
+                    if(std::find(matchedNPclctindex.begin(), matchedNPclctindex.end(), iclct) != matchedNPclctindex.end())
+                    continue;
+
+                    float clctposx = NPemulatedclcts.keyStrip->at(iclct);
+                    
+                    if(abs(clctposx - segmentx) < closestNPclcttosegmentdistance)
+                    {
+                        closestNPclcttosegmentdistance = abs(clctposx - segmentx);
+                        closestNPclcttosegmentindex = iclct;
+                    }
+
+                }
+
+                if(closestNPclcttosegmentindex != -1) // found an NP clct match to the segment
+                {
+                    matchedNPclctindex.push_back(closestNPclcttosegmentindex);
+                    matchedNPsegmentindex.push_back(iseg);
+
+                    NPtotalmatchestosegments++;
+
+                    NPsegmentmatchpositiondifference->Fill(closestNPclcttosegmentdistance);
+
+                    if(segments.mu_id->at(iseg) == -1) // matched to a segment not associated to a muon
+                    {
+                        NPmuonbackgroundcounter++;
+                        NPmuonbackgroundchambertype->Fill(ST,RI);
+                    }
+                    else // matched to a muon's segment
+                    {
+                        NPtotalmatchestomuonsegments++;
+                        float pt = muons.pt->at(segments.mu_id->at(iseg));
+                        NPmatchedmuonsegmentspt->Fill(pt);
+                        float eta = muons.eta->at(segments.mu_id->at(iseg));
+                        NPmatchedmuonsegmentseta->Fill(eta);
+                        float phi = muons.phi->at(segments.mu_id->at(iseg));
+                        NPmatchedmuonsegmentsphi->Fill(phi);
+                        NPmuonsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);
+
+                    }
+                                
+                }
+
+            }
+
+            int flag = 0;
+
+            // iterate through all OP CLCTs in chamber to see how many went unmatched
+
+            for(unsigned int iclct = 0; iclct < OPemulatedclcts.size(); iclct++)
+            {
+                if(OPemulatedclcts.ch_id->at(iclct) != chamberHash)
+                continue;
+
+                if(OPemulatedclcts.layerCount->at(iclct) < 3)
+                continue;
+
+                if(flag > 1) //max 2 CLCTs
+                {
+                    continue;
+                }
+                else
+                {
+                    flag++;
+                }
+
+                if(std::find(matchedOPclctindex.begin(), matchedOPclctindex.end(), iclct) != matchedOPclctindex.end())
+                continue;
+
+                // if code gets here, then the CLCT went unmatched
+                // check if the CLCT was on the edge
+
+                if(OPemulatedclcts.keyStrip->at(iclct) < 1)
+                OPclctsonedgeofchamber++;
+                
+                if(me11a)
 				{
-					
-					if(OldEmulatedclcts.ch_id->at(iclct) != chamberHash)					
-					continue;					
-				
-					if(OldEmulatedclcts.layerCount->at(iclct) < 3) 					
-					continue;
-
-					if(counter0 > 1)
-					continue;
-					else
-					{
-						counter0++;	
-					} 				 					
-					
-					if(std::find(matchedOPCLCTs.begin(), matchedOPCLCTs.end(), iclct) != matchedOPCLCTs.end())
-					continue;
-					
-					float OPclctStripPos = OldEmulatedclcts.keyStrip->at(iclct);
-										
-					if(abs(OPclctStripPos - segmentX) < minDistanceSegmentToClosestOPCLCT)
-					{
-						minDistanceSegmentToClosestOPCLCT = abs(OPclctStripPos - segmentX);
-						closestOPCLCTtoSegmentIndex = iclct;
-					}
-
+					if(OPemulatedclcts.keyStrip->at(iclct) > 47) OPclctsonedgeofchamber++;
 				}
-
-				if(closestOPCLCTtoSegmentIndex != -1) //match
+				else if (me11b || me13) 
 				{
-					matchedOPCLCTs.push_back(closestOPCLCTtoSegmentIndex);
-					matchedOPseg.push_back(iseg);
-
-					OPTotalMatches++;
-				 
-					if(segments.mu_id->at(iseg) == -1) //not a muon
-					{
-						OPBGCounter++;
-						OPMuonBGCounter++;
-						OPMuonBGCT->Fill(ST,RI);
-					}					
-					else
-					{
-						OPSignal++;		
-						OPSignalCounter++;				
-						float Pt = muons.pt->at(segments.mu_id->at(iseg));
-						OPMatchedPt->Fill(Pt);
-						float eta = muons.eta->at(segments.mu_id->at(iseg));
-						OPMatchedEta->Fill(eta);
-						float phi = muons.phi->at(segments.mu_id->at(iseg));
-						OPMatchedPhi->Fill(phi);
-					}	
-					
-				}
-				else
+					if(OPemulatedclcts.keyStrip->at(iclct) > 63) OPclctsonedgeofchamber++;
+				} 
+				else 
 				{
-					if(segcount > 0 && OldEmulatedclcts.size(chamberHash) > 0 && segcount == OldEmulatedclcts.size(chamberHash))
-					OPMismatchCounter++;
+					if(OPemulatedclcts.keyStrip->at(iclct) > 79) OPclctsonedgeofchamber++;
 				}
 
-				int closestNPCLCTtoSegmentIndex = -1;
-				float minDistanceSegmenttoClosestNPCLCT = 1e5;
+                OPtotalunmatchedclcts++;
+                OPunmatchedclctslayercount->Fill(OPemulatedclcts.layerCount->at(iclct));
+                OPunmatchedclctspatternid->Fill((int)OPemulatedclcts.patternId->at(iclct));               
+                
+            }
 
-				int counter1 = 0; //2 CLCTs sent out
+            //iterate through all NP clcts in chamber to see how many went unmatched
 
-				for(unsigned int iclct = 0; iclct < NewEmulatedclcts.size(); iclct++)
-				{					
-					if(NewEmulatedclcts.ch_id->at(iclct) != chamberHash)
-					continue;				
-					
-					if(NewEmulatedclcts.layerCount->at(iclct) < 3)
-					continue;
+            flag = 0;
 
-					if(counter1 > 1)
-					continue;
-					else
-					{
-						counter1++;
-					}						
+            for(unsigned int iclct = 0; iclct < NPemulatedclcts.size(); iclct++)
+            {
+                if(NPemulatedclcts.ch_id->at(iclct) != chamberHash)
+                continue;
 
-					if(std::find(matchedNPCLCTs.begin(), matchedNPCLCTs.end(), iclct) != matchedNPCLCTs.end())
-					continue;
-				
-					float NPclctStripPos = NewEmulatedclcts.keyStrip->at(iclct);
-					if(abs(NPclctStripPos - segmentX) < minDistanceSegmenttoClosestNPCLCT)
-					{
-						minDistanceSegmenttoClosestNPCLCT = abs(NPclctStripPos - segmentX);
-						closestNPCLCTtoSegmentIndex = iclct;
-					}
+                if(NPemulatedclcts.layerCount->at(iclct) < 3)
+                continue;
 
-				}
+                if(flag > 1) //max 2 CLCTs
+                {
+                    continue;
+                }
+                else
+                {
+                    flag++;
+                }
 
-				if(closestNPCLCTtoSegmentIndex != -1) //match
+                if(std::find(matchedNPclctindex.begin(), matchedNPclctindex.end(), iclct) != matchedNPclctindex.end())
+                continue;
+
+                // if code gets here, then the CLCT went unmatched
+                // check if the CLCT was on the edge
+
+                if(NPemulatedclcts.keyStrip->at(iclct) < 1)
+                NPclctsonedgeofchamber++;
+                
+                if(me11a)
 				{
-					matchedNPCLCTs.push_back(closestNPCLCTtoSegmentIndex);
-					matchedNPseg.push_back(iseg);
-
-					NPTotalMatches++;
-					
-					if(segments.mu_id->at(iseg) == -1)
-					{
-						NPBGCounter++;
-						NPMuonBGCounter++;
-						NPMuonBGCT->Fill(ST,RI);
-					}
-					else
-					{
-						NPSignalCounter++;
-						NPSignal++;						
-						float Pt = muons.pt->at(segments.mu_id->at(iseg));
-						NPMatchedPt->Fill(Pt);
-						float eta = muons.eta->at(segments.mu_id->at(iseg));
-						NPMatchedEta->Fill(eta);
-						float phi = muons.phi->at(segments.mu_id->at(iseg));
-						NPMatchedPhi->Fill(phi);						
-					}
-
+					if(NPemulatedclcts.keyStrip->at(iclct) > 47) NPclctsonedgeofchamber++;
 				}
-				else
+				else if (me11b || me13) 
 				{
-					if(segcount > 0 && NewEmulatedclcts.size(chamberHash) > 0 && segcount == NewEmulatedclcts.size(chamberHash))
-					NPMismatchCounter++;
-				}			
-
-				//printing out chambers with Old Patterns matching to muon segments but not the New ones (try to explain the difference in total matches to muon segments)
-
-				/*if(closestOPCLCTtoSegmentIndex != -1 && closestNPCLCTtoSegmentIndex == -1 && segments.mu_id->at(iseg) != -1)
-				{					
-					compHits.print();
-					cout << segmentX << " " << segcount << " " << OldEmulatedclcts.size(chamberHash) << " " << NewEmulatedclcts.size(chamberHash);
-					cout << endl << endl;
-				}*/
-
-
-			}
-
-			int counter0 = 0;
-
-			if(OldEmulatedclcts.size(chamberHash) > segcount) //see how many of the CLCTs went unmatched (max 2)
-			{				
-				for(unsigned int iclct = 0; iclct < OldEmulatedclcts.size(); iclct++)
+					if(NPemulatedclcts.keyStrip->at(iclct) > 63) NPclctsonedgeofchamber++;
+				} 
+				else 
 				{
-					if(OldEmulatedclcts.ch_id->at(iclct) != chamberHash)
-					continue;			
-
-					if(OldEmulatedclcts.layerCount->at(iclct) < 3)
-					continue;
-
-					if(counter0 > 1)
-					continue;
-					else
-					{
-						counter0++;
-					} 					
-
-					if(std::find(matchedOPCLCTs.begin(), matchedOPCLCTs.end(), iclct) != matchedOPCLCTs.end())
-					continue;
-									
-					OPOtherBGCounter++;
-					OPOtherBGLC->Fill(int(OldEmulatedclcts.layerCount->at(iclct)));
-					OPOtherBGPI->Fill(int(OldEmulatedclcts.patternId->at(iclct)));
-					
+					if(NPemulatedclcts.keyStrip->at(iclct) > 79) NPclctsonedgeofchamber++;
 				}
 
-			}
+                NPtotalunmatchedclcts++;
+                NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));
+                NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));               
+                
+            }
 
-			if(segcount > OldEmulatedclcts.size(chamberHash)) //see how many of the segments went unmatched
-			{			
+            //iterate through all segments in chamber to see how many went unmatched to OP CLCTs
 
-				for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                if(std::find(matchedOPsegmentindex.begin(), matchedOPsegmentindex.end(), iseg) != matchedOPsegmentindex.end())
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+                //ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
+				if(me11a)
 				{
-					if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
-					continue;
-
-					if(std::find(matchedOPseg.begin(), matchedOPseg.end(), iseg) != matchedOPseg.end())
-					continue;					
-					
-					OPCLCTsu++;					
-
-				}				
-				
-			}
-
-			
-			int counter1 = 0;
-
-			if(NewEmulatedclcts.size(chamberHash) > segcount) //see how many of the CLCTs went unmatched (max 2)
-			{
-				for(unsigned int i = 0; i < NewEmulatedclcts.size(); i++)
+					if(segmentx > 47) continue;
+				}
+				else if (me11b || me13) 
 				{
-					if(NewEmulatedclcts.ch_id->at(i) != chamberHash)
-					continue;
-
-					if(NewEmulatedclcts.layerCount->at(i) < 3)
-					continue;
-
-					if(counter1 > 1)
-					continue;
-					else
-					{
-						counter1++;
-					} 				
-
-					if(std::find(matchedNPCLCTs.begin(), matchedNPCLCTs.end(), i) != matchedNPCLCTs.end())
-					continue;
-
-					NPOtherBGCounter++;					
-					NPOtherBGLC->Fill(int(NewEmulatedclcts.layerCount->at(i)));					
-					NPOtherBGPI->Fill(int(NewEmulatedclcts.patternId->at(i))/10);
-
+					if(segmentx > 63) continue;
+				} 
+				else 
+				{
+					if(segmentx > 79) continue;
 				}
 
-			}
+                //if code gets here, then the segment went unmatched
 
-			if(segcount > NewEmulatedclcts.size(chamberHash)) //see how many of the segments went unmatched
-			{
-				for(unsigned int i = 0; i < segments.size(); i++)
-				{					
-					if((unsigned int)segments.ch_id->at(i) != chamberHash)
-					continue;
+                OPtotalunmatchedsegments++;
+                OPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
+                OPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
+                OPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));
 
-					if(std::find(matchedNPseg.begin(), matchedNPseg.end(), i) != matchedNPseg.end())
-					continue;
+            }
 
-					NPCLCTsu++;
+            //iterate through all segments in chamber to see how many went unmatched to NP CLCTs
 
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                if(std::find(matchedNPsegmentindex.begin(), matchedNPsegmentindex.end(), iseg) != matchedNPsegmentindex.end())
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+                //ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
+				if(me11a)
+				{
+					if(segmentx > 47) continue;
+				}
+				else if (me11b || me13) 
+				{
+					if(segmentx > 63) continue;
+				} 
+				else 
+				{
+					if(segmentx > 79) continue;
 				}
 
-			}					
+                //if code gets here, then the segment went unmatched
 
-		}	
+                NPtotalunmatchedsegments++;
+                NPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
+                NPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
+                NPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));
 
-		if(y != 0)
-		x++;
+            }
 
+            //iterate through all muon segments in chamber to see how many went unmatched to OP CLCTs
+
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                if(segments.mu_id->at(iseg) == -1)
+                continue;
+
+                if(std::find(matchedOPsegmentindex.begin(), matchedOPsegmentindex.end(), iseg) != matchedOPsegmentindex.end())
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+                //ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
+				if(me11a)
+				{
+					if(segmentx > 47) continue;
+				}
+				else if (me11b || me13) 
+				{
+					if(segmentx > 63) continue;
+				} 
+				else 
+				{
+					if(segmentx > 79) continue;
+				}
+
+                //if code gets here, then the muon segment went unmatched
+
+                OPtotalunmatchedmuonsegments++;
+
+            }
+
+            //iterate through all muon segments in chamber to see how many went unmatched to NP CLCTs
+
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                if(segments.mu_id->at(iseg) == -1)
+                continue;
+
+                if(std::find(matchedNPsegmentindex.begin(), matchedNPsegmentindex.end(), iseg) != matchedNPsegmentindex.end())
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+                //ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
+				if(me11a)
+				{
+					if(segmentx > 47) continue;
+				}
+				else if (me11b || me13) 
+				{
+					if(segmentx > 63) continue;
+				} 
+				else 
+				{
+					if(segmentx > 79) continue;
+				}
+
+                //if code gets here, then the muon segment went unmatched
+
+                NPtotalunmatchedmuonsegments++;
+                
+            }
+
+        }
+
+    }
+
+    TFile * outF = new TFile(outputfile.c_str(),"RECREATE");
+
+	if(!outF)
+    {
+		cout << "Failed to open output file: " << outputfile << endl;
+		return -1;
 	}
 
-	outF->cd();
-	SegNoMuon->Write();
-	OPMatchedPt->Write();
-	OPMatchedEta->Write();
-	OPMatchedPhi->Write();
-	OPMuonBGCT->Write();
-	OPOtherBGLC->Write();
-	OPOtherBGPI->Write();
-	OPCLCTsMoreThanSeg->Write();
-	OPSegMoreThanCLCTs->Write();
-	NPMatchedPt->Write();
-	NPMatchedEta->Write();
-	NPMatchedPhi->Write();
-	NPMuonBGCT->Write();
-	NPOtherBGLC->Write();
-	NPOtherBGPI->Write();
-	NPCLCTsMoreThanSeg->Write();
-	NPSegMoreThanCLCTs->Write();
+    outF->cd();
+    OPmatchedmuonsegmentspt->Write();
+    NPmatchedmuonsegmentspt->Write();
+    OPmatchedmuonsegmentseta->Write();
+    NPmatchedmuonsegmentseta->Write();
+    OPmatchedmuonsegmentsphi->Write();
+    NPmatchedmuonsegmentsphi->Write();
+    OPsegmentmatchpositiondifference->Write();
+    NPsegmentmatchpositiondifference->Write();
+    OPmuonsegmentmatchpositiondifference->Write();
+    NPmuonsegmentmatchpositiondifference->Write();
+    OPmuonbackgroundchambertype->Write();
+    NPmuonbackgroundchambertype->Write();
+    OPunmatchedclctschambertype->Write();
+    NPunmatchedclctschambertype->Write();
+    OPunmatchedclctslayercount->Write();
+    NPunmatchedclctslayercount->Write();
+    OPunmatchedclctspatternid->Write();
+    NPunmatchedclctspatternid->Write();
+    OPunmatchedsegmentschambertype->Write();
+    NPunmatchedsegmentschambertype->Write();
+    OPunmatchedsegmentsdxdz->Write();
+    NPunmatchedsegmentsdxdz->Write();
+    OPunmatchedsegmentsdydz->Write();
+    NPunmatchedsegmentsdydz->Write();
+    OPunmatchedsegmentsnhits->Write();
+    NPunmatchedsegmentsnhits->Write();
 
-	cout << "Segments associated to muons: " << seg_muon << endl;
-	cout << "Segments not associated to muons: " << seg_nomuon << endl << endl;
+    cout << "Total segments: " << totalsegments << endl;
+    cout << "Total muon segments: " << totalmuonsegments << endl;
+    cout << "Total segments not associated to muons: " << totalnotmuonsegments << endl << endl;
 
-	cout << "Old Patterns: " << endl;
-	cout << "--------------------------------------------------" << endl;
-	//cout << "Total # of CLCTs: " << OPTotal << endl;
-	cout << "Total # of CLCTs (3 Layer Min): " << OPTotalThreeLayerMin << endl;
-	cout << "Total # of segment matches: " << OPTotalMatches << endl;
-	cout << "Matches to muon segments: " << OPSignal << endl;
-	cout << "Muon Background: " << OPMuonBGCounter << endl;
-	cout << "# chambers with n(CLCTs) > n(segments): " << OPclctsmorethanseg << endl;
-	cout << "# excess CLCTs in chambers with n(CLCTs) > n(segments): " << OPOtherBGCounter << endl;
-	//cout << "Mismatches: " << OPMismatchCounter << endl;
-	cout << "# chambers with n(segments) > n(CLCTs): " << OPsegmorethanclcts << endl;
-	cout << "# excess segments in chambers with n(segments) > n(CLCTs): " << OPCLCTsu << endl << endl;
+    cout << "Old Patterns: " << endl;
+    cout << "--------------------------------------------------" << endl;
+    cout << "Total CLCTs (3 layer min): " << OPtotalclcts << endl;
+    cout << "Total segments matches: " << OPtotalmatchestosegments << endl;
+    cout << "Total muon segment matches: " << OPtotalmatchestomuonsegments << endl;
+    cout << "Muon background: " << OPmuonbackgroundcounter << endl;
+    cout << "Total unmatched CLCTs: " << OPtotalunmatchedclcts << " (of which " << OPclctsonedgeofchamber << " were on the edges of chambers)" << endl;
+    cout << "Total unmatched segments: " << OPtotalunmatchedsegments << endl;
+    cout << "Total unmatched muon segments: " << OPtotalunmatchedmuonsegments << endl << endl;
 
-	cout << "New Patterns: " << endl;
-	cout << "--------------------------------------------------" << endl;
-	//cout << "Total # of CLCTs: " << NPTotal << endl;
-	cout << "Total # of CLCTs (3 Layer Min): " << NPTotalThreeLayerMin << endl;
-	cout << "Total # of segment matches: " << NPTotalMatches << endl;
-	cout << "Matches to muon segments: " << NPSignal << endl;
-	cout << "Muon Background: " << NPMuonBGCounter << endl;
-	cout << "# chambers with n(CLCTs) > n(segments): " << NPclctsmorethanseg << endl;
-	cout << "# excess CLCTs in chambers with n(CLCTs) > n(segments): " << NPOtherBGCounter << endl;
-	//cout << "Mismatches: " << NPMismatchCounter << endl;
-	cout << "# chambers with n(segments) > n(CLCTs): " << NPsegmorethanclcts << endl;
-	cout << "# excess segments in chambers with n(segments) > n(CLCTs): " << NPCLCTsu << endl << endl;	 
+    cout << "New Patterns: " << endl;
+    cout << "--------------------------------------------------" << endl;
+    cout << "Total CLCTs (3 layer min): " << NPtotalclcts << endl;
+    cout << "Total segments matches: " << NPtotalmatchestosegments << endl;
+    cout << "Total muon segment matches: " << NPtotalmatchestomuonsegments << endl;
+    cout << "Muon background: " << NPmuonbackgroundcounter << endl;
+    cout << "Total unmatched CLCTs: " << NPtotalunmatchedclcts << " (of which " << NPclctsonedgeofchamber << " were on the edges of chambers)" << endl;
+    cout << "Total unmatched segments: " << NPtotalunmatchedsegments << endl;
+    cout << "Total unmatched muon segments: " << NPtotalunmatchedmuonsegments << endl << endl; 
 
-	cout <<"Events with atleast one chamber having more than one hit on a layer within 3 halfstrips: " << y << endl << endl;
-	
-	printf("Wrote to file: %s\n",outputfile.c_str());
+    printf("Wrote to file: %s\n",outputfile.c_str());
 
 	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << endl << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
+	cout << endl << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl << endl;
 	return 0;
+
 }
-
-
 
 int main(int argc, char* argv[])
 {

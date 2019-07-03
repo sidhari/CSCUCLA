@@ -74,6 +74,7 @@ public:
 	float pt() const;
 	unsigned int nclcts() const;
 	float quality() const;
+	void setquality(int qual);
 	float probability() const;
 	float multiplicity() const; //calculates average multiplicity for how many clcts it is associated with
 
@@ -146,6 +147,9 @@ public:
 
 	int nclcts();
 	int nsegments();
+
+	void setqual();
+	
 private:
 	bool _isFinal;
 	const bool _isLegacy;

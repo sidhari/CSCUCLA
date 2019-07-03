@@ -84,18 +84,19 @@ int LUTBuilder(string inputfile, string outputfile, int start = 0, int end = -1)
 
     cout << endl << "Starting Event = " << start << ", Ending Event = " << end << endl;
 
-    for(int i = start; i < end; i++)
+    for(int m = start; m < end; m++)
     {
-        if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
+        if(!(m%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(m-start)/(end-start), m-start);
 
-        t->GetEntry(i);
-        t_emu->GetEntry(i);
+        t->GetEntry(m);       
+
+        t_emu->GetEntry(m);
 
         //
 		//Iterate through all possible chambers
 		//
 
-		for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
+		for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
         {
             CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
@@ -118,12 +119,17 @@ int LUTBuilder(string inputfile, string outputfile, int start = 0, int end = -1)
             
             unsigned int PID;
 
-            int CLCTcounter = 0;
+            int CLCTcounter = 0;            
 
             for(unsigned int i = 0; i < emulatedclcts.size(); i++)
             {
-                if(chamberHash != emulatedclcts.ch_id->at(i))
+
+                cout << "2" << endl << endl;
+
+                if(chamberHash != (unsigned int)emulatedclcts.ch_id->at(i))
                 continue;
+
+                cout << "2.5" <<  endl << endl;
 
                 if(CLCTcounter > 1)
                 {
@@ -133,8 +139,7 @@ int LUTBuilder(string inputfile, string outputfile, int start = 0, int end = -1)
                 {
                     CLCTcounter++;
                 }
-                                
-                
+
                PID = emulatedclcts.patternId->at(i);
 
                if(PID == 100)
@@ -262,18 +267,13 @@ int LUTBuilder(string inputfile, string outputfile, int start = 0, int end = -1)
                   
     }
 
+    bayesLUT.print(10);
+
     bayesLUT.sort("lkxpscme");
     
-    float qual = 0;
-    
-    for(auto& x: bayesLUT._orderedLUT)
-    {
-       LUTEntry* e = &x.second();
-       const LUTKey k = x.first();
-       bayesLUT.editEntry(k,e);
-        e->_quality = qual;
-        qual++;
-    }
+    bayesLUT.setqual();
+
+    bayesLUT.print(10);
 
     bayesLUT.writeToROOT(outputfile);
 
