@@ -641,7 +641,7 @@ float ChamberHits::hitStdHS() {
 //me11a/b, and even layers are all shifted by one half strip for storage in an array
 bool ChamberHits::shift(unsigned int lay) const {
 	bool me11a = (_station == 1 && _ring == 4);
-	bool me11b = (_station == 1 && _ring == 1);
+	bool me11b = (_station == 1 && _ring == 1);	
 	return me11a ||me11b || !(lay%2);
 }
 
@@ -653,6 +653,7 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
 	bool me11a = (_station == 1 && _ring == 4);
 	bool me11b = (_station == 1 && _ring == 1);
+	bool me13 = (_station == 1 && _ring == 3);
 	for(unsigned int i = 0; i < c.size(); i++){
 		if(chSid != c.ch_id->at(i)) continue; //only look at where we are now
 		unsigned int lay = c.lay->at(i)-1;
@@ -682,10 +683,83 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 		if(timeOn >= 16) {
 			printf("Error timeOn is an invalid number: %i\n", timeOn);
 			return -1;
-		} else {
+		} else {			
 			if(!_hits[halfStripVal][lay]){
-				_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
-				_nhits++;
+				int flag = 0;
+				if((halfStripVal-1) >= 0){
+					if(!_hits[halfStripVal-1][lay]){
+						_hits[halfStripVal][lay] = 0;
+						_hits[halfStripVal-1][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;	
+						flag++;					
+					}
+				}
+				if((halfStripVal-2) >= 0){
+					if(!_hits[halfStripVal-2][lay]){
+						_hits[halfStripVal-2][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				}	
+
+				if(me11a){
+					if((halfStripVal + 1) <= 96){
+						if(!_hits[halfStripVal+1][lay])
+						_hits[halfStripVal+1][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				} else if(me11b || me13){
+					if((halfStripVal + 1) < 128){
+						if(!_hits[halfStripVal+1][lay])
+						_hits[halfStripVal+1][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				} else{
+					if((halfStripVal + 1) < 160){
+						if(!_hits[halfStripVal+1][lay])
+						_hits[halfStripVal+1][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				}
+
+				if(me11a){
+					if((halfStripVal + 2) <= 96){
+						if(!_hits[halfStripVal+2][lay])
+						_hits[halfStripVal+2][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				} else if(me11b || me13){
+					if((halfStripVal + 2) < 128){
+						if(!_hits[halfStripVal+2][lay])
+						_hits[halfStripVal+2][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				} else{
+					if((halfStripVal + 2) < 160){
+						if(!_hits[halfStripVal+2][lay])
+						_hits[halfStripVal+2][lay] = 0;
+						_hits[halfStripVal][lay] = 0;
+						cout << "Warning: comparators deleted due to presence of multiple on the same layer within 2 halfstrips" << endl;
+						flag++;
+					}
+				}
+
+				if(flag == 0){
+					_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+					_nhits++;
+				}								
+				
 			}
 		}
 	}
