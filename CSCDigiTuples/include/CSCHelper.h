@@ -69,7 +69,8 @@ bool segmentIsOnEdgeOfChamber(float strip, unsigned int ST, unsigned int RI){
 
 //written to remove ambiguity between ME11A and ME11B
 unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
-	//sanity check
+	//for simulation chamber
+	if(!st && !ri && !ch && !ec) return 0xffffffff;
 	if(!isValidChamber(st,ri,ch,ec)){
     	std::cout << "Error: Trying to serialize invalid chamber:" <<
     			" ST = " << st <<
@@ -114,6 +115,12 @@ unsigned int serialize(ChamberId id){
  */
 ChamberId unserialize(unsigned int serial){
 	ChamberId c;
+	if(serial==0xffffffff){ //dummy chamber
+		c.chamber = 0;
+		c.ring = 0;
+		c.station = 0;
+		c.endcap = 0;
+	}
 	c.chamber		= (serial & 0x0000003f)+1; //6 bits
 	serial 			= serial >> 6;
 	c.ring 			= (serial & 0x00000003)+1; //2 bits

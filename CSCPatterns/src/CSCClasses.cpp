@@ -531,17 +531,24 @@ ChamberHits::ChamberHits(unsigned int station, unsigned int ring,
 				_chamber(chamber)
 {
 	_nhits = 0;
-	_minHs = 0;
 	bool me11a = _station == 1 && _ring == 4;
 	bool me11b = _station == 1 && _ring == 1;
 	bool me13 = _station == 1 && _ring == 3;
+	//test using only one CFEB
+	bool oneCFEB = _station == 0 && _ring == 0;
 	if(me11a){
 		_maxHs = 2*48;
 	}else if (me11b || me13){
 		_maxHs = 2*64;
+	}else if(oneCFEB){
+		_maxHs = 2*16;
 	} else {
 		_maxHs = 2*80;
 	}
+
+	_minHs = 0;
+	//me11a, me11b, oneCFEB all have their key half strip layer shifted over by one
+	//_minHs = me11a || me11b || oneCFEB;
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
 		for(unsigned int j = 0; j < NLAYERS; j++){
 			_hits[i][j] = 0;
@@ -594,7 +601,9 @@ float ChamberHits::hitStdHS() {
 bool ChamberHits::shift(unsigned int lay) const {
 	bool me11a = (_station == 1 && _ring == 4);
 	bool me11b = (_station == 1 && _ring == 1);
-	return me11a ||me11b || !(lay%2);
+	//test using only one CFEB
+	bool oneCFEB = _station == 0 && _ring == 0;
+	return me11a ||me11b || oneCFEB ||!(lay%2);
 }
 
 /* @brief fills the comparator hits class with the comparators given
@@ -646,7 +655,10 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 }
 
 
-//TODO Jan 4, 2019
+/* TODO: Seems to be an issue where recHits can not be put
+ * in the lowest half-strip position of the chamber. Needs
+ * to be looked at more thoroughly
+ */
 int ChamberHits::fill(const CSCInfo::RecHits& r){
 
 
