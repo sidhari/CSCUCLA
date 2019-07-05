@@ -206,6 +206,11 @@ float LUTEntry::quality() const{
 	return _quality;
 }
 
+void LUTEntry::setquality(int qual)
+{
+	_quality = qual;
+}
+
 /* @brief Probability clct will later be matched to a muon
  *
  */
@@ -752,6 +757,22 @@ int LUT::nclcts() {
 int LUT::nsegments() {
 	if(!_isFinal) makeFinal();
 	return _nsegments;
+}
+
+void LUT::setqual()
+{
+	float quality = 0;
+    
+    for(auto& x: _orderedLUT)
+    {
+       LUTEntry* e = 0;
+       LUTKey k = x.first;
+       int r = editEntry(k,e);
+	   if(r == -1)
+	   continue;
+       e->setquality(quality);
+       quality++;
+    }
 }
 
 int LUT::convertToPSLLine(const LUTEntry& e){

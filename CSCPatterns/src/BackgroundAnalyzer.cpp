@@ -97,8 +97,8 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
     TH1F* OPmatchedmuonsegmentspt = new TH1F ("Matched Muon Segments (OP): Pt", "Matched Muon Segments (OP): Pt;Pt [GeV];Count", 20, 0, 100);
     TH1F* OPmatchedmuonsegmentseta = new TH1F ("Matched Muon Segments (OP): Eta", "Matched Muon Segments (OP): Eta;Eta;Count", 50, -3, 3);
     TH1F* OPmatchedmuonsegmentsphi = new TH1F ("Matched Muon Segments (OP): Phi", "Matched Muon Segments (OP): Phi;Phi;Count", 50, -5, 5);
-    TH1F* OPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (OP)", "Matched Segment, CLCT postion difference (OP);Position Difference;Count", 50, -20, 20);
-    TH1F* OPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (OP)", "Matched Muon Segment, CLCT postion difference (OP);Position Difference;Count", 50, -20, 20);
+    TH1F* OPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (OP)", "Matched Segment, CLCT postion difference (OP);Position Difference;Count", 10, -5, 5);
+    TH1F* OPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (OP)", "Matched Muon Segment, CLCT postion difference (OP);Position Difference;Count", 10, -5, 5);
     TH2D* OPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (OP)", "Muon Background: Chamber Type Distribution (OP);Station;Ring", 4, 1, 5, 4, 1, 5 );
     TH2D* OPunmatchedclctschambertype = new TH2D ("Unmatched CLCTs: Chamber Type Distribution (OP)", "Unmatched CLCTs: Chamber Type (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
     TH1F* OPunmatchedclctslayercount = new TH1F ("Unmatched CLCTs: Layer Count Distribution (OP)", "Unmatched CLCTs: Layer Count Distribution (OP);Layer Count;Count", 7, 0, 7);
@@ -111,8 +111,8 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
     TH1F* NPmatchedmuonsegmentspt = new TH1F ("Matched Muon Segments (NP): Pt", "Matched Muon Segments (NP): Pt;Pt [GeV];Count", 20, 0, 100);
     TH1F* NPmatchedmuonsegmentseta = new TH1F ("Matched Muon Segments (NP): Eta", "Matched Muon Segments (NP): Eta;Eta;Count", 50, -3, 3);
     TH1F* NPmatchedmuonsegmentsphi = new TH1F ("Matched Muon Segments (NP): Phi", "Matched Muon Segments (NP): Phi;Phi;Count", 50, -5, 5);
-    TH1F* NPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (NP)", "Matched Segment, CLCT postion difference (NP);Position Difference;Count", 50, -20, 20);
-    TH1F* NPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (NP)", "Matched Muon Segment, CLCT postion difference (NP);Position Difference;Count", 50, -20, 20);
+    TH1F* NPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (NP)", "Matched Segment, CLCT postion difference (NP);Position Difference;Count", 10, -5, 5);
+    TH1F* NPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (NP)", "Matched Muon Segment, CLCT postion difference (NP);Position Difference;Count", 10, -5, 5);
     TH2D* NPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (NP)", "Muon Background: Chamber Type Distribution (NP);Station;Ring", 4, 1, 5, 4, 1, 5 );
     TH2D* NPunmatchedclctschambertype = new TH2D ("Unmatched CLCTs: Chamber Type Distribution (NP)", "Unmatched CLCTs: Chamber Type (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
     TH1F* NPunmatchedclctslayercount = new TH1F ("Unmatched CLCTs: Layer Count Distribution (NP)", "Unmatched CLCTs: Layer Count Distribution (NP);Layer Count;Count", 7, 0, 7);
@@ -273,8 +273,8 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 					if(segmentx > 79) continue;
 				}
 
-                int closestOPclcttosegmentindex = -1;
-                float closestOPclcttosegmentdistance = 1e5;
+                int closestOPclcttosegmentindex = -1; //index of OP CLCT matched to current segment
+                float closestOPclcttosegmentdistance = 1e5; //distance between segment and OP CLCT in the event of a match
 
                 int flag = 0;
 
@@ -339,8 +339,8 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
                     
                 }
 
-                int closestNPclcttosegmentindex = -1;
-                float closestNPclcttosegmentdistance = 1e5;
+                int closestNPclcttosegmentindex = -1; //index of NP CLCT matched to current segment
+                float closestNPclcttosegmentdistance = 1e5; //distance between segment and NP CLCT in the event of a match
 
                 flag = 0;
 
