@@ -12,7 +12,8 @@ r.gSystem.Load('../../lib/PatternFinderClasses_cpp')
 
 
 lut = r.LUT("test", "../../dat/linearFits.lut");
-lut.loadROOT("/afs/cern.ch/user/w/wnash/public/lutExample.root")
+#lut.loadROOT("/afs/cern.ch/user/w/wnash/public/lutExample.root")
+lut.loadROOT("../../dat/lutExample.root")
 
 
 # Sort functionality for how lookup table is stored in memory

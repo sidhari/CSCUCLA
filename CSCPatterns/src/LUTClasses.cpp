@@ -16,11 +16,9 @@
 //TEMP
 #include "TFile.h"
 #include "TH1F.h"
-#include "../include/PatternFinderHelperFunctions.h"
-
-
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
 using namespace std;

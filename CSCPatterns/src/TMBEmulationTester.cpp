@@ -24,21 +24,25 @@
 #include <time.h>
 
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
-#include "../include/LUTClasses.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+#include "../include/LUTClasses.h"
+
+#include "../include/TMBEmulationTester.h"
 
 using namespace std;
 
+int main(int argc, char* argv[]){
+	TMBEmulationTester p;
+	return p.main(argc,argv);
+}
 
-
-
-int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-1) {
+int TMBEmulationTester::run(string inputfile, string outputfile, int start, int end) {
 
 	//TODO: change everythign printf -> cout
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -356,31 +360,6 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 	return 0;
 
 }
-
-
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return testTMBEmulation(string(argv[1]), string(argv[2]));
-		case 4:
-			return testTMBEmulation(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return testTMBEmulation(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./<name> inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}
-
-
 
 
 

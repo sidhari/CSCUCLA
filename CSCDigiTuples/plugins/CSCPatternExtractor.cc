@@ -282,6 +282,12 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     unsigned int matchedRHCount = 0;
     unsigned int totalSegRHs = 0;
 
+    //similarly do the same for the segments
+    vector<const CSCSegment*> unmatched_segments;
+    for(const auto& iseg : *allSegmentsCSC) unmatched_segments.push_back(&iseg);
+    if(DEBUG) cout << "Initial Unmatched Segment Count = " << unmatched_segments.size() << endl;
+    unsigned int matchedSegmentCount = 0;
+    unsigned int totalSegments = unmatched_segments.size();
 
 	eventInfo.fill(iEvent, allSegmentsCSC->size());
 
@@ -319,6 +325,14 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     					}
     				}
     			}
+    			//remove the segment from the unmatched segment list
+    			for(unsigned int un_i = 0; un_i < unmatched_segments.size(); un_i++){
+    				if(areEqual(*unmatched_segments.at(un_i), *segment)){
+    					unmatched_segments.erase(unmatched_segments.begin()+un_i);
+    					matchedSegmentCount++;
+    					break;
+    				}
+    			}
     		}
 
     	}
@@ -333,18 +347,20 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     		tree.h.h_selectedMuonsPhi->Fill(muonInfo.phi->at(im));
     	}
 
-    } else { //TODO: can make it so all unmatched segments are written out as well in selected case
-    	for(const auto& segment: *allSegmentsCSC){
-    		//TODO: might need to do some selection here
-    		segmentInfo.fill(segment, theCSC, -1); //default unmatched to -1
-    	}
+
+
     }
+
     if(DEBUG) {
     	cout << "Total Seg RHs: " << totalSegRHs << endl;
     	cout << "Matched RHs: " << matchedRHCount << endl;
     	cout << "Final Unmatched RHs size: " << unmatched_rhs.size() << endl;
+    	cout << "Total Segments: " << totalSegments << endl;
+    	cout << "Matched Segments: " << matchedSegmentCount << endl;
+    	cout << "Unmatced Segments: " << unmatched_segments.size() << endl;
     }
 
+    segmentInfo.fill(unmatched_segments,theCSC,-1);
     recHitInfo.fill(unmatched_rhs, -1);
     lctInfo.fill(*cscLCTDigi);
     clctInfo.fill(*cscCLCTDigi);
@@ -569,7 +585,7 @@ vector<const CSCSegment*> CSCPatternExtractor::matchCSC(const reco::Track& muon,
 }
 
 
-/* Apporiximate way to test if two rechits are equal,
+/* Apporoximate way to test if two rechits are equal,
  * since there is no operator defined already for the class in CMSSW
  *
  */
@@ -582,6 +598,18 @@ bool CSCPatternExtractor::areEqual(const CSCRecHit2D& rh1, const CSCRecHit2D& rh
 	return (rh1.geographicalId().rawId() == rh2.geographicalId().rawId())
 			&& (rh1.energyDepositedInLayer() == rh2.energyDepositedInLayer())
 			&& (float(centerStr1)+rh1.positionWithinStrip() == float(centerStr2) +rh2.positionWithinStrip());
+}
+/* Approximate way to test if two segments are equal,
+ * since there is no operator defined already for the class in CMSSW
+ *
+ */
+bool CSCPatternExtractor::areEqual(const CSCSegment& seg1, const CSCSegment& seg2) {
+	bool sameDetId = seg1.geographicalId() == seg2.geographicalId();
+	bool sameDirection = seg1.localDirection() == seg2.localDirection();
+	bool samePosition = seg1.localPosition() == seg2.localPosition();
+	bool sameRHSize = seg1.specificRecHits().size() == seg2.specificRecHits().size();
+
+	return sameDetId && sameDirection && samePosition && sameRHSize;
 }
 
 //define this as a plug-in

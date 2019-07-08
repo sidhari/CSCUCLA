@@ -6,6 +6,8 @@
  */
 
 
+#include <CSCClasses.h>
+#include <CSCHelperFunctions.h>
 #include <TTree.h>
 #include <TFile.h>
 #include <TH1F.h>
@@ -28,8 +30,6 @@
 
 
 #include "../../CSCPatterns/include/PatternConstants.h"
-#include "../../CSCPatterns/include/PatternFinderClasses.h"
-#include "../../CSCPatterns/include/PatternFinderHelperFunctions.h"
 #include "../../CSCPatterns/include/LUTClasses.h"
 #include "../include/BremClasses.h"
 #include "../include/BremConstants.h"

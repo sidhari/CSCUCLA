@@ -5,8 +5,8 @@
  *      Author: williamnash
  */
 
-#ifndef PATTERNCONSTANTS_H_
-#define PATTERNCONSTANTS_H_
+#ifndef CSCCONSTANTS_H_
+#define CSCCONSTANTS_H_
 
 #include <string>
 
@@ -199,4 +199,4 @@ bool ID8_BASE [MAX_PATTERN_WIDTH][NLAYERS];
 bool ID9_BASE [MAX_PATTERN_WIDTH][NLAYERS];
 
 
-#endif /* PATTERNCONSTANTS_H_ */
+#endif /* CSCCONSTANTS_H_ */

@@ -1,14 +1,3 @@
 <use name="CSCUCLA/CSCDigiTuples"/>
 <library   name="CSCUCLACSCDigiTuplesPlugins" file="CSC*.cc">
 </library>
-<library   file="FlatRandomOneOverPGunProducer.cc" name="FlatRandomOneOverPGunProducer">
-  <use   name="boost"/>
-  <use   name="FWCore/Framework"/>
-  <use   name="SimDataFormats/GeneratorProducts"/>
-  <use   name="SimGeneral/HepPDTRecord"/>
-  <use   name="clhep"/>
-  <use   name="hepmc"/>
-  <use name="heppdt"/>
-  <use name="IOMC/ParticleGuns"/>
-  <flags   EDM_PLUGIN="1"/>
-</library>

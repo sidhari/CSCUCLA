@@ -1,21 +1,26 @@
 /*
- * LUTBuilder.cpp
+ * LUTBuilder_TEMPLATE.cpp
  *
  *  Created on: Jun 18, 2019
  *      Author: wnash
  */
 
-#include "../include/LUTBuilder.h"
+
+#include "../include/LUTBuilder_TEMPLATE.h"
+
+#include <iostream>
 
 #include <TTree.h>
 #include <TFile.h>
 
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+#include "../include/CSCClasses.h"
 #include "../include/CSCHelperFunctions.h"
+#include "../include/LUTClasses.h"
 
 int main(int argc, char* argv[]){
-	LUTBuilder p;
+	LUTBuilder_TEMPLATE p;
 	return p.main(argc,argv);
 }
 
@@ -26,8 +31,7 @@ struct SegmentMatch {
 	float pt;
 };
 
-int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, int end) {
-
+int LUTBuilder_TEMPLATE::run(std::string inputfile, std::string outputfile, int start, int end){
 	cout << "Running over file: " << inputfile << endl;
 
 
@@ -55,14 +59,12 @@ int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, in
 
 
 	vector<CSCPattern>* newEnvelopes = createNewPatterns();
-	vector<CSCPattern>* oldEnvelopes = createOldPatterns();
-
 
 	//
-	// Map to look at probability
-	// TODO: incorporate this functionality into LUT class once it is more figured out
+	// LUT
 	//
-	LUT bayesLUT("bayes", LINEFIT_LUT_PATH);
+	//TODO: need to fix to use LINEFIT_LUT_PATH and make it capable on LXPLUS as well as LPC
+	LUT demoLUT("demo", "dat/linearFits.lut");
 
 
 	//
@@ -101,28 +103,21 @@ int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, in
 			if(compHits.fill(comparators)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
-			vector<CLCTCandidate*> oldSetMatch;
 
 			//get all the clcts in the chamber
 
-			if(searchForMatch(compHits, oldEnvelopes,oldSetMatch) || searchForMatch(compHits, newEnvelopes,newSetMatch)) {
-				oldSetMatch.clear();
+			if(searchForMatch(compHits, newEnvelopes,newSetMatch)) {
 				newSetMatch.clear();
 				continue;
 			}
 
-			//TODO: currently no implementation dealing with cases where we find one and not other
-			if(!oldSetMatch.size() || !newSetMatch.size()) {
-				oldSetMatch.clear();
+			if(!newSetMatch.size()) {
 				newSetMatch.clear();
 				continue;
 			}
 
 
 			vector<int> matchedNewId;
-			vector<int> matchedOldId;
-
-
 			vector<SegmentMatch> matchedNew;
 
 
@@ -134,10 +129,12 @@ int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, in
 
 				float segmentX = segments.pos_x->at(thisSeg); //strips
 				float segmentdXdZ = segments.dxdz->at(thisSeg);
+
+				//TODO: figure out way to deal with non-muon associated segments
+				if(segments.mu_id->at(thisSeg) == -1) continue;
 				float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
 
-
-				// IGNORE SEGMENTS AT THE EDGES OF THE CHAMBERS
+				//avoid segments at the edge of the chamber
 				if(CSCHelper::segmentIsOnEdgeOfChamber(segmentX, ST,RI)) continue;
 
 				//
@@ -145,19 +142,14 @@ int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, in
 				//
 
 				if(DEBUG > 0) cout << "--- Segment Position: " << segmentX << " [strips] ---" << endl;
-				if(DEBUG > 0) cout << "Legacy Match: (";
-				int closestOldMatchIndex = findClosestToSegment(oldSetMatch,segmentX);
-				if(DEBUG > 0) cout << ") [strips]" << endl;
-
-
 				if(DEBUG > 0)cout << "New Match: (";
 				int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
 				if(DEBUG > 0) cout << ") [strips]" << endl;
 
-				/* TODO currently not optimum selection could
-				 * have a case where clct1 and clct2 are closest to seg1,
-				 * clct1 could match seg2, but gets ignore by this procedure
-				 */
+				// TODO currently not optimum selection could
+				// have a case where clct1 and clct2 are closest to seg1,
+				// clct1 could match seg2, but gets ignore by this procedure
+
 				if(find(matchedNewId.begin(), matchedNewId.end(), closestNewMatchIndex) == matchedNewId.end()){
 
 					auto& clct = newSetMatch.at(closestNewMatchIndex);
@@ -174,16 +166,16 @@ int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, in
 					matchedNew.push_back(thisMatch); //not the most elegant, but fuck it
 
 				}
-				if(find(matchedOldId.begin(),matchedOldId.end(), closestOldMatchIndex) == matchedOldId.end()){
-					matchedOldId.push_back(closestOldMatchIndex);
-				}
 			}
+
+			//  Look through all the clcts we made, see if we have associated segments,
+			//  then add then to our LUT
 
 			for(int iclct=0; iclct < (int)newSetMatch.size(); iclct++){
 				auto& clct = newSetMatch.at(iclct);
 				LUTEntry* entry = 0;
 
-				if(bayesLUT.editEntry(clct->key(),entry)){
+				if(demoLUT.editEntry(clct->key(),entry)){
 					return -1;
 				}
 
@@ -200,15 +192,26 @@ int LUTBuilder::run(std::string inputfile, std::string outputfile, int start, in
 				if(!foundSegment){
 					entry->addCLCT(newSetMatch.size());
 				}
+
 			}
 
 
-			oldSetMatch.clear();
 			newSetMatch.clear();
 		}
+
+
 	}
 
-	bayesLUT.writeToROOT(outputfile);
+	// Manipulate LUT here
+
+	//sort the LUT however you want
+	demoLUT.sort("sclxp");
+
+	//print it out
+	demoLUT.print(10); //print all the entries with at least 10 clcts
+
+	demoLUT.writeToROOT(outputfile);
+
 
 	cout << "Wrote to file: " << outputfile << endl;
 	return 0;

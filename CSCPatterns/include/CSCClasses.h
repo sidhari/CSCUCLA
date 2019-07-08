@@ -19,7 +19,7 @@
 //lambda
 #include <functional>
 
-#include "PatternConstants.h"
+#include "../include/CSCConstants.h"
 #include "../include/LUTClasses.h"
 #include "../include/CSCInfo.h"
 
@@ -35,6 +35,7 @@ using namespace std;
 class ComparatorCode {
 public:
 	ComparatorCode(bool hits[NLAYERS][3]);
+	ComparatorCode(unsigned int comparatorCode);
 	ComparatorCode(const ComparatorCode& c);
 	ComparatorCode();
 
@@ -46,6 +47,7 @@ public:
 	int getId() const;
 	void printCode() const;
 	static string getStringInBase4(int code);
+	static bool getHits(const unsigned int comparatorCode,bool hits[NLAYERS][3]);
 
 private:
 	int _id;
@@ -261,8 +263,8 @@ class EmulatedCLCTs
  */
 class ChamberHits {
 public:
-	ChamberHits(unsigned int station, unsigned int ring,
-			unsigned int endcap, unsigned int chamber, bool isComparator=true);
+	ChamberHits(unsigned int station=0, unsigned int ring=0,
+			unsigned int endcap=0, unsigned int chamber=0, bool isComparator=true);
 	ChamberHits(const ChamberHits& c);
 
 	~ChamberHits(){}

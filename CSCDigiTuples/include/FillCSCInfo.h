@@ -447,11 +447,11 @@ public:
 	nHits = new vector<size8>();
     book(GET_VARIABLE_NAME(mu_id)     ,*mu_id      );
     book(GET_VARIABLE_NAME(ch_id)     ,*ch_id      );
-    book(GET_VARIABLE_NAME(pos_x),*pos_x      );
+    book(GET_VARIABLE_NAME(pos_x)	  ,*pos_x      );
     book(GET_VARIABLE_NAME(pos_y)     ,*pos_y      );
-    book(GET_VARIABLE_NAME(dxdz)     ,*dxdz       );
-    book(GET_VARIABLE_NAME(dydz)       ,*dydz       );
-    book(GET_VARIABLE_NAME(chisq)    ,*chisq      );
+    book(GET_VARIABLE_NAME(dxdz)      ,*dxdz       );
+    book(GET_VARIABLE_NAME(dydz)      ,*dydz       );
+    book(GET_VARIABLE_NAME(chisq)     ,*chisq      );
     book(GET_VARIABLE_NAME(nHits)     ,*nHits      );
 
   }

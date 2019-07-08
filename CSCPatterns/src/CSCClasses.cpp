@@ -6,10 +6,9 @@
  */
 
 
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include <stdlib.h>
-
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
 
 #include "../include/CSCHelper.h"
 
@@ -27,6 +26,12 @@ ComparatorCode::ComparatorCode(bool hits[NLAYERS][3]) {
 	calculateId();
 	calculateLayersMatched();
 };
+
+ComparatorCode::ComparatorCode(unsigned int comparatorCode) : ComparatorCode(){
+	bool hits[NLAYERS][3];
+	if(!getHits(comparatorCode,hits)) return;
+	*this = ComparatorCode(hits);
+}
 
 ComparatorCode::ComparatorCode(const ComparatorCode& c){
 	for(unsigned int i = 0; i < NLAYERS; i++){
@@ -83,6 +88,52 @@ string ComparatorCode::getStringInBase4(int code){
 	return getStringInBase4(div) + to_string(rem);
 }
 
+//given a comparator code (unsigned int) fills in the array
+//of hits that it comes from, returns false if it fails
+bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYERS][3]){
+	if(comparatorCode >= 4096) {//2^12
+		cout << "Error: invalid pattern code" << endl;
+		return false;
+	}
+
+	//initialize
+	for(unsigned int ilay=0; ilay < NLAYERS; ilay++){
+		for(unsigned int iwindow=0; iwindow < 3; iwindow++){
+			hits[ilay][iwindow] = 0;
+		}
+	}
+	for(unsigned int ilay=0, ibit=1; ilay< NLAYERS; ilay++, ibit = ibit << 2){
+		//0,1,2,3 for each layer
+		int layerPattern = (comparatorCode & (ibit|ibit<<1))/ibit;
+		if(layerPattern <0 || layerPattern > 3){
+			cout << "Error: invalid  layer code" << endl;
+			return false;
+		}
+
+		switch(layerPattern){
+		//0 -> 000
+		case 0: //already set to zero
+			break;
+			//1 -> 001
+		case 1:
+			hits[ilay][2] = 1;
+			break;
+			//2 -> 010
+		case 2:
+			hits[ilay][1] = 1;
+			break;
+			//3 -> 100
+		case 3:
+			hits[ilay][0] = 1;
+			break;
+		default:
+			cout << "Error: invalid  layer code" << endl;
+			return false;
+		}
+
+	}
+	return true;
+}
 
 //calculates the id based on location of hits
 void ComparatorCode::calculateId(){
@@ -316,6 +367,15 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[
 	_lutEntry = 0;
 }
 
+CLCTCandidate::CLCTCandidate(CSCPattern p,ComparatorCode c, int horInd, int startTime):
+				_pattern(p),
+				_horizontalIndex(horInd),
+				_startTime(startTime) {
+	_code = new ComparatorCode(c);
+	_layerMatchCount = _code->getLayersMatched();
+	_lutEntry = 0;
+}
+
 CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 		int layMatCount) :
 				_pattern(p),
@@ -323,15 +383,6 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 				_startTime(startTime){
 	_code = 0;
 	_layerMatchCount = layMatCount;
-	_lutEntry = 0;
-}
-
-CLCTCandidate::CLCTCandidate(CSCPattern p,ComparatorCode c, int horInd, int startTime):
-				_pattern(p),
-				_horizontalIndex(horInd),
-				_startTime(startTime) {
-	_code = new ComparatorCode(c);
-	_layerMatchCount = _code->getLayersMatched();
 	_lutEntry = 0;
 }
 
@@ -349,11 +400,7 @@ int CLCTCandidate::getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const{
 
 //center position of the track [strips]
 float CLCTCandidate::keyStrip() const{
-	//return (_horizontalIndex-1 + 0.5*(MAX_PATTERN_WIDTH - 1))/2.;
-	//NOT FULLY TESTED NOV 28
 	return keyHalfStrip()/2.+1;
-	//return keyHalfStrip()/2+1; NOV 28 config
-	//return (_horizontalIndex + (MAX_PATTERN_WIDTH+1)/2 )/2.;
 }
 
 int CLCTCandidate::keyHalfStrip() const {
@@ -451,7 +498,6 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 	 * if the parameters associated with c1 are
 	 * better than those of c2
 	 */
-
 
 	// we don't have an entry for c2,
 	// so take c1 as being better
@@ -579,17 +625,24 @@ ChamberHits::ChamberHits(unsigned int station, unsigned int ring,
 				_chamber(chamber)
 {
 	_nhits = 0;
-	_minHs = 0;
 	bool me11a = _station == 1 && _ring == 4;
 	bool me11b = _station == 1 && _ring == 1;
 	bool me13 = _station == 1 && _ring == 3;
+	//test using only one CFEB
+	bool oneCFEB = _station == 0 && _ring == 0;
 	if(me11a){
 		_maxHs = 2*48;
 	}else if (me11b || me13){
 		_maxHs = 2*64;
+	}else if(oneCFEB){
+		_maxHs = 2*16;
 	} else {
 		_maxHs = 2*80;
 	}
+
+	_minHs = 0;
+	//me11a, me11b, oneCFEB all have their key half strip layer shifted over by one
+	//_minHs = me11a || me11b || oneCFEB;
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
 		for(unsigned int j = 0; j < NLAYERS; j++){
 			_hits[i][j] = 0;
@@ -641,8 +694,10 @@ float ChamberHits::hitStdHS() {
 //me11a/b, and even layers are all shifted by one half strip for storage in an array
 bool ChamberHits::shift(unsigned int lay) const {
 	bool me11a = (_station == 1 && _ring == 4);
-	bool me11b = (_station == 1 && _ring == 1);	
-	return me11a ||me11b || !(lay%2);
+	bool me11b = (_station == 1 && _ring == 1);
+	//test using only one CFEB
+	bool oneCFEB = _station == 0 && _ring == 0;
+	return me11a ||me11b || oneCFEB ||!(lay%2);
 }
 
 /* @brief fills the comparator hits class with the comparators given
@@ -690,10 +745,10 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 					if(diff == 0)
 					continue;
 					int neighboringstrip = halfStripVal + diff;
-					if(neighboringstrip < minHs() || neighboringstrip > maxHs())
+					if(neighboringstrip < (int)minHs() || neighboringstrip > (int)maxHs())
 					continue;
 					if(_hits[neighboringstrip][lay] != 0){
-						_hits[neighboringstrip][lay] 0;
+						_hits[neighboringstrip][lay] = 0;
 						_hits[halfStripVal][lay] = 0;
 						cout << "Warning: Zeroing out layer with multiple comparator hits within 2 halfstrips of each other" << endl;
 						flag++;
@@ -712,7 +767,10 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 }
 
 
-//TODO Jan 4, 2019
+/* TODO: Seems to be an issue where recHits can not be put
+ * in the lowest half-strip position of the chamber. Needs
+ * to be looked at more thoroughly
+ */
 int ChamberHits::fill(const CSCInfo::RecHits& r){
 
 

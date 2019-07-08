@@ -5,9 +5,15 @@
 plots/*
 papers/*
 src/CLCTLayerAnalyzer
-src/PatternFinder
-src/printPatternCC
+src/LUTResolutionAnalyzer
+src/PatternPrinter
+src/OTMBFirmwareTester
 src/root/*
+src/LUTBuilder
+src/LUTBuilder_TEMPLATE
+src/Analyzer_TEMPLATE
+src/BackgroundAnalyzer
+src/LUTQualityAnalyzer
 python/quick_hacks/*
 ../CSCDigiTuples/test/makeCSCDigiTree_dummy_cfg.py
 ../CSCDigiTuples/test/makeCSCDigiTree_testCameron_cfg.py
@@ -22,13 +28,11 @@ include/CSCHelper.h
 include/CSCInfo.h
 jobs/Charmonium/
 ../papers/
-CSCPatterns/dat/
-src/BayesPatternAnalysis
-src/BremGenPEstimator
-src/GenStudy
-src/MultiplicityStudy
+dat/
+src/ComparatorMultiplicityAnalyzer
 src/ThreeLayerCLCTEmulationAnalyzer
-src/testTMBEmulation
+src/TMBEmulationTester
+src/LUTBuilderTEMPLATE
 src/PatternFinderMT.cpp
 papers/
 

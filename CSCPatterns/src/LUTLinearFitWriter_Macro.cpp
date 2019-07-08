@@ -5,9 +5,7 @@
  *      Author: williamnash
  */
 
-#include "../include/PatternFinderHelperFunctions.h"
-
-//root
+#include "../include/CSCHelperFunctions.h"
 #include <TGraph.h>
 #include <TF1.h>
 #include <TSystem.h>
@@ -46,7 +44,7 @@ int getErrors(const vector<int>& x,const vector<int>& y, float& sigmaM, float& s
 }
 
 
-int comparatorCodeEmulator(){
+int LUTLinearFitWriter_Macro(){
 	gSystem->Load("../lib/PatternFinderClasses_cpp");
 	gSystem->Load("../lib/PatternFinderHelperFunctions_cpp");
 
@@ -138,19 +136,6 @@ int comparatorCodeEmulator(){
 			int nsegments = 0; //set default
 			float quality = -1.; //set default
 
-			// record the offset (centered) and slope of the line
-
-			/*
-//
-// Some funky sign issues, slope is opposite the expected sign,
-// and offset is off by 0.5 strips, and need to convert to strips
-//
-			offset = 0.5*offset+0.25;
-			slope = -0.5*slope;
-			sigmaB = 0.5*sigmaB;
-			sigmaM = 0.5*sigmaM;
-
-*/
 			output << patt->getName() << " " << code << " ~ " <<
 					offset << " " << slope << " " <<
 					nsegments << " " << quality << " " <<
