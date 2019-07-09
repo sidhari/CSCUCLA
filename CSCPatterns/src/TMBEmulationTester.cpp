@@ -25,21 +25,25 @@
 #include<map>
 
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
-#include "../include/LUTClasses.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+#include "../include/LUTClasses.h"
+
+#include "../include/TMBEmulationTester.h"
 
 using namespace std;
 
+int main(int argc, char* argv[]){
+	TMBEmulationTester p;
+	return p.main(argc,argv);
+}
 
-
-
-int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-1) {
+int TMBEmulationTester::run(string inputfile, string outputfile, int start, int end) {
 
 	//TODO: change everythign printf -> cout
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -896,6 +900,7 @@ int testTMBEmulation(string inputfile, string outputfile, int start=0, int end=-
 }
 
 
+<<<<<<< HEAD:CSCPatterns/src/testTMBEmulation.cpp
 int main(int argc, char* argv[])
 {
 	try {
@@ -921,6 +926,8 @@ int main(int argc, char* argv[])
 
 
 
+=======
+>>>>>>> 2e3e7b1156c1cad1ca4fe5f6f49e11f75d642b6b:CSCPatterns/src/TMBEmulationTester.cpp
 
 
 

@@ -21,13 +21,15 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
-
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+
+#include "../include/ThreeLayerCLCTEmulationAnalyzer.h"
+
 
 using namespace std;
 
@@ -63,10 +65,14 @@ map<unsigned int, TH1F*> makeHistPermutation(string name, string title, unsigned
 	return hists;
 }
 
-int ThreeLayerCLCTEmulationAnalyzer(string inputfile, string outputfile, int start=0, int end=-1)
-{
+int main(int argc, char* argv[]){
+	ThreeLayerCLCTEmulationAnalyzer p;
+	return p.main(argc,argv);
+}
 
-	auto t1 = std::chrono::high_resolution_clock::now();
+
+
+int ThreeLayerCLCTEmulationAnalyzer::run(string inputfile, string outputfile, int start, int end) {
 
 	cout << "Running over file: " << inputfile << endl;
 
@@ -203,18 +209,20 @@ int ThreeLayerCLCTEmulationAnalyzer(string inputfile, string outputfile, int sta
 				float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
 				if (Pt < 25) continue;
 				
-				bool found3LayCLCT = false;
-				bool matched3LayCLCT = false;
+				//WN - Compiler is saying these are set, but not used
+				//bool found3LayCLCT = false;
+				//bool matched3LayCLCT = false;
 
 				int closestCLCTtoSegmentIndex = -1;				
 				float minDistanceSegmentToClosestCLCT = 1e5;
 				
 
 				for(unsigned int iclct = 0; iclct < emulatedCLCTs.size(); iclct++)
-				{					
-					unsigned int qual = emulatedCLCTs.at(iclct)->layerCount();
+				{
+					//WN - Also not used...
+					//unsigned int qual = emulatedCLCTs.at(iclct)->layerCount();
 
-					if(qual == 3) found3LayCLCT = true;
+					//if(qual == 3) found3LayCLCT = true;
 
 					if(std::find(matchedemuCLCTs.begin(), matchedemuCLCTs.end(), iclct) != matchedemuCLCTs.end()) continue;
 					float clctStripPos = emulatedCLCTs.at(iclct)->keyStrip();
@@ -232,7 +240,7 @@ int ThreeLayerCLCTEmulationAnalyzer(string inputfile, string outputfile, int sta
 						matchedemuCLCTs.push_back((unsigned int)closestCLCTtoSegmentIndex);
 						unsigned int qual = emulatedCLCTs.at(closestCLCTtoSegmentIndex)->layerCount();
 
-						if(qual == 3) matched3LayCLCT = true; 
+						//if(qual == 3) matched3LayCLCT = true;
 						
 						fillHist(clctLayerCounts, segId, qual);													
 					}
@@ -252,8 +260,8 @@ int ThreeLayerCLCTEmulationAnalyzer(string inputfile, string outputfile, int sta
 				fillHist(unmatchedClctLayerCounts, chamberHash, qual); 
 			}
 
-			int emulatedCLCTcount = emulatedCLCTs.size();
-			int realCLCTcount = clcts.size(chamberHash);
+			unsigned int emulatedCLCTcount = emulatedCLCTs.size();
+			unsigned int realCLCTcount = clcts.size(chamberHash);
 
 			if(emulatedCLCTcount != realCLCTcount && EC == 2)
 			{			
@@ -405,40 +413,12 @@ int ThreeLayerCLCTEmulationAnalyzer(string inputfile, string outputfile, int sta
 	RealvsEmulated_Layers2->Write();
 	outF->Close();
 
+
 	cout << endl << "Number of times there were less than 2 CLCTs in a chamber containing a CLCT with negative KHS during an event: " << CountWhenKHSNegativeAndLessThan2CLCTsInChamber;
 	cout << endl << "Number of times the first CLCT had negative KHS: " << NumberofFirstCLCTsWithNegativeKHS;
 	cout << endl << "Number of times more than one CLCT with negative KHS was found in the same chamber during an event: " << CounterMoreThanOneNegativeKHSCLCTInAChamber << endl << endl;
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
+	cout << "Wrote to file: " << outputfile << endl;
 
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
-	return 0;
-
-
-}
-
-int main(int argc, char* argv[])
-{
-	try 
-	{
-		switch(argc)		
-		{
-		case 3:
-			return ThreeLayerCLCTEmulationAnalyzer(string(argv[1]), string(argv[2]));
-		case 4:
-			return ThreeLayerCLCTEmulationAnalyzer(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return ThreeLayerCLCTEmulationAnalyzer(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./ThreeLayerCLCTEmulationAnalyzer inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) 
-	{
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
 	return 0;
 }

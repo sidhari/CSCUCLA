@@ -52,9 +52,25 @@ bool isValidChamber(unsigned int st, unsigned int ri, unsigned int ch, unsigned 
 	 return true;
 }
 
+bool segmentIsOnEdgeOfChamber(float strip, unsigned int ST, unsigned int RI){
+	if(strip < 1) return true;
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
+	bool me13 = (ST == 1 && RI == 3);
+	if(me11a){
+		if(strip > 47) return true;
+	} else if (me11b || me13) {
+		if(strip > 63) return true;
+	} else {
+		if(strip > 79) return true;
+	}
+	return false;
+}
+
 //written to remove ambiguity between ME11A and ME11B
 unsigned int serialize(unsigned int st, unsigned int ri, unsigned int ch, unsigned int ec){
-	//sanity check
+	//for simulation chamber
+	if(!st && !ri && !ch && !ec) return 0xffffffff;
 	if(!isValidChamber(st,ri,ch,ec)){
     	std::cout << "Error: Trying to serialize invalid chamber:" <<
     			" ST = " << st <<
@@ -99,6 +115,12 @@ unsigned int serialize(ChamberId id){
  */
 ChamberId unserialize(unsigned int serial){
 	ChamberId c;
+	if(serial==0xffffffff){ //dummy chamber
+		c.chamber = 0;
+		c.ring = 0;
+		c.station = 0;
+		c.endcap = 0;
+	}
 	c.chamber		= (serial & 0x0000003f)+1; //6 bits
 	serial 			= serial >> 6;
 	c.ring 			= (serial & 0x00000003)+1; //2 bits
@@ -110,8 +132,10 @@ ChamberId unserialize(unsigned int serial){
 
 }
 
-int MAX_ME11A_HALF_STRIP = 127;
-int MAX_ME11A_STRIP = 64;
+/* first 128 hs are in ME11B, remaining 96 are in ME11A
+ */
+int MAX_ME11B_HALF_STRIP = 127;
+int MAX_ME11B_STRIP = 64;
 
 /*
 //returns the bounds [lowest, highest] in strips of the given chamber.

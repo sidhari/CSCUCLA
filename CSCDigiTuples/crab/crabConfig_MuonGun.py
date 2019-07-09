@@ -14,7 +14,6 @@ config.General.transferLogs = False
 
 config.JobType.pluginName = 'Analysis'
 config.JobType.psetName = 'makeCSCDigiTree_MC_cfg.py'
-#config.JobType.numCores = 8
 config.JobType.allowUndistributedCMSSW = True
 config.JobType.disableAutomaticOutputCollection = True
 config.JobType.outputFiles = [outfileName]
@@ -30,5 +29,3 @@ config.Data.publication = False
 config.Data.outputDatasetTag = 'MuonGun_CSC'
 
 config.Site.storageSite = 'T3_US_FNALLPC'
-#config.Site.ignoreGlobalBlacklist = True
-#config.Site.whitelist = ['T2_RU_JINR','T2_CH_CERN']

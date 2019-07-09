@@ -25,28 +25,31 @@
 #include <time.h>
 
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
-
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+#include "../include/ComparatorMultiplicityAnalyzer.h"
+
 using namespace std;
+
+int main(int argc, char* argv[]){
+	ComparatorMultiplicityAnalyzer p;
+	return p.main(argc,argv);
+}
 
 
 /* Calculates probability of a muon given a comparator code.
  * See slides: https://indico.cern.ch/event/744948/
  */
 
-int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=-1) {
+int ComparatorMultiplicityAnalyzer::run(string inputfile, string outputfile, int start, int end) {
 
-	//TODO: change everythign printf -> cout
-	auto t1 = std::chrono::high_resolution_clock::now();
-
-	printf("Running over file: %s\n", inputfile.c_str());
+	cout << "Running over file: " << inputfile << endl;
 
 
 	TFile* f = TFile::Open(inputfile.c_str());
@@ -468,41 +471,8 @@ int MultiplicityStudy(string inputfile, string outputfile, int start=0, int end=
 	outF->Close();
 
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
-
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
+	cout << "Wrote to file: " << outputfile << endl;
 
 	return 0;
 
 }
-
-
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return MultiplicityStudy(string(argv[1]), string(argv[2]));
-		case 4:
-			return MultiplicityStudy(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return MultiplicityStudy(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./PatternFinder inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}
-
-
-
-
-
-
-

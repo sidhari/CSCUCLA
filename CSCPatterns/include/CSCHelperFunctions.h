@@ -8,14 +8,14 @@
 #ifndef PATTERNFINDERHELPERFUNCTIONS_H_
 #define PATTERNFINDERHELPERFUNCTIONS_H_
 
+#include "../include/CSCClasses.h"
 #include <math.h>
 
 #include "TTree.h"
 
-#include "PatternFinderClasses.h"
 #include "LUTClasses.h"
 
-#include "CSCInfo.h"
+#include "../include/CSCInfo.h"
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow);
 

@@ -22,20 +22,25 @@
 #include <TH2F.h>
 #include <TCanvas.h>
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+#include "../include/BackgroundAnalyzer.h"
+
 using namespace std;
 
-int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end=-1) 
-{
+int main(int argc, char* argv[]){
+	BackgroundAnalyzer p;
+	return p.main(argc,argv);
+}
 
-	auto t1 = std::chrono::high_resolution_clock::now();
+int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int end)
+{
 
 	cout << endl << "Running over file: " << inputfile << endl << endl;
 
@@ -790,33 +795,7 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
     printf("Wrote to file: %s\n",outputfile.c_str());
 
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << endl << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl << endl;
 	return 0;
 
 }
 
-int main(int argc, char* argv[])
-{
-	try 
-    {
-		switch(argc)
-        {
-		case 3:
-			return BackgroundAnalyzer(string(argv[1]), string(argv[2]));
-		case 4:
-			return BackgroundAnalyzer(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return BackgroundAnalyzer(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./BackgroundAnalyzer inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) 
-    {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}

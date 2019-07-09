@@ -367,11 +367,14 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
     const CSCCorrelatedLCTDigiCollection::Range& range =(*chamber).second;
     for(CSCCorrelatedLCTDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
     {
-    	if(st == 1 && ri == 1){
+
+    	if(st == 1 && (ri == 1|| ri ==4)){
     		//we need to manually adjust this because they don't for us
     		//getStrip returns a half strip (who knows why)
-    		if(digiItr->getStrip() > CSCHelper::MAX_ME11A_HALF_STRIP) ri = 4;
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_HALF_STRIP) ri = 4;
+    		else ri = 1; //resets ring in case where multiple clcts in ME11
     	}
+
       ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
       quality     ->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"lct_quality"));
       pattern     ->push_back(CSCHelper::convertTo<size8>(digiItr->getPattern(),"lct_pattern"));
@@ -400,9 +403,8 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 			if(st == 1 && (ri == 1|| ri ==4)){
 				//we need to manually adjust this because they don't for us
 				//getStrip returns a half strip (who knows why)
-				if(digiItr->getKeyStrip() > CSCHelper::MAX_ME11A_HALF_STRIP) {
-					ri = 4;
-				} else ri = 1; //resets ring in case where multiple clcts in ME11
+				if(digiItr->getKeyStrip() > CSCHelper::MAX_ME11B_HALF_STRIP) ri = 4;
+				else ri = 1; //resets ring in case where multiple clcts in ME11
 			}
 			ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			isValid->push_back(
@@ -451,10 +453,12 @@ void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
     const CSCComparatorDigiCollection::Range& range =(*chamber).second;
     for(CSCComparatorDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
     {
-    	if(st == 1 && ri == 1){
+
+    	if(st == 1 && (ri == 1|| ri ==4)){
     		//we need to manually adjust this because they don't for us
     		//getStrip returns a strip this time (different than before)
-    		if(digiItr->getStrip() > CSCHelper::MAX_ME11A_STRIP) ri = 4;
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+    		else ri = 1; //resets ring in case where multiple clcts in ME11
     	}
     	ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			lay->push_back(
