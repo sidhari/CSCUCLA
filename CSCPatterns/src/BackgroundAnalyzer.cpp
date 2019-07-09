@@ -20,6 +20,7 @@
 #include <TFile.h>
 #include <TH1F.h>
 #include <TH2F.h>
+#include <TCanvas.h>
 
 #include "../include/PatternConstants.h"
 #include "../include/PatternFinderClasses.h"
@@ -99,13 +100,23 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
     TH1F* OPmatchedmuonsegmentsphi = new TH1F ("Matched Muon Segments (OP): Phi", "Matched Muon Segments (OP): Phi;Phi;Count", 50, -5, 5);
     TH1F* OPsegmentmatchpositiondifference = new TH1F ("Matched Segment, CLCT postion difference (OP)", "Matched Segment, CLCT postion difference (OP);Position Difference;Count", 10, -5, 5);
     TH1F* OPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (OP)", "Matched Muon Segment, CLCT postion difference (OP);Position Difference;Count", 10, -5, 5);
-    TH2D* OPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (OP)", "Muon Background: Chamber Type Distribution (OP);Station;Ring", 4, 1, 5, 4, 1, 5 );
+    TH2D* OPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (OP)", "Muon Background: Chamber Type Distribution (OP);Station;Ring", 4, 1, 5, 4, 1, 5 );    
     TH2D* OPunmatchedclctschambertype = new TH2D ("Unmatched CLCTs: Chamber Type Distribution (OP)", "Unmatched CLCTs: Chamber Type (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* OPmatchedclctslayercount = new TH1F ("Matched CLCTs: Layer Count Distribution (OP)", "Matched CLCTs: Layer Count Distribution (OP);Layer Count;Count", 7, 0, 7);
+    TH1F* OPmatchedclctstomuonsegmentslayercount = new TH1F ("Matched CLCTs (to muon segments): Layer Count Distribution (OP)", "Matched CLCTs (to muon segments): Layer Count Distribution (OP);Layer Count;Count", 7, 0, 7);
     TH1F* OPunmatchedclctslayercount = new TH1F ("Unmatched CLCTs: Layer Count Distribution (OP)", "Unmatched CLCTs: Layer Count Distribution (OP);Layer Count;Count", 7, 0, 7);
+    TH1F* OPmatchedclctspatternid = new TH1F ("Matched CLCTs: Pattern ID Distribution (OP)", "Matched CLCTs: Pattern ID Distribution (OP);PID;Count", 9, 2, 11);
+    TH1F* OPmatchedclctstomuonsegmentspatternid = new TH1F ("Matched CLCTs (to muon segments): Pattern ID Distribution (OP)", "Matched CLCTs (to muon segments): Pattern ID Distribution (OP);PID;Count", 9, 2, 11);
     TH1F* OPunmatchedclctspatternid = new TH1F ("Unmatched CLCTs: Pattern ID Distribution (OP)", "Unmatched CLCTs: Pattern ID Distribution (OP);PID;Count", 9, 2, 11);
     TH2D* OPunmatchedsegmentschambertype = new TH2D ("Unmatched Segments: Chamber Type Distribution (OP)", "Unmatched Segments: Chamber Type Distribution (OP);Station;Ring", 4, 1, 5, 4, 1, 5);
-    TH1F* OPunmatchedsegmentsdxdz = new TH1F ("Unmatched Segments: dx/dz (OP)", "Unmatched Segments: dx/dz (OP)", 50, -4, 4);
-    TH1F* OPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dy/dz (OP)", "Unmatched Segments: dy/dz (OP)", 50, -4, 4);
+    TH1F* OPmatchedsegmentsdxdz = new TH1F ("Matched Segments: dxdz (OP)", "Matched Segments: dx/dz (OP)", 200, -4, 4);
+    TH1F* OPmatchedmuonsegmentsdxdz = new TH1F ("Matched Muon Segments: dxdz (OP)", "Matched Muon Segments: dx/dz (OP)", 200, -4, 4);
+    TH1F* OPunmatchedsegmentsdxdz = new TH1F ("Unmatched Segments: dxdz (OP)", "Unmatched Segments: dx/dz (OP)", 200, -4, 4);
+    TH1F* OPmatchedsegmentsdydz = new TH1F ("Matched Segments: dydz (OP)", "Matched Segments: dy/dz (OP)", 200, -4, 4);
+    TH1F* OPmatchedmuonsegmentsdydz = new TH1F ("Matched Muon Segments: dydz (OP)", "Matched Muon Segments: dy/dz (OP)", 200, -4, 4);
+    TH1F* OPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dydz (OP)", "Unmatched Segments: dy/dz (OP)", 200, -4, 4);
+    TH1F* OPmatchedsegmentsnhits = new TH1F ("Matched Segments: nhits (OP)", "Matched Segments: nhits (OP);nhits;Count", 7, 0, 7);
+    TH1F* OPmatchedmuonsegmentsnhits = new TH1F ("Matched Muon Segments: nhits (OP)", "Matched Muon Segments: nhits (OP);nhits;Count", 7, 0, 7);
     TH1F* OPunmatchedsegmentsnhits = new TH1F ("Unmatched Segments: nhits (OP)", "Unmatched Segments: nhits (OP);nhits;Count", 7, 0, 7);
 
     TH1F* NPmatchedmuonsegmentspt = new TH1F ("Matched Muon Segments (NP): Pt", "Matched Muon Segments (NP): Pt;Pt [GeV];Count", 20, 0, 100);
@@ -115,11 +126,21 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
     TH1F* NPmuonsegmentmatchpositiondifference = new TH1F ("Matched Muon Segment, CLCT postion difference (NP)", "Matched Muon Segment, CLCT postion difference (NP);Position Difference;Count", 10, -5, 5);
     TH2D* NPmuonbackgroundchambertype = new TH2D ("Muon Background: Chamber Type Distribution (NP)", "Muon Background: Chamber Type Distribution (NP);Station;Ring", 4, 1, 5, 4, 1, 5 );
     TH2D* NPunmatchedclctschambertype = new TH2D ("Unmatched CLCTs: Chamber Type Distribution (NP)", "Unmatched CLCTs: Chamber Type (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
+    TH1F* NPmatchedclctslayercount = new TH1F ("Matched CLCTs: Layer Count Distribution (NP)", "Matched CLCTs: Layer Count Distribution (NP);Layer Count;Count", 7, 0, 7);
+    TH1F* NPmatchedclctstomuonsegmentslayercount = new TH1F ("Matched CLCTs (to muon segments): Layer Count Distribution (NP)", "Matched CLCTs (to muon segments): Layer Count Distribution (NP);Layer Count;Count", 7, 0, 7);
     TH1F* NPunmatchedclctslayercount = new TH1F ("Unmatched CLCTs: Layer Count Distribution (NP)", "Unmatched CLCTs: Layer Count Distribution (NP);Layer Count;Count", 7, 0, 7);
+    TH1F* NPmatchedclctspatternid = new TH1F ("Matched CLCTs: Pattern ID Distribution (NP)", "Matched CLCTs: Pattern ID Distribution (NP);PID/10;Count", 5, 6, 11);
+    TH1F* NPmatchedclctstomuonsegmentspatternid = new TH1F ("Matched CLCTs (to muon segments): Pattern ID Distribution (NP)", "Matched CLCTs (to muon segments): Pattern ID Distribution (NP);PID/10;Count", 5, 6, 11);
     TH1F* NPunmatchedclctspatternid = new TH1F ("Unmatched CLCTs: Pattern ID Distribution (NP)", "Unmatched CLCTs: Pattern ID Distribution (NP);PID/10;Count", 5, 6, 11);
     TH2D* NPunmatchedsegmentschambertype = new TH2D ("Unmatched Segments: Chamber Type Distribution (NP)", "Unmatched Segments: Chamber Type Distribution (NP);Station;Ring", 4, 1, 5, 4, 1, 5);
-    TH1F* NPunmatchedsegmentsdxdz = new TH1F ("Unmatched Segments: dx/dz (NP)", "Unmatched Segments: dx/dz (NP)", 50, -4, 4);
-    TH1F* NPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dy/dz (NP)", "Unmatched Segments: dy/dz (NP)", 50, -4, 4);
+    TH1F* NPmatchedsegmentsdxdz = new TH1F ("Matched Segments: dxdz (NP)", "Matched Segments: dx/dz (NP)", 200, -4, 4);
+    TH1F* NPmatchedmuonsegmentsdxdz = new TH1F ("Matched Muon Segments: dxdz (NP)", "Matched Muon Segments: dx/dz (NP)", 200, -4, 4);
+    TH1F* NPunmatchedsegmentsdxdz = new TH1F ("Unmatched Segments: dxdz (NP)", "Unmatched Segments: dx/dz (NP)", 200, -4, 4);
+    TH1F* NPmatchedsegmentsdydz = new TH1F ("Matched Segments: dydz (NP)", "Matched Segments: dy/dz (NP)", 200, -4, 4);
+    TH1F* NPmatchedmuonsegmentsdydz = new TH1F ("Matched Muon Segments: dydz (NP)", "Matched Muon Segments: dy/dz (NP)", 200, -4, 4);
+    TH1F* NPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dydz (NP)", "Unmatched Segments: dy/dz (NP)", 200, -4, 4);
+    TH1F* NPmatchedsegmentsnhits = new TH1F ("Matched Segments: nhits (NP)", "Matched Segments: nhits (NP);nhits;Count", 7, 0, 7);
+    TH1F* NPmatchedmuonsegmentsnhits = new TH1F ("Matched Muon Segments: nhits (NP)", "Matched Muon Segments: nhits (NP);nhits;Count", 7, 0, 7);
     TH1F* NPunmatchedsegmentsnhits = new TH1F ("Unmatched Segments: nhits (NP)", "Unmatched Segments: nhits (NP);nhits;Count", 7, 0, 7);
 
     //
@@ -317,7 +338,13 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
 
                     OPtotalmatchestosegments++;
 
-                    OPsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);                   
+                    OPsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);     
+                    OPmatchedclctslayercount->Fill((int)OPemulatedclcts.layerCount->at(closestOPclcttosegmentindex));
+                    OPmatchedclctspatternid->Fill((int)OPemulatedclcts.patternId->at(closestOPclcttosegmentindex));       
+
+                    OPmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
+                    OPmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
+                    OPmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));       
 
                     if(segments.mu_id->at(iseg) == -1) // matched to a segment not associated to a muon
                     {
@@ -334,6 +361,11 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
                         float phi = muons.phi->at(segments.mu_id->at(iseg));
                         OPmatchedmuonsegmentsphi->Fill(phi);
                         OPmuonsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);
+                        OPmatchedclctstomuonsegmentslayercount->Fill((int)OPemulatedclcts.layerCount->at(closestOPclcttosegmentindex));
+                        OPmatchedclctstomuonsegmentspatternid->Fill((int)OPemulatedclcts.patternId->at(closestOPclcttosegmentindex));
+                        OPmatchedmuonsegmentsdxdz->Fill(segments.dxdz->at(iseg));
+                        OPmatchedmuonsegmentsdydz->Fill(segments.dydz->at(iseg));
+                        OPmatchedmuonsegmentsnhits->Fill(segments.nHits->at(iseg));  
 
                     }
                     
@@ -384,6 +416,12 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
                     NPtotalmatchestosegments++;
 
                     NPsegmentmatchpositiondifference->Fill(closestNPclcttosegmentdistance);
+                    NPmatchedclctslayercount->Fill((int)NPemulatedclcts.layerCount->at(closestNPclcttosegmentindex));
+                    NPmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(closestNPclcttosegmentindex)/10));
+
+                    NPmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
+                    NPmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
+                    NPmatchedsegmentsnhits->Fill(segments.nHits->at(iseg)); 
 
                     if(segments.mu_id->at(iseg) == -1) // matched to a segment not associated to a muon
                     {
@@ -400,6 +438,11 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
                         float phi = muons.phi->at(segments.mu_id->at(iseg));
                         NPmatchedmuonsegmentsphi->Fill(phi);
                         NPmuonsegmentmatchpositiondifference->Fill(closestOPclcttosegmentdistance);
+                        NPmatchedclctstomuonsegmentslayercount->Fill((int)NPemulatedclcts.layerCount->at(closestNPclcttosegmentindex));
+                        NPmatchedclctstomuonsegmentspatternid->Fill((int)(NPemulatedclcts.patternId->at(closestNPclcttosegmentindex)/10));
+                        NPmatchedmuonsegmentsdxdz->Fill(segments.dxdz->at(iseg));
+                        NPmatchedmuonsegmentsdydz->Fill(segments.dydz->at(iseg));
+                        NPmatchedmuonsegmentsnhits->Fill(segments.nHits->at(iseg));
 
                     }
                                 
@@ -688,17 +731,37 @@ int BackgroundAnalyzer(string inputfile, string outputfile, int start=0, int end
     NPmuonbackgroundchambertype->Write();
     OPunmatchedclctschambertype->Write();
     NPunmatchedclctschambertype->Write();
+    OPmatchedclctslayercount->Write();
+    OPmatchedclctstomuonsegmentslayercount->Write();
     OPunmatchedclctslayercount->Write();
+    NPmatchedclctslayercount->Write();
+    NPmatchedclctstomuonsegmentslayercount->Write();
     NPunmatchedclctslayercount->Write();
+    OPmatchedclctspatternid->Write();
+    OPmatchedclctstomuonsegmentspatternid->Write();
     OPunmatchedclctspatternid->Write();
+    NPmatchedclctspatternid->Write();
+    NPmatchedclctstomuonsegmentspatternid->Write();
     NPunmatchedclctspatternid->Write();
     OPunmatchedsegmentschambertype->Write();
     NPunmatchedsegmentschambertype->Write();
+    OPmatchedsegmentsdxdz->Write();
+    OPmatchedmuonsegmentsdxdz->Write();
     OPunmatchedsegmentsdxdz->Write();
+    NPmatchedsegmentsdxdz->Write();
+    NPmatchedmuonsegmentsdxdz->Write();
     NPunmatchedsegmentsdxdz->Write();
+    OPmatchedsegmentsdydz->Write();
+    OPmatchedmuonsegmentsdydz->Write();
     OPunmatchedsegmentsdydz->Write();
+    NPmatchedsegmentsdydz->Write();
+    NPmatchedmuonsegmentsdydz->Write();
     NPunmatchedsegmentsdydz->Write();
+    OPmatchedsegmentsnhits->Write();
+    OPmatchedmuonsegmentsnhits->Write();
     OPunmatchedsegmentsnhits->Write();
+    NPmatchedsegmentsnhits->Write();
+    NPmatchedmuonsegmentsnhits->Write();
     NPunmatchedsegmentsnhits->Write();
 
     cout << "Total segments: " << totalsegments << endl;

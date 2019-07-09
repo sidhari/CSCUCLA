@@ -2,7 +2,7 @@
  * ThreeLayerCLCTEmulationAnalyzer.cpp
  *
  *  Created on: May 1, 2019
- *      Author: wnash
+ *      Author: Siddharth Hariprakash
  */
 
 #include <string>
