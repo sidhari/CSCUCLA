@@ -21,17 +21,24 @@
 #include <TH1F.h>
 #include <TH2F.h>
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+#include "../include/EmulationTreeCreator.h"
+
 using namespace std;
 
-int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int end=-1) 
+int main(int argc, char* argv[]){
+	EmulationTreeCreator p;
+	return p.main(argc,argv);
+} 
+
+int EmulationTreeCreator::run(string inputfile, string outputfile, int start, int end) 
 {
 
 	auto t1 = std::chrono::high_resolution_clock::now();
@@ -98,7 +105,7 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 		OldPatternsEmulatedCLCTs.Erase();
 		NewPatternsEmulatedCLCTs.Erase();
 
-		for(unsigned int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
+		for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
 		{
 			CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
 
@@ -112,11 +119,6 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 			ChamberHits compHits(ST, RI, EC, CH);
 			if(compHits.fill(comparators)) return -1;
 
-			bool me11a = (ST == 1 && RI == 4);
-			bool me11b = (ST == 1 && RI == 1);
-
-			//bool threeLayerChamber = ((me11a || me11b) && CH == 11 && EC==1);
-
 			//Old Patterns
 
 			vector<CLCTCandidate*> OPemulatedCLCTs;
@@ -128,19 +130,7 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 				//return;
 
 				continue;
-			}
-
-			/*if(!threeLayerChamber) //4 Layer min
-			{
-				for(unsigned int iemu =0; iemu < OPemulatedCLCTs.size(); iemu++)
-				{
-					if(OPemulatedCLCTs.at(iemu)->layerCount() == 3) 
-					{
-						OPemulatedCLCTs.erase(OPemulatedCLCTs.begin()+iemu);
-						iemu--;
-					}
-				}
-			}*/			
+			}	
 
 			OldPatternsEmulatedCLCTs.Fill(OPemulatedCLCTs, chamberHash); 	
 
@@ -162,14 +152,11 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 
 		}
 
-		//OldPatternsEmulatedCLCTs.FillTree(1);
-		//NewPatternsEmulatedCLCTs.FillTree(2);		
 		t_emu->Fill();
 	}
 
 	outF->cd();
 	t_emu->Write();
-	//delete outF;
 
 	printf("Wrote to file: %s\n",outputfile.c_str());
 
@@ -180,27 +167,3 @@ int EmulationTreeCreator(string inputfile, string outputfile, int start=0, int e
 
 
 
-int main(int argc, char* argv[])
-{
-	try 
-	{
-		switch(argc)
-		{
-		case 3:
-			return EmulationTreeCreator(string(argv[1]), string(argv[2]));
-		case 4:
-			return EmulationTreeCreator(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return EmulationTreeCreator(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./EmulationTreeCreator inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) 
-	{
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}

@@ -77,6 +77,16 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     unsigned long long int totalsegments = 0; //total segments
     unsigned long long int totalmuonsegments = 0; //total segments associated to muons
     unsigned long long int totalnotmuonsegments = 0; //total segments not associated to muons
+    unsigned long long int totalsegmentsonedgesofchambers = 0; //total segments found on the edges of chambers
+
+    unsigned long long int Rtotalclcts = 0; //total RC CLCTs (3 Layer min)
+    unsigned long long int Rtotalmatchestosegments = 0; //total RC CLCT - Segments matches
+    unsigned long long int Rtotalmatchestomuonsegments = 0; //total RC CLCT - Muon Segment matches (signal)
+    unsigned long long int Rmuonbackgroundcounter = 0; //total RC CLCT - Segments not associated to muons matches
+    unsigned long long int Rtotalunmatchedclcts = 0; //total unmatched RC CLCTs (Other Background)
+    unsigned long long int Rclctsonedgeofchamber = 0; //total RC clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
+    unsigned long long int Rtotalunmatchedsegments = 0; //total unmatched segments with RC (CLCT Screw Ups)
+    unsigned long long int Rtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with RC
 
     unsigned long long int OPtotalclcts = 0; //total OP CLCTs (3 Layer min)
     unsigned long long int OPtotalmatchestosegments = 0; //total OP CLCT - Segments matches
@@ -216,8 +226,21 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 
             }
 
+            unsigned int Rclctcountinchamber = 0; //number of R clcts in current chamber
             unsigned int OPclctcountinchamber = 0; //number of OP clcts in current chamber 
-            unsigned int NPclctcountinchamber = 0; //number of NP clcts in current chamber            
+            unsigned int NPclctcountinchamber = 0; //number of NP clcts in current chamber  
+
+            for(unsigned int iclct = 0; iclct < clcts.size(); iclct++)
+            {
+                if((unsigned int)clcts.ch_id->at(iclct) != chamberHash)
+                continue;
+
+                if((unsigned int)clcts.quality->at(iclct) < 3)
+                continue;
+
+                Rclctcountinchamber++;
+
+            }          
 
             for(unsigned int iclct = 0; iclct < (unsigned int)OPemulatedclcts.size(); iclct++)
             {
@@ -245,6 +268,8 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
             }
 
+            Rtotalclcts += Rclctcountinchamber;
+
             if(OPclctcountinchamber > 2)
             OPclctcountinchamber = 2;
 
@@ -265,10 +290,12 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
             if(NPclctcountinchamber > segmentsinchamber)
             NPunmatchedclctschambertype->Fill(ST,RI);
-
+            
+            vector<unsigned int> matchedRclctindex; //stores indices of R clcts matched to a segment
             vector<unsigned int> matchedOPclctindex; //stores indices of OP clcts matched to a segment
             vector<unsigned int> matchedNPclctindex; //stores indices of NP clcts matched to a segment
 
+            vector<unsigned int> matchedRsegmentindex; //stores indices of segments matched to R clcts
             vector<unsigned int> matchedOPsegmentindex; //stores indices of segments matched to OP clcts
             vector<unsigned int> matchedNPsegmentindex; //stores indices of segments matched to NP clcts            
 
@@ -284,20 +311,82 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                	//ignore segments at edges of chamber
 
                 if(segmentx < 1)
-                continue;
+                {
+                    totalsegmentsonedgesofchambers++;
+                    continue;
+                }                
 
 				if(me11a)
 				{
-					if(segmentx > 47) continue;
+					if(segmentx > 47)
+                    {   
+                        totalsegmentsonedgesofchambers++;
+                        continue;
+                    }
 				}
 				else if (me11b || me13) 
 				{
-					if(segmentx > 63) continue;
+					if(segmentx > 63)
+                    {
+                        totalsegmentsonedgesofchambers++;
+                        continue;
+                    }
 				} 
 				else 
 				{
-					if(segmentx > 79) continue;
+					if(segmentx > 79)
+                    {
+                        totalsegmentsonedgesofchambers++;
+                        continue;
+                    }
 				}
+
+                int closestRclcttosegmentindex = -1; //index of real CLCT matched to current segment
+                float closestRclcttosegmentdistance = 1e5; //distance between segment and real CLCT in the event of a match
+
+                //iterate through all real clcts in chamber
+
+                for(unsigned int iclct = 0; iclct < clcts.size(); iclct++)
+                {
+                    if((unsigned int)clcts.ch_id->at(iclct) != chamberHash)
+                    continue;
+
+                    if((unsigned int)clcts.quality->at(iclct) < 3)
+                    continue;
+
+                    if(std::find(matchedRclctindex.begin(), matchedRclctindex.end(), iclct) != matchedRclctindex.end())
+                    continue;
+
+                    float clctposx = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
+                    if(me11a) clctposx -= 64;
+                    
+                    if(abs(clctposx - segmentx) < closestRclcttosegmentdistance)
+                    {
+                        closestRclcttosegmentdistance = abs(clctposx - segmentx);
+                        closestRclcttosegmentindex = iclct;
+                    }
+
+                }
+
+                if(closestRclcttosegmentindex != -1) // found an R clct match to the segment
+                {
+                    matchedRclctindex.push_back(closestRclcttosegmentindex);
+                    matchedRsegmentindex.push_back(iseg);
+
+                    Rtotalmatchestosegments++;       
+
+                    if(segments.mu_id->at(iseg) == -1) // matched to a segment not associated to a muon
+                    {
+                        Rmuonbackgroundcounter++;
+                    }
+                    else // matched to a muon's segment
+                    {
+                        Rtotalmatchestomuonsegments++;
+
+                    }
+                    
+                }
+                
 
                 int closestOPclcttosegmentindex = -1; //index of OP CLCT matched to current segment
                 float closestOPclcttosegmentdistance = 1e5; //distance between segment and OP CLCT in the event of a match
@@ -323,7 +412,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                         flag++;
                     }
 
-                    if(std::find(matchedOPclctindex.begin(), matchedOPclctindex.end(), iclct) != matchedNPclctindex.end())
+                    if(std::find(matchedOPclctindex.begin(), matchedOPclctindex.end(), iclct) != matchedOPclctindex.end())
                     continue;
 
                     float clctposx = OPemulatedclcts.keyStrip->at(iclct);
@@ -455,6 +544,45 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
             }
 
+            //iterate through all R CLCTs in chamber to see how many went unmatched
+
+            for(unsigned int iclct = 0; iclct < clcts.size(); iclct++)
+            {
+                if((unsigned int)clcts.ch_id->at(iclct) != chamberHash)
+                continue;
+
+                if((unsigned int)clcts.quality->at(iclct) < 3)
+                continue;
+
+                if(std::find(matchedRclctindex.begin(), matchedRclctindex.end(), iclct) != matchedRclctindex.end())
+                continue;
+
+                // if code gets here, then the CLCT went unmatched
+                // check if the CLCT was on the edge
+
+                float clctposx = clcts.halfStrip->at(iclct) / 2. + 16*clcts.CFEB->at(iclct);
+                if(me11a) clctposx -= 64;
+
+                if(clctposx < 1)
+                Rclctsonedgeofchamber++;
+                
+                if(me11a)
+				{
+					if(clctposx > 47) Rclctsonedgeofchamber++;
+				}
+				else if (me11b || me13) 
+				{
+					if(clctposx > 63) Rclctsonedgeofchamber++;
+				} 
+				else 
+				{
+					if(clctposx > 79) Rclctsonedgeofchamber++;
+				}
+
+                Rtotalunmatchedclcts++;              
+                
+            }
+
             int flag = 0;
 
             // iterate through all OP CLCTs in chamber to see how many went unmatched
@@ -549,8 +677,44 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 NPtotalunmatchedclcts++;
                 NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));
-                NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));               
+                NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));         
                 
+            }
+
+            //iterate through all segments in chamber to see how many went unmatched to R CLCTs
+
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                if(std::find(matchedRsegmentindex.begin(), matchedRsegmentindex.end(), iseg) != matchedRsegmentindex.end())
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+                //ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
+				if(me11a)
+				{
+					if(segmentx > 47) continue;
+				}
+				else if (me11b || me13) 
+				{
+					if(segmentx > 63) continue;
+				} 
+				else 
+				{
+					if(segmentx > 79) continue;
+				}
+
+                //if code gets here, then the segment went unmatched
+
+                Rtotalunmatchedsegments++;          
+
             }
 
             //iterate through all segments in chamber to see how many went unmatched to OP CLCTs
@@ -588,7 +752,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 OPtotalunmatchedsegments++;
                 OPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
                 OPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
-                OPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));
+                OPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));                
 
             }
 
@@ -628,6 +792,45 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 NPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
                 NPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
                 NPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));
+
+            }
+
+            //iterate through all muon segments in chamber to see how many went unmatched to R CLCTs
+
+            for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+            {
+                if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+                continue;
+
+                if(segments.mu_id->at(iseg) == -1)
+                continue;
+
+                if(std::find(matchedRsegmentindex.begin(), matchedRsegmentindex.end(), iseg) != matchedRsegmentindex.end())
+                continue;
+
+                float segmentx = segments.pos_x->at(iseg);
+
+                //ignore segments at edges of chamber
+
+                if(segmentx < 1)
+                continue;
+
+				if(me11a)
+				{
+					if(segmentx > 47) continue;
+				}
+				else if (me11b || me13) 
+				{
+					if(segmentx > 63) continue;
+				} 
+				else 
+				{
+					if(segmentx > 79) continue;
+				}
+
+                //if code gets here, then the muon segment went unmatched
+
+                Rtotalunmatchedmuonsegments++;
 
             }
 
@@ -771,7 +974,18 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     cout << "Total segments: " << totalsegments << endl;
     cout << "Total muon segments: " << totalmuonsegments << endl;
-    cout << "Total segments not associated to muons: " << totalnotmuonsegments << endl << endl;
+    cout << "Total segments not associated to muons: " << totalnotmuonsegments << endl;
+    cout << "Total segments found on the edges of chambers: " << totalsegmentsonedgesofchambers << endl << endl;
+
+    cout << "Real CLCTs: " << endl;
+    cout << "--------------------------------------------------" << endl;
+    cout << "Total CLCTs (3 layer min): " << Rtotalclcts << endl;
+    cout << "Total segments matches: " << Rtotalmatchestosegments << endl;
+    cout << "Total muon segment matches: " << Rtotalmatchestomuonsegments << endl;
+    cout << "Muon background: " << Rmuonbackgroundcounter << endl;
+    cout << "Total unmatched CLCTs: " << Rtotalunmatchedclcts << " (of which " << Rclctsonedgeofchamber << " were on the edges of chambers)" << endl;
+    cout << "Total unmatched segments: " << Rtotalunmatchedsegments << endl;
+    cout << "Total unmatched muon segments: " << Rtotalunmatchedmuonsegments << endl << endl;
 
     cout << "Old Patterns: " << endl;
     cout << "--------------------------------------------------" << endl;
@@ -798,4 +1012,3 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 	return 0;
 
 }
-
