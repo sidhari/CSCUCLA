@@ -65,6 +65,9 @@ int LUTBuilder_TEMPLATE::run(std::string inputfile, std::string outputfile, int 
 	//
 	//TODO: need to fix to use LINEFIT_LUT_PATH and make it capable on LXPLUS as well as LPC
 	LUT demoLUT("demo", "dat/linearFits.lut");
+	//LUT demoLUT("demo", string("dat/linearFits.lut"));
+	demoLUT.print();
+	return 0;
 
 
 	//

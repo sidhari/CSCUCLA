@@ -121,9 +121,10 @@ private:
  */
 class LUT {
 public:
+	LUT(const string& name, const bool isLegacy=false);
 	LUT();
-	LUT(const string& name, bool isLegacy=false);
-	LUT(const string& name, const string& lutfile, bool isLegacy=false);
+	LUT(const string& name, const string& lutfile, const bool isLegacy=false);
+	LUT(const string& name, const char*  lutfile, const bool isLegacy=false);
 
 	~LUT() {};
 
