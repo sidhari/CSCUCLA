@@ -52,7 +52,7 @@ int main(int argc, char* argv[]){
 
 int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int end)
 {
-    cout << endl << "Running over file: " << inputfile << endl;
+    cout << endl << "Running over file: " << inputfile << endl << endl;
 
     TFile* f = TFile::Open(inputfile.c_str());
 	if(!f) throw "Can't open file";
@@ -89,15 +89,15 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
-    cout << endl << "Starting Event = " << start << ", Ending Event = " << end << endl;
+    cout << "Starting Event = " << start << ", Ending Event = " << end << endl << endl;
 
-    for(int m = start; m < end; m++)
+    for(int i = start; i < end; i++)
     {
-        if(!(m%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(m-start)/(end-start), m-start);
+        if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
-        t->GetEntry(m);       
+        t->GetEntry(i);       
 
-        t_emu->GetEntry(m);
+        t_emu->GetEntry(i);
 
         //
 		//Iterate through all possible chambers
@@ -114,167 +114,155 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
-            bool me11a = (ST==1 && RI==4);
-            bool me11b = (ST==1 && RI == 1);
-            bool me13 = (ST==1 && RI==3);
-
             ChamberHits compHits(ST, RI, EC, CH);
 
 			if(compHits.fill(comparators)) return -1;
 
-			vector<CLCTCandidate*> newSetMatch;
-            
-            unsigned int PID;
+			vector<CLCTCandidate*> clctcandidates;           
+                     
 
-            int CLCTcounter = 0;            
-
-            for(unsigned int i = 0; i < emulatedclcts.size(); i++)
+            for(unsigned int iclct = 0; iclct < emulatedclcts.size(); iclct++)
             {
 
-                cout << "2" << endl << endl;
+                if(chamberHash != (unsigned int)emulatedclcts.ch_id->at(iclct))
+                continue;              
+                
 
-                if(chamberHash != (unsigned int)emulatedclcts.ch_id->at(i))
-                continue;
-
-                cout << "2.5" <<  endl << endl;
-
-                if(CLCTcounter > 1)
-                {
-                    continue;
-                }                
-                else
-                {
-                    CLCTcounter++;
-                }
-
-               PID = emulatedclcts.patternId->at(i);
+               unsigned int PID = emulatedclcts.patternId->at(iclct);
 
                if(PID == 100)
                {
                    CSCPattern p = newEnvelopes->at(0);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
                    CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   clctcandidates.push_back(c);
                }
                if(PID == 90)
                {
                    CSCPattern p = newEnvelopes->at(1);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
                    CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   clctcandidates.push_back(c);
                }
                if(PID == 80)
                {
                    CSCPattern p = newEnvelopes->at(2);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
                    CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   clctcandidates.push_back(c);
                }
                if(PID == 70)
                {
                    CSCPattern p = newEnvelopes->at(3);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
                    CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   clctcandidates.push_back(c);
                }
                if(PID == 60)
                {
                    CSCPattern p = newEnvelopes->at(4);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
                    CLCTCandidate *c = &clct;
-                   newSetMatch.push_back(c);
+                   clctcandidates.push_back(c);
                }
                 
-            }
+            }   
 
-            //while(newSetMatch.size() > 2)
-            //newSetMatch.pop_back();
+            vector<unsigned int> matchedclctsindex; //stores indices of matched CLCTs
+            vector<SegmentMatch> matchedsegmentinfo; //stores info of matched segments
 
-            vector<int> matchedNewId;
-            vector<SegmentMatch> matchedNew;            
+            //iterate through all segments in chamber
 
-            for(unsigned int thisSeg = 0; thisSeg < segments.size(); thisSeg++)
-            {   
-                if((int)chamberHash != segments.ch_id->at(thisSeg))
-                continue;
-
-                if(segments.mu_id->at(thisSeg) == -1) // not a muon
-                continue;
-
-                float segmentX = segments.pos_x->at(thisSeg);
-                float segmentdXdZ = segments.dxdz->at(thisSeg);
-                float Pt = muons.pt->at(segments.mu_id->at(thisSeg));
-
-                if(me11a)
-				{
-					if(segmentX > 47) continue;
-				}
-				else if (me11b || me13) 
-				{
-					if(segmentX > 63) continue;
-				} 
-				else 
-				{
-					if(segmentX > 79) continue;
-				}
-
-                int closestNewMatchIndex = findClosestToSegment(newSetMatch,segmentX);
-
-                if(find(matchedNewId.begin(), matchedNewId.end(), closestNewMatchIndex) == matchedNewId.end())
-                {
-                    auto& clct = newSetMatch.at(closestNewMatchIndex);
-
-                    float clctX = clct->keyStrip();
-
-                    SegmentMatch thisMatch;
-                    thisMatch.clctIndex = closestNewMatchIndex;
-                    thisMatch.posOffset = segmentX - clctX;
-                    thisMatch.slopeOffset = segmentdXdZ;
-                    thisMatch.pt = Pt;
-
-                    matchedNewId.push_back(closestNewMatchIndex);
-                    matchedNew.push_back(thisMatch);
-
-                }                
-
-            }
-
-            for(int iclct=0; iclct < (int)newSetMatch.size(); iclct++)
+            for(unsigned int iseg = 0; iseg < (unsigned int)segments.size(); iseg++)
             {
-			    auto& clct = newSetMatch.at(iclct);
-			    LUTEntry* entry = 0;
+                if(chamberHash != (unsigned int)segments.ch_id->at(iseg))
+                continue;
 
-			    if(bayesLUT.editEntry(clct->key(),entry))
-                {
-				    return -1;
-			    }
+                if(segments.mu_id->at(iseg) == -1)
+                continue;
 
-		    	bool foundSegment = false;
-		    	for(auto segMatch : matchedNew)
-                {
-				    if(segMatch.clctIndex == iclct)
+                float segmentx = segments.pos_x->at(iseg); //segment position in strips
+                float segmentdxdz = segments.dxdz->at(iseg);
+                float pt = muons.pt->at(segments.mu_id->at(iseg));
+
+                //ignore segments at edges of chambers
+
+                if(CSCHelper::segmentIsOnEdgeOfChamber(segmentx,ST,RI)) 
+                continue;
+
+                //iterate through all CLCTs in chamber
+
+                int closestclcttosegmentindex = -1;
+                float closestclcttosegmentdistance = 1e5;
+
+                for(unsigned int iclct = 0; iclct < (unsigned int)clctcandidates.size(); iclct++)
+                {   
+                    if(std::find(matchedclctsindex.begin(), matchedclctsindex.end(), iclct) != matchedclctsindex.end())
+                    continue;
+
+                    float clctposx = clctcandidates.at(iclct)->keyStrip();
+
+                    if(abs(clctposx - segmentx) < closestclcttosegmentdistance)
                     {
-				    	foundSegment = true;
-				    	float pt = segMatch.pt;
-				    	float pos = segMatch.posOffset;
-			    		float slope = segMatch.slopeOffset;
-				    	entry->addCLCT(newSetMatch.size(), pt, pos,slope);
-			    	}
-		    	}
-		    	if(!foundSegment)
+                        closestclcttosegmentdistance = abs(clctposx - segmentx);
+                        closestclcttosegmentindex = iclct;
+                    }
+
+                }
+
+                if(closestclcttosegmentindex != -1) //found a match
                 {
-			    	entry->addCLCT(newSetMatch.size());
-		    	}
+                    auto& clct = clctcandidates.at(closestclcttosegmentindex);
+                    float clctx = clct->keyStrip();
 
-		    }
+                    SegmentMatch thismatch;
+                    thismatch.clctIndex = closestclcttosegmentindex;
+                    thismatch.posOffset = segmentx - clctx;
+                    thismatch.slopeOffset = segmentdxdz;
+                    thismatch.pt = pt;
 
-            newSetMatch.clear();
+                    matchedclctsindex.push_back(closestclcttosegmentindex);
+                    matchedsegmentinfo.push_back(thismatch);
+
+                }
+            }
+
+            for(unsigned int iclct = 0; iclct < (unsigned int)clctcandidates.size(); iclct++)
+            {
+                auto& clct = clctcandidates.at(iclct);
+                LUTEntry* entry = 0;
+
+                if(bayesLUT.editEntry(clct->key(), entry))
+                {
+                    return -1;
+                }
+
+                bool foundsegment = false;
+
+                for(auto segmatch : matchedsegmentinfo)
+                {
+                    if((unsigned int)segmatch.clctIndex == iclct)
+                    {
+                        foundsegment = true;
+                        float pt = segmatch.pt;
+                        float pos = segmatch.posOffset;
+                        float slope = segmatch.slopeOffset;
+                        entry->addCLCT(clctcandidates.size(), pt, pos, slope);
+                    }
+                }
+
+                if(!foundsegment)
+                {
+                    entry->addCLCT(clctcandidates.size());
+                }
+
+            }
+
+            clctcandidates.clear();
 
         }
                   
     }
-
-    bayesLUT.print(10);
 
     bayesLUT.sort("lkxpscme");
     

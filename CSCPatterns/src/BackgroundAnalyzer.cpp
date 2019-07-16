@@ -79,14 +79,14 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     unsigned long long int totalnotmuonsegments = 0; //total segments not associated to muons
     unsigned long long int totalsegmentsonedgesofchambers = 0; //total segments found on the edges of chambers
 
-    unsigned long long int Rtotalclcts = 0; //total RC CLCTs (3 Layer min)
-    unsigned long long int Rtotalmatchestosegments = 0; //total RC CLCT - Segments matches
-    unsigned long long int Rtotalmatchestomuonsegments = 0; //total RC CLCT - Muon Segment matches (signal)
-    unsigned long long int Rmuonbackgroundcounter = 0; //total RC CLCT - Segments not associated to muons matches
-    unsigned long long int Rtotalunmatchedclcts = 0; //total unmatched RC CLCTs (Other Background)
-    unsigned long long int Rclctsonedgeofchamber = 0; //total RC clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
-    unsigned long long int Rtotalunmatchedsegments = 0; //total unmatched segments with RC (CLCT Screw Ups)
-    unsigned long long int Rtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with RC
+    unsigned long long int Rtotalclcts = 0; //total R CLCTs (3 Layer min)
+    unsigned long long int Rtotalmatchestosegments = 0; //total R CLCT - Segments matches
+    unsigned long long int Rtotalmatchestomuonsegments = 0; //total R CLCT - Muon Segment matches (signal)
+    unsigned long long int Rmuonbackgroundcounter = 0; //total R CLCT - Segments not associated to muons matches
+    unsigned long long int Rtotalunmatchedclcts = 0; //total unmatched R CLCTs (Other Background)
+    unsigned long long int Rclctsonedgeofchamber = 0; //total R clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
+    unsigned long long int Rtotalunmatchedsegments = 0; //total unmatched segments with R CLCTs (CLCT Screw Ups)
+    unsigned long long int Rtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with R CLCTs
 
     unsigned long long int OPtotalclcts = 0; //total OP CLCTs (3 Layer min)
     unsigned long long int OPtotalmatchestosegments = 0; //total OP CLCT - Segments matches
@@ -94,7 +94,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     unsigned long long int OPmuonbackgroundcounter = 0; //total OP CLCT - Segments not associated to muons matches
     unsigned long long int OPtotalunmatchedclcts = 0; //total unmatched OP CLCTs (Other Background)
     unsigned long long int OPclctsonedgeofchamber = 0; //total OP clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
-    unsigned long long int OPtotalunmatchedsegments = 0; //total unmatched segments with OP (CLCT Screw Ups)
+    unsigned long long int OPtotalunmatchedsegments = 0; //total unmatched segments with OP CLCTs (CLCT Screw Ups)
     unsigned long long int OPtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with OP
         
     unsigned long long int NPtotalclcts = 0; //total NP CLCTs (3 Layer min)
@@ -103,7 +103,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     unsigned long long int NPmuonbackgroundcounter = 0; //total NP CLCT - Segments not associated to muons matches
     unsigned long long int NPtotalunmatchedclcts = 0; //total unmatched NP CLCTs (Other Background)
     unsigned long long int NPclctsonedgeofchamber = 0; //total NP clcts found on edges of chambers, since we are skipping segments on the edges these go unmatched 
-    unsigned long long int NPtotalunmatchedsegments = 0; //total unmatched segments with NP (CLCT Screw Ups)
+    unsigned long long int NPtotalunmatchedsegments = 0; //total unmatched segments with NP CLCTs (CLCT Screw Ups)
     unsigned long long int NPtotalunmatchedmuonsegments = 0; //total unmatched Muon Segments with NP
 
     //
@@ -677,7 +677,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 NPtotalunmatchedclcts++;
                 NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));
-                NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));         
+                NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));
                 
             }
 
@@ -792,7 +792,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 NPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
                 NPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
                 NPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));
-
+                
             }
 
             //iterate through all muon segments in chamber to see how many went unmatched to R CLCTs

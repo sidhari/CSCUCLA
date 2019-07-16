@@ -34,6 +34,8 @@
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+#include "../include/CLCTSelctor.h"
+
 using namespace std;
 
 std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplitter(vector<CLCTCandidate*> emuCLCTs)
@@ -59,8 +61,14 @@ std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*
 
 }
 
+int main(int argc, char* argv[])
+{
+	CLCTSelector p;
+	return p.main(argc,argv);
+}
 
-int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -1) 
+
+int CLCTSelector::run(string inputfile, string outputfile, int start, int end) 
 {
 
 	cout << endl << "Running over file: " << inputfile << endl << endl;
@@ -105,15 +113,23 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 
 	cout << "Starting Event: " << start << " Ending Event: " << end << endl << endl;
 
+	//
+	//COUNTERS
+	//
+	
 	unsigned long long int SegCount = 0;
 	unsigned int totalmatches = 0;
-	unsigned int FirstCLCTMatch = 0;
-	unsigned int SecondCLCTMatch = 0;
-	unsigned int OtherIndexCLCTMatch = 0;
+	unsigned int firstclctmatchcounter = 0;
+	unsigned int secondclctmatchcounter = 0;
+	unsigned int otherindexclctmatchcounter = 0;
 
-	TH1F* FirstCLCTMatchesvsPt = new TH1F ("First CLCT matches", "First CLCT matches", 50, 0, 100);
-	TH1F* SecondCLCTMatchesvsPt = new TH1F ("Second CLCT matches", "Second CLCT matches", 50, 0, 100);
-	TH1F* OtherCLCTMatchesvsPt = new TH1F ("Other index CLCT matches", "Other Index CLCT matches", 50, 0, 100);
+	//
+	//HISTOGRAMS
+	//
+
+	TH1F* firstclctmatchespt = new TH1F ("First CLCT matches", "First CLCT matches", 50, 0, 100);
+	TH1F* secondclctmatchespt = new TH1F ("Second CLCT matches", "Second CLCT matches", 50, 0, 100);
+	TH1F* otherindexclctmatchespt = new TH1F ("Other index CLCT matches", "Other Index CLCT matches", 50, 0, 100);
 
 	for(int i = start; i < end; i++) 
     {
@@ -154,17 +170,17 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
             
             unsigned int PID;    			        
 
-            for(unsigned int i = 0; i < emulatedclcts.size(); i++)
+            for(unsigned int iclct = 0; iclct < emulatedclcts.size(); iclct++)
             {
-                if(chamberHash != emulatedclcts.ch_id->at(i))
+                if(chamberHash != emulatedclcts.ch_id->at(iclct))
                 continue;                       
                 
-               PID = emulatedclcts.patternId->at(i);
+               PID = emulatedclcts.patternId->at(iclct);
 
                if(PID == 100)
                {				   	
                    	CSCPattern p = newEnvelopes->at(0);      
-				  	CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+				  	CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
               	  	CLCTCandidate *c = &clct;
               		newSetMatch.push_back(c);
                              
@@ -172,28 +188,28 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
                if(PID == 90)
                {	
                    CSCPattern p = newEnvelopes->at(1);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
               	   CLCTCandidate *c = &clct;
               	   newSetMatch.push_back(c);                   
                }
                if(PID == 80)
                {	
                    CSCPattern p = newEnvelopes->at(2);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
               	   CLCTCandidate *c = &clct;
               	   newSetMatch.push_back(c);                   
                }
                if(PID == 70)
                {	
                    CSCPattern p = newEnvelopes->at(3);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
               	   CLCTCandidate *c = &clct;
               	   newSetMatch.push_back(c);                  
                }
                if(PID == 60)
                {	
                    CSCPattern p = newEnvelopes->at(4);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(i), emulatedclcts._horizontalIndex->at(i), emulatedclcts._startTime->at(i));
+				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
               	   CLCTCandidate *c = &clct;
               	   newSetMatch.push_back(c);                   
                }
@@ -201,8 +217,7 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 			   
             }
 
-			//split CLCTs by CFEB
-           
+			//split CLCTs by CFEB           
 
 			std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> newSetMatchbyCFEB = CFEBSplitter(newSetMatch);
 			vector<CLCTCandidate*> CFEB1 = std::get<0>(newSetMatchbyCFEB);
@@ -211,24 +226,7 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 			vector<CLCTCandidate*> CFEB4 = std::get<3>(newSetMatchbyCFEB);
 			vector<CLCTCandidate*> CFEB5 = std::get<4>(newSetMatchbyCFEB);
 
-			/*compHits.print();
-
-			for(int i = 0; i < 5; i++)
-			{
-				cout << endl << "CFEB " << i+1 << endl;
-
-				vector<CLCTCandidate*> CFEB = std::get<i>(newSetMatchbyCFEB);
-
-				for(int j = 0; j < CFEB.size(); j++)
-				{
-					cout << "CLCT#" << j+1 << ": " << "KeyHalfStrip: " << CFEB.at(j)->keyHalfStrip() << "Pattern ID: " << CFEB.at(j)->patternId() << " Comparator Code ID: " << CFEB.at(j)->comparatorCodeId() <<" Layer Count: " << CFEB.at(j)->layerCount() << endl;
-				}
-
-			}
-
-			cout << endl;*/
-
-			//sort clcts within each CFEB using cfebquality	
+			//print CLCT characteristsics in order here
 
 			sort(CFEB1.begin(),CFEB1.end(),CLCTCandidate::cfebquality);
 			sort(CFEB2.begin(),CFEB2.end(),CLCTCandidate::cfebquality);
@@ -243,22 +241,7 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 			std::get<3>(newSetMatchbyCFEB_sorted) = CFEB4;
 			std::get<4>(newSetMatchbyCFEB_sorted) = CFEB5;
 			
-			/*compHits.print();
-
-			for(int i = 0; i < 5; i++)
-			{
-				cout << endl << "CFEB " << i+1 << endl;
-
-				vector<CLCTCandidate*> CFEB = std::get<i>(newSetMatchbyCFEB_sorted);
-
-				for(unsigned int j = 0; j < CFEB.size(); j++)
-				{
-					cout << "CLCT#" << j+1 << ": " << "KeyHalfStrip: " << CFEB.at(j)->keyHalfStrip() << "Pattern ID: " << CFEB.at(j)->patternId() << " Comparator Code ID: " << CFEB.at(j)->comparatorCodeId() <<" Layer Count: " << CFEB.at(j)->layerCount() << endl;
-				}
-
-			}
-
-			cout << endl;	*/				
+			//reprint CLCT characteristics in order to see if sorting worked						
 
 			//take first from each cfeb, find best, add to final list, delete from this list, keep going till all cfeb vectors are empty
 
@@ -266,7 +249,7 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 
 			int size = CFEB1.size() + CFEB2.size() + CFEB3.size() + CFEB4.size() + CFEB5.size();
 
-			for(int i = 0; i < size; i++)
+			for(int iclct = 0; iclct < size; iclct++)
 			{
 				if(CFEB1.size() != 0)
 				FinalCandidates.push_back(CFEB1.at(0));
@@ -283,7 +266,7 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 				if(CFEB5.size() != 0)
 				FinalCandidates.push_back(CFEB5.at(0));
 
-				sort(FinalCandidates.begin()+i, FinalCandidates.end(), CLCTCandidate::LUTquality);
+				sort(FinalCandidates.begin()+iclct, FinalCandidates.end(), CLCTCandidate::LUTquality);
 
 				if(CFEB1.size() != 0)
 				CFEB1.erase(CFEB1.begin());
@@ -356,18 +339,18 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 					totalmatches++;
 					if(closestCLCTtoSegmentIndex == 0)
 					{
-						FirstCLCTMatch++;
-						FirstCLCTMatchesvsPt->Fill(pt);
+						firstclctmatchcounter++;
+						firstclctmatchespt->Fill(pt);
 					}					
 					else if(closestCLCTtoSegmentIndex == 1)
 					{
-						SecondCLCTMatch++;
-						SecondCLCTMatchesvsPt->Fill(pt);
+						secondclctmatchcounter++;
+						secondclctmatchespt->Fill(pt);
 					}
 					else
 					{
-						OtherIndexCLCTMatch++;
-						OtherCLCTMatchesvsPt->Fill(pt);
+						otherindexclctmatchcounter++;
+						otherindexclctmatchespt->Fill(pt);
 					}
 
 				}		
@@ -387,40 +370,15 @@ int CLCTSelector(string inputfile, string outputfile, int start = 0, int end = -
 	}
 
 	outF->cd();
-	FirstCLCTMatchesvsPt->Write();
-	SecondCLCTMatchesvsPt->Write();
-	OtherCLCTMatchesvsPt->Write();
+	firstclctmatchespt->Write();
+	secondclctmatchespt->Write();
+	otherindexclctmatchespt->Write();
 
-	cout << SegCount << " " << FirstCLCTMatch << " " << SecondCLCTMatch << " " << OtherIndexCLCTMatch << endl << endl;
+	cout << SegCount << " " << firstclctmatchcounter << " " << secondclctmatchcounter << " " << otherindexclctmatchcounter << endl << endl;
 
 
 	cout << "Wrote to file: " << outputfile << endl;
 
-	return 0;
-}
-
-int main(int argc, char* argv[])
-{
-	try 
-    {
-		switch(argc)
-        {
-		case 3:
-			return CLCTSelector(string(argv[1]), string(argv[2]));
-		case 4:
-			return CLCTSelector(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return CLCTSelector(string(argv[1]), string(argv[2]),atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./CLCTSelector inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) 
-    {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
 	return 0;
 }
 
