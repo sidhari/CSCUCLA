@@ -504,6 +504,7 @@ int LUT::loadROOT(const string& rootfile) {
 	return 0;
 }
 
+//TODO: verify that non-existent file spits out warning and fails
 int LUT::loadText(const string& textfile){
 	if(DEBUG > 0) cout << "Loading lut from textfile: " << textfile << endl;
 	if(_isFinal) return -1;
