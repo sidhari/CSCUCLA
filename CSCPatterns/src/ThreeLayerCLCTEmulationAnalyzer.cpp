@@ -68,24 +68,24 @@ int ThreeLayerCLCTEmulationAnalyzer::run(string inputfile, string outputfile, in
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
 
-	printf("Starting Event = %i, Ending Event = %i\n", start, end);
 	cout << "Starting Event: " << start << " Ending Event: " << end << endl;
 
 	for(int i = start; i < end; i++) {
 		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
-		/* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
-		 * installed on September 12
-		 */
+		// First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
+		// installed on September 12
+
 		if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
-		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
-		 */
+		// Era after min-separation change (10 -> 5), also includes 3 layer firmware change
 		//if(evt.RunNumber <= 323362) continue;
 
 
 		//TODO: fill this in!
 	}
+
+
 
 
 	outF->Close();

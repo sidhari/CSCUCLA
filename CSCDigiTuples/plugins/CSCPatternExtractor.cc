@@ -338,7 +338,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     	}
     	if(muonInCSC) tree.h.h_eventCuts->Fill(EVENT_CUTS::hasMuonInCSC);
     	if(!muonInfo.size()) return; //no muons with csc info
-    	//fill only the muons that have csc segments associtaed with them
+    	//fill only the muons that have csc segments associated with them
     	tree.h.h_muonCuts->Fill(MUON_CUTS::muonHasSegments,muonInfo.size());
     	tree.h.h_nSelectedMuons->Fill(muonInfo.size());
     	for(unsigned int im =0 ; im < muonInfo.size(); im++){
@@ -373,7 +373,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 
 // ------------ method called once each job just after ending the event loop  ------------
 void CSCPatternExtractor::endJob() {
-	cout << "Wrote to: " << tree.file->GetName() << endl;	if(selection == "") return;
+	cout << "Wrote to: " << tree.file->GetName() << endl;
 	cout << "Finished running CSCPatternExtractor.cc" << endl;
 }
 
