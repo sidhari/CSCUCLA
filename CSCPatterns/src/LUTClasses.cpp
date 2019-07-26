@@ -204,7 +204,7 @@ float LUTEntry::quality() const{
 	return _quality;
 }
 
-void LUTEntry::setquality(int qual)
+void LUTEntry::setquality(float qual)
 {
 	_quality = qual;
 }
@@ -586,7 +586,7 @@ int LUT::loadText(const string& textfile){
 
 int LUT::writeToText(const string& filename) {
 		cout << "\033[94m=== Writing LUT ===\033[0m" << endl;
-		cout << "Writing to file: " << filename << endl;
+		cout << "Writing to file: " << filename << endl << endl;
 		ofstream myfile;
 		myfile.open(filename);
 		if(!myfile.is_open()){
@@ -760,17 +760,26 @@ int LUT::nsegments() {
 void LUT::setqual()
 {
 	float quality = 0;
-    
-    for(auto& x: _orderedLUT)
-    {
-       LUTEntry* e = 0;
-       LUTKey k = x.first;
-       int r = editEntry(k,e);
-	   if(r == -1)
-	   continue;
-       e->setquality(quality);
-       quality++;
-    }
+
+	for(auto& x: _orderedLUT)
+	{			
+		LUTKey k = x.first;
+		LUTEntry e = x.second;
+
+		e.setquality(quality);
+		_lut.erase(k);
+		_lut.insert(make_pair(k,e));
+		quality++;
+
+	}
+
+	_orderedLUT.clear();
+
+	for(auto& x: _lut)
+	{
+		_orderedLUT.insert(x);
+	}
+
 }
 
 int LUT::convertToPSLLine(const LUTEntry& e){

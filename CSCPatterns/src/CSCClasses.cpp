@@ -522,9 +522,6 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
 		[](CLCTCandidate* c1, CLCTCandidate* c2){
 
-	//const LUTEntry* l1 = c1->_lutEntry;
-	//const LUTEntry* l2 = c2->_lutEntry;
-
 	/*We want this function to sort the CLCT's
 	 * in a way that puts the best quality candidate
 	 * the lowest in the list, i.e. return true
@@ -548,8 +545,9 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
 CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 		[](CLCTCandidate* c1, CLCTCandidate* c2){
 
-	const LUTEntry* l1 = c1->_lutEntry;
-	const LUTEntry* l2 = c2->_lutEntry;
+	const LUTEntry *l1 = c1->_lutEntry;
+	const LUTEntry *l2 = c2->_lutEntry;
+	
 
 	/*We want this function to sort the CLCT's
 	 * in a way that puts the best quality candidate
@@ -558,7 +556,6 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 	 * better than those of c2
 	 */
 
-
 	// we don't have an entry for c2,
 	// so take c1 as being better
 	if(!l2) return true;
@@ -566,9 +563,8 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 	// we know we have something for c2,
 	// which should be by default better than nothing
 	if(!l1) return false;
-
-
-	//priority (layers, chi2, slope)
+	
+	//priority (quality, keyHS)
 	if (l1->quality() < l2->quality()) return true;
 	else if(l1->quality() == l2->quality())
 	{
@@ -593,8 +589,7 @@ void CLCTCandidateCollection::Fill(vector<CLCTCandidate*> emulatedCLCTs, unsigne
 		comparatorCodeId.push_back(emulatedCLCTs.at(i)->comparatorCodeId());
 		layerCount.push_back(emulatedCLCTs.at(i)->layerCount());
 		patternId.push_back(emulatedCLCTs.at(i)->patternId());		
-		ch_id.push_back(chamberHash);		
-		IndexInChamber.push_back(i);
+		ch_id.push_back(chamberHash);
 	} 
 		
 }
@@ -609,7 +604,6 @@ void CLCTCandidateCollection::Erase()
 	layerCount.clear();
 	patternId.clear();	
 	ch_id.clear();
-	IndexInChamber.clear();
 }
 
 //
@@ -750,7 +744,11 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 					if(_hits[neighboringstrip][lay] != 0){
 						_hits[neighboringstrip][lay] = 0;
 						_hits[halfStripVal][lay] = 0;
-						cout << "Warning: Zeroing out layer with multiple comparator hits within 2 halfstrips of each other" << endl;
+						if(DEBUG > 1)
+						{
+							cout << halfStripVal << endl;
+							cout << "Warning: Zeroing out layer with multiple comparator hits within 2 halfstrips of each other" << endl << endl;
+						}						
 						flag++;
 					}
 				}
@@ -761,6 +759,7 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 				
 			}
 		}
+		
 	}
 
 	return 0;

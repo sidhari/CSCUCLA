@@ -145,8 +145,7 @@ class CLCTCandidateCollection
 	std::vector<int> layerCount;
 	std::vector<int> patternId;	
 	std::vector<int> ch_id;	
-	std::vector<int> IndexInChamber;
-
+	
 	CLCTCandidateCollection(TTree *t, int i)
 	{	
 		if(i==1)
@@ -158,8 +157,7 @@ class CLCTCandidateCollection
 			t->Branch("OPcomparatorCodeId", &comparatorCodeId);
 			t->Branch("OPlayerCount", &layerCount);
 			t->Branch("OPpatternId", &patternId);		
-			t->Branch("OPch_id", &ch_id);	
-			t->Branch("OPIndexInChamber", &IndexInChamber);
+			t->Branch("OPch_id", &ch_id);				
 		}	
 				
 		if(i==2)
@@ -171,8 +169,7 @@ class CLCTCandidateCollection
 			t->Branch("NPcomparatorCodeId", &comparatorCodeId);
 			t->Branch("NPlayerCount", &layerCount);
 			t->Branch("NPpatternId", &patternId);		
-			t->Branch("NPch_id", &ch_id);	
-			t->Branch("NPIndexInChamber", &IndexInChamber);
+			t->Branch("NPch_id", &ch_id);
 		}
 	}	
 
@@ -195,7 +192,6 @@ class EmulatedCLCTs
 		layerCount = 0;
 		patternId = 0;		
 		ch_id = 0;
-		IndexInChamber = 0;
 	}
 
 	EmulatedCLCTs(TTree* t, int i) : EmulatedCLCTs()
@@ -210,7 +206,6 @@ class EmulatedCLCTs
 			t->SetBranchAddress("OPlayerCount", &layerCount);
 			t->SetBranchAddress("OPpatternId", &patternId);		
 			t->SetBranchAddress("OPch_id", &ch_id);
-			t->SetBranchAddress("OPIndexInChamber", &IndexInChamber);
 		}
 
 		if(i==2)
@@ -223,7 +218,6 @@ class EmulatedCLCTs
 			t->SetBranchAddress("NPlayerCount", &layerCount);
 			t->SetBranchAddress("NPpatternId", &patternId);		
 			t->SetBranchAddress("NPch_id", &ch_id);
-			t->SetBranchAddress("NPIndexInChamber", &IndexInChamber);
 		}
 		
 	}
@@ -254,7 +248,6 @@ class EmulatedCLCTs
 	std::vector<int>* layerCount;
 	std::vector<int>* patternId;	
 	std::vector<unsigned int>* ch_id;
-	std::vector<int>* IndexInChamber;
 
 };
 

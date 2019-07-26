@@ -78,10 +78,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     EmulatedCLCTs emulatedclcts(t_emu,2);
 
-    vector<CSCPattern>* newEnvelopes = createNewPatterns();
-   
-
-	LUT bayesLUT("bayes", "dat/luts/linearFits.lut");
+	LUT bayesLUT(string("bayes"), string("dat/luts/linearFits.lut"));  
 
     //
 	// TREE ITERATION
@@ -95,9 +92,9 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
     {
         if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
-        t->GetEntry(i);       
+        t->GetEntry(i);               
 
-        t_emu->GetEntry(i);
+        t_emu->GetEntry(i);        
 
         //
 		//Iterate through all possible chambers
@@ -110,63 +107,13 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 			unsigned int EC = c.endcap;
 			unsigned int ST = c.station;
 			unsigned int RI = c.ring;
-			unsigned int CH = c.chamber;
+			unsigned int CH = c.chamber;            
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
             ChamberHits compHits(ST, RI, EC, CH);
 
-			if(compHits.fill(comparators)) return -1;
-
-			vector<CLCTCandidate*> clctcandidates;           
-                     
-
-            for(unsigned int iclct = 0; iclct < emulatedclcts.size(); iclct++)
-            {
-
-                if(chamberHash != (unsigned int)emulatedclcts.ch_id->at(iclct))
-                continue;              
-                
-
-               unsigned int PID = emulatedclcts.patternId->at(iclct);
-
-               if(PID == 100)
-               {
-                   CSCPattern p = newEnvelopes->at(0);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-                   CLCTCandidate *c = &clct;
-                   clctcandidates.push_back(c);
-               }
-               if(PID == 90)
-               {
-                   CSCPattern p = newEnvelopes->at(1);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-                   CLCTCandidate *c = &clct;
-                   clctcandidates.push_back(c);
-               }
-               if(PID == 80)
-               {
-                   CSCPattern p = newEnvelopes->at(2);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-                   CLCTCandidate *c = &clct;
-                   clctcandidates.push_back(c);
-               }
-               if(PID == 70)
-               {
-                   CSCPattern p = newEnvelopes->at(3);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-                   CLCTCandidate *c = &clct;
-                   clctcandidates.push_back(c);
-               }
-               if(PID == 60)
-               {
-                   CSCPattern p = newEnvelopes->at(4);
-                   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-                   CLCTCandidate *c = &clct;
-                   clctcandidates.push_back(c);
-               }
-                
-            }   
+			if(compHits.fill(comparators)) return -1;			             
 
             vector<unsigned int> matchedclctsindex; //stores indices of matched CLCTs
             vector<SegmentMatch> matchedsegmentinfo; //stores info of matched segments
@@ -190,17 +137,20 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                 if(CSCHelper::segmentIsOnEdgeOfChamber(segmentx,ST,RI)) 
                 continue;
 
-                //iterate through all CLCTs in chamber
+                //iterate through all CLCTs in chamber, see if there is a match
 
                 int closestclcttosegmentindex = -1;
                 float closestclcttosegmentdistance = 1e5;
 
-                for(unsigned int iclct = 0; iclct < (unsigned int)clctcandidates.size(); iclct++)
+                for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
                 {   
+                    if(emulatedclcts.ch_id->at(iclct) != chamberHash)
+                    continue;
+
                     if(std::find(matchedclctsindex.begin(), matchedclctsindex.end(), iclct) != matchedclctsindex.end())
                     continue;
 
-                    float clctposx = clctcandidates.at(iclct)->keyStrip();
+                    float clctposx = emulatedclcts.keyStrip->at(iclct);
 
                     if(abs(clctposx - segmentx) < closestclcttosegmentdistance)
                     {
@@ -212,8 +162,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 if(closestclcttosegmentindex != -1) //found a match
                 {
-                    auto& clct = clctcandidates.at(closestclcttosegmentindex);
-                    float clctx = clct->keyStrip();
+                    float clctx = emulatedclcts.keyStrip->at(closestclcttosegmentindex);
 
                     SegmentMatch thismatch;
                     thismatch.clctIndex = closestclcttosegmentindex;
@@ -227,14 +176,21 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                 }
             }
 
-            for(unsigned int iclct = 0; iclct < (unsigned int)clctcandidates.size(); iclct++)
-            {
-                auto& clct = clctcandidates.at(iclct);
+            for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
+            { 
+                if(emulatedclcts.ch_id->at(iclct) != chamberHash)
+                continue;
+
                 LUTEntry* entry = 0;
 
-                if(bayesLUT.editEntry(clct->key(), entry))
+                int PID = emulatedclcts.patternId->at(iclct);
+                int code = emulatedclcts.comparatorCodeId->at(iclct);                
+
+                LUTKey k(PID,code);
+
+                if(bayesLUT.editEntry(k,entry))
                 {
-                    return -1;
+                    return -1;              
                 }
 
                 bool foundsegment = false;
@@ -247,30 +203,28 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                         float pt = segmatch.pt;
                         float pos = segmatch.posOffset;
                         float slope = segmatch.slopeOffset;
-                        entry->addCLCT(clctcandidates.size(), pt, pos, slope);
+                        entry->addCLCT(emulatedclcts.size(chamberHash), pt, pos, slope);
                     }
                 }
 
                 if(!foundsegment)
                 {
-                    entry->addCLCT(clctcandidates.size());
+                    entry->addCLCT(emulatedclcts.size(chamberHash));
                 }
 
             }
-
-            clctcandidates.clear();
 
         }
                   
     }
 
-    bayesLUT.sort("lkxpscme");
-    
+    bayesLUT.sort("xlpkemsc");
+
     bayesLUT.setqual();
 
-    bayesLUT.print(10);
+    //bayesLUT.writeToROOT(outputfile);
 
-    bayesLUT.writeToROOT(outputfile);
+    bayesLUT.writeToText(outputfile);
 
     cout << "Wrote to file: " << outputfile << endl;
     

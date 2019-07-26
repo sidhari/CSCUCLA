@@ -74,7 +74,7 @@ public:
 	float pt() const;
 	unsigned int nclcts() const;
 	float quality() const;
-	void setquality(int qual);
+	void setquality(float qual);
 	float probability() const;
 	float multiplicity() const; //calculates average multiplicity for how many clcts it is associated with
 
@@ -85,7 +85,7 @@ public:
 
 
 	const unsigned int _layers; //layers in code
-	const float _chi2; //chi2 of fit
+	const float _chi2; //chi2 of fit	
 
 private:
 	bool _isFinal; //if we have already calculated the offsets with all the segments
@@ -107,7 +107,6 @@ private:
 	unsigned long _nsegments; //amount of segments used to construct LUT entry
 	unsigned long _nclcts; //amount of clcts we found when making this entry (not necessarily matched with segments)
 	float _multiplicity;
-
 
 	float _quality; //quality parameter used choose between CLCTs
 

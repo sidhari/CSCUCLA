@@ -79,6 +79,10 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     unsigned long long int totalnotmuonsegments = 0; //total segments not associated to muons
     unsigned long long int totalsegmentsonedgesofchambers = 0; //total segments found on the edges of chambers
 
+    unsigned long long int norechitsinchamber = 0; //if CLCT goes unmatched, check if chamber did not have rechits
+    unsigned long long int nocomphitsinchamber = 0; //if segment goes unmatched, check if chamber did not have comparator hits
+    unsigned long long int samesetofrechitsmultiplesegments = 0; //if segment goes unmatched. check to see if this was because of multiple segments formed from sae set of rechits
+
     unsigned long long int Rtotalclcts = 0; //total R CLCTs (3 Layer min)
     unsigned long long int Rtotalmatchestosegments = 0; //total R CLCT - Segments matches
     unsigned long long int Rtotalmatchestomuonsegments = 0; //total R CLCT - Muon Segment matches (signal)
@@ -156,7 +160,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     TH1F* NPunmatchedsegmentsdydz = new TH1F ("Unmatched Segments: dydz (NP)", "Unmatched Segments: dy/dz (NP)", 200, -4, 4);
     TH1F* NPmatchedsegmentsnhits = new TH1F ("Matched Segments: nhits (NP)", "Matched Segments: nhits (NP);nhits;Count", 7, 0, 7);
     TH1F* NPmatchedmuonsegmentsnhits = new TH1F ("Matched Muon Segments: nhits (NP)", "Matched Muon Segments: nhits (NP);nhits;Count", 7, 0, 7);
-    TH1F* NPunmatchedsegmentsnhits = new TH1F ("Unmatched Segments: nhits (NP)", "Unmatched Segments: nhits (NP);nhits;Count", 7, 0, 7);
+    TH1F* NPunmatchedsegmentsnhits = new TH1F ("Unmatched Segments: nhits (NP)", "Unmatched Segments: nhits (NP);nhits;Count", 7, 0, 7);    
 
     //
     //EVENT LOOP
@@ -164,7 +168,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 	
-	cout << "Starting Event: " << start << " Ending Event: " << endl << endl;
+	cout << "Starting Event: " << start << " Ending Event: " << end << endl << endl;
 
     for(int i = start; i < end; i++) 
     {
@@ -176,20 +180,11 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 		/* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
 		 * installed on September 12
 		 */
-		if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
+		if(evt.RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
+        //if(evt.RunNumber != 324970) continue;
 		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
 		 */
 		//if(evt.RunNumber <= 323362) continue;
-
-        totalsegments += segments.size();
-
-        for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
-        {
-            if(segments.mu_id->at(iseg) == -1)
-            totalnotmuonsegments++;
-            else
-            totalmuonsegments++;
-        }
 
         for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
 		{
@@ -208,6 +203,10 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
 			bool me13 = (ST == 1 && RI == 3);
+            //bool me22 = (ST == 2 && RI == 2);
+
+            /*if(!(me22)) //ME22 analysis
+            continue;*/
 
             unsigned int segmentsinchamber = 0; //number of segments in current chamber
             unsigned int muonsegmentsinchamber = 0; //number of muon segments in current chamber
@@ -217,7 +216,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
                 continue;
 
-                segmentsinchamber++;
+                segmentsinchamber++;            
 
                 if(segments.mu_id->at(iseg) == -1)
                 continue;
@@ -225,6 +224,10 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 muonsegmentsinchamber++;
                 
             }
+
+            totalsegments += segmentsinchamber;
+            totalmuonsegments += muonsegmentsinchamber;
+            totalnotmuonsegments += (segmentsinchamber - muonsegmentsinchamber);
 
             unsigned int Rclctcountinchamber = 0; //number of R clcts in current chamber
             unsigned int OPclctcountinchamber = 0; //number of OP clcts in current chamber 
@@ -277,19 +280,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
             NPclctcountinchamber = 2;   
 
             OPtotalclcts += OPclctcountinchamber;
-            NPtotalclcts += NPclctcountinchamber;        
-
-            if(segmentsinchamber > OPclctcountinchamber)
-            OPunmatchedsegmentschambertype->Fill(ST,RI);
-
-            if(OPclctcountinchamber > segmentsinchamber)
-            OPunmatchedclctschambertype->Fill(ST,RI);
-
-            if(segmentsinchamber > NPclctcountinchamber)
-            NPunmatchedsegmentschambertype->Fill(ST,RI);
-
-            if(NPclctcountinchamber > segmentsinchamber)
-            NPunmatchedclctschambertype->Fill(ST,RI);
+            NPtotalclcts += NPclctcountinchamber;
             
             vector<unsigned int> matchedRclctindex; //stores indices of R clcts matched to a segment
             vector<unsigned int> matchedOPclctindex; //stores indices of OP clcts matched to a segment
@@ -628,7 +619,8 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 OPtotalunmatchedclcts++;
                 OPunmatchedclctslayercount->Fill(OPemulatedclcts.layerCount->at(iclct));
-                OPunmatchedclctspatternid->Fill((int)OPemulatedclcts.patternId->at(iclct));               
+                OPunmatchedclctspatternid->Fill((int)OPemulatedclcts.patternId->at(iclct));           
+                OPunmatchedclctschambertype->Fill(ST,RI);    
                 
             }
 
@@ -678,6 +670,31 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 NPtotalunmatchedclcts++;
                 NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));
                 NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));
+                NPunmatchedclctschambertype->Fill(ST,RI);   
+
+                //see if the chamber had rechits
+
+                ChamberHits rechits(ST,RI,EC,CH);
+                rechits.fill(recHits);
+                int temp = 0;
+                for(unsigned int irec1 = 0; irec1 < N_MAX_HALF_STRIPS; irec1++)
+                {
+                    for(unsigned int irec2 = 0; irec2 < NLAYERS; irec2++)
+                    {
+                        if(rechits._hits[irec1][irec2])
+                        temp++;
+                    }
+                }
+                
+                if(temp == 0) //no rechits in chamber
+                norechitsinchamber++;
+                else
+                {
+                    compHits.print();
+                    cout << endl << NPclctcountinchamber << endl;
+                    rechits.print();
+                    cout << endl << segmentsinchamber << endl << endl;                    
+                }
                 
             }
 
@@ -752,7 +769,8 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 OPtotalunmatchedsegments++;
                 OPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
                 OPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
-                OPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));                
+                OPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));  
+                OPunmatchedsegmentschambertype->Fill(ST,RI);              
 
             }
 
@@ -791,7 +809,25 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 NPtotalunmatchedsegments++;
                 NPunmatchedsegmentsdxdz->Fill(segments.dxdz->at(iseg));
                 NPunmatchedsegmentsdydz->Fill(segments.dydz->at(iseg));
-                NPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));
+                NPunmatchedsegmentsnhits->Fill(segments.nHits->at(iseg));  
+                NPunmatchedsegmentschambertype->Fill(ST,RI);             
+
+                //check to see if chamber had comp hits
+
+                int temp = 0;
+                for(unsigned int iclct1 = 0; iclct1 < N_MAX_HALF_STRIPS; iclct1++)
+                {
+                    for(unsigned int iclct2 = 0; iclct2 < NLAYERS; iclct2++)
+                    {
+                        if(compHits._hits[iclct1][iclct2])
+                        temp++;
+                    }
+                }
+
+                if(temp == 0) //no comphits in chamber
+                nocomphitsinchamber++; 
+                else
+                samesetofrechitsmultiplesegments++;                                   
                 
             }
 
@@ -968,7 +1004,6 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     OPmatchedsegmentsnhits->Write();
     OPmatchedmuonsegmentsnhits->Write();
     OPunmatchedsegmentsnhits->Write();
-    NPmatchedsegmentsnhits->Write();
     NPmatchedmuonsegmentsnhits->Write();
     NPunmatchedsegmentsnhits->Write();
 
@@ -976,6 +1011,10 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     cout << "Total muon segments: " << totalmuonsegments << endl;
     cout << "Total segments not associated to muons: " << totalnotmuonsegments << endl;
     cout << "Total segments found on the edges of chambers: " << totalsegmentsonedgesofchambers << endl << endl;
+
+    cout << norechitsinchamber << endl << endl;
+    cout << nocomphitsinchamber << endl << endl;
+    cout << samesetofrechitsmultiplesegments << endl << endl;
 
     cout << "Real CLCTs: " << endl;
     cout << "--------------------------------------------------" << endl;

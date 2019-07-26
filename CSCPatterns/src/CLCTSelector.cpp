@@ -25,9 +25,9 @@
 #include<map>
 
 
-#include "../include/PatternConstants.h"
-#include "../include/PatternFinderClasses.h"
-#include "../include/PatternFinderHelperFunctions.h"
+#include "../include/CSCConstants.h"
+#include "../include/CSCClasses.h"
+#include "../include/CSCHelperFunctions.h"
 #include "../include/LUTClasses.h"
 
 //using soft-links, if it doesn't work, is in ../../CSCDigiTuples/include/<name>
@@ -37,29 +37,6 @@
 #include "../include/CLCTSelctor.h"
 
 using namespace std;
-
-std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplitter(vector<CLCTCandidate*> emuCLCTs)
-{
-	
-	map<int,vector<CLCTCandidate*>> DetCFEB;
-	
-	for(unsigned int j = 0; j < emuCLCTs.size(); j++)
-	{
-		float keystrip = emuCLCTs.at(j)->keyStrip();
-		int CFEB = ((keystrip-1)/16);
-		DetCFEB[CFEB].push_back(emuCLCTs.at(j));
-	}	
-
-	std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> CFEBSplit;
-	std::get<0>(CFEBSplit) = DetCFEB[0];
-	std::get<1>(CFEBSplit) = DetCFEB[1];
-	std::get<2>(CFEBSplit) = DetCFEB[2];
-	std::get<3>(CFEBSplit) = DetCFEB[3];
-	std::get<4>(CFEBSplit) = DetCFEB[4];
-
-	return CFEBSplit;
-
-}
 
 int main(int argc, char* argv[])
 {
@@ -84,6 +61,16 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
     TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
+	//load LUT
+
+	LUT lut(string("lut"));
+	lut.loadText(string("dat/luts/lpkxemcs.root")); //best so far: lpkxemcs
+	if(lut.makeFinal())
+	{
+		return -1;
+	}
+
+
 	//
 	// SET INPUT BRANCHES
 	//
@@ -100,9 +87,31 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 	vector<CSCPattern>* newEnvelopes = createNewPatterns();	
 
-	LUT lut("lut");
-	lut.loadROOT("dat/luts/lut.root");
+	//LUT lut(string("lut"),string("dat/luts/lkxpscme.root"));
 
+	//
+	//COUNTERS
+	//
+	
+	unsigned long long int totalmuonsegments = 0;
+	unsigned long long int totalmatches = 0;
+	unsigned long long int firstclctmatches = 0;
+	unsigned long long int secondclctmatches = 0;
+	unsigned long long int otherindexclctmatches = 0;
+
+	//
+	//HISTOGRAMS
+	//
+
+	TH1F* matchespt = new TH1F ("matched_muon_segments_pt", "Matched Muon Segments: pt", 50, 0, 100);
+	TH1F* firstclctmatchespt = new TH1F ("muon_segments_matched_to_first_CLCT_pt", "Muon Segments matched to first CLCT: pt", 50, 0, 100);
+	TH1F* secondclctmatchespt = new TH1F ("muon_segments_matched_to_second_CLCT_pt", "Muon Segments matched to second CLCT: pt", 50, 0, 100);
+	TH1F* otherindexclctmatchespt = new TH1F ("muon_segments_matched_to_other_CLCTs_pt", "Muon Segments matched to other CLCTs: pt", 50, 0, 100);
+	TH1F* effeciency1 = new TH1F ("h1_div_h2", "h1/h2", 50, 0, 100);
+	TH1F* effeciency2 = new TH1F ("h1_div_h3", "h1/h3", 50, 0, 100);
+	TH1F* effeciency3 = new TH1F ("h1_div_h4", "h1/h4", 50, 0, 100);
+
+	TH1F* matchedclctindex = new TH1F ("matched_clct_index", "Matched CLCT Index", 12, -2, 10);
 
 	//
 	// EVENT LOOP
@@ -113,27 +122,9 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 	cout << "Starting Event: " << start << " Ending Event: " << end << endl << endl;
 
-	//
-	//COUNTERS
-	//
-	
-	unsigned long long int SegCount = 0;
-	unsigned int totalmatches = 0;
-	unsigned int firstclctmatchcounter = 0;
-	unsigned int secondclctmatchcounter = 0;
-	unsigned int otherindexclctmatchcounter = 0;
-
-	//
-	//HISTOGRAMS
-	//
-
-	TH1F* firstclctmatchespt = new TH1F ("First CLCT matches", "First CLCT matches", 50, 0, 100);
-	TH1F* secondclctmatchespt = new TH1F ("Second CLCT matches", "Second CLCT matches", 50, 0, 100);
-	TH1F* otherindexclctmatchespt = new TH1F ("Other index CLCT matches", "Other Index CLCT matches", 50, 0, 100);
-
 	for(int i = start; i < end; i++) 
     {
-		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
+		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
         t_emu->GetEntry(i);
@@ -145,6 +136,8 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
 		 */
 		//if(evt.RunNumber <= 323362) continue;
+
+		//iterate through all chambers
 
         for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
         {		
@@ -166,197 +159,203 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 			if(compHits.fill(comparators)) return -1;
 
-			vector<CLCTCandidate*> newSetMatch;			
-            
-            unsigned int PID;    			        
+			vector<CLCTCandidate*> initialclctcandidates;
 
-            for(unsigned int iclct = 0; iclct < emulatedclcts.size(); iclct++)
-            {
-                if(chamberHash != emulatedclcts.ch_id->at(iclct))
-                continue;                       
-                
-               PID = emulatedclcts.patternId->at(iclct);
+			//iterate through all emulated CLCTs in chamber, fill vector 
 
-               if(PID == 100)
-               {				   	
-                   	CSCPattern p = newEnvelopes->at(0);      
-				  	CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-              	  	CLCTCandidate *c = &clct;
-              		newSetMatch.push_back(c);
-                             
-               }
-               if(PID == 90)
-               {	
-                   CSCPattern p = newEnvelopes->at(1);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-              	   CLCTCandidate *c = &clct;
-              	   newSetMatch.push_back(c);                   
-               }
-               if(PID == 80)
-               {	
-                   CSCPattern p = newEnvelopes->at(2);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-              	   CLCTCandidate *c = &clct;
-              	   newSetMatch.push_back(c);                   
-               }
-               if(PID == 70)
-               {	
-                   CSCPattern p = newEnvelopes->at(3);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-              	   CLCTCandidate *c = &clct;
-              	   newSetMatch.push_back(c);                  
-               }
-               if(PID == 60)
-               {	
-                   CSCPattern p = newEnvelopes->at(4);      
-				   CLCTCandidate clct(p, emulatedclcts.comparatorCodeId->at(iclct), emulatedclcts._horizontalIndex->at(iclct), emulatedclcts._startTime->at(iclct));
-              	   CLCTCandidate *c = &clct;
-              	   newSetMatch.push_back(c);                   
-               }
-
-			   
-            }
-
-			//split CLCTs by CFEB           
-
-			std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> newSetMatchbyCFEB = CFEBSplitter(newSetMatch);
-			vector<CLCTCandidate*> CFEB1 = std::get<0>(newSetMatchbyCFEB);
-			vector<CLCTCandidate*> CFEB2 = std::get<1>(newSetMatchbyCFEB);
-			vector<CLCTCandidate*> CFEB3 = std::get<2>(newSetMatchbyCFEB);
-			vector<CLCTCandidate*> CFEB4 = std::get<3>(newSetMatchbyCFEB);
-			vector<CLCTCandidate*> CFEB5 = std::get<4>(newSetMatchbyCFEB);
-
-			//print CLCT characteristsics in order here
-
-			sort(CFEB1.begin(),CFEB1.end(),CLCTCandidate::cfebquality);
-			sort(CFEB2.begin(),CFEB2.end(),CLCTCandidate::cfebquality);
-			sort(CFEB3.begin(),CFEB3.end(),CLCTCandidate::cfebquality);
-			sort(CFEB4.begin(),CFEB4.end(),CLCTCandidate::cfebquality);
-			sort(CFEB5.begin(),CFEB5.end(),CLCTCandidate::cfebquality);
-
-			std::tuple<vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>, vector<CLCTCandidate*>> newSetMatchbyCFEB_sorted;
-			std::get<0>(newSetMatchbyCFEB_sorted) = CFEB1;
-			std::get<1>(newSetMatchbyCFEB_sorted) = CFEB2;
-			std::get<2>(newSetMatchbyCFEB_sorted) = CFEB3;
-			std::get<3>(newSetMatchbyCFEB_sorted) = CFEB4;
-			std::get<4>(newSetMatchbyCFEB_sorted) = CFEB5;
-			
-			//reprint CLCT characteristics in order to see if sorting worked						
-
-			//take first from each cfeb, find best, add to final list, delete from this list, keep going till all cfeb vectors are empty
-
-			vector<CLCTCandidate*> FinalCandidates;
-
-			int size = CFEB1.size() + CFEB2.size() + CFEB3.size() + CFEB4.size() + CFEB5.size();
-
-			for(int iclct = 0; iclct < size; iclct++)
-			{
-				if(CFEB1.size() != 0)
-				FinalCandidates.push_back(CFEB1.at(0));
-
-				if(CFEB2.size() != 0)
-				FinalCandidates.push_back(CFEB2.at(0));
-
-				if(CFEB3.size() != 0)
-				FinalCandidates.push_back(CFEB3.at(0));
-
-				if(CFEB4.size() != 0)
-				FinalCandidates.push_back(CFEB4.at(0));
-
-				if(CFEB5.size() != 0)
-				FinalCandidates.push_back(CFEB5.at(0));
-
-				sort(FinalCandidates.begin()+iclct, FinalCandidates.end(), CLCTCandidate::LUTquality);
-
-				if(CFEB1.size() != 0)
-				CFEB1.erase(CFEB1.begin());
-
-				if(CFEB2.size() != 0)
-				CFEB2.erase(CFEB2.begin());
-
-				if(CFEB3.size() != 0)
-				CFEB3.erase(CFEB3.begin());
-
-				if(CFEB4.size() != 0)
-				CFEB4.erase(CFEB4.begin());
-
-				if(CFEB5.size() != 0)
-				CFEB5.erase(CFEB5.begin());		
-
-			}	
-			
-
-			vector<int> matchedCLCTs;
-
-			for(unsigned int thisSeg = 0; thisSeg < segments.size(); thisSeg++)
-			{
-				
-				if(chamberHash != (unsigned int)segments.ch_id->at(thisSeg))
+			for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
+			{	
+				if(emulatedclcts.ch_id->at(iclct) != chamberHash) 
 				continue;
 
-				if(segments.mu_id->at(thisSeg) == -1)
-				continue;	
+				int PID = emulatedclcts.patternId->at(iclct);				
+				ComparatorCode c((unsigned int)emulatedclcts.comparatorCodeId->at(iclct));
 
-				SegCount++;			
+				switch (PID)
+				{	
+					case 100:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(0),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates.push_back(clct);
+						break;
+					}
 
-				float segmentX = segments.pos_x->at(thisSeg);
-				float pt = muons.pt->at(segments.mu_id->at(thisSeg));
+					case 90:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(1),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates.push_back(clct);
+						break;	
+					}
+
+					case 80:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(2),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates.push_back(clct);	
+						break;
+					}
+
+					case 70:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(3),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates.push_back(clct);	
+						break;
+					}
+
+					case 60:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(4),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates.push_back(clct);
+						break;
+					}
+
+					default:
+					{
+						cout << "Invalid PID" << endl << endl;
+						break;
+					} 
+
+				}
+
+			}
+
+			
+
+			for(unsigned int temp = 0; temp < initialclctcandidates.size(); temp++)
+			{
+				const LUTEntry *e;
+				int PID = initialclctcandidates.at(temp)->patternId();
+				int CCID = initialclctcandidates.at(temp)->comparatorCodeId();
+				LUTKey k(PID,CCID);
+				lut.getEntry(k,e);
+				initialclctcandidates.at(temp)->_lutEntry = e;
+			}
+
+			//print CLCTs pre sort here (TO DO)
+
+			//split CLCTs by CFEB
+
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit; 
+			vector<int> CFEBpossibilities; //keeps track of which CFEBs have CLCTs
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+				float keystrip = initialclctcandidates.at(iclct)->keyStrip();
+				int whichCFEB = (keystrip-1)/16;
+				CFEBsplit[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				if(std::find(CFEBpossibilities.begin(),CFEBpossibilities.end(),whichCFEB) == CFEBpossibilities.end())
+				CFEBpossibilities.push_back(whichCFEB);
+			}	
+
+			//sort within each CFEB		
+
+			for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+			{ 
+				sort(CFEBsplit[*it].begin(),CFEBsplit[*it].end(),CLCTCandidate::cfebquality);
+			}			
+
+			//pick first from each CFEB, use LUT to find best
+
+			vector<CLCTCandidate*> finalclctcandidates;
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit[*it].size() == 0)
+					continue;
+					finalclctcandidates.push_back(CFEBsplit[*it].at(0));
+				}
+
+				sort(finalclctcandidates.begin()+iclct,finalclctcandidates.end(),CLCTCandidate::LUTquality);
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit[*it].size() == 0)
+					continue;
+					CFEBsplit[*it].erase(CFEBsplit[*it].begin());
+				}
+			}	
+
+			//print CLCTs post sort here (TO DO)	
+
+			vector<int> matchedclctindices;
+
+			//iterate through all segments in chamber
+
+			for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+			{
+				if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+				continue;
+
+				if(segments.mu_id->at(iseg) == -1)
+				continue;
+
+				totalmuonsegments++;
+
+				float segmentx = segments.pos_x->at(iseg);
+				float pt = muons.pt->at(segments.mu_id->at(iseg));
 
 				if(me11a)
 				{
-					if(segmentX > 47) continue;
+					if(segmentx > 47) continue;
 				}
 				else if (me11b || me13) 
 				{
-					if(segmentX > 63) continue;
+					if(segmentx > 63) continue;
 				} 
 				else 
 				{
-					if(segmentX > 79) continue;
+					if(segmentx > 79) continue;
 				}
-				
-				int closestCLCTtoSegmentIndex = -1;
-				float minDistanceSegmentToClosestCLCT = 1e5;
 
-				for(unsigned int iclct = 0; iclct < FinalCandidates.size(); iclct++)
-				{	 
-					if(std::find(matchedCLCTs.begin(), matchedCLCTs.end(), iclct) != matchedCLCTs.end())
+				int closestclcttosegmentindex = -1;
+				float closestclcttosegmentdistance = 1e5;
+
+				//iterate through all CLCTs in chamber, find best match
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates.size(); iclct++)
+				{
+					if(std::find(matchedclctindices.begin(),matchedclctindices.end(),iclct) != matchedclctindices.end())
 					continue;
 
-					float CLCTStripPos = FinalCandidates.at(iclct)->keyStrip();
+					if(finalclctcandidates.at(iclct)->layerCount() < 3)
+					continue;
 
-					if(abs(CLCTStripPos - segmentX) < minDistanceSegmentToClosestCLCT)
+					float clctx = finalclctcandidates.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance)
 					{
-						minDistanceSegmentToClosestCLCT = abs(CLCTStripPos - segmentX);
-						closestCLCTtoSegmentIndex = iclct;
+						closestclcttosegmentdistance = abs(clctx - segmentx);
+						closestclcttosegmentindex = iclct;
 					}
-
 				}
 
-				if(closestCLCTtoSegmentIndex != -1) //match
-				{							
-					matchedCLCTs.push_back(closestCLCTtoSegmentIndex);
+				if(closestclcttosegmentindex != -1) //found a match
+				{
+					matchedclctindices.push_back(closestclcttosegmentindex);
 					totalmatches++;
-					if(closestCLCTtoSegmentIndex == 0)
+					matchespt->Fill(pt);
+					matchedclctindex->Fill(closestclcttosegmentindex);
+					if(closestclcttosegmentindex == 0)
 					{
-						firstclctmatchcounter++;
+						firstclctmatches++;
 						firstclctmatchespt->Fill(pt);
-					}					
-					else if(closestCLCTtoSegmentIndex == 1)
+					}
+					if(closestclcttosegmentindex == 1)
 					{
-						secondclctmatchcounter++;
+						secondclctmatches++;
 						secondclctmatchespt->Fill(pt);
 					}
-					else
+					if(closestclcttosegmentindex > 1)
 					{
-						otherindexclctmatchcounter++;
+						otherindexclctmatches++;
 						otherindexclctmatchespt->Fill(pt);
 					}
 
-				}		
-								
+				}
 
-			}						
+			}			       						
 
         }
 
@@ -369,12 +368,21 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 		return -1;
 	}
 
+	effeciency1->Divide(matchespt,firstclctmatchespt);
+	effeciency2->Divide(matchespt,secondclctmatchespt);
+	effeciency3->Divide(matchespt,otherindexclctmatchespt);
+
 	outF->cd();
+	matchespt->Write();
 	firstclctmatchespt->Write();
 	secondclctmatchespt->Write();
 	otherindexclctmatchespt->Write();
+	effeciency1->Write();
+	effeciency2->Write();
+	effeciency3->Write();
+	matchedclctindex->Write();
 
-	cout << SegCount << " " << firstclctmatchcounter << " " << secondclctmatchcounter << " " << otherindexclctmatchcounter << endl << endl;
+	cout << totalmuonsegments << " " << totalmatches << " " << firstclctmatches << " " << secondclctmatches << " " << otherindexclctmatches << endl << endl;
 
 
 	cout << "Wrote to file: " << outputfile << endl;
