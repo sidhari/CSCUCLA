@@ -79,6 +79,8 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     unsigned long long int totalnotmuonsegments = 0; //total segments not associated to muons
     unsigned long long int totalsegmentsonedgesofchambers = 0; //total segments found on the edges of chambers
 
+    //unsigned long long int check = 0;
+
     unsigned long long int norechitsinchamber = 0; //if CLCT goes unmatched, check if chamber did not have rechits
     unsigned long long int nocomphitsinchamber = 0; //if segment goes unmatched, check if chamber did not have comparator hits
     unsigned long long int samesetofrechitsmultiplesegments = 0; //if segment goes unmatched. check to see if this was because of multiple segments formed from sae set of rechits
@@ -216,10 +218,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
                 continue;
 
-                segmentsinchamber++;            
-
-                if(segments.mu_id->at(iseg) == -1)
-                continue;
+                segmentsinchamber++;
 
                 muonsegmentsinchamber++;
                 
@@ -667,10 +666,10 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 					if(NPemulatedclcts.keyStrip->at(iclct) > 79) NPclctsonedgeofchamber++;
 				}
 
-                NPtotalunmatchedclcts++;
-                NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));
+                NPtotalunmatchedclcts++;                  
+                NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));                
                 NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));
-                NPunmatchedclctschambertype->Fill(ST,RI);   
+                NPunmatchedclctschambertype->Fill(ST,RI);
 
                 //see if the chamber had rechits
 
@@ -687,14 +686,16 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 }
                 
                 if(temp == 0) //no rechits in chamber
-                norechitsinchamber++;
-                else
                 {
-                    compHits.print();
-                    cout << endl << NPclctcountinchamber << endl;
-                    rechits.print();
-                    cout << endl << segmentsinchamber << endl << endl;                    
-                }
+                    norechitsinchamber++;
+                }                
+                /*else
+                {
+                    NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));                
+                    NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));
+                    NPunmatchedclctschambertype->Fill(ST,RI); 
+                }*/
+                
                 
             }
 
@@ -825,9 +826,17 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 }
 
                 if(temp == 0) //no comphits in chamber
-                nocomphitsinchamber++; 
+                {
+                    nocomphitsinchamber++; 
+                } 
+                
                 else
-                samesetofrechitsmultiplesegments++;                                   
+                {
+                    samesetofrechitsmultiplesegments++;
+                }
+                          
+
+                                       
                 
             }
 
@@ -1045,6 +1054,8 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
     cout << "Total unmatched CLCTs: " << NPtotalunmatchedclcts << " (of which " << NPclctsonedgeofchamber << " were on the edges of chambers)" << endl;
     cout << "Total unmatched segments: " << NPtotalunmatchedsegments << endl;
     cout << "Total unmatched muon segments: " << NPtotalunmatchedmuonsegments << endl << endl; 
+
+    //cout << check << endl << endl;
 
     printf("Wrote to file: %s\n",outputfile.c_str());
 

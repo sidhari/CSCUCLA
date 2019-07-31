@@ -289,9 +289,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				continue;
 
 				if(segments.mu_id->at(iseg) == -1)
-				continue;
-
-				totalmuonsegments++;
+				continue;				
 
 				float segmentx = segments.pos_x->at(iseg);
 				float pt = muons.pt->at(segments.mu_id->at(iseg));
@@ -308,6 +306,8 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				{
 					if(segmentx > 79) continue;
 				}
+
+				totalmuonsegments++;
 
 				int closestclcttosegmentindex = -1;
 				float closestclcttosegmentdistance = 1e5;
@@ -368,9 +368,9 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 		return -1;
 	}
 
-	effeciency1->Divide(matchespt,firstclctmatchespt);
-	effeciency2->Divide(matchespt,secondclctmatchespt);
-	effeciency3->Divide(matchespt,otherindexclctmatchespt);
+	effeciency1->Divide(firstclctmatchespt,matchespt);
+	effeciency2->Divide(secondclctmatchespt,matchespt);
+	effeciency3->Divide(otherindexclctmatchespt,matchespt);
 
 	outF->cd();
 	matchespt->Write();

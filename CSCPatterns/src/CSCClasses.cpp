@@ -743,19 +743,20 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 					continue;
 					if(_hits[neighboringstrip][lay] != 0){
 						_hits[neighboringstrip][lay] = 0;
-						_hits[halfStripVal][lay] = 0;
-						if(DEBUG > 1)
-						{
-							cout << halfStripVal << endl;
-							cout << "Warning: Zeroing out layer with multiple comparator hits within 2 halfstrips of each other" << endl << endl;
-						}						
+						_hits[halfStripVal][lay] = 0;				
+							
+						/*cout << "Warning: Comparator found at halfstrip " << halfStripVal << ", layer  "<< lay+1 << endl;
+						cout << "         Zeroing out layer with multiple comparator hits within a three halfstrip window" << endl << endl;*/
+												
 						flag++;
 					}
 				}
 				if(flag == 0){
 					_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
 					_nhits++;
-				}								
+				}	
+
+				//print();					
 				
 			}
 		}
