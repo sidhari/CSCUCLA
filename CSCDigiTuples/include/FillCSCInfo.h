@@ -622,7 +622,6 @@ public:
 		delete trkNumber;
 		delete keyStrip;
 	}
-	;
 
 	virtual void reset() {
 		ch_id->clear();
@@ -649,6 +648,16 @@ class FillALCTInfo : public CSCInfo::ALCTs, public FillInfo
 			ALCTs(),
 			FillInfo(name,tree)
 		{
+			ch_id = new std::vector<size16>();
+			isValid = new std::vector<size8>();
+			quality = new std::vector<size8>();
+			accelerator = new std::vector<size8>();
+			collisionB = new std::vector<size8>();
+			keyWG = new std::vector<size8>();
+			BX = new std::vector<size8>();
+			trkNumber = new std::vector<size8>();
+			fullBX = new std::vector<size8>();
+
 			book(GET_VARIABLE_NAME(ch_id),*ch_id);
 			book(GET_VARIABLE_NAME(isValid),*isValid);
 			book(GET_VARIABLE_NAME(quality),*quality);
@@ -676,7 +685,7 @@ class FillALCTInfo : public CSCInfo::ALCTs, public FillInfo
 		virtual void reset()
 		{
 			ch_id->clear();
-			isValid;
+			isValid->clear();
 			quality->clear();
 			accelerator->clear(); 
 			collisionB->clear();
@@ -696,6 +705,13 @@ class FillWireInfo : public CSCInfo::Wires, public FillInfo
 			Wires(),
 			FillInfo(name,tree)
 		{
+			ch_id = new std::vector<size16>();
+			group = new std::vector<int>();
+			lay = new std::vector<size8>();
+			time_bin = new std::vector<int>();
+			BX = new std::vector<int>();
+			time_bins_on = new std::vector<std::vector<int>>();
+
 			book(GET_VARIABLE_NAME(ch_id),*ch_id);
 			book(GET_VARIABLE_NAME(group),*group);
 			book(GET_VARIABLE_NAME(lay),*lay);
@@ -724,8 +740,61 @@ class FillWireInfo : public CSCInfo::Wires, public FillInfo
 			time_bins_on->clear();
 		}
 
-		void fill(const CSCWireDigiCollections &wires); //no idea if this digicollection exists yolo
+		void fill(const CSCWireDigiCollections &wires); 
 }
+
+class FillStripInfo : public CSCInfo::Strips, public FillInfo
+{
+	public:
+		FillStripInfo(TreeContainer &tree):
+			Strips(),
+			FillInfo(name,tree)
+		{
+			ch_id = new std::vector<size16>();
+			lay = new std::vector<size8>();
+			num = new std::vector<int>();
+		  ADC = new std::vector<std::vector<int>>();
+			L1APhase = new std::vector<std::vector<int>>();
+			ADCOverflow = new std::vector<std::vector<uint16_t>>();
+			OverlappedSample = new std::vector<std::vector<uint16_t>>();
+			Errorstat = new std::vector<std::vector<uint16_t>>();
+
+			book(GET_VARIABLE_NAME(ch_id), *ch_id);
+			book(GET_VARIABLE_NAME(lay), *lay);
+			book(GET_VARIABLE_NAME(num), *num);
+			book(GET_VARIABLE_NAME(ADC), *ADC);
+			book(GET_VARIABLE_NAME(L1APhase), *L1APhase);
+			book(GET_VARIABLE_NAME(ADCOverflow), *ADCOverflow);
+			book(GET_VARIABLE_NAME(OverlappedSample), *OverlappedSample);
+			book(GET_VARIABLE_NAME(Errorstat), *Errorstat);
+		}
+
+		virtual ~FillStripInfo()
+		{
+			delete ch_id;
+			delete lay;
+			delete num;
+			delete ADC;
+			delete L1APhase;
+			delete ADCOverflow;
+			delete OverlappedSample;
+			delete Errorstat;
+		}
+
+		virtual reset()
+		{
+			ch_id->clear();
+			lay->clear();
+			num->clear();
+			ADC->clear();
+			L1APhase->clear();
+			ADCOverflow->clear();
+			OverlappedSample->clear();
+			Errorstat->clear();
+		}
+
+		void fill(const CSCStripDigiCollection &strips)
+};
 
 class FillCompInfo : public CSCInfo::Comparators, public FillInfo {
 public:
