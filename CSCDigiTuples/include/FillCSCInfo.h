@@ -642,6 +642,90 @@ public:
 
 };
 
+class FillALCTInfo : public CSCInfo::ALCTs, public FillInfo 
+{
+	public: 
+		FillALCTInfo(TreeContainer& tree) :
+			ALCTs(),
+			FillInfo(name,tree)
+		{
+			book(GET_VARIABLE_NAME(ch_id),*ch_id);
+			book(GET_VARIABLE_NAME(isValid),*isValid);
+			book(GET_VARIABLE_NAME(quality),*quality);
+			book(GET_VARIABLE_NAME(accelerator),*acclerator);
+			book(GET_VARIABLE_NAME(collisionB),*collisionB);
+			book(GET_VARIABLE_NAME(keyWG),*keyWG);
+			book(GET_VARIABLE_NAME(BX),*BX);
+			book(GET_VARIABLE_NAME(trkNumber),*trkNumber);
+			book(GET_VARIABLE_NAME(fullBX),*fullBX);
+		}
+
+		virtual ~FillALCTInfo()
+		{
+			delete ch_id;
+			delete isValid;
+			delete quality;
+			delete accelerator; 
+			delete collisionB;
+			delete keyWG;
+			delete BX;
+			delete trkNumber;
+			delete fullBX;
+		}
+
+		virtual void reset()
+		{
+			ch_id->clear();
+			isValid;
+			quality->clear();
+			accelerator->clear(); 
+			collisionB->clear();
+			keyWG->clear();
+			BX->clear();
+			trkNumber->clear();
+			FBX->clear();
+		}
+
+		void fill(const CSCALCTDigiCollections &alcts); 
+}
+
+class FillWireInfo : public CSCInfo::Wires, public FillInfo 
+{
+	public: 
+		FillALCTInfo(TreeContainer& tree) :
+			Wires(),
+			FillInfo(name,tree)
+		{
+			book(GET_VARIABLE_NAME(ch_id),*ch_id);
+			book(GET_VARIABLE_NAME(group),*group);
+			book(GET_VARIABLE_NAME(lay),*lay);
+			book(GET_VARIABLE_NAME(time_bin),*time_bin);
+			book(GET_VARIABLE_NAME(BX),*BX);
+			book(GET_VARIABLE_NAME(time_bins_on),*time_bins_on);
+		}
+
+		virtual ~FillWireInfo()
+		{
+			delete ch_id;
+			delete group
+			delete lay;
+			delete time_bin;
+			delete BX;
+			delete time_bins_on;
+		}
+
+		virtual void reset()
+		{
+			ch_id->clear();
+			group->clear();
+			lay->clear();
+			time_bin->clear(); 
+			BX->clear();
+			time_bins_on->clear();
+		}
+
+		void fill(const CSCWireDigiCollections &wires); //no idea if this digicollection exists yolo
+}
 
 class FillCompInfo : public CSCInfo::Comparators, public FillInfo {
 public:
@@ -662,10 +746,8 @@ public:
 		book(GET_VARIABLE_NAME(halfStrip), *halfStrip);
 		book(GET_VARIABLE_NAME(bestTime), *bestTime);
 		book(GET_VARIABLE_NAME(nTimeOn), *nTimeOn);
-
-
-
   }
+
   virtual ~FillCompInfo() {
 	  delete ch_id;
 	  delete lay;

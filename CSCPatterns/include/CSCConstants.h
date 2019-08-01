@@ -22,6 +22,7 @@ const unsigned int MAX_PATTERN_WIDTH = 11;
  */
 const unsigned int BUSY_WINDOW = 10;
 const unsigned int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
+const unsigned int N_KWG = 112;
 const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 const unsigned int CFEB_HS = 32;

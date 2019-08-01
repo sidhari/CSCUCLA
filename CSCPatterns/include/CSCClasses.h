@@ -165,13 +165,38 @@ public:
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
 	unsigned int _nhits;
-	unsigned int _minHs;
+	unsigned int _minHs; //Halfstrip
 	unsigned int _maxHs;
 
 	float _meanHS;
 	float _stdHS;
 
 };
+
+/*class ALCT_ChamberHits
+{
+	public:
+		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
+			unsigned int endcap=0, unsigned int chamber=0, bool isWire=true);
+		
+		ALCT_ChamberHits(const ALCT_ChamberHits &c);
+		
+		~ChamberHits(){}	
+
+		const bool _isWire;
+		const unsigned int _station;
+		const unsigned int _ring;
+		const unsigned int _endcap;
+		const unsigned int _chamber;
+
+		int _hits[N_KWG][NLAYERS];
+
+		int fill(const CSCInfo::Wires& w);
+		void print() const; //deprecated
+		friend ostream& operator<<(ostream& os, const ChamberHits& c);
+	private:
+		
+}*/
 
 
 
