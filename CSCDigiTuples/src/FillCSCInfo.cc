@@ -19,7 +19,6 @@ void TreeContainer::reset(){
 	for(auto& info: infos) info->reset();
 }
 
-
 SelectionHistograms::SelectionHistograms(TreeContainer& t, const string& selection){
 
 	h_eventCuts = new TH1F("h_eventCuts", "h_eventCuts; ; Events", EVENT_CUTS::EVENT_SIZE, 0, EVENT_CUTS::EVENT_SIZE);
@@ -385,8 +384,6 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
   }
 }
 
-
-
 void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 	for (CSCCLCTDigiCollection::DigiRangeIterator chamber = clcts.begin();
 			chamber != clcts.end(); chamber++) {
@@ -406,7 +403,7 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 				if(digiItr->getKeyStrip() > CSCHelper::MAX_ME11B_HALF_STRIP) ri = 4;
 				else ri = 1; //resets ring in case where multiple clcts in ME11
 			}
-			ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
+			ch_id->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			isValid->push_back(
 				CSCHelper::convertTo<size8>(digiItr->isValid(),
 						"clct_isvalid"));
@@ -441,6 +438,137 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 	}
 }
 
+void FillALCTInfo::fill(const CSCALCTDigiCollections &alcts)
+{
+	CSCALCTDigiCollection::const_iterator chamber;
+	for (chamber = alcts.begin(); chamber!=alcts.end(); chamber++)
+	{
+		CSCDetId id = (*chamber).first;
+		unsigned int st = id.station();
+	  unsigned int ri = id.ring();
+	  unsigned int ch = id.chamber();
+	  unsigned int ec = id.endcap();
+
+		const CSCALCTDigiCollection::Range &range = (*chamber).second;
+		CSCALCTDigiCollection::const_iterator digiItr;
+
+		for (digiItr = range.first; digiItr!=range.second; digiItr++)
+		{
+			if (st == 1 && (ri == 1|| ri ==4))
+			{
+    		// we need to manually adjust this because they don't for us
+    		// getStrip returns a strip this time (different than before)
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+    		else ri = 1; // resets ring in case where multiple clcts in ME11
+    	}
+
+			ch_id				->push_back(CSCHelper::serialize(st, ri, ch, ec));
+			isValid			->push_back(CSCHelper::convertTo<size8>(digiItr->isValid(),"alct_isValid"));
+			quality			->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"alct_quality"));
+			accelerator	->push_back(CSCHelper::convertTo<size8>(digiItr->getAccelerator(),"alct_accelerator"));
+			collisionB	->push_back(CSCHelper::convertTo<size8>(digiItr->getCollisionB(),"alct_collisionB"));
+			keyWG				->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG(),"alct_keyWG"));
+			BX					->push_back(CSCHelper::convertTo<size8>(digiItr->getBX(),"alct_BX"));
+			trkNumber		->push_back(CSCHelper::convertTo<size8>(digiItr->getTrkNumber(),"alct_trkNumber"));
+			fullBX			->push_back(CSCHelper::convertTo<size8>(digiItr->getFullBX(),"alct_fullBX"));
+		}
+	}
+}
+
+/* DEPRECATED CODE FOR REFERENCE
+
+void FillALCTInfo::fill(const CSCALCTDigiCollection& alcts){
+  reset();
+
+  for(CSCALCTDigiCollection::DigiRangeIterator chamber=alcts.begin(); chamber != alcts.end(); chamber++) {
+    CSCDetId id = (*chamber).first;
+    const CSCALCTDigiCollection::Range& range =(*chamber).second;
+    for(CSCALCTDigiCollection::const_iterator digiItr = range.first; digiItr != range.second; ++digiItr)
+    {
+
+      alct_id         .push_back(CSCHelper::chamberSerial(id));
+      alct_isvalid    .push_back(CSCHelper::convertTo<size8>(digiItr->isValid()  ,"alct_isvalid"  ));
+      alct_quality    .push_back(CSCHelper::convertTo<size8>(digiItr->getQuality()  ,"alct_quality"  ));
+      alct_accel      .push_back(CSCHelper::convertTo<size8>(digiItr->getAccelerator()  ,"alct_accel"  ));
+      alct_collB      .push_back(CSCHelper::convertTo<size8>(digiItr->getCollisionB()  ,"alct_collB"  ));
+      alct_wireGroup  .push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG()  ,"alct_wireGroup"));
+      alct_BX         .push_back(CSCHelper::convertTo<size8>(digiItr->getBX()  ,"alct_BX"       ));
+      alct_trkNumber  .push_back(CSCHelper::convertTo<size8>(digiItr->getTrknmb()  ,"alct_trkNumber"));
+    }
+
+}
+
+*/
+
+void FillWireInfo::fill(const CSCWireDigiCollection &wires)
+{
+	CSCWireDigiCollection::DigiRangeIterator chamber;
+	for (chamber = wires.begin(); chamber!= comps.end(); chamber++)
+	{
+		CSCDetId id = (*chamber).first;
+		unsigned int st = id.station();
+    unsigned int ri = id.ring();
+    unsigned int ch = id.chamber();
+    unsigned int ec = id.endcap();
+
+		const CSCWireDigiCollection::Range &range = (*chamber).second;
+		CSCWireDigiCollection::const_iterator digiItr;
+
+		for (digiItr = range.first; digiItr!= range.second; digiItr++)
+		{
+			if (st == 1 && (ri == 1|| ri ==4))
+			{
+    		// we need to manually adjust this because they don't for us
+    		// getStrip returns a strip this time (different than before)
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+    		else ri = 1; // resets ring in case where multiple clcts in ME11
+    	}
+
+			ch_id					->push_back(CSCHelper::serialize(st, ri, ch, ec));
+			group					->push_back(digiItr->getWireGroup());					
+			lay						->push_back(CSCHelper::convertTo<size8>(id.layer(), "wire_lay"));
+			time_bin			->push_back(digiItr->getTimeBin());
+			BX						->push_back(digiItr->getWireGroupBX());
+			time_bins_on	->push_back(digiItr->getTimeBinsOn());
+		}
+	}
+}
+
+void FillStripInfo::fill(const CSCStripDigiCollection &strips)
+{
+	CSCStripDigiCollection::DigiRangeIterator chamber;
+	for (chamber = strips.begin(); chamber != strips.end(); chamber++)
+	{
+		CSCDetId id = (*chamber).first;
+		unsigned int st = id.station();
+    unsigned int ri = id.ring();
+    unsigned int ch = id.chamber();
+    unsigned int ec = id.endcap();
+
+		const CSCStripDigiCollection::Range &range = (*chamber).second;
+		CSCStripDigiCollection::const_iterator digiItr;
+
+		for (digiItr = range.first; digiItr != range.second; digiItr++)
+		{
+			if (st == 1 && (ri == 1|| ri ==4))
+			{
+    		// we need to manually adjust this because they don't for us
+    		// getStrip returns a strip this time (different than before)
+    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+    		else ri = 1; // resets ring in case where multiple clcts in ME11
+    	}
+
+			ch_id							->push_back(CSCHelper::serialize(st, ri, ch, ec));
+			lay								->push_back(CSCHelper::convertTo<size8>(id.layer(), "strip_lay"));
+			num								->push_back(digiItr->getStrip());
+			ADC								->push_back(digiItr->getADCCounts());
+			L1APhase					->push_back(digiItr->getL1APhase())
+			ADCOverflow				->push_back(digiItr->getADCOverflow());
+			OverlappedSample	->push_back(digiItr->getOverlappedSample());	
+			Errorstat					->push_back(digiItr->getErrorstat());
+		}
+	}
+}
 
 void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
   for (CSCComparatorDigiCollection::DigiRangeIterator chamber=comps.begin(); chamber!=comps.end(); chamber++)
@@ -473,17 +601,14 @@ void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
 					CSCHelper::convertTo<size8>((*digiItr).getTimeBinsOn().size(),
 							"comp_nTimeOn"));
 			unsigned int bestTimeBin = 0;
-			for(const auto& time : (*digiItr).getTimeBinsOn()){
+			for(const auto& time : (*digiItr).getTimeBinsOn())
+			{
 				bestTimeBin = time;
-				if(time < 10 && time > 5) {
-					break;
-				}
+				if (time < 10 && time > 5) break;
 			}
 			bestTime->push_back(CSCHelper::convertTo<size8>(bestTimeBin, "comp_bestTime"));
-
 		}
 	}
-
 }
 
 

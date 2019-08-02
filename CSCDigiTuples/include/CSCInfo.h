@@ -3,9 +3,11 @@
 
 
 /*
- *   	    Author: William Nash
+ *  Author: William Nash
  *  Date Inherited: September 11 2018
- *
+ * 
+ *	Forked By: Chau Dao
+ *	Date Forked: 26 July 2019
  */
 
 #include <vector>
@@ -19,7 +21,7 @@ typedef   unsigned short int   size16; //16 bit 0->65536
 typedef   unsigned int         size  ; //32 bit 0->4294967296
 
 //
-//TODO: Can clean up a lot of boiler plate using boost libraries and
+// TODO: Can clean up a lot of boiler plate using boost libraries and
 //	"reflections".
 //
 
@@ -30,15 +32,19 @@ class TreeContainer;
 namespace CSCInfo {
 
 
-
-
-
 class Object {
 public:
 	const string name;
 	virtual ~Object(){};
 	Object(const char *n): name(n){}
-
+	inline const char *branchify(char const * varname)
+	{
+		return (name+'_'+string(varname)).c_str();
+	}
+	inline const char *branchify2(char const * varname)
+	{
+		return (name+string(varname)).c_str();
+	}
 };
 
 class Event : public Object{
@@ -51,16 +57,12 @@ public:
 		NSegmentsInEvent = 0;
 	}
 	Event(TTree* t): Event(){
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(EventNumber))).c_str(),
-				&EventNumber);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(RunNumber))).c_str(),
-						&RunNumber);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(LumiSection))).c_str(),
-						&LumiSection);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(BXCrossing))).c_str(),
-						&BXCrossing);
-		if(t->GetBranch((name+'_'+string(GET_VARIABLE_NAME(NSegmentsInEvent))).c_str())) { //in the event you are using legacy trees, defaults the value to 0
-			t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(NSegmentsInEvent))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(EventNumber)), &EventNumber);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(RunNumber)), &RunNumber);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(LumiSection)),&LumiSection);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BXCrossing)), &BXCrossing);
+		if(t->GetBranch(branchify(GET_VARIABLE_NAME(NSegmentsInEvent)))) { //in the event you are using legacy trees, defaults the value to 0
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(NSegmentsInEvent)),
 						&NSegmentsInEvent);
 		}
 	}
@@ -85,15 +87,15 @@ public:
 	}
 
 	GenParticles(TTree* t) : GenParticles() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pdg_id))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pdg_id)),
 				&pdg_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pt))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pt)),
 				&pt);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(eta)),
 				&eta);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(phi)),
 				&phi);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(q))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(q)),
 				&q);
 	}
 
@@ -119,19 +121,19 @@ public:
 		pAtEntry = 0;
 	}
 	SimHits(TTree* t) : SimHits() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)),
 				&ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pdg_id))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pdg_id)),
 				&pdg_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(layer))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(layer)),
 				&layer);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(energyLoss))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(energyLoss)),
 				&energyLoss);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(thetaAtEntry))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(thetaAtEntry)),
 				&thetaAtEntry);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phiAtEntry))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(phiAtEntry)),
 				&phiAtEntry);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pAtEntry))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pAtEntry)),
 				&pAtEntry);
 
 	}
@@ -158,13 +160,13 @@ public:
 	}
 
 	CaloHit(const string& pref, TTree* t) : CaloHit(pref) {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(energyEM))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(energyEM)),
 								&energyEM);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(energyHad))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(energyHad)),
 								&energyHad);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(eta)),
 								&eta);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(phi)),
 								&phi);
 	}
 	unsigned int size() const {
@@ -200,19 +202,19 @@ public:
 
 
 	PFCandidate(TTree* t) : PFCandidate() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pdg_id))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pdg_id)),
 				&pdg_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(particleId))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(particleId)),
 						&particleId);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(eta)),
 						&eta);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(phi)),
 						&phi);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ecalEnergy))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ecalEnergy)),
 						&ecalEnergy);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(hcalEnergy))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(hcalEnergy)),
 						&hcalEnergy);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(h0Energy))).c_str(),
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(h0Energy)),
 								&h0Energy);
 	}
 
@@ -237,18 +239,12 @@ public:
 		isTracker = 0;
 	}
 	Muons(TTree* t) : Muons() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pt))).c_str(),
-				&pt);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(eta))).c_str(),
-				&eta);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(phi))).c_str(),
-				&phi);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(q))).c_str(),
-				&q);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(isGlobal))).c_str(),
-				&isGlobal);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(isTracker))).c_str(),
-				&isTracker);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pt)), &pt);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(eta)), &eta);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(phi)), &phi);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(q)), &q);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(isGlobal)), &isGlobal);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(isTracker)), &isTracker);
 	}
 
 	unsigned int size() const {
@@ -276,14 +272,14 @@ public:
 		nHits = 0;
 	}
 	Segments(TTree* t) : Segments() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(mu_id))).c_str(), &mu_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(), &ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pos_x))).c_str(), &pos_x);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pos_y))).c_str(), &pos_y);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(dxdz))).c_str(), &dxdz);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(dydz))).c_str(), &dydz);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(chisq))).c_str(), &chisq);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(nHits))).c_str(), &nHits);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(mu_id)), &mu_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pos_x)), &pos_x);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pos_y)), &pos_y);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(dxdz)), &dxdz);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(dydz)), &dydz);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(chisq)), &chisq);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(nHits)), &nHits);
 	}
 
 	unsigned int size() const {
@@ -313,13 +309,13 @@ class RecHits : public Object{
 		max_adc = 0;
 	}
 	RecHits(TTree* t) : RecHits() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(mu_id))).c_str(), &mu_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(), &ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(lay))).c_str(), &lay);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pos_x))).c_str(), &pos_x);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pos_y))).c_str(), &pos_y);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(e))).c_str(), &e);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(max_adc))).c_str(), &max_adc);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(mu_id)), &mu_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)), &lay);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pos_x)), &pos_x);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pos_y)), &pos_y);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(e)), &e);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(max_adc)), &max_adc);
 	}
 	unsigned int size() const {
 		return mu_id ? mu_id->size() : 0;
@@ -346,13 +342,13 @@ public:
 		bunchCross = 0;
 	}
 	LCTs(TTree* t) : LCTs() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(), &ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(quality))).c_str(), &quality);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pattern))).c_str(), &pattern);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(bend))).c_str(), &bend);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(keyWireGroup))).c_str(), &keyWireGroup);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(keyHalfStrip))).c_str(), &keyHalfStrip);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(bunchCross))).c_str(), &bunchCross);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)), &quality);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pattern)), &pattern);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(bend)), &bend);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyWireGroup)), &keyWireGroup);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyHalfStrip)), &keyHalfStrip);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(bunchCross)), &bunchCross);
 	}
 
 	unsigned int size() const {
@@ -385,17 +381,17 @@ public:
 		keyStrip = 0;
 	}
 	CLCTs(TTree* t) : CLCTs() {
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(), &ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(isValid))).c_str(), &isValid);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(quality))).c_str(), &quality);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(pattern))).c_str(), &pattern);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(stripType))).c_str(), &stripType);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(bend))).c_str(), &bend);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(halfStrip))).c_str(), &halfStrip);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(CFEB))).c_str(), &CFEB);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(BX))).c_str(), &BX);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(trkNumber))).c_str(), &trkNumber);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(keyStrip))).c_str(), &keyStrip);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(isValid)), &isValid);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)), &quality);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(pattern)), &pattern);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(stripType)), &stripType);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(bend)), &bend);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(halfStrip)), &halfStrip);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(CFEB)), &CFEB);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)), &BX);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(trkNumber)), &trkNumber);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyStrip)), &keyStrip);
 	}
 
 	unsigned int size() const {
@@ -412,7 +408,7 @@ public:
 		return count;
 	}
 
-	std::vector<size16> *ch_id;
+	std::vector<size16>* ch_id;
 	std::vector<size8>* isValid;
 	std::vector<size16>* quality;
 	std::vector<size8>* pattern;
@@ -426,8 +422,130 @@ public:
 
 };
 
+class ALCTs : public Object 
+{
+	public: 
+		ALCTs() : Object("alct")
+		{
+			ch_id = 0;
+			isValid = 0;
+			quality = 0; 
+			accelerator = 0;
+			collisionB = 0;
+			keyWG = 0;
+			BX = 0;
+			trkNumber = 0;
+			fullBX = 0;
+		}
 
-class Comparators :public Object {
+		ALCTs(TTree* t) : ALCTs()
+		{
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(isValid)), &isValid);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)), &quality);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(accelerator)), &accelerator);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(collisionB)), &collisionB);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyWG)), &keyWG);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)), &BX);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(trkNumber)), &trkNumber);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(fullBX)), &fullBX);
+		}
+
+		unsigned int size() const 
+		{
+			return ch_id ? ch_id->size() : 0;
+		}
+
+		std::vector<size16>* ch_id;
+		std::vector<size8>* isValid;
+		std::vector<size8>* quality;
+		std::vector<size8>* accelerator;
+		std::vector<size8>* collisionB;
+		std::vector<size8>* keyWG;
+		std::vector<size8>* BX;
+		std::vector<size8>* trkNumber;
+		std::vector<size8>* fullBX;
+};
+
+class Wires : public Object 
+{
+	public: 
+		Wires() : Object("wire")
+		{
+			ch_id = 0;
+			group = 0;
+			lay = 0;
+			time_bin = 0;
+			BX = 0;
+			time_bins_on = 0;
+		}
+
+		Wires(TTree* t) : Wires()
+		{
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(group)), &group);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)), &lay);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(time_bin)), &time_bin);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)), &BX);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(time_bins_on)), &time_bins_on);
+		}
+
+		unsigned int size() const 
+		{
+			return ch_id ? ch_id->size() : 0;
+		}
+
+		std::vector<size16>* ch_id;
+		std::vector<int>* group;
+		std::vector<size8>* lay;
+		std::vector<int>* time_bin;
+		std::vector<int>* BX;
+		std::vector<std::vector<int>>* time_bins_on;
+};
+
+class Strips : public Object
+{
+	public:
+		Strips() : Object("strip")
+		{
+			ch_id = 0;
+			lay = 0;
+			num = 0;
+			ADC = 0;
+			L1APhase = 0;
+			ADCOverflow = 0;
+			OverlappedSample = 0;
+			Errorstat = 0;
+		}
+
+		Strips(TTree* t) : Strips()
+		{
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)), &lay);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(num)), &num);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ADC)), &ADC);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(L1APhase)), &L1APhase);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ADCOverflow)), &ADCOverflow);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(OverlappedSample)), &OverlappedSample);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(Errorstat)), &Errorstat);
+		}
+
+		unsigned int size() const 
+		{
+			return ch_id ? ch_id->size() : 0;
+		}
+	
+		std::vector<size16>* ch_id;
+		std::vector<size8>* lay;
+		std::vector<int>* num;
+		std::vector<std::vector<int>>* ADC;
+		std::vector<std::vector<int>>* L1APhase;
+		std::vector<std::vector<uint16_t>>* ADCOverflow;
+		std::vector<std::vector<uint16_t>>* OverlappedSample;
+		std::vector<std::vector<uint16_t>>* Errorstat;
+};
+
+class Comparators : public Object {
 public:
 	Comparators() : Object("comp") {
 		ch_id = 0;
@@ -438,12 +556,12 @@ public:
 		nTimeOn = 0;
 	}
 	Comparators(TTree* t) : Comparators(){
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(ch_id))).c_str(), &ch_id);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(lay))).c_str(), &lay);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(strip))).c_str(), &strip);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(halfStrip))).c_str(), &halfStrip);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(bestTime))).c_str(), &bestTime);
-		t->SetBranchAddress((name+'_'+string(GET_VARIABLE_NAME(nTimeOn))).c_str(), &nTimeOn);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)), &lay);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(strip)), &strip);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(halfStrip)), &halfStrip);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(bestTime)), &bestTime);
+		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(nTimeOn)), &nTimeOn);
 	}
 
 	unsigned int size() const {

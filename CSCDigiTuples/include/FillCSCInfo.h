@@ -622,7 +622,6 @@ public:
 		delete trkNumber;
 		delete keyStrip;
 	}
-	;
 
 	virtual void reset() {
 		ch_id->clear();
@@ -642,6 +641,160 @@ public:
 
 };
 
+class FillALCTInfo : public CSCInfo::ALCTs, public FillInfo 
+{
+	public: 
+		FillALCTInfo(TreeContainer& tree) :
+			ALCTs(),
+			FillInfo(name,tree)
+		{
+			ch_id = new std::vector<size16>();
+			isValid = new std::vector<size8>();
+			quality = new std::vector<size8>();
+			accelerator = new std::vector<size8>();
+			collisionB = new std::vector<size8>();
+			keyWG = new std::vector<size8>();
+			BX = new std::vector<size8>();
+			trkNumber = new std::vector<size8>();
+			fullBX = new std::vector<size8>();
+
+			book(GET_VARIABLE_NAME(ch_id),*ch_id);
+			book(GET_VARIABLE_NAME(isValid),*isValid);
+			book(GET_VARIABLE_NAME(quality),*quality);
+			book(GET_VARIABLE_NAME(accelerator),*acclerator);
+			book(GET_VARIABLE_NAME(collisionB),*collisionB);
+			book(GET_VARIABLE_NAME(keyWG),*keyWG);
+			book(GET_VARIABLE_NAME(BX),*BX);
+			book(GET_VARIABLE_NAME(trkNumber),*trkNumber);
+			book(GET_VARIABLE_NAME(fullBX),*fullBX);
+		}
+
+		virtual ~FillALCTInfo()
+		{
+			delete ch_id;
+			delete isValid;
+			delete quality;
+			delete accelerator; 
+			delete collisionB;
+			delete keyWG;
+			delete BX;
+			delete trkNumber;
+			delete fullBX;
+		}
+
+		virtual void reset()
+		{
+			ch_id->clear();
+			isValid->clear();
+			quality->clear();
+			accelerator->clear(); 
+			collisionB->clear();
+			keyWG->clear();
+			BX->clear();
+			trkNumber->clear();
+			FBX->clear();
+		}
+
+		void fill(const CSCALCTDigiCollections &alcts); 
+}
+
+class FillWireInfo : public CSCInfo::Wires, public FillInfo 
+{
+	public: 
+		FillALCTInfo(TreeContainer& tree) :
+			Wires(),
+			FillInfo(name,tree)
+		{
+			ch_id = new std::vector<size16>();
+			group = new std::vector<int>();
+			lay = new std::vector<size8>();
+			time_bin = new std::vector<int>();
+			BX = new std::vector<int>();
+			time_bins_on = new std::vector<std::vector<int>>();
+
+			book(GET_VARIABLE_NAME(ch_id),*ch_id);
+			book(GET_VARIABLE_NAME(group),*group);
+			book(GET_VARIABLE_NAME(lay),*lay);
+			book(GET_VARIABLE_NAME(time_bin),*time_bin);
+			book(GET_VARIABLE_NAME(BX),*BX);
+			book(GET_VARIABLE_NAME(time_bins_on),*time_bins_on);
+		}
+
+		virtual ~FillWireInfo()
+		{
+			delete ch_id;
+			delete group
+			delete lay;
+			delete time_bin;
+			delete BX;
+			delete time_bins_on;
+		}
+
+		virtual void reset()
+		{
+			ch_id->clear();
+			group->clear();
+			lay->clear();
+			time_bin->clear(); 
+			BX->clear();
+			time_bins_on->clear();
+		}
+
+		void fill(const CSCWireDigiCollections &wires); 
+}
+
+class FillStripInfo : public CSCInfo::Strips, public FillInfo
+{
+	public:
+		FillStripInfo(TreeContainer &tree):
+			Strips(),
+			FillInfo(name,tree)
+		{
+			ch_id = new std::vector<size16>();
+			lay = new std::vector<size8>();
+			num = new std::vector<int>();
+		  ADC = new std::vector<std::vector<int>>();
+			L1APhase = new std::vector<std::vector<int>>();
+			ADCOverflow = new std::vector<std::vector<uint16_t>>();
+			OverlappedSample = new std::vector<std::vector<uint16_t>>();
+			Errorstat = new std::vector<std::vector<uint16_t>>();
+
+			book(GET_VARIABLE_NAME(ch_id), *ch_id);
+			book(GET_VARIABLE_NAME(lay), *lay);
+			book(GET_VARIABLE_NAME(num), *num);
+			book(GET_VARIABLE_NAME(ADC), *ADC);
+			book(GET_VARIABLE_NAME(L1APhase), *L1APhase);
+			book(GET_VARIABLE_NAME(ADCOverflow), *ADCOverflow);
+			book(GET_VARIABLE_NAME(OverlappedSample), *OverlappedSample);
+			book(GET_VARIABLE_NAME(Errorstat), *Errorstat);
+		}
+
+		virtual ~FillStripInfo()
+		{
+			delete ch_id;
+			delete lay;
+			delete num;
+			delete ADC;
+			delete L1APhase;
+			delete ADCOverflow;
+			delete OverlappedSample;
+			delete Errorstat;
+		}
+
+		virtual reset()
+		{
+			ch_id->clear();
+			lay->clear();
+			num->clear();
+			ADC->clear();
+			L1APhase->clear();
+			ADCOverflow->clear();
+			OverlappedSample->clear();
+			Errorstat->clear();
+		}
+
+		void fill(const CSCStripDigiCollection &strips)
+};
 
 class FillCompInfo : public CSCInfo::Comparators, public FillInfo {
 public:
@@ -662,10 +815,8 @@ public:
 		book(GET_VARIABLE_NAME(halfStrip), *halfStrip);
 		book(GET_VARIABLE_NAME(bestTime), *bestTime);
 		book(GET_VARIABLE_NAME(nTimeOn), *nTimeOn);
-
-
-
   }
+
   virtual ~FillCompInfo() {
 	  delete ch_id;
 	  delete lay;

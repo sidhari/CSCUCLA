@@ -511,7 +511,7 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         lctKWG.clear();
         lctKHS.clear();
         lctBend.clear();
-        lctBX.clear();
+        lctBX.clear();d
 
         csctflctId.clear();
         csctflctQ.clear();

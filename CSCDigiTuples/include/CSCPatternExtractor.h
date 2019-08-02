@@ -136,6 +136,9 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         FillRecHitInfo recHitInfo;
         FillLCTInfo lctInfo;
         FillCLCTInfo clctInfo;
+        FillALCTInfo alctInfo;
+        FillWireInfo wireInfo;
+        FillStripInfo stripInfo;
         FillCompInfo compInfo;
         FillPFInfo pfInfo;
         //gen
