@@ -12,6 +12,9 @@ src/root/*
 src/LUTBuilder
 src/LUTBuilder_TEMPLATE
 src/Analyzer_TEMPLATE
+src/*Analyzer
+src/*Tester
+src/*Creator
 python/quick_hacks/*
 ../CSCDigiTuples/test/makeCSCDigiTree_dummy_cfg.py
 ../CSCDigiTuples/test/makeCSCDigiTree_testCameron_cfg.py

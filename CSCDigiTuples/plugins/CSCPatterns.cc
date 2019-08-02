@@ -901,7 +901,6 @@ CSCPatterns::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 }
                 strip.push_back(stripBuf);
                 stripADCs.push_back(stripADCBuf);
-
             }
 
         }// Matched CSCSegment loop
