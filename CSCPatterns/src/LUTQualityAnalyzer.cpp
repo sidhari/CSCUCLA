@@ -218,7 +218,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                   
     }
 
-    bayesLUT.sort("xlpkemsc");
+    bayesLUT.sort("slxpmcek");
 
     bayesLUT.setqual();
 

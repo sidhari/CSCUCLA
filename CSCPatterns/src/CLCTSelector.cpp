@@ -64,7 +64,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	//load LUT
 
 	LUT lut(string("lut"));
-	lut.loadText(string("dat/luts/lpkxemcs.root")); //best so far: lpkxemcs
+	lut.loadText(string("dat/luts/slxpmcek.root")); //best so far: slxpmcek.root
 	if(lut.makeFinal())
 	{
 		return -1;
@@ -85,9 +85,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
     EmulatedCLCTs emulatedclcts(t_emu,2);	
 
-	vector<CSCPattern>* newEnvelopes = createNewPatterns();	
-
-	//LUT lut(string("lut"),string("dat/luts/lkxpscme.root"));
+	vector<CSCPattern>* newEnvelopes = createNewPatterns();
 
 	//
 	//COUNTERS
@@ -107,11 +105,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	TH1F* firstclctmatchespt = new TH1F ("muon_segments_matched_to_first_CLCT_pt", "Muon Segments matched to first CLCT: pt", 50, 0, 100);
 	TH1F* secondclctmatchespt = new TH1F ("muon_segments_matched_to_second_CLCT_pt", "Muon Segments matched to second CLCT: pt", 50, 0, 100);
 	TH1F* otherindexclctmatchespt = new TH1F ("muon_segments_matched_to_other_CLCTs_pt", "Muon Segments matched to other CLCTs: pt", 50, 0, 100);
-	TH1F* effeciency1 = new TH1F ("h1_div_h2", "h1/h2", 50, 0, 100);
-	TH1F* effeciency2 = new TH1F ("h1_div_h3", "h1/h3", 50, 0, 100);
-	TH1F* effeciency3 = new TH1F ("h1_div_h4", "h1/h4", 50, 0, 100);
+	TH1F* effeciency1 = new TH1F ("first_index_efficiency", "First Index Efficiency;Pt[GeV];Efficiency", 50, 0, 100);
+	TH1F* effeciency2 = new TH1F ("second_index_efficiency", "Second Index Efficiency;Pt[GeV];Efficiency", 50, 0, 100);
+	TH1F* effeciency3 = new TH1F ("other_indices_efficiency", "Other Indices Efficiency;Pt[GeV];Efficiency", 50, 0, 100);
 
-	TH1F* matchedclctindex = new TH1F ("matched_clct_index", "Matched CLCT Index", 12, -2, 10);
+	TH1F* matchedclctindex = new TH1F ("matched_clct_index", "Matched CLCT Index", 10, 0, 10);
 
 	//
 	// EVENT LOOP
@@ -277,6 +275,23 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				}
 			}	
 
+			unsigned int segcount  = 0;
+
+			for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+			{
+				if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+				continue;
+
+				if(segments.mu_id->at(iseg) == -1)
+				continue;
+
+				segcount++;
+
+			}
+
+			/*if(segcount != 1 || finalclctcandidates.size() != 2)
+			continue;*/ 
+
 			//print CLCTs post sort here (TO DO)	
 
 			vector<int> matchedclctindices;
@@ -382,7 +397,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	effeciency3->Write();
 	matchedclctindex->Write();
 
-	cout << totalmuonsegments << " " << totalmatches << " " << firstclctmatches << " " << secondclctmatches << " " << otherindexclctmatches << endl << endl;
+	cout << totalmatches << " " << firstclctmatches << " " << secondclctmatches << " " << otherindexclctmatches << endl << endl;
 
 
 	cout << "Wrote to file: " << outputfile << endl;

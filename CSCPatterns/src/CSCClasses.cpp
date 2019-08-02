@@ -555,6 +555,7 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 	 * if the parameters associated with c1 are
 	 * better than those of c2
 	 */
+	 
 
 	// we don't have an entry for c2,
 	// so take c1 as being better
@@ -572,6 +573,7 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 		
 	}
 	return false;
+
 };
 
 //

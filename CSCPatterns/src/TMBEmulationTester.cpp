@@ -900,34 +900,6 @@ int TMBEmulationTester::run(string inputfile, string outputfile, int start, int 
 }
 
 
-<<<<<<< HEAD:CSCPatterns/src/testTMBEmulation.cpp
-int main(int argc, char* argv[])
-{
-	try {
-		switch(argc){
-		case 3:
-			return testTMBEmulation(string(argv[1]), string(argv[2]));
-		case 4:
-			return testTMBEmulation(string(argv[1]), string(argv[2]),0, atoi(argv[3]));
-		case 5:
-			return testTMBEmulation(string(argv[1]), string(argv[2]), atoi(argv[3]), atoi(argv[4]));
-		default:
-			cout << "Gave "<< argc-1 << " arguments, usage is:" << endl;
-			cout << "./<name> inputFile outputFile (events)" << endl;
-			return -1;
-		}
-	}catch( const char* msg) {
-		cerr << "ERROR: " << msg << endl;
-		return -1;
-	}
-	return 0;
-}
-
-
-
-
-=======
->>>>>>> 2e3e7b1156c1cad1ca4fe5f6f49e11f75d642b6b:CSCPatterns/src/TMBEmulationTester.cpp
 
 
 
