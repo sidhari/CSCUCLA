@@ -656,7 +656,7 @@ class FillALCTInfo : public CSCInfo::ALCTs, public FillInfo
 			keyWG = new std::vector<size8>();
 			BX = new std::vector<size8>();
 			trkNumber = new std::vector<size8>();
-			fullBX = new std::vector<size8>();
+			fullBX = new std::vector<size16>();
 
 			book(GET_VARIABLE_NAME(ch_id),*ch_id);
 			book(GET_VARIABLE_NAME(isValid),*isValid);

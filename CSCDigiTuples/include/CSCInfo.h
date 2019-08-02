@@ -464,7 +464,7 @@ class ALCTs : public Object
 		std::vector<size8>* keyWG;
 		std::vector<size8>* BX;
 		std::vector<size8>* trkNumber;
-		std::vector<size8>* fullBX;
+		std::vector<size16>* fullBX;
 };
 
 class Wires : public Object 

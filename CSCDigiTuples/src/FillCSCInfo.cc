@@ -440,7 +440,7 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 
 void FillALCTInfo::fill(const CSCALCTDigiCollection &alcts)
 {
-	CSCALCTDigiCollection::const_iterator chamber;
+	CSCALCTDigiCollection::DigiRangeIterator chamber;
 	for (chamber = alcts.begin(); chamber!=alcts.end(); chamber++)
 	{
 		CSCDetId id = (*chamber).first;
@@ -472,7 +472,7 @@ void FillALCTInfo::fill(const CSCALCTDigiCollection &alcts)
 			keyWG				->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG(),"alct_keyWG"));
 			BX					->push_back(CSCHelper::convertTo<size8>(digiItr->getBX(),"alct_BX"));
 			trkNumber		->push_back(CSCHelper::convertTo<size8>(digiItr->getTrknmb(),"alct_trkNumber"));
-			fullBX			->push_back(CSCHelper::convertTo<size8>(digiItr->getFullBX(),"alct_fullBX"));
+			fullBX			->push_back(CSCHelper::convertTo<size16>(digiItr->getFullBX(),"alct_fullBX"));
 		}
 	}
 }
