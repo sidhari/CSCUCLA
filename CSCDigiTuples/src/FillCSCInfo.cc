@@ -312,11 +312,20 @@ void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC,
 	LocalPoint lay4zeroIn3 = segLay3->toLocal(lay4zero);
 	float cm2lay = fabs(lay4zeroIn3.z());
 
+	//correct for me11a/b
+	const float strip = segLay3Geo->strip(tP);
+	int st = id.station();
+	int ri = id.ring();
+	if(st == 1 && (ri == 1|| ri ==4)){
+		//we need to manually adjust this because they don't for us
+		if(strip > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+	}
+
 
 	//fill everything
 	mu_id->push_back(mu_index);
-	ch_id->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
-	pos_x->push_back(segLay3Geo->strip(tP));
+	ch_id->push_back(CSCHelper::serialize(st, ri, id.chamber(), id.endcap()));
+	pos_x->push_back(strip);
 	pos_y->push_back(segment.localPosition().y());
 	dxdz->push_back(segment.localDirection().x() / cm2strip / ( segment.localDirection().z() / cm2lay));
 	dydz->push_back(segment.localDirection().y() / segment.localDirection().z());

@@ -128,9 +128,7 @@ class  CSCPatternExtractor : public edm::EDAnalyzer {
         string selection;
         edm::InputTag CSCSegmentTags_;
 
-
         TreeContainer tree;
-
 
         FillEventInfo eventInfo;
         FillMuonInfo muonInfo;

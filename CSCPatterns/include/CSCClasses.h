@@ -68,7 +68,7 @@ private:
  */
 class CSCPattern {
 public:
-	CSCPattern(unsigned int id, bool isLegacy, const bool pat_[MAX_PATTERN_WIDTH][NLAYERS]);
+	CSCPattern(unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]);
 	CSCPattern(string name, unsigned int id, bool isLegacy, const bool pat[MAX_PATTERN_WIDTH][NLAYERS]);
 	CSCPattern(const CSCPattern &obj);
 	CSCPattern();

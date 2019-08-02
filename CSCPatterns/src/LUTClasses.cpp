@@ -309,12 +309,8 @@ int LUTEntry::makeFinal(){
 // LUT
 //
 
-LUT::LUT():
-	LUT("Default")
-{
-}
 
-LUT::LUT(const string& name, bool isLegacy):
+LUT::LUT(const string& name, const bool isLegacy):
 	_name(name),
 _isLegacy(isLegacy)
 {
@@ -326,12 +322,21 @@ _isLegacy(isLegacy)
 	_orderedLUT = set<pair<LUTKey,LUTEntry>, LUTLambda>(_lutFunc);
 }
 
-LUT::LUT(const string& name, const string& filepath, bool isLegacy):
+LUT::LUT():
+	LUT("Default")
+{
+}
+
+LUT::LUT(const string& name, const string& filepath, const bool isLegacy):
 	LUT(name,isLegacy)
 {
 	if(loadText(filepath)){
 		throw "Error, can't load file";
 	}
+}
+
+LUT::LUT(const string& name, const char*  lutfile, const bool isLegacy):
+	LUT(name, string(lutfile),isLegacy){
 }
 
 int LUT::setEntry(const LUTKey& k,const LUTEntry& e){
@@ -504,6 +509,7 @@ int LUT::loadROOT(const string& rootfile) {
 	return 0;
 }
 
+//TODO: verify that non-existent file spits out warning and fails
 int LUT::loadText(const string& textfile){
 	if(DEBUG > 0) cout << "Loading lut from textfile: " << textfile << endl;
 	if(_isFinal) return -1;

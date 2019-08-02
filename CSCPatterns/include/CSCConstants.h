@@ -178,7 +178,7 @@ const bool id8Bools[NLAYERS][MAX_PATTERN_WIDTH] = {
 		{0,0,0,1,1,1,0,0,0,0,0}
 		};
 
-bool idABools[NLAYERS][MAX_PATTERN_WIDTH] = {
+const bool idABools[NLAYERS][MAX_PATTERN_WIDTH] = {
 		{0,0,0,0,1,1,1,0,0,0,0},
 		{0,0,0,0,0,1,0,0,0,0,0},
 		{0,0,0,0,0,1,0,0,0,0,0},
