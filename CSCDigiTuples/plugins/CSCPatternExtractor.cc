@@ -48,7 +48,10 @@ segmentInfo(tree),
 recHitInfo(tree),
 lctInfo(tree),
 clctInfo(tree),
+alctInfo(tree),
 compInfo(tree),
+wireInfo(tree),
+stripInfo(tree),
 pfInfo(tree),
 genInfo(tree),
 simHitInfo(tree),
@@ -259,6 +262,11 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     tree.h.h_eventCuts->Fill(EVENT_CUTS::hasSegments);
     tree.h.h_muonCuts->Fill(MUON_CUTS::eventHasSegments, muons->size());
 
+	edm::Handle<CSCWireDigiCollection> wireDigi;
+	iEvent.getByToken(wd_token, wireDigi);
+
+	edm::Handle<CSCStripDigiCollection> stripDigi;
+	iEvent.getByToken(sd_token, stripDigi);
 
     edm::Handle<CSCComparatorDigiCollection> compDigi;
     iEvent.getByToken(cod_token, compDigi);
@@ -268,6 +276,9 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 
     edm::Handle<CSCCorrelatedLCTDigiCollection> cscLCTDigi;
     iEvent.getByToken(ld_token, cscLCTDigi);
+
+	edm::Handle<CSCALCTDigiCollection> cscALCTDigi;
+	iEvent.getByToken(ad_token,cscALCTDigi);
 
     edm::Handle<CSCCLCTDigiCollection> cscCLCTDigi;
     iEvent.getByToken(cd_token, cscCLCTDigi);
@@ -364,8 +375,10 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
     recHitInfo.fill(unmatched_rhs, -1);
     lctInfo.fill(*cscLCTDigi);
     clctInfo.fill(*cscCLCTDigi);
+	alctInfo.fill(*cscALCTDigi);
+	wireInfo.fill(*wireDigi);
+	stripInfo.fill(*stripDigi);
     compInfo.fill(*compDigi);
-
 
 	tree.fill();
 }

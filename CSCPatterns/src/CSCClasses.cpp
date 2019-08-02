@@ -879,3 +879,26 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 	}
 	return *this;
 }
+
+/*ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
+		unsigned int endcap, unsigned int chamber, bool isWire) :
+				_isWire(isWire),
+				_station(station),
+				_ring(ring),
+				_endcap(endcap),
+				_chamber(chamber)
+{
+	bool me11a = _station == 1 && _ring == 4;
+	bool me11b = _station == 1 && _ring == 1;
+	bool me13 = _station == 1 && _ring == 3;
+	//test using only one CFEB
+	bool oneCFEB = _station == 0 && _ring == 0;
+
+	//me11a, me11b, oneCFEB all have their key half strip layer shifted over by one
+	//_minHs = me11a || me11b || oneCFEB;
+	for(unsigned int i = 0; i < N_KWG; i++){
+		for(unsigned int j = 0; j < NLAYERS; j++){
+			_hits[i][j] = 0;
+		}
+	}
+}*/
