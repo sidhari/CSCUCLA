@@ -37,11 +37,11 @@ public:
 	const string name;
 	virtual ~Object(){};
 	Object(const char *n): name(n){}
-	inline const char *branchify(char const * varname)
-	{
-		return (name+'_'+string(varname)).c_str();
+	std::string branchify (const char * varname) 
+	{	
+		return (name+'_'+string(varname));		
 	}
-	inline const char *branchify2(char const * varname)
+	inline const char *branchify2(const char * varname)
 	{
 		return (name+string(varname)).c_str();
 	}
@@ -57,8 +57,9 @@ public:
 		NSegmentsInEvent = 0;
 	}
 	Event(TTree* t): Event(){
-		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(EventNumber)), &EventNumber);
-		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(RunNumber)), &RunNumber);
+		t->SetBranchAddress((name + '_' + string(GET_VARIABLE_NAME(EventNumber))).c_str(), &EventNumber);
+		t->SetBranchAddress((name + '_' + string(GET_VARIABLE_NAME(RunNumber))).c_str(), &RunNumber);
+		cout << branchify(GET_VARIABLE_NAME(LumiSection)).c_str() << endl << endl;
 		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(LumiSection)),&LumiSection);
 		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BXCrossing)), &BXCrossing);
 		if(t->GetBranch(branchify(GET_VARIABLE_NAME(NSegmentsInEvent)))) { //in the event you are using legacy trees, defaults the value to 0
