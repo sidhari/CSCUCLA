@@ -264,7 +264,7 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 	edm::Handle<CSCWireDigiCollection> wireDigi;
 	iEvent.getByToken(wd_token, wireDigi);
 
-	edm::Handle<CSCStripCollection> stripDigi;
+	edm::Handle<CSCStripDigiCollection> stripDigi;
 	iEvent.getByToken(sd_token, stripDigi);
 
     edm::Handle<CSCComparatorDigiCollection> compDigi;

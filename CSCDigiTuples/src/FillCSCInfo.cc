@@ -438,7 +438,7 @@ void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
 	}
 }
 
-void FillALCTInfo::fill(const CSCALCTDigiCollections &alcts)
+void FillALCTInfo::fill(const CSCALCTDigiCollection &alcts)
 {
 	CSCALCTDigiCollection::const_iterator chamber;
 	for (chamber = alcts.begin(); chamber!=alcts.end(); chamber++)
@@ -454,13 +454,15 @@ void FillALCTInfo::fill(const CSCALCTDigiCollections &alcts)
 
 		for (digiItr = range.first; digiItr!=range.second; digiItr++)
 		{
+			//TODO: Is an ALCT in ME11A/B meaningful?
+			/*
 			if (st == 1 && (ri == 1|| ri ==4))
 			{
-    		// we need to manually adjust this because they don't for us
-    		// getStrip returns a strip this time (different than before)
-    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
-    		else ri = 1; // resets ring in case where multiple clcts in ME11
-    	}
+				// we need to manually adjust this because they don't for us
+				// getStrip returns a strip this time (different than before)
+				if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+				else ri = 1; // resets ring in case where multiple clcts in ME11
+			}*/
 
 			ch_id				->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			isValid			->push_back(CSCHelper::convertTo<size8>(digiItr->isValid(),"alct_isValid"));
@@ -469,7 +471,7 @@ void FillALCTInfo::fill(const CSCALCTDigiCollections &alcts)
 			collisionB	->push_back(CSCHelper::convertTo<size8>(digiItr->getCollisionB(),"alct_collisionB"));
 			keyWG				->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG(),"alct_keyWG"));
 			BX					->push_back(CSCHelper::convertTo<size8>(digiItr->getBX(),"alct_BX"));
-			trkNumber		->push_back(CSCHelper::convertTo<size8>(digiItr->getTrkNumber(),"alct_trkNumber"));
+			trkNumber		->push_back(CSCHelper::convertTo<size8>(digiItr->getTrknmb(),"alct_trkNumber"));
 			fullBX			->push_back(CSCHelper::convertTo<size8>(digiItr->getFullBX(),"alct_fullBX"));
 		}
 	}
@@ -503,33 +505,36 @@ void FillALCTInfo::fill(const CSCALCTDigiCollection& alcts){
 void FillWireInfo::fill(const CSCWireDigiCollection &wires)
 {
 	CSCWireDigiCollection::DigiRangeIterator chamber;
-	for (chamber = wires.begin(); chamber!= comps.end(); chamber++)
+	for (chamber = wires.begin(); chamber!= wires.end(); chamber++)
 	{
 		CSCDetId id = (*chamber).first;
 		unsigned int st = id.station();
-    unsigned int ri = id.ring();
-    unsigned int ch = id.chamber();
-    unsigned int ec = id.endcap();
+		unsigned int ri = id.ring();
+		unsigned int ch = id.chamber();
+		unsigned int ec = id.endcap();
 
 		const CSCWireDigiCollection::Range &range = (*chamber).second;
 		CSCWireDigiCollection::const_iterator digiItr;
 
 		for (digiItr = range.first; digiItr!= range.second; digiItr++)
 		{
+			//TODO: Is an ALCT in ME11A/B meaningful?
+			/*
 			if (st == 1 && (ri == 1|| ri ==4))
 			{
-    		// we need to manually adjust this because they don't for us
-    		// getStrip returns a strip this time (different than before)
-    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
-    		else ri = 1; // resets ring in case where multiple clcts in ME11
-    	}
+				// we need to manually adjust this because they don't for us
+				// getStrip returns a strip this time (different than before)
+				if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+				else ri = 1; // resets ring in case where multiple clcts in ME11
+			}
+			*/
 
 			ch_id					->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			group					->push_back(digiItr->getWireGroup());					
 			lay						->push_back(CSCHelper::convertTo<size8>(id.layer(), "wire_lay"));
-			time_bin			->push_back(digiItr->getTimeBin());
+			timeBin					->push_back(digiItr->getTimeBin());
 			BX						->push_back(digiItr->getWireGroupBX());
-			time_bins_on	->push_back(digiItr->getTimeBinsOn());
+			//time_bins_on	->push_back(digiItr->getTimeBinsOn());
 		}
 	}
 }
@@ -541,9 +546,9 @@ void FillStripInfo::fill(const CSCStripDigiCollection &strips)
 	{
 		CSCDetId id = (*chamber).first;
 		unsigned int st = id.station();
-    unsigned int ri = id.ring();
-    unsigned int ch = id.chamber();
-    unsigned int ec = id.endcap();
+		unsigned int ri = id.ring();
+		unsigned int ch = id.chamber();
+		unsigned int ec = id.endcap();
 
 		const CSCStripDigiCollection::Range &range = (*chamber).second;
 		CSCStripDigiCollection::const_iterator digiItr;
@@ -552,20 +557,20 @@ void FillStripInfo::fill(const CSCStripDigiCollection &strips)
 		{
 			if (st == 1 && (ri == 1|| ri ==4))
 			{
-    		// we need to manually adjust this because they don't for us
-    		// getStrip returns a strip this time (different than before)
-    		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
-    		else ri = 1; // resets ring in case where multiple clcts in ME11
-    	}
+				// we need to manually adjust this because they don't for us
+				// getStrip returns a strip this time (different than before)
+				if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
+				else ri = 1; // resets ring in case where multiple clcts in ME11
+			}
 
 			ch_id							->push_back(CSCHelper::serialize(st, ri, ch, ec));
 			lay								->push_back(CSCHelper::convertTo<size8>(id.layer(), "strip_lay"));
 			num								->push_back(digiItr->getStrip());
-			ADC								->push_back(digiItr->getADCCounts());
-			L1APhase					->push_back(digiItr->getL1APhase())
-			ADCOverflow				->push_back(digiItr->getADCOverflow());
-			OverlappedSample	->push_back(digiItr->getOverlappedSample());	
-			Errorstat					->push_back(digiItr->getErrorstat());
+			//			ADC								->push_back(digiItr->getADCCounts());
+			//			L1APhase					->push_back(digiItr->getL1APhase())
+			//			ADCOverflow				->push_back(digiItr->getADCOverflow());
+			//			OverlappedSample	->push_back(digiItr->getOverlappedSample());
+			//			Errorstat					->push_back(digiItr->getErrorstat());
 		}
 	}
 }

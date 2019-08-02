@@ -475,9 +475,9 @@ class Wires : public Object
 			ch_id = 0;
 			group = 0;
 			lay = 0;
-			time_bin = 0;
+			timeBin = 0;
 			BX = 0;
-			time_bins_on = 0;
+			//timeBinsOn = 0;
 		}
 
 		Wires(TTree* t) : Wires()
@@ -485,9 +485,9 @@ class Wires : public Object
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(group)), &group);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)), &lay);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(time_bin)), &time_bin);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBin)), &timeBin);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)), &BX);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(time_bins_on)), &time_bins_on);
+			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinsOn)), &timeBinsOn);
 		}
 
 		unsigned int size() const 
@@ -498,9 +498,9 @@ class Wires : public Object
 		std::vector<size16>* ch_id;
 		std::vector<int>* group;
 		std::vector<size8>* lay;
-		std::vector<int>* time_bin;
+		std::vector<int>* timeBin;
 		std::vector<int>* BX;
-		std::vector<std::vector<int>>* time_bins_on;
+		//std::vector<std::vector<int>>* timeBinsOn;
 };
 
 class Strips : public Object
@@ -511,11 +511,11 @@ class Strips : public Object
 			ch_id = 0;
 			lay = 0;
 			num = 0;
-			ADC = 0;
-			L1APhase = 0;
-			ADCOverflow = 0;
-			OverlappedSample = 0;
-			Errorstat = 0;
+			//ADC = 0;
+			//L1APhase = 0;
+			//ADCOverflow = 0;
+			//OverlappedSample = 0;
+			//Errorstat = 0;
 		}
 
 		Strips(TTree* t) : Strips()
@@ -523,11 +523,11 @@ class Strips : public Object
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)), &ch_id);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)), &lay);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(num)), &num);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ADC)), &ADC);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(L1APhase)), &L1APhase);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ADCOverflow)), &ADCOverflow);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(OverlappedSample)), &OverlappedSample);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(Errorstat)), &Errorstat);
+			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ADC)), &ADC);
+			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(L1APhase)), &L1APhase);
+			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ADCOverflow)), &ADCOverflow);
+			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(OverlappedSample)), &OverlappedSample);
+			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(Errorstat)), &Errorstat);
 		}
 
 		unsigned int size() const 
@@ -538,11 +538,11 @@ class Strips : public Object
 		std::vector<size16>* ch_id;
 		std::vector<size8>* lay;
 		std::vector<int>* num;
-		std::vector<std::vector<int>>* ADC;
-		std::vector<std::vector<int>>* L1APhase;
-		std::vector<std::vector<uint16_t>>* ADCOverflow;
-		std::vector<std::vector<uint16_t>>* OverlappedSample;
-		std::vector<std::vector<uint16_t>>* Errorstat;
+		//std::vector<std::vector<int>>* ADC;
+		//std::vector<std::vector<int>>* L1APhase;
+		//std::vector<std::vector<uint16_t>>* ADCOverflow;
+		//std::vector<std::vector<uint16_t>>* overlappedSample;
+		//std::vector<std::vector<uint16_t>>* errorstat;
 };
 
 class Comparators : public Object {
