@@ -766,7 +766,7 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 	return *this;
 }
 
-/*ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
+ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 		unsigned int endcap, unsigned int chamber, bool isWire) :
 				_isWire(isWire),
 				_station(station),
@@ -787,4 +787,4 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 			_hits[i][j] = 0;
 		}
 	}
-}*/
+}

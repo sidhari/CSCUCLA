@@ -22,6 +22,7 @@
 #include "../include/CSCConstants.h"
 #include "../include/LUTClasses.h"
 #include "../include/CSCInfo.h"
+#include "../../CSCDigiTuples/include/FillCSCInfo.h"
 
 using namespace std;
 
@@ -131,6 +132,79 @@ private:
 
 };
 
+class ALCTCandidate
+{
+	public:
+	
+
+};
+
+class ALCTCandidateCollection
+{
+	public:
+		ALCTs() : Object("alct_cand")
+		{
+			ch_id = 0;
+			quality = 0; 
+			accelerator = 0;
+			collisionB = 0;
+			keyWG = 0;
+			BX = 0;
+			trkNumber = 0;
+			fullBX = 0;
+		}
+
+		ALCTs(TTree* t) : ALCTs()
+		{
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(accelerator)).c_str(), &accelerator);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(collisionB)).c_str(), &collisionB);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyWG)).c_str(), &keyWG);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(trkNumber)).c_str(), &trkNumber);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(fullBX)).c_str(), &fullBX);
+		}
+
+		unsigned int size() const 
+		{
+			return ch_id ? ch_id->size() : 0;
+		}
+
+		std::vector<size16>* ch_id;
+		std::vector<size8>* quality; 
+		std::vector<size8>* accelerator;
+		std::vector<size8>* collisionB;
+		std::vector<size8>* keyWG;
+		std::vector<size8>* BX; 			//bunch crossing
+		std::vector<size8>* trkNumber;
+		std::vector<size16>* fullBX;
+};
+
+class FillALCTCandidateInfo: public ALCTCandidateCollection, public FillInfo
+{
+	public:
+		FillALCTCandidateCollection(TreeContainer &tree):
+			ALCTCandidateCollection(),
+			FillInfo(name,tree)
+		{
+
+		}
+
+		virtual ~FillALCTCandidateCollection()
+		{
+
+		}
+
+		virtual void reset()
+		{
+
+		}
+
+		void splat(ALCTCandidate &alct_cand, unsigned int chamberHash);
+
+		void fill(const std::vector<ALCTCandidate> &alct_cands, unsigned int chamberHash);
+};
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber
@@ -170,10 +244,9 @@ private:
 
 	float _meanHS;
 	float _stdHS;
-
 };
 
-/*class ALCT_ChamberHits
+class ALCT_ChamberHits
 {
 	public:
 		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
@@ -189,16 +262,23 @@ private:
 		const unsigned int _endcap;
 		const unsigned int _chamber;
 
+		unsigned int minWi() const {return _minWi;}
+		unsigned int maxWi() const {return _maxWi;}
+		unsigned int nhits()const {return _nhits;}
+
+		float hitMeanWi();
+		float hitStdWi();
+
 		int _hits[N_KWG][NLAYERS];
 
 		int fill(const CSCInfo::Wires& w);
 		void print() const; //deprecated
-		friend ostream& operator<<(ostream& os, const ChamberHits& c);
-	private:
 		
-}*/
+		//friend ostream& operator<<(ostream& os, const ChamberHits& c);
+		//ALCT_ChamberHits& operator-=(const ALCTCandidate& mi);
 
-
+	private:
+};
 
 
 #endif /* PATTERNFITTER_H_ */
