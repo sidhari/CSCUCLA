@@ -135,8 +135,9 @@ private:
 class ALCTCandidate
 {
 	public:
-	
+		ALCTCandidate();
 
+		void ~ALCTCandidate();
 };
 
 class ALCTCandidateCollection
@@ -154,7 +155,7 @@ class ALCTCandidateCollection
 			fullBX = 0;
 		}
 
-		ALCTs(TTree* t) : ALCTs()
+		ALCTCandidateCollection(TTree* t) : ALCTs()
 		{
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
@@ -234,8 +235,8 @@ public:
 	int fill(const CSCInfo::Comparators& c);
 	int fill(const CSCInfo::RecHits& r);
 	void print() const; //deprecated
+	
 	friend ostream& operator<<(ostream& os, const ChamberHits& c);
-
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
 	unsigned int _nhits;
@@ -254,7 +255,7 @@ class ALCT_ChamberHits
 		
 		ALCT_ChamberHits(const ALCT_ChamberHits &c);
 		
-		~ChamberHits(){}	
+		~ALCT_ChamberHits(){}
 
 		const bool _isWire;
 		const unsigned int _station;
@@ -262,22 +263,28 @@ class ALCT_ChamberHits
 		const unsigned int _endcap;
 		const unsigned int _chamber;
 
-		unsigned int minWi() const {return _minWi;}
-		unsigned int maxWi() const {return _maxWi;}
-		unsigned int nhits()const {return _nhits;}
+		unsigned int get_minWi() const {return _minWi;}
+		unsigned int get_maxWi() const {return _maxWi;}
+		unsigned int get_nhits() const {return _nhits;}
 
-		float hitMeanWi();
-		float hitStdWi();
+		float get_hitMeanWi();
+		float get_hitStdWi();
 
 		int _hits[N_KWG][NLAYERS];
 
 		int fill(const CSCInfo::Wires& w);
-		void print() const; //deprecated
+		//void print() const; //deprecated
 		
-		//friend ostream& operator<<(ostream& os, const ChamberHits& c);
-		//ALCT_ChamberHits& operator-=(const ALCTCandidate& mi);
+		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
+		ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
 
 	private:
+		unsigned int _minWi;
+		unsigned int _maxWi;
+		unsigned int _nhits;
+
+		float _meanWi;
+		float _stdWi;
 };
 
 

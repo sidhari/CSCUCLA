@@ -79,6 +79,10 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 
 		t->GetEntry(i);
 
+		/**********************
+	 	* CHAMBER LOOP
+	 	**********************/
+
 		for(unsigned int chamberHash = 0; chamberHash < (unsigned int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++)
 		{
 			CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
@@ -89,6 +93,9 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 			unsigned int CH = c.chamber;
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+
+			ALCT_ChamberHits wireHits(ST, RI, EC, CH);
+			if (wireHits.fill(wires)) return -1;
 		}
 		alct_t_emu->Fill();
 	}

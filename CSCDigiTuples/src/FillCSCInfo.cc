@@ -159,7 +159,8 @@ void FillSimHitsInfo::fill(const vector<PSimHit>& simhits) {
 	}
 }
 
-void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalBarrelGeometry* theEcal) {
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalBarrelGeometry* theEcal) 
+{
 	for(auto& cal : calohits) 
 	{
 		auto id = EBDetId(cal.id());
@@ -182,7 +183,8 @@ void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalBarrelGe
 	}
 }
 
-void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalEndcapGeometry* theEcal) {
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalEndcapGeometry* theEcal) 
+{
 	for(auto& cal : calohits) 
 	{
 		auto id = EEDetId(cal.id());
@@ -227,7 +229,8 @@ void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const EcalPreshowe
 }
 
 //TODO: could merge ECAL / HCAL fill functions
-void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const HcalGeometry* theHcal){
+void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const HcalGeometry* theHcal)
+{
 	for(auto& cal: calohits){
 		auto id = HcalDetId(cal.id());
 		if(!theHcal->present(id)){
@@ -246,7 +249,8 @@ void FillCaloHitsInfo::fill(const vector<PCaloHit>& calohits, const HcalGeometry
 }
 
 
-void FillPFInfo::fill(const vector<reco::PFCandidate>& pfCand) {
+void FillPFInfo::fill(const vector<reco::PFCandidate>& pfCand) 
+{
 	for(const auto& cand : pfCand) {
 		pdg_id		->push_back(cand.pdgId());
 		particleId	->push_back(cand.particleId());
@@ -272,7 +276,8 @@ void FillMuonInfo::fill(const reco::Muon& muon) {
 	isTracker	->push_back(muon.isTrackerMuon());
 }
 
-size16 FillSegmentInfo::findRecHitIdx(const CSCRecHit2D& hit, const CSCRecHit2DCollection* allRecHits){
+size16 FillSegmentInfo::findRecHitIdx(const CSCRecHit2D& hit, const CSCRecHit2DCollection* allRecHits)
+{
   int idx = -1;
   int foundIDX = -1;
   for (CSCRecHit2DCollection::const_iterator hiti=allRecHits->begin(); hiti!=allRecHits->end(); hiti++)
@@ -294,8 +299,8 @@ void FillSegmentInfo::fill(std::vector<const CSCSegment*>& segments, const CSCGe
   }
 }
 
-void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC, int mu_index){
-
+void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC, int mu_index)
+{
 	DetId detId  = segment.geographicalId();
 	CSCDetId id(detId.rawId());
 
@@ -333,7 +338,8 @@ void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC,
 
 }
 
-void FillRecHitInfo::fill(const std::vector<CSCRecHit2D>& recHits, int mu_index){
+void FillRecHitInfo::fill(const std::vector<CSCRecHit2D>& recHits, int mu_index)
+{
   for (const auto& rechit : recHits){
 
       DetId detId = rechit.geographicalId();
@@ -358,7 +364,8 @@ void FillRecHitInfo::fill(const std::vector<CSCRecHit2D>& recHits, int mu_index)
   }
 }
 
-void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
+void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts)
+{
   for (CSCCorrelatedLCTDigiCollection::DigiRangeIterator chamber=lcts.begin(); chamber!=lcts.end(); chamber++)
   {
     CSCDetId id = (*chamber).first;
@@ -388,7 +395,8 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts){
   }
 }
 
-void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) {
+void FillCLCTInfo::fill(const CSCCLCTDigiCollection& clcts) 
+{
 	for (CSCCLCTDigiCollection::DigiRangeIterator chamber = clcts.begin();
 			chamber != clcts.end(); chamber++) {
 		CSCDetId id = (*chamber).first;
@@ -497,7 +505,7 @@ void FillWireInfo::fill(const CSCWireDigiCollection &wires)
 
 		for (digiItr = range.first; digiItr!= range.second; digiItr++)
 		{
-			//TODO: Is an ALCT in ME11A/B meaningful?
+			// TODO: Is an ALCT in ME11A/B meaningful?
 			/*
 			if (st == 1 && (ri == 1|| ri ==4))
 			{
@@ -538,6 +546,7 @@ void FillStripInfo::fill(const CSCStripDigiCollection &strips)
 			{
 				// we need to manually adjust this because they don't for us
 				// getStrip returns a strip this time (different than before)
+
 				if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
 				else ri = 1; // resets ring in case where multiple clcts in ME11
 			}
@@ -570,6 +579,7 @@ void FillCompInfo::fill(const CSCComparatorDigiCollection& comps){
 		{
     		//we need to manually adjust this because they don't for us
     		//getStrip returns a strip this time (different than before)
+			
     		if(digiItr->getStrip() > CSCHelper::MAX_ME11B_STRIP) ri = 4;
     		else ri = 1; //resets ring in case where multiple clcts in ME11
     	}

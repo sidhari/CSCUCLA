@@ -773,18 +773,53 @@ ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 				_ring(ring),
 				_endcap(endcap),
 				_chamber(chamber)
-{
-	bool me11a = _station == 1 && _ring == 4;
-	bool me11b = _station == 1 && _ring == 1;
-	bool me13 = _station == 1 && _ring == 3;
-	//test using only one CFEB
-	bool oneCFEB = _station == 0 && _ring == 0;
+{	_nhits = 0;
 
-	//me11a, me11b, oneCFEB all have their key half strip layer shifted over by one
-	//_minHs = me11a || me11b || oneCFEB;
-	for(unsigned int i = 0; i < N_KWG; i++){
-		for(unsigned int j = 0; j < NLAYERS; j++){
+	bool me11a 	= _station == 1 && _ring == 4;
+	bool me11b 	= _station == 1 && _ring == 1;
+	bool me13 	= _station == 1 && _ring == 3;
+	bool me12 	= _station == 1 && _ring == 2;
+	bool me21	= _station == 2 && _ring == 1;
+	bool me31 	= _station == 3 && _ring == 1;
+	bool me41	= _station == 4 && _ring == 1;
+	//bool oneCFEB = _station == 0 && _ring == 0;
+
+	if (me11a || me11b || me12 || me13)	_maxWi = 32;
+	else if (me21) 						_maxWi = 112;
+	else if (me31 || me41)				_maxWi = 96;
+	else 								_maxWi = 64;
+
+	_minWi = 0;
+
+	for(unsigned int i = 0; i < N_KWG; i++)
+	{
+		for(unsigned int j = 0; j < NLAYERS; j++)
+		{
 			_hits[i][j] = 0;
 		}
+	}
+	_meanWi = -1;
+	_stdWi = -1;
+}
+
+float ALCT_ChamberHits::get_hitMeanWi()
+{
+
+}
+
+float ALCT_ChamberHits::get_hitStdWi()
+{
+	
+}
+
+int ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
+{
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+
+	for (unsigned int i = 0; i < w.size(); i++)
+	{
+		if (chSid!= w.ch_id->at(i)) continue;
+		unsigned int lay = w.lay->at(i) - 1;
+		unsigned int group = w.group->at(i);
 	}
 }
