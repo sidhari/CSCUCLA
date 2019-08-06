@@ -38,7 +38,7 @@ public:
 	virtual ~Object(){};
 	Object(const char *n): name(n){}
 
-	/* 
+	/* @brief takes a variable name and returns a std::string in current branch convention
 	 * branchify
 	 * 	- reqires: pointer to the variable name [varname]
 	 * 	- returns: required string format to read from current convention TTree

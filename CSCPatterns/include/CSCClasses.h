@@ -132,7 +132,7 @@ private:
 
 };
 
-class ALCTCandidate
+/* class ALCTCandidate
 {
 	public:
 		ALCTCandidate();
@@ -205,7 +205,7 @@ class FillALCTCandidateInfo: public ALCTCandidateCollection, public FillInfo
 		void splat(ALCTCandidate &alct_cand, unsigned int chamberHash);
 
 		void fill(const std::vector<ALCTCandidate> &alct_cands, unsigned int chamberHash);
-};
+};*/
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber

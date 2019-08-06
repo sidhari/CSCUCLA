@@ -385,12 +385,13 @@ void FillLCTInfo::fill(const CSCCorrelatedLCTDigiCollection& lcts)
     		else ri = 1; //resets ring in case where multiple clcts in ME11
     	}
 
-      ch_id       ->push_back(CSCHelper::serialize(st, ri, ch, ec));
-      quality     ->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"lct_quality"));
-      pattern     ->push_back(CSCHelper::convertTo<size8>(digiItr->getPattern(),"lct_pattern"));
-      bend        ->push_back(CSCHelper::convertTo<size8>(digiItr->getBend()   ,"lct_bend"));
-      keyWireGroup->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG()  ,"lct_keyWireGroup"));
-      keyHalfStrip->push_back(CSCHelper::convertTo<size8>(digiItr->getStrip()  ,"lct_keyHalfStrip"));
+      ch_id       	->push_back(CSCHelper::serialize(st, ri, ch, ec));
+      quality     	->push_back(CSCHelper::convertTo<size8>(digiItr->getQuality(),"lct_quality"));
+      pattern     	->push_back(CSCHelper::convertTo<size8>(digiItr->getPattern(),"lct_pattern"));
+      bend        	->push_back(CSCHelper::convertTo<size8>(digiItr->getBend()   ,"lct_bend"));
+      keyWireGroup	->push_back(CSCHelper::convertTo<size8>(digiItr->getKeyWG()  ,"lct_keyWireGroup"));
+      keyHalfStrip	->push_back(CSCHelper::convertTo<size8>(digiItr->getStrip()  ,"lct_keyHalfStrip"));
+	  bunchCross	->push_back(CSCHelper::convertTo<size8>(digiItr->getBX()	 ,"lct_bunchCross"));
       }
   }
 }

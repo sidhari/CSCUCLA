@@ -804,22 +804,54 @@ ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 
 float ALCT_ChamberHits::get_hitMeanWi()
 {
-
+	if (_meanWi != -1) return _meanWi;
+	return _meanWi;
 }
 
 float ALCT_ChamberHits::get_hitStdWi()
 {
-	
+	if (_stdWi != -1) return _stdWi;
+	return _stdWi;
+}
+
+ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
+	os << "==== Printing Chamber  ST = " << c._station <<
+			", RI = "<< c._ring <<
+			", CH = "<< c._chamber <<
+			", EC = "<< c._endcap << " ====\n";
+	for(unsigned int y = 0; y < NLAYERS; y++) {
+		os << " ";
+		for(unsigned int x = c.minWi(); x < c.maxWi(); x++){
+			if(c._hits[x][y]) os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
+			else os <<"-";
+		}
+		os <<"\n";
+	}
+	os << "\n";
+	return os;
 }
 
 int ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 {
 	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
 
+	// Chamber booleans for convenience 
+	bool me11a 	= _station == 1 && _ring == 4;
+	bool me11b 	= _station == 1 && _ring == 1;
+	bool me13 	= _station == 1 && _ring == 3;
+	bool me12 	= _station == 1 && _ring == 2;
+	bool me21	= _station == 2 && _ring == 1;
+	bool me31 	= _station == 3 && _ring == 1;
+	bool me41	= _station == 4 && _ring == 1;
+
 	for (unsigned int i = 0; i < w.size(); i++)
 	{
 		if (chSid!= w.ch_id->at(i)) continue;
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i);
+		unsigned int timeBin = w.timeBin->at(i);
+
+		_hits[group][lay] = timeBin+1;
 	}
+	return 0;
 }
