@@ -767,7 +767,7 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 }
 
 ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
-		unsigned int endcap, unsigned int chamber, bool isWire) :
+		unsigned int chamber, unsigned int endcap, bool isWire) :
 				_isWire(isWire),
 				_station(station),
 				_ring(ring),
@@ -822,7 +822,7 @@ ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		os << " ";
 		for(unsigned int x = c.get_minWi(); x < c.get_maxWi(); x++){
-			if(c._hits[x][y]) os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
+			if(c._hits[x][y]) os << c._hits[x][y];//os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
 			else os <<"-";
 		}
 		os <<"\n";

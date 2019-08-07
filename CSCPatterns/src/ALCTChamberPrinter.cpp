@@ -35,10 +35,8 @@ int main(int argc, char* argv[]){
 	return p.main(argc,argv);
 }
 
-int ALCTChamberPrinter::run(string inputfile, unsigned int EC, unsigned int ST, unsigned int RI, unsigned int CH)
+int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, unsigned int CH, unsigned int EC)
 {
-    auto t1 = std::chrono::high_resolution_clock::now();
-
 	cout << endl << "Running over file: " << inputfile << endl;
 
 	TFile* f = TFile::Open(inputfile.c_str());
@@ -48,7 +46,8 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int EC, unsigned int ST, 
 	if(!t) throw "Can't find tree";
 
     CSCInfo::Wires wires(t);
-    ALCT_ChamberHits wireHits(ST, RI, EC, CH);
+    ALCT_ChamberHits wireHits(ST, RI, CH, EC);
+	wireHits.fill(wires);
     std::cout << wireHits << endl;
 
     return 0;
