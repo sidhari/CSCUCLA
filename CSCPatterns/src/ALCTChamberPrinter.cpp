@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
 	return p.main(argc,argv);
 }
 
-int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, unsigned int CH, unsigned int EC)
+int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, unsigned int CH, unsigned int EC, unsigned int eventnum)
 {
 	cout << endl << "Running over file: " << inputfile << endl;
 
@@ -47,8 +47,8 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 
     CSCInfo::Wires wires(t);
     ALCT_ChamberHits wireHits(ST, RI, CH, EC);
+	t->GetEntry(eventnum);
 	wireHits.fill(wires);
     std::cout << wireHits << endl;
-
     return 0;
 }

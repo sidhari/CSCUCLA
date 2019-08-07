@@ -831,10 +831,9 @@ ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
 	return os;
 }
 
-int ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
+void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 {
 	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
-
 	// Chamber booleans for convenience 
 	bool me11a 	= _station == 1 && _ring == 4;
 	bool me11b 	= _station == 1 && _ring == 1;
@@ -853,5 +852,4 @@ int ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 
 		_hits[group][lay] = timeBin+1;
 	}
-	return 0;
 }

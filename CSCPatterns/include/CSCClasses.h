@@ -272,7 +272,7 @@ class ALCT_ChamberHits
 
 		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
 
-		int fill(const CSCInfo::Wires& w);
+		void fill(const CSCInfo::Wires& w);
 		//void print() const; //deprecated
 		
 		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);

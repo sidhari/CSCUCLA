@@ -14,14 +14,15 @@ class ALCTChamberPrinter
 {
     public:
         void AlCTChamberPrinter(){};
-        int run(string inputfile, unsigned int ST, unsigned int RI, unsigned int CH, unsigned int EC);
+        int run(string inputfile, unsigned int ST, unsigned int RI, unsigned int CH, unsigned int EC, unsigned int eventnum);
         int main(int argc, char* argv[])
         {
             std::string s(argv[1]);
             ALCTChamberPrinter::run(s,  (unsigned int) atoi(argv[2]),
                                         (unsigned int) atoi(argv[3]),
                                         (unsigned int) atoi(argv[4]),
-                                        (unsigned int) atoi(argv[5]));
+                                        (unsigned int) atoi(argv[5])
+                                        (unsigned int) atoi(argv[6]));
             return 0;
         } 
 };
