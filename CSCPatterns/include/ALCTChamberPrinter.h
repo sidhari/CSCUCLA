@@ -13,7 +13,7 @@
 class ALCTChamberPrinter
 {
     public:
-        AlCTChamberPrinter(){};
+        void AlCTChamberPrinter(){};
         int run(string inputfile, unsigned int EC, unsigned int ST, unsigned int RI, unsigned int CH);
         int main(int argc, char* argv[])
         {
@@ -21,9 +21,10 @@ class ALCTChamberPrinter
             ALCTChamberPrinter::run(s,  (unsigned int) atoi(argv[2]),
                                         (unsigned int) atoi(argv[3]),
                                         (unsigned int) atoi(argv[4]),
-                                        (unsigned int) atoi(argv[5]))
+                                        (unsigned int) atoi(argv[5]));
+            return 0;
         }
-}
+};
 
 
 #endif

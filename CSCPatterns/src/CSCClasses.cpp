@@ -791,7 +791,7 @@ ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 
 	_minWi = 0;
 
-	for(unsigned int i = 0; i < N_KWG; i++)
+	for(unsigned int i = 0; i < N_KEY_WIRE_GROUPS; i++)
 	{
 		for(unsigned int j = 0; j < NLAYERS; j++)
 		{
@@ -821,7 +821,7 @@ ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
 			", EC = "<< c._endcap << " ====\n";
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		os << " ";
-		for(unsigned int x = c.minWi(); x < c.maxWi(); x++){
+		for(unsigned int x = c.get_minWi(); x < c.get_maxWi(); x++){
 			if(c._hits[x][y]) os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
 			else os <<"-";
 		}

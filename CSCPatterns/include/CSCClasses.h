@@ -22,7 +22,7 @@
 #include "../include/CSCConstants.h"
 #include "../include/LUTClasses.h"
 #include "../include/CSCInfo.h"
-#include "../../CSCDigiTuples/include/FillCSCInfo.h"
+//#include "../../CSCDigiTuples/include/FillCSCInfo.h"
 
 using namespace std;
 
@@ -270,13 +270,13 @@ class ALCT_ChamberHits
 		float get_hitMeanWi();
 		float get_hitStdWi();
 
-		int _hits[N_KWG][NLAYERS];
+		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
 
 		int fill(const CSCInfo::Wires& w);
 		//void print() const; //deprecated
 		
 		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
-		ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
+		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
 
 	private:
 		unsigned int _minWi;
