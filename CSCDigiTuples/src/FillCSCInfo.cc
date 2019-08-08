@@ -521,6 +521,7 @@ void FillWireInfo::fill(const CSCWireDigiCollection &wires)
 			group			->push_back(digiItr->getWireGroup());					
 			lay				->push_back(CSCHelper::convertTo<size8>(id.layer(), "wire_lay"));
 			timeBin			->push_back(digiItr->getTimeBin());
+			timeBinWord		->push_back(digiItr->getTimeBinWord());
 			BX				->push_back(digiItr->getWireGroupBX());
 			//time_bins_on	->push_back(digiItr->getTimeBinsOn());
 		}

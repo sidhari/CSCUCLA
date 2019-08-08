@@ -22,7 +22,6 @@
 #include "../include/CSCConstants.h"
 #include "../include/LUTClasses.h"
 #include "../include/CSCInfo.h"
-//#include "../../CSCDigiTuples/include/FillCSCInfo.h"
 
 using namespace std;
 
@@ -33,7 +32,7 @@ using namespace std;
  * Can encode "comparator codes" within patterns.
  *
  */
-class ComparatorCode {
+class ComparatorCode{
 public:
 	ComparatorCode(bool hits[NLAYERS][3]);
 	ComparatorCode(unsigned int comparatorCode);
@@ -143,6 +142,65 @@ private:
 class ALCTCandidateCollection
 {
 	public:
+		ALCTCandidateCollection() : CSCInfo::Object("alct_cand")
+		{
+			ch_id = 0;
+			quality = 0; 
+			accelerator = 0;
+			collisionB = 0;
+			keyWG = 0;
+			BX = 0;
+			trkNumber = 0;
+			fullBX = 0;
+		}
+		
+		ALCTCandidateCollection(TTree* t, int flag=1) : ALCTCandidateCollection()
+		{
+			if (flag == 0) // read
+			{
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(accelerator)).c_str(), &accelerator);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(collisionB)).c_str(), &collisionB);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyWG)).c_str(), &keyWG);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(trkNumber)).c_str(), &trkNumber);
+				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(fullBX)).c_str(), &fullBX);
+			}
+			else if (flag == 1) // write (writes to trees by default)
+			{
+				t->Branch(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
+				t->Branch(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
+				t->Branch(branchify(GET_VARIABLE_NAME(accelerator)).c_str(), &accelerator);
+				t->Branch(branchify(GET_VARIABLE_NAME(collisionB)).c_str(), &collisionB);
+				t->Branch(branchify(GET_VARIABLE_NAME(keyWG)).c_str(), &keyWG);
+				t->Branch(branchify(GET_VARIABLE_NAME(BX).c_str(), &BX);
+				t->Branch(branchify(GET_VARIABLE_NAME(trkNumber)).c_str(), &trkNumber);
+				t->Branch(branchify(GET_VARIABLE_NAME(fullBX)).c_str(), &fullBX);
+			}
+			else std::cout << "Error with flag value" << std::endl;
+		}
+
+		unsigned int size() const 
+		{
+			return ch_id ? ch_id->size() : 0;
+		}
+
+		std::vector<size16>* ch_id;
+		std::vector<size8>* quality; 
+		std::vector<size8>* accelerator;
+		std::vector<size8>* collisionB;
+		std::vector<size8>* keyWG;
+		std::vector<size8>* BX; 			//bunch crossing
+		std::vector<size8>* trkNumber;
+		std::vector<size16>* fullBX;
+}; */
+
+/*
+
+class ALCTCandidateCollection
+{
+	public:
 		ALCTs() : Object("alct_cand")
 		{
 			ch_id = 0;
@@ -180,7 +238,7 @@ class ALCTCandidateCollection
 		std::vector<size8>* BX; 			//bunch crossing
 		std::vector<size8>* trkNumber;
 		std::vector<size16>* fullBX;
-};
+}; 
 
 class FillALCTCandidateInfo: public ALCTCandidateCollection, public FillInfo
 {
@@ -205,7 +263,8 @@ class FillALCTCandidateInfo: public ALCTCandidateCollection, public FillInfo
 		void splat(ALCTCandidate &alct_cand, unsigned int chamberHash);
 
 		void fill(const std::vector<ALCTCandidate> &alct_cands, unsigned int chamberHash);
-};*/
+};
+*/
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber

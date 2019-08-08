@@ -492,6 +492,7 @@ class Wires : public Object
 			lay = 0;
 			timeBin = 0;
 			BX = 0;
+			timeBinWord = 0;
 			//timeBinsOn = 0;
 		}
 
@@ -502,6 +503,7 @@ class Wires : public Object
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)).c_str(), &lay);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBin)).c_str(), &timeBin);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinWord)).c_str(), &timeBinWord);
 			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinsOn)).c_str(), &timeBinsOn);
 		}
 
@@ -515,6 +517,7 @@ class Wires : public Object
 		std::vector<size8>* lay;
 		std::vector<int>* timeBin;
 		std::vector<int>* BX;
+		std::vector<uint32_t>* timeBinWord;
 		//std::vector<std::vector<int>>* timeBinsOn;
 };
 

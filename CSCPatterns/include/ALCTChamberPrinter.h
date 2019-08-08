@@ -21,7 +21,7 @@ class ALCTChamberPrinter
             ALCTChamberPrinter::run(s,  (unsigned int) atoi(argv[2]),
                                         (unsigned int) atoi(argv[3]),
                                         (unsigned int) atoi(argv[4]),
-                                        (unsigned int) atoi(argv[5])
+                                        (unsigned int) atoi(argv[5]),
                                         (unsigned int) atoi(argv[6]));
             return 0;
         } 
