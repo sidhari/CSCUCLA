@@ -627,6 +627,7 @@ void FillStripInfo::fill(const CSCStripDigiCollection& strips){
     }
   } // end strip loop
 }
+*/
 
 
 
