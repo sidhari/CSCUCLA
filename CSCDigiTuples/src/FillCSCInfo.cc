@@ -626,7 +626,7 @@ void FillStripInfo::fill(const CSCStripDigiCollection& strips){
       strip_number.push_back(CSCHelper::convertTo<size8>(stripIter->getStrip(),"strip_number"));
     }
   } // end strip loop
-}
+}*/
 
 
 
