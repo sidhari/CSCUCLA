@@ -242,6 +242,8 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow){
 
 	ChamberHits shrinkingChamber = c;
+	if(c.nhits() < 3)
+	return 0;
 
 	CLCTCandidate *bestMatch = 0;
 

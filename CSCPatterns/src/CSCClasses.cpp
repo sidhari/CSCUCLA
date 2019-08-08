@@ -566,13 +566,18 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 	if(!l1) return false;
 	
 	//priority (quality, keyHS)
-	if (l1->quality() < l2->quality()) return true;
+	/*if (l1->quality() < l2->quality()) return true;
 	else if(l1->quality() == l2->quality())
 	{
 		if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;		
 		
 	}
+	return false;*/
+
+	if((1-(l1->_chi2)/(c1->layerCount()-2)) < (1-(l2->_chi2)/(c2->layerCount()-2))) return true;
+	else 
 	return false;
+
 
 };
 
@@ -734,26 +739,13 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 		if(timeOn >= 16) {
 			printf("Error timeOn is an invalid number: %i\n", timeOn);
 			return -1;
-		} else {			
+		} else if (timeOn < 6 || timeOn > 9)
+		{
+			continue;
+		}		
+		else {			
 			if(!_hits[halfStripVal][lay]){
-				int flag = 0;
-				for(int diff = -2; diff <= 2; diff++){
-					if(diff == 0)
-					continue;
-					int neighboringstrip = halfStripVal + diff;
-					if(neighboringstrip < (int)minHs() || neighboringstrip > (int)maxHs())
-					continue;
-					if(_hits[neighboringstrip][lay] != 0){
-						_hits[neighboringstrip][lay] = 0;
-						_hits[halfStripVal][lay] = 0;				
-							
-						/*cout << "Warning: Comparator found at halfstrip " << halfStripVal << ", layer  "<< lay+1 << endl;
-						cout << "         Zeroing out layer with multiple comparator hits within a three halfstrip window" << endl << endl;*/
-												
-						flag++;
-					}
-				}
-				if(flag == 0){
+
 					_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
 					_nhits++;
 				}	
@@ -762,8 +754,80 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 				
 			}
 		}
+
+		/*int _print = 0;
+
+		if(_nhits > 0)
+		{
+			print();
+			cout << endl;
+			_print++;
+		}*/
 		
-	}
+
+		for(int ilayer = 0; ilayer < (int)NLAYERS; ilayer++)
+		{
+			int flag = -1;
+
+			for(int ihalfstrip = 0; ihalfstrip < (int)N_MAX_HALF_STRIPS; ihalfstrip++)
+			{
+				if(_hits[ihalfstrip][ilayer])
+				{
+					int temp = 0;
+
+					for(int diff = -2; diff < 0; diff++)
+					{
+						int neighborhs = ihalfstrip + diff;
+						if(neighborhs < (int)minHs() || neighborhs > (int)maxHs())
+						continue;
+						if(_hits[neighborhs][ilayer])
+						{
+							_hits[neighborhs][ilayer] = 0;
+							_nhits--;
+							temp = 1;
+						}
+						
+					}
+
+					if(temp == 1)
+					{
+						if(flag >= 0)
+						{
+							_hits[flag][ilayer] = 0;
+							_nhits--;
+						}
+						flag = ihalfstrip;
+					}
+					else
+					{
+						if(flag >= 0)
+						{
+							_hits[flag][ilayer] = 0;
+							_nhits--;
+						}
+
+						flag = -1;
+					}
+
+				}
+
+			}
+
+			if(flag >= 0)
+			{
+				_hits[flag][ilayer] = 0;
+				_nhits--;
+				//cout << "WARNING: Deleting multiple comparators within a 3 half strip window" << endl << endl;
+			}
+			
+			
+		}
+
+		/*if(_print > 0)
+		{
+			print();
+			cout << endl << endl;
+		}*/
 
 	return 0;
 }
@@ -877,6 +941,7 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 			}
 		}
 	}
+	_nhits -= mi.layerCount();	
 	return *this;
 }
 
