@@ -32,7 +32,7 @@ using namespace std;
  * Can encode "comparator codes" within patterns.
  *
  */
-class ComparatorCode {
+class ComparatorCode{
 public:
 	ComparatorCode(bool hits[NLAYERS][3]);
 	ComparatorCode(unsigned int comparatorCode);
@@ -279,8 +279,8 @@ public:
 	int fill(const CSCInfo::Comparators& c);
 	int fill(const CSCInfo::RecHits& r);
 	void print() const; //deprecated
+	
 	friend ostream& operator<<(ostream& os, const ChamberHits& c);
-
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
 	unsigned int _nhits;
@@ -289,10 +289,9 @@ private:
 
 	float _meanHS;
 	float _stdHS;
-
 };
 
-/*class ALCT_ChamberHits
+class ALCT_ChamberHits
 {
 	public:
 		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
@@ -300,7 +299,7 @@ private:
 		
 		ALCT_ChamberHits(const ALCT_ChamberHits &c);
 		
-		~ChamberHits(){}	
+		~ALCT_ChamberHits(){}
 
 		const bool _isWire;
 		const unsigned int _station;
@@ -308,16 +307,29 @@ private:
 		const unsigned int _endcap;
 		const unsigned int _chamber;
 
-		int _hits[N_KWG][NLAYERS];
+		unsigned int get_minWi() const {return _minWi;}
+		unsigned int get_maxWi() const {return _maxWi;}
+		unsigned int get_nhits() const {return _nhits;}
 
-		int fill(const CSCInfo::Wires& w);
-		void print() const; //deprecated
-		friend ostream& operator<<(ostream& os, const ChamberHits& c);
-	private:
+		float get_hitMeanWi();
+		float get_hitStdWi();
+
+		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
+
+		void fill(const CSCInfo::Wires& w);
+		//void print() const; //deprecated
 		
-}*/
+		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
+		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
 
+	private:
+		unsigned int _minWi;
+		unsigned int _maxWi;
+		unsigned int _nhits;
 
+		float _meanWi;
+		float _stdWi;
+};
 
 
 #endif /* PATTERNFITTER_H_ */

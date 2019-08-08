@@ -37,6 +37,13 @@ public:
 	const string name;
 	virtual ~Object(){};
 	Object(const char *n): name(n){}
+
+	/* @brief takes a variable name and returns a std::string in current branch convention
+	 * branchify
+	 * 	- reqires: pointer to the variable name [varname]
+	 * 	- returns: required string format to read from current convention TTree
+	 */
+
 	inline std::string branchify(char const * varname)
 	{
 		return (name+'_'+string(varname));
@@ -45,6 +52,11 @@ public:
 
 class Event : public Object{
 public:
+
+	/*
+	 * Constructor used in FillCSCInfo.h to write to a tree using current
+	 * naming conventions. Analogous for following classes.
+	 */
 	Event() : Object("Event"){
 		EventNumber = 0;
 		RunNumber = 0;
@@ -52,6 +64,11 @@ public:
 		BXCrossing = -1;
 		NSegmentsInEvent = 0;
 	}
+
+	/*
+	 * Constructor used when wanting to read from branches of a TTree. Can be 
+	 * used independently of FillCSCInfo.h. Analogous for following classes
+	 */
 	Event(TTree* t): Event(){
 		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(EventNumber)).c_str(), &EventNumber);
 		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(RunNumber)).c_str(), &RunNumber);
@@ -63,13 +80,11 @@ public:
 		}
 	}
 
-
 	unsigned long long EventNumber;
 	unsigned long long RunNumber;
 	int LumiSection;
 	int BXCrossing;
 	int NSegmentsInEvent;
-
 };
 
 class GenParticles : public Object{
@@ -116,6 +131,7 @@ public:
 		phiAtEntry = 0;
 		pAtEntry = 0;
 	}
+
 	SimHits(TTree* t) : SimHits() {
 		t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)).c_str(),
 				&ch_id);
@@ -394,7 +410,10 @@ public:
 		return ch_id ? ch_id->size() : 0;
 	}
 
-	//returns the amount of clcts in the chamber <chamber_index>
+	/* size:
+	 *	- requires: the designated index [chamber_index]
+	 * 	- returns: amount of clcts, [count] in the chamber [chamber_index]
+	 */
 	unsigned int size(unsigned int chamber_index) const {
 		if(!ch_id) return 0;
 		unsigned int count =0;
@@ -454,11 +473,11 @@ class ALCTs : public Object
 
 		std::vector<size16>* ch_id;
 		std::vector<size8>* isValid;
-		std::vector<size8>* quality;
+		std::vector<size8>* quality; 
 		std::vector<size8>* accelerator;
 		std::vector<size8>* collisionB;
 		std::vector<size8>* keyWG;
-		std::vector<size8>* BX;
+		std::vector<size8>* BX; 			//bunch crossing
 		std::vector<size8>* trkNumber;
 		std::vector<size16>* fullBX;
 };
@@ -473,6 +492,7 @@ class Wires : public Object
 			lay = 0;
 			timeBin = 0;
 			BX = 0;
+			timeBinWord = 0;
 			//timeBinsOn = 0;
 		}
 
@@ -483,6 +503,7 @@ class Wires : public Object
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(lay)).c_str(), &lay);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBin)).c_str(), &timeBin);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
+			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinWord)).c_str(), &timeBinWord);
 			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinsOn)).c_str(), &timeBinsOn);
 		}
 
@@ -496,6 +517,7 @@ class Wires : public Object
 		std::vector<size8>* lay;
 		std::vector<int>* timeBin;
 		std::vector<int>* BX;
+		std::vector<uint32_t>* timeBinWord;
 		//std::vector<std::vector<int>>* timeBinsOn;
 };
 
@@ -574,6 +596,5 @@ public:
 };
 
 }
-
 
 #endif /*CSCUCLA_CSCDIGITUPLES_CSCINFO_H*/

@@ -1,11 +1,13 @@
 base=$(pwd)
-subdir1="/CSCDigiTuples/include/CSCHelper.h"
-subdir2="/CSCPatterns/include"
-subdir3="/CSCDigiTuples/include/CSCInfo.h"
-subdir4="/CSCPatterns/include"
-newpath1=$base$subdir1
-newpath2=$base$subdir2
-newpath3=$base$subdir3
-newpath4=$base$subdir4
-ln -s $newpath1 $newpath2
-ln -s $newpath3 $newpath4
+src1="/CSCDigiTuples/include/CSCHelper.h"
+src2="/CSCDigiTuples/include/CSCInfo.h"
+src3="/CSCDigiTuples/include/FillCSCInfo.h"
+dest="/CSCPatterns/include"
+srcpath1=$base$src1
+srcpath2=$base$src2
+#srcpath3=$base$src3
+destpath=$base$dest
+ln -s $srcpath1 $destpath
+ln -s $srcpath2 $destpath
+#ln -s $srcpath3 $destpath
+
