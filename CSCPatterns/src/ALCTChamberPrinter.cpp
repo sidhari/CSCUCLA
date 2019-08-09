@@ -25,6 +25,7 @@
 
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
+#include "../include/ALCTHelperFunctions.h"
 
 #include "../include/ALCTChamberPrinter.h"
 
@@ -48,7 +49,13 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
     CSCInfo::Wires wires(t);
     ALCT_ChamberHits wireHits(ST, RI, CH, EC);
 	t->GetEntry(eventnum);
-	wireHits.fill(wires);
-    std::cout << wireHits << endl;
+
+	for (unsigned int i = 0; i<wires.size(); i++)
+	{
+		print_pulse(wires.timeBinWord->at(i));
+	}
+
+	// wireHits.fill(wires);
+    // std::cout << wireHits << endl;
     return 0;
 }

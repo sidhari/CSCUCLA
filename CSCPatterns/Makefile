@@ -5,7 +5,7 @@ ROOTFLAGS=`root-config --cflags --libs` -L$(ROOTSYS)/lib
 LIBDIR=lib
 SRCDIR=src
 INCDIR=include
-PROJLIBS=$(LIBDIR)/CSCClasses_cpp.so $(LIBDIR)/CSCHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/Processor_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
+PROJLIBS=$(LIBDIR)/CSCClasses_cpp.so $(LIBDIR)/CSCHelperFunctions_cpp.so $(LIBDIR)/ALCTHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/Processor_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
 
 #TODO: Wildcards here!!
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
