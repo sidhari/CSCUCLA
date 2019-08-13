@@ -8,6 +8,8 @@
 
 #include "../include/CSCClasses.h"
 #include "../include/CSCHelperFunctions.h"
+#include "../include/ALCTHelperFunctions.h"
+
 #include <stdlib.h>
 
 #include "../include/CSCHelper.h"
@@ -843,6 +845,8 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 	bool me31 	= _station == 3 && _ring == 1;
 	bool me41	= _station == 4 && _ring == 1;
 
+	_nhits = 0;
+
 	for (unsigned int i = 0; i < w.size(); i++)
 	{
 		if (chSid!= w.ch_id->at(i)) continue;
@@ -851,5 +855,47 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 		unsigned int timeBin = w.timeBin->at(i);
 
 		_hits[group][lay] = timeBin+1;
+		_nhits++;
+	}
+}
+
+void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
+{
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	_nhits = 0;
+	for (unsigned int i = 0; i < w.size(); i++)
+	{
+		if (chSid!=w.ch_id->at(i)) continue; 
+		unsigned int lay = w.lay->at(i) - 1;
+		unsigned int group = w.group->at(i);
+		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
+		std::vector<int> timevec = pulse_to_vec(extended_pulse);
+		for (int j = 0; j<timevec.size(); j++)
+		{
+			if (timevec.at(j)!=time) continue;
+			_hits[group][lay] = time+1;
+			_nhits++;
+		}
+	}
+}
+
+void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end, int p_ext)
+{
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	for (unsigned int i=0; i < w.size(); i++)
+	{
+		if (chSid!=w.ch_id->at(i)) continue;
+		unsigned int lay = w.lay->at(i) - 1;
+		unsigned int group = w.group->at(i);
+		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
+		std::vector<int> timevec = pulse_to_vec(extended_pulse);
+		for (int j = 0; j<timevec.size(); j++)
+		{
+			if (timevec.at(j)>end) continue;
+			if (timevec.at(j)<begin) continue;
+			if (_hits[group][lay] != 0 && _hits[group][lay]<timevec.at(j)+1) continue;
+			if (_hits[group][lay] != 0) _nhits++;
+			_hits[group][lay] = timevec.at(j)+1;
+		}
 	}
 }

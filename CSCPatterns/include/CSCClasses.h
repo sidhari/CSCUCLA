@@ -131,12 +131,25 @@ private:
 
 };
 
-/* class ALCTCandidate
+class ALCTCandidate
 {
 	public:
-		ALCTCandidate();
-
+		ALCTCandidate(CSCPattern p, int kwg, bool hits[NLAYERS][3]);
 		void ~ALCTCandidate();
+
+		const CSCPattern pattern;
+		const int kwg;
+		const int time;
+		bool isValid;
+		int quality;
+		bool vtp;
+		bool vbot; 
+
+		int getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const;
+
+	private:
+		ALCTCandidate* next;
+		ALCTCandidate* prev;
 };
 
 class ALCTCandidateCollection
@@ -194,7 +207,7 @@ class ALCTCandidateCollection
 		std::vector<size8>* BX; 			//bunch crossing
 		std::vector<size8>* trkNumber;
 		std::vector<size16>* fullBX;
-}; */
+}; 
 
 /*
 
@@ -331,8 +344,8 @@ class ALCT_ChamberHits
 
 		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
 
-		void fill(const CSCInfo::Wires& w);
-		//void print() const; //deprecated
+		void fill(const CSCInfo::Wires &w);
+		void fill(const CSCInfo::Wires &w, int time, int p_ext=1)
 		
 		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
 		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
