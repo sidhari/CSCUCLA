@@ -566,16 +566,12 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 	if(!l1) return false;
 	
 	//priority (quality, keyHS)
-	/*if (l1->quality() < l2->quality()) return true;
+	if (l1->quality() < l2->quality()) return true;
 	else if(l1->quality() == l2->quality())
 	{
 		if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;		
 		
 	}
-	return false;*/
-
-	if((1-(l1->_chi2)/(c1->layerCount()-2)) < (1-(l2->_chi2)/(c2->layerCount()-2))) return true;
-	else 
 	return false;
 
 

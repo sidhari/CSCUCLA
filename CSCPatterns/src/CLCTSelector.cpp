@@ -64,7 +64,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	//load LUT
 
 	LUT lut(string("lut"));
-	lut.loadText(string("dat/luts/test.root")); //best so far: slxpmcek.root
+	lut.loadText(string("dat/luts/lpxke.root")); 
 	if(lut.makeFinal())
 	{
 		return -1;

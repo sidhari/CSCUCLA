@@ -465,7 +465,7 @@ void LUT::print(unsigned int minClcts,unsigned int minSegments,unsigned int minL
 
 		//double p_mu_cc = p_cc ? p_cc_mu*p_mu/p_cc : 0.;
 
-		printf("[%4i,%5i,%7s] -> [%8.4f,%8.4f,%8.1e,%6.2f,%8.1e,%6.2f,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
+		printf("[%4i,%5i,%7s] -> [%8.4f,%8.4f,%8.1e,%6.2f,%8.1e,%6.2f,%6.2f,%5i,%5.2f,%8.3f,%8.3f,%8.3f]\n",
 				k._pattern,
 				k._code,
 				ComparatorCode::getStringInBase4(k._code).c_str(),
@@ -481,7 +481,7 @@ void LUT::print(unsigned int minClcts,unsigned int minSegments,unsigned int minL
 				e._layers,
 				e._chi2,
 				e.position(),
-				e.slope());
+				e.slope(),
 	}
 	//printf("P(mu) = %3.3f\n", p_mu);
 }
@@ -559,7 +559,6 @@ int LUT::loadText(const string& textfile){
 			float quality           = stof(elements[counter++]);
 			unsigned int layers     = stoul(elements[counter++]);
 			float chi2              = stof(elements[counter++]);
-
 
 			if(DEBUG >2){
 				cout << line << endl;
@@ -710,6 +709,7 @@ int LUT::writeToPSLs(const string& fileprefix){
  * this recalculates the positions / slopes and puts them
  * all in order
  */
+
 int LUT::makeFinal(){
 	if(_isFinal) return 0;
 	_nclcts = 0;

@@ -81,11 +81,11 @@ public:
 	TTree* makeTree(const string& name) const;
 
 
-	int makeFinal();
+	int makeFinal();	
 
 
 	const unsigned int _layers; //layers in code
-	const float _chi2; //chi2 of fit	
+	const float _chi2; //chi2 of fit
 
 private:
 	bool _isFinal; //if we have already calculated the offsets with all the segments
@@ -95,7 +95,7 @@ private:
 	 * - make tree writer class belong to each entry specifically
 	 *
 	 */
-	vector<bool> _hasSegment; //if we ahve a segment associated with this one or not
+	vector<bool> _hasSegment; //if we have a segment associated with this one or not
 	vector<float> _positionOffsets; //segment - clct
 	vector<float> _slopeOffsets;
 	vector<float> _pts; //all pts associated with segments put into entry
@@ -108,6 +108,8 @@ private:
 	unsigned long _nclcts; //amount of clcts we found when making this entry (not necessarily matched with segments)
 	float _multiplicity;
 
+	unsigned long long int _matches;
+	
 	float _quality; //quality parameter used choose between CLCTs
 
 };
@@ -198,6 +200,9 @@ private:
 				case 'k': //key
 					if(l1.first == l2.first) continue;
 					return l1.first < l2.first;
+				case 'b': //bayes prob
+					if(l1e.bayesprobability() == l2e.bayesprobability())continue;
+					return l1e.bayesprobability() > l2e.bayesprobability();
 				default:
 					return l1.second < l2.second;
 				}
