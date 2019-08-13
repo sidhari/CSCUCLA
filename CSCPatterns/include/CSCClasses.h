@@ -131,7 +131,7 @@ private:
 
 };
 
-class ALCTCandidate
+/* class ALCTCandidate
 {
 	public:
 		ALCTCandidate(CSCPattern p, int kwg, bool hits[NLAYERS][3]);
@@ -207,7 +207,7 @@ class ALCTCandidateCollection
 		std::vector<size8>* BX; 			//bunch crossing
 		std::vector<size8>* trkNumber;
 		std::vector<size16>* fullBX;
-}; 
+}; */
 
 /*
 
@@ -345,7 +345,8 @@ class ALCT_ChamberHits
 		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
 
 		void fill(const CSCInfo::Wires &w);
-		void fill(const CSCInfo::Wires &w, int time, int p_ext=1)
+		void fill(const CSCInfo::Wires &w, int time, int p_ext=6);
+		void fill(const CSCInfo::Wires &w, int start, int end, int p_ext=6);
 		
 		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
 		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);

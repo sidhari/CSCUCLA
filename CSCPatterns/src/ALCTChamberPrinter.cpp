@@ -53,7 +53,7 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 	for (unsigned int i = 0; i<wires.size(); i++)
 	{
 		print_pulse(wires.timeBinWord->at(i));
-		print_pulse(extend_time(wires.timeBinWord->at(i)));
+		print_pulse(extend_time(wires.timeBinWord->at(i),6));
 	}
 
 	// wireHits.fill(wires);

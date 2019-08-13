@@ -869,6 +869,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i);
 		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
+		if (!extended_pulse) continue; 
 		std::vector<int> timevec = pulse_to_vec(extended_pulse);
 		for (int j = 0; j<timevec.size(); j++)
 		{
@@ -888,11 +889,12 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end, int p_e
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i);
 		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
+		if (!extended_pulse) continue; 
 		std::vector<int> timevec = pulse_to_vec(extended_pulse);
 		for (int j = 0; j<timevec.size(); j++)
 		{
 			if (timevec.at(j)>end) continue;
-			if (timevec.at(j)<begin) continue;
+			if (timevec.at(j)<start) continue;
 			if (_hits[group][lay] != 0 && _hits[group][lay]<timevec.at(j)+1) continue;
 			if (_hits[group][lay] != 0) _nhits++;
 			_hits[group][lay] = timevec.at(j)+1;

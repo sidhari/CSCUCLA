@@ -26,24 +26,22 @@ std::vector<int> pulse_to_vec (const unsigned int pulse)
 unsigned int extend_time(const unsigned int pulse, const int p_ext)
 {
     uint32_t tbit = pulse;
-    std::vector<int> timevec = pulse_to_vec(pulse); 
-    for (int i = 0; i<timevec.size(); i++)
-    for (int i=0; i<timevec.size(); i++)
+    uint32_t one = 1; 
+    for (int i = 0; i < 16; i++) 
     {
-        uint32_t one = 1;
-        int time = timevec.at(i);
-        one = one << time; 
-        for (int j = 1; j<p_ext; j++)
+        if (tbit & one)
         {
-            if(time+j>15) break;
-            else
+            for (int j = 0; j<p_ext-1; j++)
             {
-                one = one << 1; 
-                tbit = (tbit | one);
+                one <<= 1; 
+                tbit|=one; 
+                i++;
+                if (i>=16) return tbit;
             }
         }
+        one <<= 1;
     }
-    return tbit;
+  return tbit;
 }
 
 void print_pulse(unsigned int pulse)

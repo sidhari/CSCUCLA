@@ -24,7 +24,12 @@ void print_pulse(unsigned int pulse);
 
 unsigned int extend_time(const unsigned int pulse, const int p_ext=1);
 
-int searchForMatch(const ALCT_ChamberHits &c, const vector<CSCPattern>* ps, vector<ALCTCandidate*> &m);
+//std::vector<ALCTCandidate> track_scan(const ChamberHits &c);
+
+//void ghost_cancel(std::vector<ALCTCandidate> &v);
+
+//int containsPattern(const ChamberHits &c, const CSCPattern &p, const int horPos, const int )
+//int searchForMatch(const ALCT_ChamberHits &c, const vector<CSCPattern>* ps, vector<ALCTCandidate*> &m);
 
 
 
