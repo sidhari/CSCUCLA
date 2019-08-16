@@ -131,7 +131,7 @@ private:
 
 };
 
-/* class ALCTCandidate
+class ALCTCandidate
 {
 	public:
 		ALCTCandidate(CSCPattern p, int kwg, bool hits[NLAYERS][3]);
@@ -151,7 +151,7 @@ private:
 		ALCTCandidate* next;
 		ALCTCandidate* prev;
 };
-
+/*
 class ALCTCandidateCollection
 {
 	public:
@@ -323,7 +323,7 @@ class ALCT_ChamberHits
 {
 	public:
 		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
-			unsigned int endcap=0, unsigned int chamber=0, bool isWire=true);
+			unsigned int endcap=0, unsigned int chamber=0, bool isWire=true, bool empty = true);
 		
 		ALCT_ChamberHits(const ALCT_ChamberHits &c);
 		
@@ -338,6 +338,8 @@ class ALCT_ChamberHits
 		unsigned int get_minWi() const {return _minWi;}
 		unsigned int get_maxWi() const {return _maxWi;}
 		unsigned int get_nhits() const {return _nhits;}
+		bool isEmpty() const {return _empty;}
+		void regHit() {_empty = false;}
 
 		float get_hitMeanWi();
 		float get_hitStdWi();
@@ -355,6 +357,8 @@ class ALCT_ChamberHits
 		unsigned int _minWi;
 		unsigned int _maxWi;
 		unsigned int _nhits;
+
+		bool _empty;
 
 		float _meanWi;
 		float _stdWi;

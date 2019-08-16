@@ -769,12 +769,14 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 }
 
 ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
-		unsigned int chamber, unsigned int endcap, bool isWire) :
+		unsigned int chamber, unsigned int endcap, bool isWire, bool empty) :
 				_isWire(isWire),
 				_station(station),
 				_ring(ring),
 				_endcap(endcap),
-				_chamber(chamber)
+				_chamber(chamber),
+				_isWire(isWire),
+				_empty(empty)
 {	_nhits = 0;
 
 	bool me11a 	= _station == 1 && _ring == 4;
@@ -835,10 +837,13 @@ ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
 
 void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 {
-	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	int chSid1 = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	int chSid2 = chSid1;
+
 	// Chamber booleans for convenience 
-	bool me11a 	= _station == 1 && _ring == 4;
-	bool me11b 	= _station == 1 && _ring == 1;
+	bool me11 	= _station == 1 && (_ring == 4 || _ring == 1);
+	bool me11a	= _station == 1 && _ring == 4;
+	bool me11b	= _station == 1 && _ring == 1;
 	bool me13 	= _station == 1 && _ring == 3;
 	bool me12 	= _station == 1 && _ring == 2;
 	bool me21	= _station == 2 && _ring == 1;
@@ -847,25 +852,47 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 
 	_nhits = 0;
 
+	if (me11)
+	{
+		if (me11a) chSid2 = CSCHelper::serialize(_station, 1, _chamber, _endcap);
+		if (me11b) chSid2 = CSCHelper::serialize(_station, 4, _chamber, _endcap);
+	}
+
 	for (unsigned int i = 0; i < w.size(); i++)
 	{
-		if (chSid!= w.ch_id->at(i)) continue;
+		if (chSid1!= w.ch_id->at(i) && chSid2!=w.ch_id->at(i)) continue;
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i);
 		unsigned int timeBin = w.timeBin->at(i);
 
 		_hits[group][lay] = timeBin+1;
 		_nhits++;
+		this->regHit();
 	}
 }
 
 void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
 {
-	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	bool me11 	= _station == 1 && (_ring == 4 || _ring == 1);
+	bool me11a	= _station == 1 && _ring == 4;
+	bool me11b	= _station == 1 && _ring == 1;
+	bool me13 	= _station == 1 && _ring == 3;
+	bool me12 	= _station == 1 && _ring == 2;
+	bool me21	= _station == 2 && _ring == 1;
+	bool me31 	= _station == 3 && _ring == 1;
+	bool me41	= _station == 4 && _ring == 1;
+
+	_nhits = 0;
+
+	if (me11)
+	{
+		if (me11a) chSid2 = CSCHelper::serialize(_station, 1, _chamber, _endcap);
+		if (me11b) chSid2 = CSCHelper::serialize(_station, 4, _chamber, _endcap);
+	}
 	_nhits = 0;
 	for (unsigned int i = 0; i < w.size(); i++)
 	{
-		if (chSid!=w.ch_id->at(i)) continue; 
+		if (chSid1!=w.ch_id->at(i) && chSid2!= w.ch_id->at(i)) continue; 
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i);
 		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
@@ -876,6 +903,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
 			if (timevec.at(j)!=time) continue;
 			_hits[group][lay] = time+1;
 			_nhits++;
+			this->regHit();
 		}
 	}
 }
