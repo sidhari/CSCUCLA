@@ -80,17 +80,17 @@ void preTrigger(int kwg,
                 const int start_bx, 
                 const int i_pattern, 
                 std::vector<ALCT_ChamberHits*> &chamber_list, 
-                const ALCT_Config &config,
+                const ALCTConfig &config,
                 ALCTCandidate &cand)
 {
-    unsigned int layers_hit;
+    int layers_hit;
     bool hit_layer[NLAYERS];
 
-    const unsigned int nplanes_hit_pretrig_acc = 
+    const int nplanes_hit_pretrig_acc = 
         (config.get_nplanes_accel_pretrig() != 0) ? 
             config.get_nplanes_accel_pretrig() : 
             config.get_nplanes_hit_pretrig();
-    const unsigned int pretrig_thresh[N_ALCT_PATTERNS] = 
+    const int pretrig_thresh[N_ALCT_PATTERNS] = 
     {
         nplanes_hit_pretrig_acc, 
         config.get_nplanes_hit_pretrig(), 
@@ -112,9 +112,9 @@ void preTrigger(int kwg,
             int this_layer = pattern_envelope[0][i_wire];
             int this_wire = pattern_envelope[1 + MESelect][i_wire] + kwg;
             if (this_wire < 0 || this_wire >= chamber->get_maxWi()) continue;
-            if (chamber->_hits[this_wire][this_layer] && !hit_layers[this_layer])
+            if (chamber->_hits[this_wire][this_layer] && !hit_layer[this_layer])
             {
-                hit_layers[this_layer] = true;
+                hit_layer[this_layer] = true;
                 layers_hit++;
             }
             if (layers_hit >= pretrig_thresh[i_pattern])
@@ -126,7 +126,7 @@ void preTrigger(int kwg,
     cand.nix();
 }
 
-bool patternDection(const int key_wire,
+void patternDection(const int key_wire,
                     const int i_pattern, 
                     const std::vector<ALCT_ChamberHits*> &chamber_list, 
                     const ALCTConfig &config,
@@ -138,12 +138,12 @@ bool patternDection(const int key_wire,
 
     int this_layer, this_wire, delta_wire;
 
-    const unsigned int nplanes_hit_pattern_acc = 
+    const int nplanes_hit_pattern_acc = 
         (config.get_nplanes_accel_pattern() != 0) ? 
             config.get_nplanes_accel_pattern() : 
             config.get_nplanes_hit_pattern();
 
-    const unsigned int pattern_thresh[N_ALCT_PATTERNS] = 
+    const int pattern_thresh[N_ALCT_PATTERNS] = 
     {
         nplanes_hit_pattern_acc, 
         config.get_nplanes_hit_pattern(), 
@@ -233,21 +233,15 @@ void ghostBuster(ALCTCandidate* curr)
 {
     ALCTCandidate* temp = curr->next; 
     if (temp == NULL) return; 
-    if (curr->get_quality() > 0)
+    if (curr->get_quality())
     {
         int dt = curr->get_first_bx() - temp->get_first_bx();
         if (dt == 0)
-        {
             temp->flag();
-        }
         else if (dt<=ghost_cancel && curr->get_quality() > temp->get_quality())
-        {
             temp->flag();
-        }
         else if (dt<=ghost_cancel && curr->get_quality() < temp->get_quality())
-        {
-            curr->flag(); 
-        }
+            curr->flag();
     }
     ghostBuster(temp); 
 }
@@ -257,6 +251,11 @@ void clean(ALCTCandidate* curr)
     ALCTCandidate* temp = curr->next; 
     if (temp == NULL) return;
     if (!temp->isValid()) temp->nix();  
+}
+
+int getTempALCTQuality(int quality)
+{
+    return quality; 
 }
 
 

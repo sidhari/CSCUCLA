@@ -539,7 +539,7 @@ ALCTCandidate::ALCTCandidate(unsigned int kwg, ALCTCandidate* pred) :
 	this->prev = pred; 
 }
 
-ALCTCandidate::nix()
+void ALCTCandidate::nix()
 {
 	this->_isValid = false; 
 	if (this->prev != NULL) this->prev->next = this->next;
@@ -802,7 +802,6 @@ ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 				_ring(ring),
 				_endcap(endcap),
 				_chamber(chamber),
-				_isWire(isWire),
 				_empty(empty)
 {	_nhits = 0;
 
@@ -900,6 +899,9 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 
 void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
 {
+	int chSid1 = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	int chSid2 = chSid1;
+
 	bool me11 	= _station == 1 && (_ring == 4 || _ring == 1);
 	bool me11a	= _station == 1 && _ring == 4;
 	bool me11b	= _station == 1 && _ring == 1;

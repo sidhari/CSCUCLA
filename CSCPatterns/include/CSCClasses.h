@@ -136,7 +136,6 @@ class ALCTCandidate
 	public:
 		ALCTCandidate(unsigned int kwg);
 		ALCTCandidate(unsigned int kwg, ALCTCandidate * pred);
-		void ~ALCTCandidate();
 
 		ALCTCandidate* next;
 		ALCTCandidate* prev;
@@ -145,18 +144,19 @@ class ALCTCandidate
 		bool isValid() const {return _isValid;}
 		unsigned int get_kwg() const {return _kwg;}
 		unsigned int get_first_bx() const {return _first_bx;}
+		int get_quality() const {return _quality;}
 
 		void set_kwg(unsigned int kwg) {_kwg = kwg;}
 		void set_first_bx(unsigned int first_bx) {_first_bx = first_bx;}
 		void set_first_bx_corr (unsigned int first_bx_corr) {_first_bx_corr = first_bx_corr;}
 		void set_quality(unsigned int quality){_quality = quality;}
+		void set_pattern(int pattern) {_pattern = pattern;} 
 		
 		void flag() {_isValid = false;}
 		void nix();
 
 	private:
 		int _pattern; 
-		bool _isValid;
 		unsigned int _kwg; 
 		unsigned int _first_bx;
 		unsigned int _quality;

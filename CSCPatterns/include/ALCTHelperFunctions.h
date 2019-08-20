@@ -26,13 +26,26 @@ const int ghost_cancel = 4;
 const int pattern_envelope[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
 {
     // Each digit indicates layer
-    {0, 0, 1, 1, 2, 3, 4, 4, 4, 5, 5, 5},
+    {0, 0, 0, 1, 1, 2, 3, 3, 4, 4, 4, 5, 5, 5},
 
     // Offset from KWG Number for ME1 and ME2
-    {-2, 1, 0, -1, 0, 0, 0, 1, 0, 1, 2, 0, 1, 2},
+    {-2, -1, 0, -1, 0, 0, 0, 1, 0, 1, 2, 0, 1, 2},
 
     // KWG Number offset for ME3 and ME4
     {2, 1, 0, 1, 0, 0, 0, -1, 0, -1, -2, 0, -1, -2}
+};
+
+// TODO: LOOK DEEPER INTO THIS TEMP MEASURES ONLY
+const int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
+{
+    // Accelerator pattern
+    {0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0},
+
+    // Collision pattern A
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+
+    // Collision pattern B
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
 const int pattern_mask_open[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
@@ -78,18 +91,18 @@ class ALCTConfig
             _hit_persist = 6; 
         }
 
-        int get_fifo_tbins() const {return _fifo_tbins};
-        int get_fifo_pretrig() const {return _fifo_pretrig};
-        int get_drift_delay() const {return _drift_delay};
-        int get_nplanes_hit_pretrig() const {return _nplanes_hit_pretrig};
-        int get_nplanes_hit_pattern() const {return _nplanes_hit_pattern};
-        int get_nplanes_accel_pretrig() const {return _nplanes_accel_pretrig};
-        int get_nplanes_accel_pattern() const {return _nplanes_accel_pattern};
-        int get_trig_mode() const {return _trig_mode};
-        int get_accel_mode() const {return _accel_mode};
-        int get_window_width() const {return _window_width};
-        int get_hit_persist() const {return _hit_persist};
-        
+        int get_fifo_tbins() const {return _fifo_tbins;}
+        int get_fifo_pretrig() const {return _fifo_pretrig;}
+        int get_drift_delay() const {return _drift_delay;}
+        int get_nplanes_hit_pretrig() const {return _nplanes_hit_pretrig;}
+        int get_nplanes_hit_pattern() const {return _nplanes_hit_pattern;}
+        int get_nplanes_accel_pretrig() const {return _nplanes_accel_pretrig;}
+        int get_nplanes_accel_pattern() const {return _nplanes_accel_pattern;}
+        int get_trig_mode() const {return _trig_mode;}
+        int get_accel_mode() const {return _accel_mode;}
+        int get_window_width() const {return _window_width;}
+        int get_hit_persist() const {return _hit_persist;}
+    
     private:
         int _fifo_tbins;
         int _fifo_pretrig;
@@ -102,7 +115,7 @@ class ALCTConfig
         int _trig_mode;
         int _accel_mode;
         int _window_width;
-        int _hit_persist. 
+        int _hit_persist;
 };
 
 // Converts a one-shot pulse to a vector of integers, where the elements of 
@@ -122,13 +135,25 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 // as a vector of ALCT_ChamberHits pointers, the bunch crossing we want to start on
 // and the config class. Returns -1 if the pretrigger was not satisfied, returns the 
 // bunch crossing at which it is satisfied otherwise
-int preTrigger(int kwg, int start_bx = 0, const std::vector<ALCT_ChamberHits*> &chamber, ALCTConfig &config);
+void preTrigger(int kwg, 
+                const int start_bx, 
+                const int i_pattern, 
+                std::vector<ALCT_ChamberHits*> &chamber_list, 
+                const ALCTConfig &config,
+                ALCTCandidate &cand);
 
-bool patternDetection(const int key_wire, const std::vector<ALCT_ChamberHits*> &chamber_list, ALCTConfig &config);
+void patternDection(const int key_wire,
+                    const int i_pattern, 
+                    const std::vector<ALCT_ChamberHits*> &chamber_list, 
+                    const ALCTConfig &config,
+                    ALCTCandidate &cand);
 
 void ghostBuster(ALCTCandidate* curr);
 
 void clean(ALCTCandidate* curr); 
+
+int getTempALCTQuality(int quality);
+
 
 
 #endif 

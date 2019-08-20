@@ -41,7 +41,7 @@ const unsigned int LEGACY_PATTERN_IDS[NLEGACYPATTERNS] = {10,9,8,7,6,5,4,3,2};
 // ALCT CONSTANTS
 //*****************************
 const unsigned int N_KEY_WIRE_GROUPS = 112;
-const unsigned int N_ALCT_PATTERNS = 2;
+const unsigned int N_ALCT_PATTERNS = 3;
 const unsigned int MAX_WIRES_IN_PATTERN = 14;
 
 const unsigned int NCHAMBERS = 10;
