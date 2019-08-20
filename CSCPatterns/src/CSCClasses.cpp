@@ -520,6 +520,28 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 	return false;
 };
 
+ALCTCandidate::ALCTCandidate(unsigned int kwg) : 
+	_kwg(kwg)
+{
+	_isValid = false; 
+	_first_bx = 0;
+	_first_bx_corr = 0;
+	for (int i = 0; i<3; i++)
+		quality[i] = 0;
+	_Q = 0; 
+
+	next = 0;
+	prev = 0;
+}
+
+ALCTCandidate::ALCTCandidate(unsigned int kwg, ALCTCandidate * prev) : 
+	ALCTCandidate(kwg)
+{
+	prev->next = this; 
+	this->prev = prev; 
+}
+
+
 //
 // ChamberHits
 //

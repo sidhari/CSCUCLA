@@ -12,7 +12,7 @@
 #include "../include/CSCClasses.h"
 #include "../include/CSCConstants.h"
 
-std::vector<int> pulse_to_vec (const unsigned int pulse)
+std::vector<int> pulse_to_vec(const unsigned int pulse)
 {
     std::vector<int> tbins;
     uint32_t tbit = pulse;
@@ -90,7 +90,9 @@ int preTrigger( int kwg,
             config.get_nplanes_hit_pretrig();
     const unsigned int pretrig_thresh[N_ALCT_PATTERNS] = 
     {
-        nplanes_hit_pretrig_acc, config.get_nplanes_hit_pretrig(), config.get_nplanes_hit_pretrig()
+        nplanes_hit_pretrig_acc, 
+        config.get_nplanes_hit_pretrig(), 
+        config.get_nplanes_hit_pretrig()
     };
 
     unsigned int stop_bx = config.get_fifo_tbins() - config.get_drift_delay();
@@ -107,11 +109,9 @@ int preTrigger( int kwg,
             layers_hit = 0;
             for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++)
             {
-                if (pattern_mask[i_pattern][i_wire])
-                {
-                    this_layer = pattern_envelope[0][i_wire];
-                    this_wire = pattern_envelope[1 + MESelect][i_wire] + kwg;
-                }
+                if (!pattern_mask[i_pattern][i_wire]) continue; 
+                int this_layer = pattern_envelope[0][i_wire];
+                int this_wire = pattern_envelope[1 + MESelect][i_wire] + kwg;
                 if (this_wire < 0 || this_wire >= chamber->get_maxWi()) continue;
                 if (chamber->_hits[this_wire][this_layer] && !hit_layers[this_layer])
                 {
@@ -123,6 +123,112 @@ int preTrigger( int kwg,
         }
     }
     return -1; 
+}
+
+bool patternDection(const int key_wire, 
+                    const std::vector<ALCT_ChamberHits*> &chamber_list, 
+                    const ALCTConfig &config,
+                    std::vector<ALCTCandidate*> &cand_list)
+{
+    bool trigger = false;
+    bool hit_layer[NLAYERS];
+    unsigned int temp_quality;
+
+    int this_layer, this_wire, delta_wire;
+
+    const unsigned int nplanes_hit_pattern_acc = 
+        (config.get_nplanes_accel_pattern() != 0) ? 
+            config.get_nplanes_accel_pattern() : 
+            config.get_nplanes_hit_pattern();
+
+    const unsigned int pattern_thresh[N_ALCT_PATTERNS] = 
+    {
+        nplanes_hit_pattern_acc, 
+        config.get_nplanes_hit_pattern(), 
+        config.get_nplanes_hit_pattern()
+    };
+
+    ALCT_ChamberHits* chamber = chamber_list.at(0);
+    int MESelect = (chamber->_station <= 2) ? 0 : 1;
+
+    for (int i_pattern = 0; i_pattern < N_ALCT_PATTERNS; i_pattern++)
+    {
+        temp_quality = 0;
+        for (int i_layer = 0; i_layer < NLAYERS; i_layer++)
+            hit_layer[i_layer] = false; 
+        
+        double times_sum = 0.;
+        double num_pattern_hits = 0.;
+        std::multiset<int> mset_for_median;
+        mset_for_median.clear();
+
+        for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++)
+        {
+            if (pattern_mask[i_pattern][i_wire])
+            {
+                this_layer = pattern_envelope[0][i_wire];
+                delta_wire = pattern_envelope[1 + MESelect][i_wire];
+                this_wire = delta_wire + i_wire;
+
+                if (this_wire<0 || this_wire>= chamber->get_maxWi()) continue;
+                chamber = chamber_list.at(first_bx+config.get_drift_delay());
+                if (chamber->_hits[this_wire][this_layer])
+                {
+                    if (!hit_layer[this_layer])
+                    {
+                        hit_layer[this_layer] = true;
+                        temp_quality++;
+                    }
+                    if (abs(delta_wire)<2)
+                    {
+                        ALCT_ChamberHits* temp = chamber; 
+                        int first_bx_layer = first_bx + config.get_drift_delay();
+                        for (unsigned int dbx = 0; dbx < config.get_hit_persist(); dbx++)
+                        {
+                            if (chamber->prev == NULL) break;
+                            temp = temp->prev;
+                            if (temp->_hits[this_wire][this_layer]) first_bx_layer--;
+                            else break;    
+                        }
+                        times_sum += (double) first_bx_layer;
+                        num_pattern_hits += 1.; 
+                        mset_for_median.insert(first_bx_layer);
+                    }
+                }
+            }
+        }
+        int first_bx_corrected = -1;
+        const int sz = mset_for_median.size();
+        if (sz > 0) 
+        {
+            std::multiset<int>::iterator im = mset_for_median.begin();
+            if (sz > 1) std::advance(im, sz / 2 - 1);
+            if (sz == 1) first_bx_corrected = *im;
+            else if ((sz % 2) == 1) first_bx_corrected = *(++im);
+            else first_bx_corrected = ((*im) + (*(++im))) / 2;
+        }
+        if (temp_quality >= pattern_thresh[i_pattern]) 
+        {
+            trigger = true;
+            temp_quality = getTempALCTQuality(temp_quality);
+
+            if (i_pattern == 0) 
+            {
+                // Accelerator pattern
+                quality[key_wire][0] = temp_quality;
+            } 
+            else 
+            {
+                // Only one collision pattern (of the best quality) is reported
+                if (static_cast<int>(temp_quality) > quality[key_wire][1]) 
+                {
+                    quality[key_wire][1] = temp_quality;   //real quality
+                    quality[key_wire][2] = i_pattern - 1;  // pattern, left or right
+                }
+            }
+        }
+    }
+    return trigger; 
 }
 
 

@@ -19,6 +19,8 @@
 // LEGACY CODE 
 //******************************
 
+const int hit_persist = 6; 
+
 const int pattern_envelope[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
 {
     // Each digit indicates layer
@@ -71,6 +73,7 @@ class ALCTConfig
             _trig_mode = 2;
             _accel_mode = 0;
             _window_width = 7; 
+            _hit_persist = 6; 
         }
 
         int get_fifo_tbins() const {return _fifo_tbins};
@@ -83,16 +86,7 @@ class ALCTConfig
         int get_trig_mode() const {return _trig_mode};
         int get_accel_mode() const {return _accel_mode};
         int get_window_width() const {return _window_width};
-
-        /*int set_fifo_tbins(int val);
-        int set_fifo_pretrig(int val);
-        int set_drift_delay(int val);
-        int set_nplanes_pretrig(int val);
-        int set_nplanes_pattern(int val);
-        int set_nplanes_accel(int val);
-        int set_trig_mode(int val);
-        int set_accel_mode(int val);
-        int set_window_width(int val);*/
+        int get_hit_persist() const {return _hit_persist};
         
     private:
         int _fifo_tbins;
@@ -106,6 +100,7 @@ class ALCTConfig
         int _trig_mode;
         int _accel_mode;
         int _window_width;
+        int _hit_persist. 
 };
 
 // Converts a one-shot pulse to a vector of integers, where the elements of 
@@ -117,7 +112,7 @@ void print_pulse(unsigned int pulse);
 
 // stretches a one-shot pulse to a length of p_ext time bins
 // set to a constant of 6, as in data
-unsigned int extend_time(const unsigned int pulse, const int p_ext=6);
+unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 
 // Checks whether a threshold for a wire has been passed. If so returns the 
 // bunch crossing in which the threshhold was passed. Note that in this instance 
@@ -127,7 +122,7 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext=6);
 // bunch crossing at which it is satisfied otherwise
 int preTrigger(int kwg, int start_bx = 0, const std::vector<ALCT_ChamberHits*> &chamber, ALCTConfig &config);
 
-void patternDetection(const int key_wire, const std::vector<ALCT_ChamberHits*> &chamber, ALCTConfig &config);
+bool patternDetection(const int key_wire, const std::vector<ALCT_ChamberHits*> &chamber_list, ALCTConfig &config);
 
 
 

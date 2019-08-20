@@ -134,150 +134,38 @@ private:
 class ALCTCandidate
 {
 	public:
-		ALCTCandidate(CSCPattern p, int kwg, bool hits[NLAYERS][3]);
+		ALCTCandidate(unsigned int kwg);
+		ALCTCandidate(unsigned int kwg, ALCTCandidate * pred);
 		void ~ALCTCandidate();
 
-		const CSCPattern pattern;
-		const int kwg;
-		const int time;
 		bool isValid;
-		int quality;
-		bool vtp;
-		bool vbot; 
-
-		int getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const;
-
-	private:
+		unsigned int quality[3];
 		ALCTCandidate* next;
 		ALCTCandidate* prev;
+
+		int get_pattern() const {return _pattern;}
+		bool isValid() const {return _isValid;}
+		unsigned int get_kwg() const {return _kwg;}
+		unsigned int get_first_bx() const {return _first_bx;}
+		unsigned int get_first_bx_corr() const {return _first_bx_corr;}
+		unsigned int getQ() const {return _Q;}
+
+		void set_kwg(unsigned int kwg) {_kwg = kwg;}
+		void set_first_bx(unsigned int first_bx) {_first_bx = first_bx;}
+		void set_first_bx_corr(unsigned int first_bx_corr) {_first_bx_corr = first_bx_corr;}
+		void setQ(unsigned int Q) {_Q = Q;}
+
+		void nix() {_isValid = false;}
+
+	private:
+
+		int _pattern; 
+		bool _isValid;
+		unsigned int _kwg; 
+		unsigned int _first_bx;
+		unsigned int _first_bx_corr;
+		unsigned int _Q; 
 };
-/*
-class ALCTCandidateCollection
-{
-	public:
-		ALCTCandidateCollection() : CSCInfo::Object("alct_cand")
-		{
-			ch_id = 0;
-			quality = 0; 
-			accelerator = 0;
-			collisionB = 0;
-			keyWG = 0;
-			BX = 0;
-			trkNumber = 0;
-			fullBX = 0;
-		}
-		
-		ALCTCandidateCollection(TTree* t, int flag=1) : ALCTCandidateCollection()
-		{
-			if (flag == 0) // read
-			{
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(accelerator)).c_str(), &accelerator);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(collisionB)).c_str(), &collisionB);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyWG)).c_str(), &keyWG);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(trkNumber)).c_str(), &trkNumber);
-				t->SetBranchAddress(branchify(GET_VARIABLE_NAME(fullBX)).c_str(), &fullBX);
-			}
-			else if (flag == 1) // write (writes to trees by default)
-			{
-				t->Branch(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
-				t->Branch(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
-				t->Branch(branchify(GET_VARIABLE_NAME(accelerator)).c_str(), &accelerator);
-				t->Branch(branchify(GET_VARIABLE_NAME(collisionB)).c_str(), &collisionB);
-				t->Branch(branchify(GET_VARIABLE_NAME(keyWG)).c_str(), &keyWG);
-				t->Branch(branchify(GET_VARIABLE_NAME(BX).c_str(), &BX);
-				t->Branch(branchify(GET_VARIABLE_NAME(trkNumber)).c_str(), &trkNumber);
-				t->Branch(branchify(GET_VARIABLE_NAME(fullBX)).c_str(), &fullBX);
-			}
-			else std::cout << "Error with flag value" << std::endl;
-		}
-
-		unsigned int size() const 
-		{
-			return ch_id ? ch_id->size() : 0;
-		}
-
-		std::vector<size16>* ch_id;
-		std::vector<size8>* quality; 
-		std::vector<size8>* accelerator;
-		std::vector<size8>* collisionB;
-		std::vector<size8>* keyWG;
-		std::vector<size8>* BX; 			//bunch crossing
-		std::vector<size8>* trkNumber;
-		std::vector<size16>* fullBX;
-}; */
-
-/*
-
-class ALCTCandidateCollection
-{
-	public:
-		ALCTs() : Object("alct_cand")
-		{
-			ch_id = 0;
-			quality = 0; 
-			accelerator = 0;
-			collisionB = 0;
-			keyWG = 0;
-			BX = 0;
-			trkNumber = 0;
-			fullBX = 0;
-		}
-
-		ALCTCandidateCollection(TTree* t) : ALCTs()
-		{
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(ch_id)).c_str(), &ch_id);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(quality)).c_str(), &quality);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(accelerator)).c_str(), &accelerator);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(collisionB)).c_str(), &collisionB);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(keyWG)).c_str(), &keyWG);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(trkNumber)).c_str(), &trkNumber);
-			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(fullBX)).c_str(), &fullBX);
-		}
-
-		unsigned int size() const 
-		{
-			return ch_id ? ch_id->size() : 0;
-		}
-
-		std::vector<size16>* ch_id;
-		std::vector<size8>* quality; 
-		std::vector<size8>* accelerator;
-		std::vector<size8>* collisionB;
-		std::vector<size8>* keyWG;
-		std::vector<size8>* BX; 			//bunch crossing
-		std::vector<size8>* trkNumber;
-		std::vector<size16>* fullBX;
-}; 
-
-class FillALCTCandidateInfo: public ALCTCandidateCollection, public FillInfo
-{
-	public:
-		FillALCTCandidateCollection(TreeContainer &tree):
-			ALCTCandidateCollection(),
-			FillInfo(name,tree)
-		{
-
-		}
-
-		virtual ~FillALCTCandidateCollection()
-		{
-
-		}
-
-		virtual void reset()
-		{
-
-		}
-
-		void splat(ALCTCandidate &alct_cand, unsigned int chamberHash);
-
-		void fill(const std::vector<ALCTCandidate> &alct_cands, unsigned int chamberHash);
-};
-*/
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber
@@ -345,6 +233,9 @@ class ALCT_ChamberHits
 		float get_hitStdWi();
 
 		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
+
+		ALCT_ChamberHits* prev = 0;
+		ALCT_ChamberHits* next = 0; 
 
 		void fill(const CSCInfo::Wires &w);
 		void fill(const CSCInfo::Wires &w, int time, int p_ext=6);
