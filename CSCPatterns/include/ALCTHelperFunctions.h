@@ -21,6 +21,8 @@
 
 const int hit_persist = 6; 
 
+const int ghost_cancel = 4; 
+
 const int pattern_envelope[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
 {
     // Each digit indicates layer
@@ -124,6 +126,9 @@ int preTrigger(int kwg, int start_bx = 0, const std::vector<ALCT_ChamberHits*> &
 
 bool patternDetection(const int key_wire, const std::vector<ALCT_ChamberHits*> &chamber_list, ALCTConfig &config);
 
+void ghostBuster(ALCTCandidate* curr);
+
+void clean(ALCTCandidate* curr); 
 
 
 #endif 

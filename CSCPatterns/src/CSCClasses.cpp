@@ -523,22 +523,27 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 ALCTCandidate::ALCTCandidate(unsigned int kwg) : 
 	_kwg(kwg)
 {
-	_isValid = false; 
+	_isValid = true; 
 	_first_bx = 0;
 	_first_bx_corr = 0;
-	for (int i = 0; i<3; i++)
-		quality[i] = 0;
-	_Q = 0; 
+	_quality = 0; 
 
 	next = 0;
 	prev = 0;
 }
 
-ALCTCandidate::ALCTCandidate(unsigned int kwg, ALCTCandidate * prev) : 
+ALCTCandidate::ALCTCandidate(unsigned int kwg, ALCTCandidate* pred) : 
 	ALCTCandidate(kwg)
 {
-	prev->next = this; 
-	this->prev = prev; 
+	pred->next = this; 
+	this->prev = pred; 
+}
+
+ALCTCandidate::nix()
+{
+	this->_isValid = false; 
+	if (this->prev != NULL) this->prev->next = this->next;
+	if (this->next != NULL) this->next->prev = this->prev;
 }
 
 
