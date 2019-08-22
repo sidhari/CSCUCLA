@@ -151,6 +151,7 @@ public:
 	unsigned int minHs() const {return _minHs;}
 	unsigned int maxHs() const {return _maxHs;}
 	unsigned int nhits() const {return _nhits;}
+	unsigned int nCFEBs() const {return _nCFEBs;}
 	float hitMeanHS();
 	float hitStdHS();
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
@@ -161,6 +162,7 @@ public:
 	int fill(const CSCInfo::RecHits& r);
 	void print() const; //deprecated
 	friend ostream& operator<<(ostream& os, const ChamberHits& c);
+	//void writeMEMs(const std::string& fileidentifier) const;
 
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
@@ -170,35 +172,9 @@ private:
 
 	float _meanHS;
 	float _stdHS;
+	unsigned int _nCFEBs;
 
 };
-
-/*class ALCT_ChamberHits
-{
-	public:
-		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
-			unsigned int endcap=0, unsigned int chamber=0, bool isWire=true);
-		
-		ALCT_ChamberHits(const ALCT_ChamberHits &c);
-		
-		~ChamberHits(){}	
-
-		const bool _isWire;
-		const unsigned int _station;
-		const unsigned int _ring;
-		const unsigned int _endcap;
-		const unsigned int _chamber;
-
-		int _hits[N_KWG][NLAYERS];
-
-		int fill(const CSCInfo::Wires& w);
-		void print() const; //deprecated
-		friend ostream& operator<<(ostream& os, const ChamberHits& c);
-	private:
-		
-}*/
-
-
 
 
 #endif /* PATTERNFITTER_H_ */

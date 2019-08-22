@@ -68,13 +68,14 @@ int Analyzer_TEMPLATE::run(string inputfile, string outputfile, int start, int e
 	if(end > t->GetEntries() || end < 0) end = t->GetEntries();
 
 
-	printf("Starting Event = %i, Ending Event = %i\n", start, end);
 	cout << "Starting Event: " << start << " Ending Event: " << end << endl;
+
 
 	for(int i = start; i < end; i++) {
 		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
+
 
 	}
 

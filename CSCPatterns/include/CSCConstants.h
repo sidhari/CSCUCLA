@@ -26,6 +26,7 @@ const unsigned int N_KEY_WIRE_GROUPS = 112;
 const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 const unsigned int CFEB_HS = 32;
+const unsigned int MAX_CFEBS = 7; //in ME11
 
 const std::string LINEFIT_LUT_PATH = "/uscms/home/wnash/CSCUCLA/CSCPatterns/dat/linearFits.lut";
 //const std::string LINEFIT_LUT_PATH = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/linearFits.lut";
