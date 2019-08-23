@@ -134,8 +134,10 @@ private:
 class ALCTCandidate
 {
 	public:
-		ALCTCandidate(unsigned int kwg);
-		ALCTCandidate(unsigned int kwg, ALCTCandidate * pred);
+		ALCTCandidate(unsigned int kwg, int pattern);
+		ALCTCandidate(unsigned int kwg, int pattern, ALCTCandidate * pred);
+
+		//~ALCTCandidate();
 
 		ALCTCandidate* next;
 		ALCTCandidate* prev;
@@ -154,6 +156,9 @@ class ALCTCandidate
 		
 		void flag() {_isValid = false;}
 		void nix();
+
+		friend ostream& operator<<(ostream& os, const ALCTCandidate &c);
+		friend ostream& operator<<(ostream& os, const ALCTCandidate * const c);
 
 	private:
 		int _pattern; 

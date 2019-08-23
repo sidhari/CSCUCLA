@@ -35,19 +35,6 @@ const int pattern_envelope[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
     {2, 1, 0, 1, 0, 0, 0, -1, 0, -1, -2, 0, -1, -2}
 };
 
-// TODO: LOOK DEEPER INTO THIS TEMP MEASURES ONLY
-const int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
-{
-    // Accelerator pattern
-    {0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0},
-
-    // Collision pattern A
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-
-    // Collision pattern B
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-};
-
 const int pattern_mask_open[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
 {
     // Accelerator pattern
@@ -61,7 +48,7 @@ const int pattern_mask_open[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
 };
 
 // Special option for narrow pattern for ring 1 stations
-const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
+/*const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
 {
     // Accelerator pattern
     {0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0},
@@ -71,6 +58,18 @@ const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
 
     // Collision pattern B
     {0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0}
+};*/
+
+const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
+{
+    // Accelerator pattern
+    {0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0},
+
+    // Collision pattern A
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+
+    // Collision pattern B
+    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
 class ALCTConfig
@@ -90,7 +89,7 @@ class ALCTConfig
             _window_width = 7; 
             _hit_persist = 6; 
         }
-
+        
         int get_fifo_tbins() const {return _fifo_tbins;}
         int get_fifo_pretrig() const {return _fifo_pretrig;}
         int get_drift_delay() const {return _drift_delay;}
@@ -135,16 +134,13 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 // as a vector of ALCT_ChamberHits pointers, the bunch crossing we want to start on
 // and the config class. Returns -1 if the pretrigger was not satisfied, returns the 
 // bunch crossing at which it is satisfied otherwise
-void preTrigger(int kwg, 
-                const int start_bx, 
-                const int i_pattern, 
+bool preTrigger(const int start_bx, 
                 std::vector<ALCT_ChamberHits*> &chamber_list, 
-                const ALCTConfig &config,
+                ALCTConfig &config,
                 ALCTCandidate &cand);
 
-void patternDection(const int key_wire,
-                    const int i_pattern, 
-                    const std::vector<ALCT_ChamberHits*> &chamber_list, 
+
+bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list, 
                     const ALCTConfig &config,
                     ALCTCandidate &cand);
 
@@ -154,6 +150,8 @@ void clean(ALCTCandidate* curr);
 
 int getTempALCTQuality(int quality);
 
+void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec);
 
+void bestTrackSelector(); 
 
 #endif 

@@ -76,13 +76,24 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext)
   return tbit;
 }
 
-void preTrigger(int kwg, 
-                const int start_bx, 
-                const int i_pattern, 
+bool preTrigger(const int start_bx, 
                 std::vector<ALCT_ChamberHits*> &chamber_list, 
-                const ALCTConfig &config,
+                ALCTConfig &config,
                 ALCTCandidate &cand)
 {
+    int kwg = cand.get_kwg();
+    int i_pattern = cand.get_pattern();
+    int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN];
+    for (int i_patt = 0; i_patt < N_ALCT_PATTERNS; i_patt++) 
+    {
+        for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++) 
+        {
+            pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
+            if (((chamber_list.at(0))->_ring== 1 || (chamber_list.at(0))->_ring == 4))
+                pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
+        }   
+    }
+
     int layers_hit;
     bool hit_layer[NLAYERS];
 
@@ -120,18 +131,32 @@ void preTrigger(int kwg,
             if (layers_hit >= pretrig_thresh[i_pattern])
             {
                 cand.set_first_bx(i);
+                return true;
             }
         }
     }
     cand.nix();
+    return false;
+    cout << "nixed " << kwg << endl;
 }
 
-void patternDection(const int key_wire,
-                    const int i_pattern, 
-                    const std::vector<ALCT_ChamberHits*> &chamber_list, 
+bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list, 
                     const ALCTConfig &config,
                     ALCTCandidate &cand)
 {
+    int key_wire = cand.get_kwg();
+    int i_pattern = cand.get_pattern(); 
+    int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN];
+    for (int i_patt = 0; i_patt < N_ALCT_PATTERNS; i_patt++) 
+    {
+        for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++) 
+        {
+            pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
+            if (((chamber_list.at(0))->_ring== 1 || (chamber_list.at(0))->_ring == 4))
+                pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
+        }   
+    }
+
     bool trigger = false;
     bool hit_layer[NLAYERS];
     unsigned int temp_quality;
@@ -167,7 +192,7 @@ void patternDection(const int key_wire,
         {
             this_layer = pattern_envelope[0][i_wire];
             delta_wire = pattern_envelope[1 + MESelect][i_wire];
-            this_wire = delta_wire + i_wire;
+            this_wire = delta_wire + key_wire;
 
             if (this_wire<0 || this_wire>= chamber->get_maxWi()) continue;
             chamber = chamber_list.at(cand.get_first_bx()+config.get_drift_delay());
@@ -227,22 +252,31 @@ void patternDection(const int key_wire,
         }
     }
     else cand.nix();
+    return trigger;
 }
 
 void ghostBuster(ALCTCandidate* curr)
 {
+    if (curr == NULL) return;
     ALCTCandidate* temp = curr->next; 
     if (temp == NULL) return; 
     if (curr->get_quality())
     {
-        int dt = curr->get_first_bx() - temp->get_first_bx();
-        if (dt == 0)
-            temp->flag();
-        else if (dt<=ghost_cancel && curr->get_quality() > temp->get_quality())
-            temp->flag();
-        else if (dt<=ghost_cancel && curr->get_quality() < temp->get_quality())
-            curr->flag();
+        if (temp->get_kwg()-1 == curr->get_kwg())
+        {
+            int dt = curr->get_first_bx() - temp->get_first_bx();
+            if (dt == 0)
+            {
+                if (curr->get_quality()>=temp->get_quality()) temp->flag();
+                else curr->flag(); 
+            }
+            else if (dt<=ghost_cancel && curr->get_quality() > temp->get_quality())
+                temp->flag();
+            else if (dt<=ghost_cancel && curr->get_quality() < temp->get_quality())
+                curr->flag();
+        }
     }
+    else curr->flag(); 
     ghostBuster(temp); 
 }
 
@@ -250,12 +284,30 @@ void clean(ALCTCandidate* curr)
 {
     ALCTCandidate* temp = curr->next; 
     if (temp == NULL) return;
-    if (!temp->isValid()) temp->nix();  
+    if (!temp->isValid())
+    {
+        temp->nix();
+        clean(curr);
+    }
+    else clean(temp);
 }
 
-int getTempALCTQuality(int quality)
+void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec)
 {
-    return quality; 
+    cand_vec.push_back(curr);
+    if (curr->next == NULL) return;
+    else head_to_vec(curr->next, cand_vec);
 }
+
+int getTempALCTQuality(int temp_quality)
+{
+    return (temp_quality > 3) ? temp_quality - 3 : 0; 
+}
+
+void bestTrackSelector()
+{
+
+}
+
 
 

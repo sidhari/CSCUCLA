@@ -520,8 +520,9 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 	return false;
 };
 
-ALCTCandidate::ALCTCandidate(unsigned int kwg) : 
-	_kwg(kwg)
+ALCTCandidate::ALCTCandidate(unsigned int kwg, int pattern) : 
+	_kwg(kwg),
+	_pattern(pattern)
 {
 	_isValid = true; 
 	_first_bx = 0;
@@ -532,8 +533,8 @@ ALCTCandidate::ALCTCandidate(unsigned int kwg) :
 	prev = 0;
 }
 
-ALCTCandidate::ALCTCandidate(unsigned int kwg, ALCTCandidate* pred) : 
-	ALCTCandidate(kwg)
+ALCTCandidate::ALCTCandidate(unsigned int kwg, int pattern, ALCTCandidate* pred) : 
+	ALCTCandidate(kwg, pattern)
 {
 	pred->next = this; 
 	this->prev = pred; 
@@ -544,6 +545,26 @@ void ALCTCandidate::nix()
 	this->_isValid = false; 
 	if (this->prev != NULL) this->prev->next = this->next;
 	if (this->next != NULL) this->next->prev = this->prev;
+}
+
+ostream& operator<<(ostream& os, const ALCTCandidate &c){
+	os << "==== Printing ALCTCandidate  Pattern = " << c.get_pattern() <<
+			", Validity = "<< c.isValid() <<
+			", KWG = " << c.get_kwg() <<
+			", Quality = " << c.get_quality() << 
+			", First BX = "<< c.get_first_bx() << " ====\n";
+	os << "\n";
+	return os;
+}
+
+ostream& operator<<(ostream& os, const ALCTCandidate* const c){
+	os << "==== Printing ALCTCandidate  Pattern = " << c->get_pattern() <<
+			", Validity = "<< c->isValid() <<
+			", KWG = " << c->get_kwg() <<
+			", Quality = " << c->get_quality() << 
+			", First BX = "<< c->get_first_bx() << " ====\n";
+	os << "\n";
+	return os;
 }
 
 
@@ -814,7 +835,7 @@ ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 	bool me41	= _station == 4 && _ring == 1;
 	//bool oneCFEB = _station == 0 && _ring == 0;
 
-	if (me11a || me11b || me12 || me13)	_maxWi = 32;
+	if (me11a || me11b || me12 || me13)	_maxWi = 48;
 	else if (me21) 						_maxWi = 112;
 	else if (me31 || me41)				_maxWi = 96;
 	else 								_maxWi = 64;
@@ -852,7 +873,7 @@ ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
 	for(unsigned int y = 0; y < NLAYERS; y++) {
 		os << " ";
 		for(unsigned int x = c.get_minWi(); x < c.get_maxWi(); x++){
-			if(c._hits[x][y]) os << c._hits[x][y];//os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
+			if(c._hits[x][y]) os << c._hits[x][y]-1;//os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
 			else os <<"-";
 		}
 		os <<"\n";
@@ -897,7 +918,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 	}
 }
 
-void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
+void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int tbin, int p_ext)
 {
 	int chSid1 = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
 	int chSid2 = chSid1;
@@ -912,29 +933,29 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int time, int p_ext)
 	bool me41	= _station == 4 && _ring == 1;
 
 	_nhits = 0;
+	_empty = true;
 
-	if (me11)
+	if (me11a || me11b)
 	{
 		if (me11a) chSid2 = CSCHelper::serialize(_station, 1, _chamber, _endcap);
 		if (me11b) chSid2 = CSCHelper::serialize(_station, 4, _chamber, _endcap);
 	}
-	_nhits = 0;
 	for (unsigned int i = 0; i < w.size(); i++)
 	{
 		if (chSid1!=w.ch_id->at(i) && chSid2!= w.ch_id->at(i)) continue; 
 		unsigned int lay = w.lay->at(i) - 1;
-		unsigned int group = w.group->at(i);
+		unsigned int group = w.group->at(i)-1;
 		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
 		if (!extended_pulse) continue; 
 		std::vector<int> timevec = pulse_to_vec(extended_pulse);
 		for (int j = 0; j<timevec.size(); j++)
 		{
-			if (timevec.at(j)!=time) continue;
-			_hits[group][lay] = time+1;
+			if (timevec.at(j)!= tbin) continue;
+			_hits[group][lay] = 1;
 			_nhits++;
-			this->regHit();
 		}
 	}
+	if (_nhits > 0) regHit();
 }
 
 void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end, int p_ext)

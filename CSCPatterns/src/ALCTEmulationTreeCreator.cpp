@@ -22,6 +22,7 @@
 #include "../include/CSCConstants.h"
 #include "../include/CSCClasses.h"
 #include "../include/CSCHelperFunctions.h"
+#include "../include/ALCTHelperFunctions.h"
 
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
