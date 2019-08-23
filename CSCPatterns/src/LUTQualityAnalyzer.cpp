@@ -52,6 +52,8 @@ int main(int argc, char* argv[]){
 
 int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int end)
 {
+    auto t1 = std::chrono::high_resolution_clock::now();
+
     cout << endl << "Running over file: " << inputfile << endl << endl;
 
     TFile* f = TFile::Open(inputfile.c_str());
@@ -78,7 +80,28 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     EmulatedCLCTs emulatedclcts(t_emu,2);
 
-	LUT bayesLUT(string("bayes"), string("dat/luts/linearFits.lut"));  
+	LUT bayesLUT(string("bayes"));
+    bayesLUT.loadText(string("dat/luts/linearFits.lut"));
+
+    //
+    //COUNTERS
+    //
+
+    unsigned long long int muonsegmentmatchcounter = 0;
+    unsigned long long int notmuonsegmentmatchcounter = 0;
+
+    map<LUTKey,unsigned long long int> muonsegmentmatchesperkey;
+    map<LUTKey,unsigned long long int> notmuonsegmentmatchesperkey;
+
+    for(unsigned int PID = 100; PID >59; PID-=10)
+    {
+        for(unsigned int CCID = 0; CCID < 4096; CCID++)
+        {
+            LUTKey k(PID,CCID);
+            muonsegmentmatchesperkey[k] = 0;
+            notmuonsegmentmatchesperkey[k] = 0; 
+        }
+    }
 
     //
 	// TREE ITERATION
@@ -95,6 +118,13 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
         t->GetEntry(i);               
 
         t_emu->GetEntry(i);        
+
+        /* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
+		* installed on September 12
+		*/
+		if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
+		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
+		*/
 
         //
 		//Iterate through all possible chambers
@@ -125,17 +155,21 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                 if(chamberHash != (unsigned int)segments.ch_id->at(iseg))
                 continue;
 
-                if(segments.mu_id->at(iseg) == -1)
-                continue;
+                float segmentdxdz;
+                float pt;
 
-                float segmentx = segments.pos_x->at(iseg); //segment position in strips
-                float segmentdxdz = segments.dxdz->at(iseg);
-                float pt = muons.pt->at(segments.mu_id->at(iseg));
+                if(segments.mu_id->at(iseg) != -1)
+                {
+                    segmentdxdz = segments.dxdz->at(iseg);
+                    pt = muons.pt->at(segments.mu_id->at(iseg));
+                }            
+
+                float segmentx = segments.pos_x->at(iseg); //segment position in strips                
 
                 //ignore segments at edges of chambers
 
-                if(CSCHelper::segmentIsOnEdgeOfChamber(segmentx,ST,RI)) 
-                continue;
+                //if(CSCHelper::segmentIsOnEdgeOfChamber(segmentx,ST,RI)) 
+                //continue;
 
                 //iterate through all CLCTs in chamber, see if there is a match
 
@@ -145,6 +179,9 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                 for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
                 {   
                     if(emulatedclcts.ch_id->at(iclct) != chamberHash)
+                    continue;
+
+                    if(emulatedclcts.layerCount->at(iclct) < 3)
                     continue;
 
                     if(std::find(matchedclctsindex.begin(), matchedclctsindex.end(), iclct) != matchedclctsindex.end())
@@ -162,6 +199,25 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 if(closestclcttosegmentindex != -1) //found a match
                 {
+                    if(segments.mu_id->at(iseg) == -1)
+                    {
+                        notmuonsegmentmatchcounter++;
+                        int PID = (int)emulatedclcts.patternId->at(closestclcttosegmentindex);
+                        int CCID = (int)emulatedclcts.comparatorCodeId->at(closestclcttosegmentindex);
+                        LUTKey k(PID,CCID);
+                        notmuonsegmentmatchesperkey[k]++;
+                        //cout << "not muon " << notmuonsegmentmatchesperkey[k] << endl << endl;
+                        matchedclctsindex.push_back(closestclcttosegmentindex);
+                        continue;
+                    }
+
+                    muonsegmentmatchcounter++;
+                    int PID = (int)emulatedclcts.patternId->at(closestclcttosegmentindex);
+                    int CCID = (int)emulatedclcts.comparatorCodeId->at(closestclcttosegmentindex);
+                    LUTKey k(PID,CCID);
+                    muonsegmentmatchesperkey[k]++;
+                    //cout << "muon " << muonsegmentmatchesperkey[k] << endl << endl;
+
                     float clctx = emulatedclcts.keyStrip->at(closestclcttosegmentindex);
 
                     SegmentMatch thismatch;
@@ -179,6 +235,9 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
             for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
             { 
                 if(emulatedclcts.ch_id->at(iclct) != chamberHash)
+                continue;
+
+                if(emulatedclcts.layerCount->at(iclct) < 3)
                 continue;
 
                 LUTEntry* entry = 0;
@@ -208,7 +267,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                 }
 
                 if(!foundsegment)
-                {
+                {                    
                     entry->addCLCT(emulatedclcts.size(chamberHash));
                 }
 
@@ -218,7 +277,39 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                   
     }
 
-    bayesLUT.sort("lpxke");
+    map<LUTKey,LUTEntry> _lut = bayesLUT.lut();    
+
+    for(int PID = 100; PID > 59; PID-=10)
+    {
+        for(int CCID = 0; CCID < 4096; CCID++)
+        {
+            LUTKey k(PID,CCID);
+            LUTEntry* e = 0;
+            if(bayesLUT.editEntry(k,e))
+            {
+                //cout << k._pattern << " " << k._code << endl;
+                //cout << muonsegmentmatchesperkey[k] << " " << notmuonsegmentmatchesperkey[k] << endl;
+                //cout << "key not found" << endl << endl;
+                continue;
+            }
+
+            e->calculatebayesprobability(muonsegmentmatchesperkey[k], notmuonsegmentmatchesperkey[k], muonsegmentmatchcounter, notmuonsegmentmatchcounter);
+        
+        }
+    }
+
+    /*for(auto&x : _lut)
+    {
+        LUTEntry* e = &x.second;
+        auto k = x.first;
+        e->calculatebayesprobability(muonsegmentmatchesperkey[k], notmuonsegmentmatchesperkey[k], muonsegmentmatchcounter, notmuonsegmentmatchcounter);        
+    }*/
+
+    //bayesLUT.sort("b");
+
+    bayesLUT.makeFinal();
+
+    bayesLUT.sort("lbxk");
 
     bayesLUT.setqual();
 
@@ -226,7 +317,10 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     bayesLUT.writeToText(outputfile);
 
-    cout << "Wrote to file: " << outputfile << endl;
+    cout << "Wrote to file: " << outputfile << endl << endl;
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl << endl;
     
     return 0;
 }

@@ -483,6 +483,66 @@ vector<CSCPattern>* createOldPatterns(){
 
 	return thisVector;
 }
+
+/*
+ *  Writes .mem files, read by A. Pecks firmware tester.
+ * Writes multiple files, each one containing all the comparator
+ * hits for a given CFEB. Each file is put in the format
+ *
+ * <fileidentifier><CFEB number>.mem
+ *
+ *
+ *TODO: make it so ME11A gets put in CFEBs 5-7
+ */
+void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS]){
+	bool me11a = c._station == 1 && c._ring == 4;
+	bool me11b = c._station == 1 && c._ring == 1;
+	//test using only one CFEB
+	bool oneCFEB = c._station == 0 && c._ring == 0;
+
+	//for now, only works with ME11 chambers and fake demo chamber (oneCFEB)
+	if(!(me11a || me11b || oneCFEB)) return;
+
+
+	for(unsigned int iCFEB=0; iCFEB < MAX_CFEBS; iCFEB++){
+
+		/*
+		A single line would be, for example,
+		000000001111111122222222333333334444444455555555
+		Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
+		So for example:
+			000000010000000100000001000000010000000100000001
+		corresponds to a 6 layer straight pattern on hs0.
+		This array stores the correct number for each layer
+		 */
+
+		//pad with 7 empty time bins
+		for(unsigned int i=0; i < 7; i++){
+			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+		}
+
+		if(iCFEB >=  c.nCFEBs()) { //if we are writing to more CFEB files than the chamber actually has
+			//fill them with zeros
+			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+		} else{
+			//otherwise, do some math to convert to properly formatted line
+			int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4] = {0};
+			for(unsigned int  ilay=0; ilay < NLAYERS; ilay++){
+			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
+					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay]) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
+				}
+			}
+
+			for(unsigned int i=0; i < NLAYERS;i++){
+				for(unsigned int j=0; j < CFEB_HS/4; j++){
+					CFEBStreams[iCFEB] <<dec << comparatorLocationNumberEncoding[i][j];
+				}
+			}
+			CFEBStreams[iCFEB] << endl;
+		}
+
+	}
+}
 /* Deprecated
 int chamberSerial( int ec, int st, int ri, int ch ) {
 

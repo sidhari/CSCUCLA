@@ -76,6 +76,10 @@ public:
 	float quality() const;
 	void setquality(float qual);
 	float probability() const;
+	float bayesprobability() const;
+	void setbayesprobability(float bayesprobability);
+	void calculatebayesprobability(unsigned long long int muonsegmentmatches, unsigned long long int notmuonsegmentmatches, unsigned long long int totalmuonsegmentmatches, unsigned long long int totalnotmuonsegmentmatches);
+	
 	float multiplicity() const; //calculates average multiplicity for how many clcts it is associated with
 
 	TTree* makeTree(const string& name) const;
@@ -108,7 +112,7 @@ private:
 	unsigned long _nclcts; //amount of clcts we found when making this entry (not necessarily matched with segments)
 	float _multiplicity;
 
-	unsigned long long int _matches;
+	float _bayesprobability;	
 	
 	float _quality; //quality parameter used choose between CLCTs
 
@@ -151,6 +155,8 @@ public:
 	int nsegments();
 
 	void setqual();
+	
+	map<LUTKey,LUTEntry> lut();
 	
 private:
 	bool _isFinal;
@@ -200,8 +206,8 @@ private:
 				case 'k': //key
 					if(l1.first == l2.first) continue;
 					return l1.first < l2.first;
-				case 'b': //bayes prob
-					if(l1e.bayesprobability() == l2e.bayesprobability())continue;
+				case 'b': //bayes probability
+					if(l1e.bayesprobability() == l2e.bayesprobability()) continue;
 					return l1e.bayesprobability() > l2e.bayesprobability();
 				default:
 					return l1.second < l2.second;

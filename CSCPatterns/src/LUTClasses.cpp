@@ -209,6 +209,11 @@ void LUTEntry::setquality(float qual)
 	_quality = qual;
 }
 
+void LUTEntry::setbayesprobability(float bayesprobability)
+{
+	_bayesprobability = bayesprobability;
+}
+
 /* @brief Probability clct will later be matched to a muon
  *
  */
@@ -216,6 +221,26 @@ float LUTEntry::probability() const{
 	if(nclcts()) return 1.*nsegments()/nclcts();
 	else return 0;
 }
+
+void LUTEntry::calculatebayesprobability(unsigned long long int muonsegmentmatches, unsigned long long int notmuonsegmentmatches, unsigned long long int totalmuonsegmentmatches, unsigned long long int totalnotmuonsegmentmatches)
+{		
+	float probkeymu    = ((float)muonsegmentmatches)/((float)totalmuonsegmentmatches); //probability that this key matched to a segment given the segment was associated to a muon
+	float probmu       = ((float)totalmuonsegmentmatches)/((float)(totalmuonsegmentmatches + totalnotmuonsegmentmatches)); //probability that clct is matched to a muon's segment
+	float probkeynotmu = ((float)notmuonsegmentmatches)/((float)(totalnotmuonsegmentmatches)); //probability that this key matched to a segment given the segment was not associated to a muon
+	float probnotmu    = ((float)totalnotmuonsegmentmatches)/((float)(totalmuonsegmentmatches + totalnotmuonsegmentmatches)); //probability that a clct was matched to a segment not associated to a muon
+
+	if((probkeymu*probmu + probkeynotmu*probnotmu) > 0)
+		_bayesprobability = (probkeymu*probmu)/(probkeymu*probmu + probkeynotmu*probnotmu);
+	else
+		_bayesprobability = -1; //undefined
+
+}	
+
+float LUTEntry::bayesprobability() const
+{
+	return _bayesprobability;
+}
+
 
 /* @brief How many (on average) clcts show up in the same chamber as this one
  *
@@ -465,7 +490,7 @@ void LUT::print(unsigned int minClcts,unsigned int minSegments,unsigned int minL
 
 		//double p_mu_cc = p_cc ? p_cc_mu*p_mu/p_cc : 0.;
 
-		printf("[%4i,%5i,%7s] -> [%8.4f,%8.4f,%8.1e,%6.2f,%8.1e,%6.2f,%6.2f,%5i,%5.2f,%8.3f,%8.3f,%8.3f]\n",
+		printf("[%4i,%5i,%7s] -> [%8.4f,%8.4f,%8.1e,%6.2f,%8.1e,%6.2f,%6.2f,%5i,%5.2f,%8.3f,%8.3f]\n",
 				k._pattern,
 				k._code,
 				ComparatorCode::getStringInBase4(k._code).c_str(),
@@ -481,7 +506,7 @@ void LUT::print(unsigned int minClcts,unsigned int minSegments,unsigned int minL
 				e._layers,
 				e._chi2,
 				e.position(),
-				e.slope(),
+				e.slope());
 	}
 	//printf("P(mu) = %3.3f\n", p_mu);
 }
@@ -529,7 +554,7 @@ int LUT::loadText(const string& textfile){
 			elements.push_back(line.substr(previous,current-previous));
 
 			//how many elements we expect to get from an LUT using the new scheme
-			const unsigned int sizeOfNewLUT = 9;
+			const unsigned int sizeOfNewLUT = 10;
 			const unsigned int sizeOfLegacyLUT = sizeOfNewLUT-1;
 
 
@@ -559,6 +584,7 @@ int LUT::loadText(const string& textfile){
 			float quality           = stof(elements[counter++]);
 			unsigned int layers     = stoul(elements[counter++]);
 			float chi2              = stof(elements[counter++]);
+			float bayesprob         = stof(elements[counter++]);
 
 			if(DEBUG >2){
 				cout << line << endl;
@@ -577,6 +603,7 @@ int LUT::loadText(const string& textfile){
 
 			LUTEntry entry = LUTEntry(position, slope, nsegments, pt, nclcts, multiplicity,
 					quality, layers, chi2);
+			entry.setbayesprobability(bayesprob);
 			if(setEntry(key,entry))return -1;
 		}
 		myfile.close();
@@ -611,7 +638,8 @@ int LUT::writeToText(const string& filename) {
 			myfile << it.second.nsegments() << " ";
 			myfile << it.second.quality() << " ";
 			myfile << it.second._layers << " ";
-			myfile << it.second._chi2 << endl;
+			myfile << it.second._chi2 << " ";
+			myfile << it.second.bayesprobability() << endl;
 		}
 
 		myfile.close();
@@ -744,6 +772,8 @@ int LUT::sort(const string& sortOrder){
 	}
 	//_orderedLUT = newOrderedLUT;
 
+	cout << _orderedLUT.size() << endl << endl;
+
 	return 0;
 }
 
@@ -786,6 +816,11 @@ void LUT::setqual()
 		_orderedLUT.insert(x);
 	}
 
+}
+
+map<LUTKey,LUTEntry> LUT::lut()
+{
+	return _lut;
 }
 
 int LUT::convertToPSLLine(const LUTEntry& e){

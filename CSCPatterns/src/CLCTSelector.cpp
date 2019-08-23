@@ -22,7 +22,7 @@
 #include <algorithm>
 #include <chrono>
 #include <time.h>
-#include<map>
+#include <map>
 
 
 #include "../include/CSCConstants.h"
@@ -44,7 +44,6 @@ int main(int argc, char* argv[])
 	return p.main(argc,argv);
 }
 
-
 int CLCTSelector::run(string inputfile, string outputfile, int start, int end) 
 {
 
@@ -57,14 +56,14 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
 
-    TFile* f_emu = TFile::Open("dat/Trees/EmulationResults.root");
+    TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_EverythingEndingIn1.root");
 
     TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
 	//load LUT
 
 	LUT lut(string("lut"));
-	lut.loadText(string("dat/luts/lpxke.root")); 
+	lut.loadText(string("dat/luts/lbxk.lut")); 
 	if(lut.makeFinal())
 	{
 		return -1;
@@ -101,16 +100,25 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	//HISTOGRAMS
 	//
 
-	TH1F* matchespt = new TH1F ("matched_muon_segments_pt", "Matched Muon Segments: pt", 50, 0, 100);
-	TH1F* firstclctmatchespt = new TH1F ("muon_segments_matched_to_first_CLCT_pt", "Muon Segments matched to first CLCT: pt", 50, 0, 100);
-	TH1F* secondclctmatchespt = new TH1F ("muon_segments_matched_to_second_CLCT_pt", "Muon Segments matched to second CLCT: pt", 50, 0, 100);
-	TH1F* otherindexclctmatchespt = new TH1F ("muon_segments_matched_to_other_CLCTs_pt", "Muon Segments matched to other CLCTs: pt", 50, 0, 100);
-	TH1F* effeciency1 = new TH1F ("first_index_efficiency", "First Index Efficiency;Pt[GeV];Efficiency", 50, 0, 100);
-	TH1F* effeciency2 = new TH1F ("second_index_efficiency", "Second Index Efficiency;Pt[GeV];Efficiency", 50, 0, 100);
-	TH1F* effeciency3 = new TH1F ("other_indices_efficiency", "Other Indices Efficiency;Pt[GeV];Efficiency", 50, 0, 100);
-
-	TH1F* matchedclctindex = new TH1F ("matched_clct_index", "Matched CLCT Index", 10, 0, 10);
-
+	TH1F* matchespt = new TH1F ("matched_muon_segments_pt", "Matched Muon Segments: pt;Pt[GeV];Count", 70, 0, 100);
+	TH1F* firstclctmatchespt = new TH1F ("muon_segments_matched_to_first_CLCT_pt", "Muon Segments matched to first CLCT: pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_layers = new TH1F ("muon_segments_matched_to_first_CLCT_pt_layers", "Muon Segments matched to first CLCT (Layers): pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_PID = new TH1F ("muon_segments_matched_to_first_CLCT_pt_PID", "Muon Segments matched to first CLCT (PID): pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_bayes = new TH1F ("muon_segments_matched_to_first_CLCT_pt_bayes", "Muon Segments matched to first CLCT (Bayes): pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_chi2 = new TH1F ("muon_segments_matched_to_first_CLCT_pt_chi2", "Muon Segments matched to first CLCT (Chi2): pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_KHS = new TH1F ("muon_segments_matched_to_first_CLCT_pt_KHS", "Muon Segments matched to first CLCT (KHS): pt", 70, 0, 100);
+	TH1F* secondclctmatchespt = new TH1F ("muon_segments_matched_to_second_CLCT_pt", "Muon Segments matched to second CLCT: pt", 70, 0, 100);
+	TH1F* otherindexclctmatchespt = new TH1F ("muon_segments_matched_to_other_CLCTs_pt", "Muon Segments matched to other CLCTs: pt", 70, 0, 100);
+	TH1F* effeciency1 = new TH1F ("first_index_efficiency", "First CLCT Matches;Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_layers = new TH1F ("first_index_efficiency_layers", "First CLCT Matches (Layers);Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_PID = new TH1F ("first_index_efficiency_PID", "First CLCT Matches (PID);Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_bayes = new TH1F ("first_index_efficiency_bayes", "First CLCT Matches (Bayes);Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_chi2 = new TH1F ("first_index_efficiency_chi2", "First CLCT Matches (Chi2);Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_KHS = new TH1F ("first_index_efficiency_KHS", "First CLCT Matches (KHS);Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency2 = new TH1F ("second_index_efficiency", "Second CLCT Matches;Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency3 = new TH1F ("other_indices_efficiency", "Other CLCT Matches;Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* matchedclctindex = new TH1F ("matched_clct_index", "Matched CLCT Indices", 10, 0, 10);
+	
 	//
 	// EVENT LOOP
 	//
@@ -122,7 +130,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 	for(int i = start; i < end; i++) 
     {
-		if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
+		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);
         t_emu->GetEntry(i);
@@ -164,6 +172,9 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 			for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
 			{	
 				if(emulatedclcts.ch_id->at(iclct) != chamberHash) 
+				continue;
+
+				if(emulatedclcts.layerCount->at(iclct) < 3)
 				continue;
 
 				int PID = emulatedclcts.patternId->at(iclct);				
@@ -216,7 +227,23 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 			}
 
-			
+			unsigned int segcount = 0;
+
+			for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+			{
+				if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
+				continue;
+
+				if(segments.mu_id->at(iseg) == -1)
+				continue;
+
+				segcount++;
+			}
+
+			if(segcount != 1)
+			continue;
+			if(initialclctcandidates.size() < 2)
+			continue;
 
 			for(unsigned int temp = 0; temp < initialclctcandidates.size(); temp++)
 			{
@@ -224,15 +251,23 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				int PID = initialclctcandidates.at(temp)->patternId();
 				int CCID = initialclctcandidates.at(temp)->comparatorCodeId();
 				LUTKey k(PID,CCID);
-				lut.getEntry(k,e);
+				if(lut.getEntry(k,e))
+				{
+					cout << PID << " " << CCID << endl << endl;
+					continue;
+				}
 				initialclctcandidates.at(temp)->_lutEntry = e;
 			}
 
-			//print CLCTs pre sort here (TO DO)
-
 			//split CLCTs by CFEB
 
-			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit; 
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_layers;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_PID;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_bayes;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_chi2;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_KHS;
+
 			vector<int> CFEBpossibilities; //keeps track of which CFEBs have CLCTs
 
 			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
@@ -240,6 +275,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				float keystrip = initialclctcandidates.at(iclct)->keyStrip();
 				int whichCFEB = (keystrip-1)/16;
 				CFEBsplit[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_layers[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_PID[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_bayes[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_chi2[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_KHS[whichCFEB].push_back(initialclctcandidates.at(iclct));
 				if(std::find(CFEBpossibilities.begin(),CFEBpossibilities.end(),whichCFEB) == CFEBpossibilities.end())
 				CFEBpossibilities.push_back(whichCFEB);
 			}	
@@ -249,6 +289,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 			for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
 			{ 
 				sort(CFEBsplit[*it].begin(),CFEBsplit[*it].end(),CLCTCandidate::cfebquality);
+				sort(CFEBsplit_layers[*it].begin(),CFEBsplit_layers[*it].end(),CLCTCandidate::cfebquality);
+				sort(CFEBsplit_PID[*it].begin(),CFEBsplit_PID[*it].end(),CLCTCandidate::cfebquality);
+				sort(CFEBsplit_bayes[*it].begin(),CFEBsplit_bayes[*it].end(),CLCTCandidate::cfebquality);
+				sort(CFEBsplit_chi2[*it].begin(),CFEBsplit_chi2[*it].end(),CLCTCandidate::cfebquality);
+				sort(CFEBsplit_KHS[*it].begin(),CFEBsplit_KHS[*it].end(),CLCTCandidate::cfebquality);
 			}			
 
 			//pick first from each CFEB, use LUT to find best
@@ -273,28 +318,196 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					continue;
 					CFEBsplit[*it].erase(CFEBsplit[*it].begin());
 				}
+			}
+			
+			vector<CLCTCandidate*> finalclctcandidates_layers;
+			vector<CLCTCandidate*> finalclctcandidates_PID;
+			vector<CLCTCandidate*> finalclctcandidates_bayes;
+			vector<CLCTCandidate*> finalclctcandidates_chi2;
+			vector<CLCTCandidate*> finalclctcandidates_KHS;
+
+			//just layers
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_layers[*it].size() == 0)
+					continue;
+					finalclctcandidates_layers.push_back(CFEBsplit_layers[*it].at(0));
+				}
+
+				sort(finalclctcandidates_layers.begin()+iclct,finalclctcandidates_layers.end(),
+				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				{	
+					const LUTEntry *l1 = c1->_lutEntry;
+					const LUTEntry *l2 = c2->_lutEntry;
+
+					if(!l2) return true;
+					if(!l1) return false;
+
+					if(c1->layerCount() >= c2->layerCount())
+					return true;
+					else
+					return false;
+				});
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_layers[*it].size() == 0)
+					continue;
+					CFEBsplit_layers[*it].erase(CFEBsplit_layers[*it].begin());
+				}
 			}	
 
-			unsigned int segcount  = 0;
+			//just PID
 
-			for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
 			{
-				if((unsigned int)segments.ch_id->at(iseg) != chamberHash)
-				continue;
 
-				if(segments.mu_id->at(iseg) == -1)
-				continue;
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_PID[*it].size() == 0)
+					continue;
+					finalclctcandidates_PID.push_back(CFEBsplit_PID[*it].at(0));
+				}
 
-				segcount++;
+				sort(finalclctcandidates_PID.begin()+iclct,finalclctcandidates_PID.end(),
+				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				{	
+					const LUTEntry *l1 = c1->_lutEntry;
+					const LUTEntry *l2 = c2->_lutEntry;
 
+					if(!l2) return true;
+					if(!l1) return false;
+
+					if(c1->patternId() >= c2->patternId(  ))
+					return true;
+					else
+					return false;
+				});
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_PID[*it].size() == 0)
+					continue;
+					CFEBsplit_PID[*it].erase(CFEBsplit_PID[*it].begin());
+				}
+			} 
+
+			//just bayes
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_bayes[*it].size() == 0)
+					continue;
+					finalclctcandidates_bayes.push_back(CFEBsplit_bayes[*it].at(0));
+				}
+
+				sort(finalclctcandidates_bayes.begin()+iclct,finalclctcandidates_bayes.end(),
+				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				{	
+					const LUTEntry *l1 = c1->_lutEntry;
+					const LUTEntry *l2 = c2->_lutEntry;
+
+					if(!l2) return true;
+					if(!l1) return false;
+
+					if(l1->bayesprobability() >= l2->bayesprobability())
+					return true;
+					else
+					return false;
+				});
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_bayes[*it].size() == 0)
+					continue;
+					CFEBsplit_bayes[*it].erase(CFEBsplit_bayes[*it].begin());
+				}
 			}
 
-			/*if(segcount != 1 || finalclctcandidates.size() != 2)
-			continue;*/
+			//just chi2
 
-			//print CLCTs post sort here (TO DO)	
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_chi2[*it].size() == 0)
+					continue;
+					finalclctcandidates_chi2.push_back(CFEBsplit_chi2[*it].at(0));
+				}
+
+				sort(finalclctcandidates_chi2.begin()+iclct,finalclctcandidates_chi2.end(),
+				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				{	
+					const LUTEntry *l1 = c1->_lutEntry;
+					const LUTEntry *l2 = c2->_lutEntry;
+
+					if(!l2) return true;
+					if(!l1) return false;
+
+					if(l1->_chi2 <= l2->_chi2)
+					return true;
+					else
+					return false;
+				});
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_chi2[*it].size() == 0)
+					continue;
+					CFEBsplit_chi2[*it].erase(CFEBsplit_chi2[*it].begin());
+				}
+			}
+
+			//just KHS
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_KHS[*it].size() == 0)
+					continue;
+					finalclctcandidates_KHS.push_back(CFEBsplit_KHS[*it].at(0));
+				}
+
+				sort(finalclctcandidates_KHS.begin()+iclct,finalclctcandidates_KHS.end(),
+				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				{	
+					const LUTEntry *l1 = c1->_lutEntry;
+					const LUTEntry *l2 = c2->_lutEntry;
+
+					if(!l2) return true;
+					if(!l1) return false;
+
+					if(c1->keyHalfStrip() <= c2->keyHalfStrip())
+					return true;
+					else
+					return false;
+				});
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_KHS[*it].size() == 0)
+					continue;
+					CFEBsplit_KHS[*it].erase(CFEBsplit_KHS[*it].begin());
+				}
+			}
+
 
 			vector<int> matchedclctindices;
+			vector<int> matchedclctindices_layers;
+			vector<int> matchedclctindices_PID;
+			vector<int> matchedclctindices_bayes;
+			vector<int> matchedclctindices_chi2;
+			vector<int> matchedclctindices_KHS;
 
 			//iterate through all segments in chamber
 
@@ -322,19 +535,18 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					if(segmentx > 79) continue;
 				}
 
-				totalmuonsegments++;
+				totalmuonsegments++;				
+
+				//iterate through all CLCTs in chamber, find best match
+
+				//LUTqaulity
 
 				int closestclcttosegmentindex = -1;
 				float closestclcttosegmentdistance = 1e5;
 
-				//iterate through all CLCTs in chamber, find best match
-
 				for(int iclct = 0; iclct < (int)finalclctcandidates.size(); iclct++)
 				{
 					if(std::find(matchedclctindices.begin(),matchedclctindices.end(),iclct) != matchedclctindices.end())
-					continue;
-
-					if(finalclctcandidates.at(iclct)->layerCount() < 3)
 					continue;
 
 					float clctx = finalclctcandidates.at(iclct)->keyStrip();
@@ -370,6 +582,154 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 				}
 
+				//layers
+
+				int closestclcttosegmentindex_layers = -1;
+				float closestclcttosegmentdistance_layers = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_layers.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_layers.begin(), matchedclctindices_layers.end(), iclct) != matchedclctindices_layers.end())
+					continue;
+
+					float clctx = finalclctcandidates_layers.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_layers)
+					{
+						closestclcttosegmentdistance_layers = abs(clctx - segmentx);
+						closestclcttosegmentindex_layers = iclct;
+					}					
+				}
+
+				if(closestclcttosegmentindex_layers != -1)
+				{
+					matchedclctindices_layers.push_back(closestclcttosegmentindex_layers);
+
+					if(closestclcttosegmentindex_layers == 0)
+						firstclctmatchespt_layers->Fill(pt);
+				}
+
+				//PID
+
+				int closestclcttosegmentindex_PID = -1;
+				float closestclcttosegmentdistance_PID = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_PID.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_PID.begin(), matchedclctindices_PID.end(), iclct) != matchedclctindices_PID.end())
+					continue;
+
+					float clctx = finalclctcandidates_PID.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_PID)
+					{
+						closestclcttosegmentdistance_PID = abs(clctx - segmentx);
+						closestclcttosegmentindex_PID = iclct;
+					}					
+				}
+
+				if(closestclcttosegmentindex_PID != -1)
+				{
+					matchedclctindices_PID.push_back(closestclcttosegmentindex_PID);
+
+					if(closestclcttosegmentindex_PID == 0)
+						firstclctmatchespt_layers->Fill(pt);
+				}
+
+				//bayes
+
+				int closestclcttosegmentindex_bayes = -1;
+				float closestclcttosegmentdistance_bayes = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_bayes.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_bayes.begin(), matchedclctindices_bayes.end(), iclct) != matchedclctindices_bayes.end())
+					continue;
+
+					float clctx = finalclctcandidates_bayes.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_bayes)
+					{
+						closestclcttosegmentdistance_bayes = abs(clctx - segmentx);
+						closestclcttosegmentindex_bayes = iclct;
+					}					
+				}
+
+				if(closestclcttosegmentindex_bayes != -1)
+				{
+					matchedclctindices_bayes.push_back(closestclcttosegmentindex_bayes);
+
+					if(closestclcttosegmentindex_bayes == 0)
+						firstclctmatchespt_bayes->Fill(pt);
+				}
+
+				//chi2
+
+				int closestclcttosegmentindex_chi2 = -1;
+				float closestclcttosegmentdistance_chi2 = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_chi2.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_chi2.begin(), matchedclctindices_chi2.end(), iclct) != matchedclctindices_chi2.end())
+					continue;
+
+					float clctx = finalclctcandidates_chi2.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_chi2)
+					{
+						closestclcttosegmentdistance_chi2 = abs(clctx - segmentx);
+						closestclcttosegmentindex_chi2 = iclct;
+					}					
+				}
+
+				if(closestclcttosegmentindex_chi2 != -1)
+				{
+					matchedclctindices_chi2.push_back(closestclcttosegmentindex_chi2);
+
+					if(closestclcttosegmentindex_chi2 == 0)
+						firstclctmatchespt_chi2->Fill(pt);
+				}
+
+				//KHS
+
+				int closestclcttosegmentindex_KHS = -1;
+				float closestclcttosegmentdistance_KHS = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_KHS.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_KHS.begin(), matchedclctindices_KHS.end(), iclct) != matchedclctindices_KHS.end())
+					continue;
+
+					float clctx = finalclctcandidates_KHS.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_KHS)
+					{
+						closestclcttosegmentdistance_KHS = abs(clctx - segmentx);
+						closestclcttosegmentindex_KHS = iclct;
+					}					
+				}
+
+				if(closestclcttosegmentindex_KHS != -1)
+				{
+					matchedclctindices_KHS.push_back(closestclcttosegmentindex_KHS);
+
+					if(closestclcttosegmentindex_KHS == 0)
+						firstclctmatchespt_KHS->Fill(pt);
+				}
+
+				/*if(finalclctcandidates.at(0)->keyHalfStrip() != finalclctcandidates_KHS.at(0)->keyHalfStrip()) 
+				{
+					compHits.print();
+					cout << endl;
+					cout << "Segment: " << (int)segments.nHits->at(iseg) << " " << segments.dxdz->at(iseg) << " " << segments.pos_x->at(iseg) << endl;
+					cout << "LUTQuality picked: " << finalclctcandidates.at(0)->layerCount() << " " << finalclctcandidates.at(0)->patternId() << " " << finalclctcandidates.at(0)->keyStrip() << endl;
+					cout << "Layers picked: " << finalclctcandidates_layers.at(0)->layerCount() << " " << finalclctcandidates_layers.at(0)->patternId() << " " << finalclctcandidates_layers.at(0)->keyStrip() << endl;
+					cout << "PID picked: " << finalclctcandidates_PID.at(0)->layerCount() << " " << finalclctcandidates_PID.at(0)->patternId() << " " << finalclctcandidates_PID.at(0)->keyStrip() << endl;
+					cout << "Bayes picked: " << finalclctcandidates_bayes.at(0)->layerCount() << " " << finalclctcandidates_bayes.at(0)->patternId() << " " << finalclctcandidates_bayes.at(0)->keyStrip() << endl;
+					cout << "Chi2 picked: " << finalclctcandidates_chi2.at(0)->layerCount() << " " << finalclctcandidates_chi2.at(0)->patternId() << " " << finalclctcandidates_chi2.at(0)->keyStrip() << endl;
+					cout << "KHS picked: " << finalclctcandidates_KHS.at(0)->layerCount() << " " << finalclctcandidates_KHS.at(0)->patternId() << " " << finalclctcandidates_KHS.at(0)->keyStrip() << endl << endl; 
+				}*/				
+
 			}			       						
 
         }
@@ -384,6 +744,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	}
 
 	effeciency1->Divide(firstclctmatchespt,matchespt);
+	effeciency1_layers->Divide(firstclctmatchespt_layers,matchespt);
+	effeciency1_PID->Divide(firstclctmatchespt_PID,matchespt);
+	effeciency1_bayes->Divide(firstclctmatchespt_bayes,matchespt);
+	effeciency1_chi2->Divide(firstclctmatchespt_chi2,matchespt);
+	effeciency1_KHS->Divide(firstclctmatchespt_KHS,matchespt);
 	effeciency2->Divide(secondclctmatchespt,matchespt);
 	effeciency3->Divide(otherindexclctmatchespt,matchespt);
 
@@ -393,6 +758,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	secondclctmatchespt->Write();
 	otherindexclctmatchespt->Write();
 	effeciency1->Write();
+	effeciency1_layers->Write();
+	effeciency1_PID->Write();
+	effeciency1_bayes->Write();
+	effeciency1_chi2->Write();
+	effeciency1_KHS->Write();
 	effeciency2->Write();
 	effeciency3->Write();
 	matchedclctindex->Write();

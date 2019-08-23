@@ -142,7 +142,7 @@ void ComparatorCode::calculateId(){
 	for(unsigned int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
-		for(int row = 0; row < 3; row++){
+		for(int row = 2; row >= 0; row--){
 			rowPat = rowPat << 1; //bitshift the last number to the left
 			rowPat += _hits[column][row];
 		}
@@ -566,15 +566,39 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 	if(!l1) return false;
 	
 	//priority (quality, keyHS)
-	if (l1->quality() < l2->quality()) return true;
+	/*if (l1->quality() < l2->quality()) return true;
 	else if(l1->quality() == l2->quality())
 	{
 		if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;		
 		
 	}
+	return false;*/
+
+	if(c1->layerCount() > c2->layerCount())
+		return true;
+	else if(c1->layerCount() == c2->layerCount())
+	{
+		if(c1->patternId() > c2->patternId())
+			return true;
+		else if(c1->patternId() == c2->patternId())
+		{
+			if(l1->bayesprobability() > l2->bayesprobability())
+				return true;
+			else if(l1->bayesprobability() == l2->bayesprobability())
+			{
+				if(l1->_chi2 < l2->_chi2)
+					return true;
+				else if(l1->_chi2 == l2->_chi2)
+				{
+					if(c1->keyHalfStrip() < c2->keyHalfStrip())
+					return true;
+				}
+			}
+		}
+	}
+
 	return false;
-
-
+	
 };
 
 //
@@ -876,6 +900,7 @@ void ChamberHits::print() const {
 		for(unsigned int x = minHs() + shift(y); x < maxHs()+shift(y); x++){
 			if(!((x-shift(y))%CFEB_HS)) printf("|");
 			if(_hits[x][y]) printf("%X",_hits[x][y]-1); //print one less, so we stay in hexadecimal (0-15)
+			//if(_hits[x][y]) printf("*");
 			else printf("-");
 		}
 		printf("|\n");
