@@ -233,7 +233,7 @@ class ALCT_ChamberHits
 
 		float get_hitMeanWi();
 		float get_hitStdWi();
-
+		
 		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
 
 		ALCT_ChamberHits* prev = 0;
