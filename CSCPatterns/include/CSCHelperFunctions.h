@@ -52,11 +52,7 @@ vector<CSCPattern>* createNewPatterns();
 //creates the currently implemented patterns in the TMB
 vector<CSCPattern>* createOldPatterns();
 
-int fillCompHits(ChamberHits& theseCompHits,
-		const CSCInfo::Comparators& c); // index of what ring/station you are on
-
-int fillRecHits(ChamberHits& theseRecHits,
-		const CSCInfo::RecHits& r);
+void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS]);
 
 
 #endif /* PATTERNFINDERHELPERFUNCTIONS_H_ */

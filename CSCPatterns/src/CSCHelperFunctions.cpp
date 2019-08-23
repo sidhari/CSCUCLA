@@ -168,8 +168,7 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 
 	/* Allow matches only in regions where the key half strip is within the chamber,
 	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
-	 * since the layers are offset for non-me11a/b chambers TODO
-	 * iterate
+	 * since the layers are offset for non-me11a/b chambers
 	 */
 	for(int x = (int)c.minHs() -(int)MAX_PATTERN_WIDTH/2+1; x < (int)c.maxHs() - (int)MAX_PATTERN_WIDTH/2+1; x++){
 		//check if region is in the busy window, if using old tmb logic
@@ -424,17 +423,17 @@ vector<CSCPattern>* createNewPatterns(){
 
 	vector<CSCPattern>* thisVector = new vector<CSCPattern>();
 
-	CSCPattern id1("100",PATTERN_IDS[0],false,IDSV1_A);
-	CSCPattern id4("90",PATTERN_IDS[1],false,IDSV1_C);
-	CSCPattern id5 = id4.makeFlipped("80",PATTERN_IDS[2]);
-	CSCPattern id8("70",PATTERN_IDS[3], false, IDSV1_E);
-	CSCPattern id9 = id8.makeFlipped("60",PATTERN_IDS[4]);
+	CSCPattern id15("15",PATTERN_IDS[0],false,IDSV1_A);
+	CSCPattern id14("14",PATTERN_IDS[1],false,IDSV1_C);
+	CSCPattern id13 = id14.makeFlipped("13",PATTERN_IDS[2]);
+	CSCPattern id12("12",PATTERN_IDS[3], false, IDSV1_E);
+	CSCPattern id11 = id12.makeFlipped("11",PATTERN_IDS[4]);
 
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
+	thisVector->push_back(id15);
+	thisVector->push_back(id14);
+	thisVector->push_back(id13);
+	thisVector->push_back(id12);
+	thisVector->push_back(id11);
 
 	return thisVector;
 }
@@ -484,6 +483,8 @@ vector<CSCPattern>* createOldPatterns(){
 	return thisVector;
 }
 
+
+
 /*
  *  Writes .mem files, read by A. Pecks firmware tester.
  * Writes multiple files, each one containing all the comparator
@@ -508,11 +509,17 @@ void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS])
 
 		/*
 		A single line would be, for example,
+
 		000000001111111122222222333333334444444455555555
+
 		Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
+
 		So for example:
+
 			000000010000000100000001000000010000000100000001
+
 		corresponds to a 6 layer straight pattern on hs0.
+
 		This array stores the correct number for each layer
 		 */
 
@@ -543,22 +550,3 @@ void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS])
 
 	}
 }
-/* Deprecated
-int chamberSerial( int ec, int st, int ri, int ch ) {
-
-    int kSerial = ch;
-    if (st == 1 && ri == 1) kSerial = ch;
-    if (st == 1 && ri == 2) kSerial = ch + 36;
-    if (st == 1 && ri == 3) kSerial = ch + 72;
-    if (st == 1 && ri == 4) kSerial = ch;
-    if (st == 2 && ri == 1) kSerial = ch + 108;
-    if (st == 2 && ri == 2) kSerial = ch + 126;
-    if (st == 3 && ri == 1) kSerial = ch + 162;
-    if (st == 3 && ri == 2) kSerial = ch + 180;
-    if (st == 4 && ri == 1) kSerial = ch + 216;
-    if (st == 4 && ri == 2) kSerial = ch + 234;  // one day...
-    if (ec == 2) kSerial = kSerial + 300;
-
-    return kSerial;
-}
-*/

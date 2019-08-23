@@ -9,6 +9,8 @@
 #include "../include/CSCClasses.h"
 #include "../include/CSCHelperFunctions.h"
 #include <stdlib.h>
+#include <stdio.h>
+#include <iomanip>
 
 #include "../include/CSCHelper.h"
 
@@ -299,6 +301,10 @@ void CSCPattern::printCode(int code) const{
 		}
 		printf("\n");
 	}
+	for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
+		printf("%1x", i);
+	}
+	printf("\n");
 }
 
 //fills "code_hits" with how the code "code" would look inside the pattern
@@ -652,14 +658,16 @@ ChamberHits::ChamberHits(unsigned int station, unsigned int ring,
 	//test using only one CFEB
 	bool oneCFEB = _station == 0 && _ring == 0;
 	if(me11a){
-		_maxHs = 2*48;
+		_nCFEBs = 3;
 	}else if (me11b || me13){
-		_maxHs = 2*64;
+		_nCFEBs = 4;
 	}else if(oneCFEB){
-		_maxHs = 2*16;
+		_nCFEBs = 1;
 	} else {
-		_maxHs = 2*80;
+		_nCFEBs = 5;
 	}
+
+	_maxHs = 2*16*_nCFEBs;
 
 	_minHs = 0;
 	//me11a, me11b, oneCFEB all have their key half strip layer shifted over by one
@@ -680,6 +688,7 @@ ChamberHits::ChamberHits(const ChamberHits& c) :
 			_endcap(c._endcap),
 			_chamber(c._chamber) {
 	_nhits = c._nhits;
+	_nCFEBs = c._nCFEBs;
 	_minHs = c._minHs;
 	_maxHs = c._maxHs;
 	for(unsigned int i =0; i < N_MAX_HALF_STRIPS; i++){
@@ -936,6 +945,67 @@ ostream& operator<<(ostream& os, const ChamberHits& c){
 	os << "\n";
 	return os;
 }
+//
+///*
+// *  Writes .mem files, read by A. Pecks firmware tester.
+// * Writes multiple files, each one containing all the comparator
+// * hits for a given CFEB. Each file is put in the format
+// *
+// * <fileidentifier><CFEB number>.mem
+// *
+// */
+//
+//void ChamberHits::writeMEMs(const std::string& fileidentifier) const {
+//	bool me11a = _station == 1 && _ring == 4;
+//	bool me11b = _station == 1 && _ring == 1;
+//	//test using only one CFEB
+//	bool oneCFEB = _station == 0 && _ring == 0;
+//
+//	//for now, only works with ME11 chambers and fake demo chamber (oneCFEB)
+//	if(!(me11a || me11b || oneCFEB)) return;
+//
+//
+//	for(unsigned int iCFEB=0; iCFEB < _nCFEBs; iCFEB++){
+//		/*
+//		A single line would be, for example,
+//
+//		000000001111111122222222333333334444444455555555
+//
+//		Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
+//
+//		So for example:
+//
+//			000000010000000100000001000000010000000100000001
+//
+//		corresponds to a 6 layer straight pattern on hs0.
+//
+//		This array stores the correct number for each layer
+//		 */
+//		int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4] = {0};
+//
+//		for(unsigned int ihs=iCFEB*CFEB_HS; ihs < (iCFEB+1)*CFEB_HS;ihs++){ //iterate through hs within cfeb
+//			for(unsigned int  ilay=0; ilay < NLAYERS; ilay++){
+//				if(_hits[ihs][ilay]) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
+//			}
+//		}
+//		std::ofstream compFile;
+//		compFile.open(fileidentifier+to_string(iCFEB)+".mem");
+//		//pad with 7 empty time bins
+//		for(unsigned int i=0; i < 7; i++){
+//			compFile << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+//		}
+//		for(unsigned int i=0; i < NLAYERS;i++){
+//
+//			for(unsigned int j=0; j < CFEB_HS/4; j++){
+//				compFile <<dec << comparatorLocationNumberEncoding[i][j];
+//			}
+//		}
+//		compFile << endl;
+//		compFile.close();
+//	}
+//
+//}
+
 
 //takes the hits associated with clct "mi" out of the chamber
 ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
@@ -958,6 +1028,7 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 				// if there is an overlap, erase the one in the chamber
 				if(validComparatorTime(_hits[horPos+px][y], startTimeWindow)) {
 					_hits[horPos+px][y] = 0;
+					_nhits--; //decrement the amount of hits in the chamber
 				}
 			}
 		}
@@ -966,90 +1037,3 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 	return *this;
 }
 
-ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
-		unsigned int chamber, unsigned int endcap, bool isWire) :
-				_isWire(isWire),
-				_station(station),
-				_ring(ring),
-				_endcap(endcap),
-				_chamber(chamber)
-{	_nhits = 0;
-
-	bool me11a 	= _station == 1 && _ring == 4;
-	bool me11b 	= _station == 1 && _ring == 1;
-	bool me13 	= _station == 1 && _ring == 3;
-	bool me12 	= _station == 1 && _ring == 2;
-	bool me21	= _station == 2 && _ring == 1;
-	bool me31 	= _station == 3 && _ring == 1;
-	bool me41	= _station == 4 && _ring == 1;
-	//bool oneCFEB = _station == 0 && _ring == 0;
-
-	if (me11a || me11b || me12 || me13)	_maxWi = 32;
-	else if (me21) 						_maxWi = 112;
-	else if (me31 || me41)				_maxWi = 96;
-	else 								_maxWi = 64;
-
-	_minWi = 0;
-
-	for(unsigned int i = 0; i < N_KEY_WIRE_GROUPS; i++)
-	{
-		for(unsigned int j = 0; j < NLAYERS; j++)
-		{
-			_hits[i][j] = 0;
-		}
-	}
-	_meanWi = -1;
-	_stdWi = -1;
-}
-
-float ALCT_ChamberHits::get_hitMeanWi()
-{
-	if (_meanWi != -1) return _meanWi;
-	return _meanWi;
-}
-
-float ALCT_ChamberHits::get_hitStdWi()
-{
-	if (_stdWi != -1) return _stdWi;
-	return _stdWi;
-}
-
-ostream& operator<<(ostream& os, const ALCT_ChamberHits &c){
-	os << "==== Printing Chamber  ST = " << c._station <<
-			", RI = "<< c._ring <<
-			", CH = "<< c._chamber <<
-			", EC = "<< c._endcap << " ====\n";
-	for(unsigned int y = 0; y < NLAYERS; y++) {
-		os << " ";
-		for(unsigned int x = c.get_minWi(); x < c.get_maxWi(); x++){
-			if(c._hits[x][y]) os << c._hits[x][y];//os << setbase(16) << c._hits[x][y]-1 << setbase(10); //print one less, so we stay in hexadecimal (0-15)
-			else os <<"-";
-		}
-		os <<"\n";
-	}
-	os << "\n";
-	return os;
-}
-
-void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
-{
-	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
-	// Chamber booleans for convenience 
-	bool me11a 	= _station == 1 && _ring == 4;
-	bool me11b 	= _station == 1 && _ring == 1;
-	bool me13 	= _station == 1 && _ring == 3;
-	bool me12 	= _station == 1 && _ring == 2;
-	bool me21	= _station == 2 && _ring == 1;
-	bool me31 	= _station == 3 && _ring == 1;
-	bool me41	= _station == 4 && _ring == 1;
-
-	for (unsigned int i = 0; i < w.size(); i++)
-	{
-		if (chSid!= w.ch_id->at(i)) continue;
-		unsigned int lay = w.lay->at(i) - 1;
-		unsigned int group = w.group->at(i);
-		unsigned int timeBin = w.timeBin->at(i);
-
-		_hits[group][lay] = timeBin+1;
-	}
-}

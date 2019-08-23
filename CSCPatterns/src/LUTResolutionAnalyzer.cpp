@@ -333,7 +333,7 @@ int LUTResolutionAnalyzer::run(string inputfile, string outputfile, int start, i
 
 			if(theseCompHits.fill(comparators)) return -1;
 
-			if (!USE_COMP_HITS && DEBUG > 0) if(fillRecHits(theseRHHits,recHits)) return -1;
+			if (!USE_COMP_HITS && DEBUG > 0) if(theseRHHits.fill(recHits)) return -1;
 
 			vector<CLCTCandidate*> newSetMatch;
 			vector<CLCTCandidate*> oldSetMatch;
