@@ -84,6 +84,7 @@ bool preTrigger(const int start_bx,
     int kwg = cand.get_kwg();
     int i_pattern = cand.get_pattern();
     int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN];
+
     for (int i_patt = 0; i_patt < N_ALCT_PATTERNS; i_patt++) 
     {
         for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++) 
@@ -137,12 +138,42 @@ bool preTrigger(const int start_bx,
     }
     cand.nix();
     return false;
-    cout << "nixed " << kwg << endl;
 }
 
-bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list, 
-                    const ALCTConfig &config,
-                    ALCTCandidate &cand)
+void preTrigger(const int start_bx, 
+                std::vector<ALCT_ChamberHits*> &chamber_list, 
+                ALCTConfig &config,
+                ALCTCandidate * &head)
+{
+    //cout << "caught1" << endl;
+    if (head == NULL) return; 
+    if (head->prev == NULL)
+    {
+        ALCTCandidate * temp = head->next;
+        //cout << "caught2" << endl;
+        bool trigger = preTrigger(start_bx, chamber_list, config, *head);
+        //cout << "caught3" << endl;
+        if (!trigger) head = temp;
+        preTrigger(start_bx, chamber_list, config, temp);
+        //cout << "caught4" << endl;
+    }
+    else 
+    {
+        ALCTCandidate * cand = head;
+        while (cand!=NULL)
+        {
+            ALCTCandidate * cand_next = cand->next; 
+            bool trigger = preTrigger(start_bx,chamber_list,config,*cand); 
+            cand = cand_next; 
+            cout << "caught5" << endl;
+        }
+    }
+    return;
+}
+
+bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list, 
+                        const ALCTConfig &config,
+                        ALCTCandidate &cand)
 {
     int key_wire = cand.get_kwg();
     int i_pattern = cand.get_pattern(); 
@@ -255,6 +286,31 @@ bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list,
     return trigger;
 }
 
+void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list, 
+                        ALCTConfig &config,
+                        ALCTCandidate * &head)
+{
+    if (head == NULL) return; 
+    else if (head->prev == NULL)
+    {
+        ALCTCandidate * temp = head->next;
+        bool trigger = patternDetection(chamber_list, config, *head);
+        if (!trigger) head = temp;
+        patternDetection(chamber_list, config, temp);
+    }
+    else 
+    {
+        ALCTCandidate * cand = head;
+        while (cand!=NULL)
+        {
+            ALCTCandidate * cand_next = cand->next; 
+            bool trigger = patternDetection(chamber_list,config,*cand); 
+            cand = cand_next;
+        }
+    }
+    return;
+}
+
 void ghostBuster(ALCTCandidate* curr)
 {
     if (curr == NULL) return;
@@ -280,23 +336,36 @@ void ghostBuster(ALCTCandidate* curr)
     ghostBuster(temp); 
 }
 
-void clean(ALCTCandidate* curr)
+void clean(ALCTCandidate* &curr)
 {
-    ALCTCandidate* temp = curr->next; 
-    if (temp == NULL) return;
-    if (!temp->isValid())
+    if (curr == NULL) return; 
+    if (curr->prev == NULL) // if this is the current head of list
     {
-        temp->nix();
-        clean(curr);
+        if (!curr->isValid()) // if the head of the list is invalid
+        {
+            ALCTCandidate * temp = curr; 
+            curr = curr->next;
+            temp->nix();
+            clean(curr);
+        }
+        else
+        {
+            clean(curr->next);
+        }
     }
-    else clean(temp);
+    else // current element is not the head and is not NULL
+    {
+        ALCTCandidate* temp = curr->next;
+        if (!curr->isValid()) curr->nix();
+        clean(temp);
+    }
 }
 
 void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec)
 {
+    if (curr == NULL) return; 
     cand_vec.push_back(curr);
-    if (curr->next == NULL) return;
-    else head_to_vec(curr->next, cand_vec);
+    head_to_vec(curr->next, cand_vec);
 }
 
 int getTempALCTQuality(int temp_quality)

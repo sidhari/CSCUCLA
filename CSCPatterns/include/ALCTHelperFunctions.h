@@ -139,14 +139,22 @@ bool preTrigger(const int start_bx,
                 ALCTConfig &config,
                 ALCTCandidate &cand);
 
+void preTrigger(const int start_bx, 
+                std::vector<ALCT_ChamberHits*> &chamber_list, 
+                ALCTConfig &config,
+                ALCTCandidate* &head);
 
 bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list, 
                     const ALCTConfig &config,
                     ALCTCandidate &cand);
 
+void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list, 
+                        ALCTConfig &config,
+                        ALCTCandidate * &head);
+
 void ghostBuster(ALCTCandidate* curr);
 
-void clean(ALCTCandidate* curr); 
+void clean(ALCTCandidate* &curr); 
 
 int getTempALCTQuality(int quality);
 

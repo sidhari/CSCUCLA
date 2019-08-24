@@ -55,8 +55,6 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 	{
 		t->GetEntry(i);
 
-		bool head_bool = false; 
-
 		std::vector<ALCT_ChamberHits*> cvec;
 		for (int i=0; i<16; i++)
 		{
@@ -66,13 +64,11 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 			cvec.push_back(temp);
 		}
 		std::vector<ALCTCandidate*> candvec;
-		ALCTCandidate * head;
 
-		cout << "=== PreTriggerring Results ===" << endl << endl; 
-
+		/*
+		ALCTCandidate(cand)
 		for (int i = 0; i<(cvec.at(0))->get_maxWi(); i++)
 		{
-			ALCTCandidate * cand;
 			cand = (i==0) ? new ALCTCandidate(i,1) : new ALCTCandidate(i,1,cand);
 			if (preTrigger(0,cvec,config,*cand)) candvec.push_back(cand); 
 		}
@@ -82,29 +78,69 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 			std::cout << candvec.at(i) << endl; 
 		}
 
-		std::vector<ALCTCandidate*> candvec2;
+		std::vector<ALCTCandidate*> candvec2;*/
 
-		cout << "=== PatternDetection Results ===" << endl << endl; 
+		ALCTCandidate * head = new ALCTCandidate(0,1);
 
-		for (int i = 0; i<candvec.size(); i++)
+		for (int i = 0; i<(cvec.at(0))->get_maxWi(); i++)
+		{
+			ALCTCandidate * cand; 
+			cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
+		}
+
+		preTrigger(0,cvec,config,head);
+		head_to_vec(head,candvec);
+
+		cout << "=== PreTriggerring Results ===" << endl << endl;
+
+		for (int i=0; i<candvec.size(); i++)
+		{
+			std::cout << candvec.at(i) << endl << endl; 
+		}
+
+		/*for (int i = 0; i<candvec.size(); i++)
 		{
 			ALCTCandidate* cand = candvec.at(i);
-			if (patternDection(cvec,config,*cand)) candvec2.push_back(cand); 
+			if (patternDetection(cvec,config,*cand)) candvec2.push_back(cand); 
 		}
 		
 		for (int i=0; i< candvec2.size(); i++)
 		{
 			std::cout << candvec2.at(i) << endl; 
+		}*/
+
+		patternDetection(cvec, config, head); 
+		candvec.clear();
+		head_to_vec(head,candvec);
+
+		cout << "=== PatternDetection Results ===" << endl << endl; 
+
+		for (int i=0; i<candvec.size(); i++)
+		{
+			std::cout << candvec.at(i) << endl << endl; 
 		}
 
-		cout << "=== GhostBuster Results ===" << endl << endl; 
-
-		if (candvec2.size()!= 0) ghostBuster(candvec2.at(0));
+		/*if (candvec2.size()!= 0) ghostBuster(candvec2.at(0));
 
 		cout << "got here" << endl; 
 		for (int i=0; i<candvec2.size();i++)
 		{
 			if (candvec2.at(i)->isValid()) std::cout<< candvec2.at(i) << endl;
+		}*/
+
+		cout << "=== End PatternDetection Results ===" << endl << endl; 
+
+		ghostBuster(head);
+		cout << "=== ghostbustered ===" << endl << endl; 
+		clean(head);
+		candvec.clear();
+		head_to_vec(head,candvec);
+
+		cout << "=== GhostBuster Results ===" << endl << endl; 
+
+		for (int i=0; i<candvec.size(); i++)
+		{
+			std::cout << candvec.at(i) << endl << endl; 
 		}
 
 		cout << " finished emulation results" << endl << endl;
@@ -128,7 +164,10 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 				<< ", accelerator = " << " " << (int) alcts.accelerator->at(i)
 				<< ", BX = " << " " << (int) alcts.BX->at(i) << endl; 
 		}
-		if (candvec2.size()) return 0; 
+
+		cout << "finished alct for event " << i << endl << endl;  
+
+		if (candvec.size()) return 0; 
 	}
     return 0;
 }
