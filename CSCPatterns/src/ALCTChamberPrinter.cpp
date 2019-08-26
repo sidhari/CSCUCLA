@@ -60,7 +60,7 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 		{
 			ALCT_ChamberHits * temp = new ALCT_ChamberHits(ST,RI,CH,EC);
 			temp->fill(wires,i);
-			cout << *temp << endl; 
+			//cout << *temp << endl; 
 			cvec.push_back(temp);
 		}
 		std::vector<ALCTCandidate*> candvec;
@@ -128,10 +128,7 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 			if (candvec2.at(i)->isValid()) std::cout<< candvec2.at(i) << endl;
 		}*/
 
-		cout << "=== End PatternDetection Results ===" << endl << endl; 
-
 		ghostBuster(head);
-		cout << "=== ghostbustered ===" << endl << endl; 
 		clean(head);
 		candvec.clear();
 		head_to_vec(head,candvec);

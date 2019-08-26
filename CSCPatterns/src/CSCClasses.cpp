@@ -542,9 +542,11 @@ ALCTCandidate::ALCTCandidate(unsigned int kwg, int pattern, ALCTCandidate* pred)
 
 void ALCTCandidate::nix()
 {
-	this->_isValid = false; 
-	if (this->prev != NULL) this->prev->next = this->next;
-	if (this->next != NULL) this->next->prev = this->prev;
+	this->_isValid = false;
+	ALCTCandidate * previous = this->prev;
+	ALCTCandidate * following = this->next; 
+	if (this->prev != NULL) previous->next = this->next;
+	if (this->next != NULL) following->prev = this->prev;
 }
 
 ostream& operator<<(ostream& os, const ALCTCandidate &c){

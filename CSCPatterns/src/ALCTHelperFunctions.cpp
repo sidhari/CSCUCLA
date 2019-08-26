@@ -144,31 +144,16 @@ void preTrigger(const int start_bx,
                 std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate * &head)
-{
-    //cout << "caught1" << endl;
-    if (head == NULL) return; 
-    if (head->prev == NULL)
+{   
+    if (head==NULL) return;
+    ALCTCandidate * cand = head; 
+    while (cand!= NULL)
     {
-        ALCTCandidate * temp = head->next;
-        //cout << "caught2" << endl;
-        bool trigger = preTrigger(start_bx, chamber_list, config, *head);
-        //cout << "caught3" << endl;
-        if (!trigger) head = temp;
-        preTrigger(start_bx, chamber_list, config, temp);
-        //cout << "caught4" << endl;
+        bool trigger = preTrigger(start_bx, chamber_list, config, *cand);
+        if (!trigger && cand == head) head = cand->next;
+        cand = cand->next;
     }
-    else 
-    {
-        ALCTCandidate * cand = head;
-        while (cand!=NULL)
-        {
-            ALCTCandidate * cand_next = cand->next; 
-            bool trigger = preTrigger(start_bx,chamber_list,config,*cand); 
-            cand = cand_next; 
-            cout << "caught5" << endl;
-        }
-    }
-    return;
+    return; 
 }
 
 bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list, 
@@ -290,25 +275,15 @@ void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list,
                         ALCTConfig &config,
                         ALCTCandidate * &head)
 {
-    if (head == NULL) return; 
-    else if (head->prev == NULL)
+    if (head==NULL) return;
+    ALCTCandidate * cand = head; 
+    while (cand!= NULL)
     {
-        ALCTCandidate * temp = head->next;
-        bool trigger = patternDetection(chamber_list, config, *head);
-        if (!trigger) head = temp;
-        patternDetection(chamber_list, config, temp);
+        bool trigger = patternDetection(chamber_list, config, *cand);
+        if (!trigger && cand == head) head = cand->next;
+        cand = cand->next;
     }
-    else 
-    {
-        ALCTCandidate * cand = head;
-        while (cand!=NULL)
-        {
-            ALCTCandidate * cand_next = cand->next; 
-            bool trigger = patternDetection(chamber_list,config,*cand); 
-            cand = cand_next;
-        }
-    }
-    return;
+    return; 
 }
 
 void ghostBuster(ALCTCandidate* curr)

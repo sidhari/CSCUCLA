@@ -128,7 +128,7 @@ void print_pulse(unsigned int pulse);
 // set to a constant of 6, as in data
 unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 
-// Checks whether a threshold for a wire has been passed. If so returns the 
+// Checks whether a threshold for a wire (layers hit) has been passed. If so returns the 
 // bunch crossing in which the threshhold was passed. Note that in this instance 
 // time is zero indexed. Takes in the key wire group we want to inspect as well
 // as a vector of ALCT_ChamberHits pointers, the bunch crossing we want to start on
@@ -139,6 +139,7 @@ bool preTrigger(const int start_bx,
                 ALCTConfig &config,
                 ALCTCandidate &cand);
 
+// 
 void preTrigger(const int start_bx, 
                 std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
