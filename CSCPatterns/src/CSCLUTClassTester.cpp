@@ -19,7 +19,7 @@ int main(int argc, char* argv[])
 	cout << "-- Testing Comparator Codes --" << endl;
 
 
-	ComparatorCode c(1365);
+	ComparatorCode c(4095);
 	cout << "\t ccode: " << c.getId() << endl;
 	ComparatorCode cc(c);
 	cout << "\t ccode: " << cc.getId() << endl;

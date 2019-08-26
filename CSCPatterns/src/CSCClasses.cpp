@@ -118,7 +118,7 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 			break;
 			//1 -> 001
 		case 1:
-			hits[ilay][2] = 1;
+			hits[ilay][0] = 1;
 			break;
 			//2 -> 010
 		case 2:
@@ -126,7 +126,7 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 			break;
 			//3 -> 100
 		case 3:
-			hits[ilay][0] = 1;
+			hits[ilay][2] = 1;
 			break;
 		default:
 			cout << "Error: invalid  layer code" << endl;
@@ -144,6 +144,8 @@ void ComparatorCode::calculateId(){
 	for(unsigned int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
+		//for(int row = 0; row < 3; row++){
+		//use Firmware definition for comparator code definition
 		for(int row = 2; row >=0; row--){
 			rowPat = rowPat << 1; //bitshift the last number to the left
 			rowPat += _hits[column][row];
@@ -292,7 +294,9 @@ void CSCPattern::printCode(int code) const{
 				if(!_pat[i][j]){
 					printf("-");
 				}else{
-					if(trueCounter == layerPattern) printf("X");
+					//if(trueCounter == layerPattern) printf("X");
+					//use Firmware convention for comparator code definition
+					if(trueCounter == 4-layerPattern) printf("X");
 					else printf("_");
 					trueCounter--;
 				}
@@ -334,7 +338,9 @@ int CSCPattern::recoverPatternCCCombination(const int code, int code_hits[MAX_PA
 				if(!_pat[i][j]){
 					code_hits[i][j] = 0;
 				}else{
-					if(trueCounter == layerPattern) code_hits[i][j] = 1;
+					//if(trueCounter == layerPattern) code_hits[i][j] = 1;
+					//use Firmware convention for comparator code definition
+					if(trueCounter == 4-layerPattern) code_hits[i][j] = 1;
 					else code_hits[i][j] = 0;
 					trueCounter--;
 				}
