@@ -33,7 +33,7 @@ const std::string LINEFIT_LUT_PATH = "/uscms/home/wnash/CSCUCLA/CSCPatterns/dat/
 
 //labels of all envelopes
 const unsigned int NPATTERNS = 5;
-const unsigned int PATTERN_IDS[NPATTERNS] = {100,90,80, 70, 60};
+const unsigned int PATTERN_IDS[NPATTERNS] = {15,14,13, 12,11};
 const unsigned int NCOMPARATOR_CODES = 4096; //codes per pattern 2^12, without accounting for degeneracy, etc
 
 const unsigned int NLEGACYPATTERNS = 9;

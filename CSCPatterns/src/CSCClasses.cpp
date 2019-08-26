@@ -144,7 +144,7 @@ void ComparatorCode::calculateId(){
 	for(unsigned int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
-		for(int row = 0; row < 3; row++){
+		for(int row = 2; row >=0; row--){
 			rowPat = rowPat << 1; //bitshift the last number to the left
 			rowPat += _hits[column][row];
 		}

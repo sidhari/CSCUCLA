@@ -39,14 +39,14 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 	//initialize output files
 	std::ofstream CFEBFiles[MAX_CFEBS];
 	for(unsigned int i=0; i < MAX_CFEBS; i++){
-		CFEBFiles[i].open("CFEB"+to_string(i)+".mem");
+		//CFEBFiles[i].open("CFEB"+to_string(i)+"-fake.mem"); //TODO smart naming
+		CFEBFiles[i].open("cfeb"+to_string(i)+".mem");
 	}
 
 	const unsigned int nCLCTs = 2;
 	ofstream CLCTFiles[nCLCTs]; //2 clcts
-	for(unsigned int i=0; i < nCLCTs; i++){
-		CLCTFiles[i].open("expected"+to_string(i)+".mem");
-	}
+	CLCTFiles[0].open("expected_1st.mem");
+	CLCTFiles[1].open("expected_2nd.mem");
 
 	vector<CSCPattern>* newPatterns = createNewPatterns();
 
@@ -176,15 +176,15 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				if(!compHits.nhits()) continue; //skip if its empty
 				compHits.print();
 
-				writeToMEMFiles(compHits, CFEBFiles);
-
 				vector<CLCTCandidate*> emulatedCLCTs;
 
 				if(searchForMatch(compHits,newPatterns, emulatedCLCTs,true)){
 					emulatedCLCTs.clear();
-
 					continue;
 				}
+
+				writeToMEMFiles(compHits, CFEBFiles);
+
 				while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
 				std::cout << "khs, patt, ccode" << std::endl;
