@@ -243,6 +243,8 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 // note that this is currently NOT the key half strip, but some constant off of it ( MAX_PATTERN_WIDTH / 2? )
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow){
 
+
+	if(c.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done
 	ChamberHits shrinkingChamber = c;
 
 	CLCTCandidate *bestMatch = 0;
@@ -271,56 +273,21 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 			}
 		}
 
-		/*
-		set<CLCTCandidate*, CLCTCandidate::QUALITY_SORT> matches =
-				set<CLCTCandidate*, CLCTCandidate::QUALITY_SORT>( CLCTCandidate::cfebQuality);
-		matches.insert(bestMatch);
-		matches.insert(thisMatch);
 
-		for(unsigned int im=0; im < matches.size(); im++){
-
-		}
-		bestMatch = matches.begin();
-		matches.erase(matches.end()-1);
-		*/
-
-
-
-
-		//make a vector of matches so we can sort them according to the cfeb quality
-		/*
-		if(CLCTCandidate::cfebQuality(bestMatch,thisMatch)){
-			delete thisMatch;
-		}else{
-			if(bestMatch)delete bestMatch;
-			bestMatch = thisMatch;
-		}
-		*/
 
 		vector<CLCTCandidate*> matches;
 		matches.push_back(bestMatch);
 		matches.push_back(thisMatch);
 
-		//vector<CLCTCandidate*, CLCTCandidate::QUALITY_SORT>::iterator begin() { return
-		//std::sort(matches.begin(), matches.end(), CLCTCandidate::QUALITY_SORT(CLCTCandidate::cfebQuality));
 		sort(matches.begin(), matches.end(), CLCTCandidate::cfebQuality);
-		//sort(matches.begin(), matches.end());
+
 
 
 		//remove the last element from the array, i.e. the worst of the two
 		matches.pop_back();
 
+		//the best match is the one which is sorted to the front
 		bestMatch = matches.front();
-
-
-		/*
-		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount()){
-			if(bestMatch) delete bestMatch;
-			bestMatch = thisMatch;
-		}else{
-			delete thisMatch;
-		}
-		*/
 	}
 
 	//we have a valid best match

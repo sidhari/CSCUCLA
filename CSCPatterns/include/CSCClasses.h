@@ -140,12 +140,12 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
 	const LUTEntry* l1 = c1->_lutEntry;
 	const LUTEntry* l2 = c2->_lutEntry;
 
-	/*We want this function to sort the CLCT's
-	 * in a way that puts the best quality candidate
-	 * the lowest in the list, i.e. return true
-	 * if the parameters associated with c1 are
-	 * better than those of c2
-	 */
+	//We want this function to sort the CLCT's
+	 // in a way that puts the best quality candidate
+	 // the lowest in the list, i.e. return true
+	 // if the parameters associated with c1 are
+	 // better than those of c2
+
 
 	// we don't have an entry for c2,
 	// so take c1 as being better
