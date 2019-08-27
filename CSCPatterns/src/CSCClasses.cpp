@@ -545,8 +545,9 @@ void ALCTCandidate::nix()
 	this->_isValid = false;
 	ALCTCandidate * previous = this->prev;
 	ALCTCandidate * following = this->next; 
-	if (this->prev != NULL) previous->next = this->next;
-	if (this->next != NULL) following->prev = this->prev;
+	if (previous != NULL) previous->next = this->next;
+	if (following!= NULL) following->prev = this->prev;
+	delete this; 
 }
 
 ostream& operator<<(ostream& os, const ALCTCandidate &c){
@@ -837,7 +838,8 @@ ALCT_ChamberHits::ALCT_ChamberHits(unsigned int station, unsigned int ring,
 	bool me41	= _station == 4 && _ring == 1;
 	//bool oneCFEB = _station == 0 && _ring == 0;
 
-	if (me11a || me11b || me12 || me13)	_maxWi = 48;
+	if (me11a || me11b)					_maxWi = 48;
+	else if (me13)						_maxWi = 32; 
 	else if (me21) 						_maxWi = 112;
 	else if (me31 || me41)				_maxWi = 96;
 	else 								_maxWi = 64;

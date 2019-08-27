@@ -47,8 +47,8 @@ const int pattern_mask_open[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
-// Special option for narrow pattern for ring 1 stations
-/*const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
+
+const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
 {
     // Accelerator pattern
     {0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0},
@@ -58,18 +58,6 @@ const int pattern_mask_open[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
 
     // Collision pattern B
     {0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0}
-};*/
-
-const int pattern_mask_r1[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] =
-{
-    // Accelerator pattern
-    {0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0},
-
-    // Collision pattern A
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-
-    // Collision pattern B
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
 class ALCTConfig
@@ -87,7 +75,10 @@ class ALCTConfig
             _trig_mode = 2;
             _accel_mode = 0;
             _window_width = 7; 
-            _hit_persist = 6; 
+            _hit_persist = 6;
+            _start_bx = 5; 
+
+            _narrow_mask_flag = false; 
         }
         
         int get_fifo_tbins() const {return _fifo_tbins;}
@@ -101,6 +92,9 @@ class ALCTConfig
         int get_accel_mode() const {return _accel_mode;}
         int get_window_width() const {return _window_width;}
         int get_hit_persist() const {return _hit_persist;}
+        int get_start_bx() const {return _start_bx;}
+
+        bool narrow_mask_flag() const {return _narrow_mask_flag;}
     
     private:
         int _fifo_tbins;
@@ -115,6 +109,9 @@ class ALCTConfig
         int _accel_mode;
         int _window_width;
         int _hit_persist;
+        int _start_bx; 
+
+        bool _narrow_mask_flag; 
 };
 
 // Converts a one-shot pulse to a vector of integers, where the elements of 
@@ -134,32 +131,50 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 // as a vector of ALCT_ChamberHits pointers, the bunch crossing we want to start on
 // and the config class. Returns -1 if the pretrigger was not satisfied, returns the 
 // bunch crossing at which it is satisfied otherwise
-bool preTrigger(const int start_bx, 
-                std::vector<ALCT_ChamberHits*> &chamber_list, 
+bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate &cand);
 
-// 
-void preTrigger(const int start_bx, 
-                std::vector<ALCT_ChamberHits*> &chamber_list, 
+// Overloads the [preTrigger] function. Called on the head of a linked list of wires
+// and [preTrigger]s all the wires. Returns the new head.
+void preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate* &head);
 
+// Sees whether the wire has a pattern for it. Returns a boolean for whether or not
+// a pattern was found. Works analogously to the preTrigger Algorithm 
 bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list, 
                     const ALCTConfig &config,
                     ALCTCandidate &cand);
 
+// Overloads the [patternDetection] function. Called on the head of a linked list of
+// wires and runs the [patternDetection] algorithm on all the wires. Returns the
+// new head
 void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list, 
                         ALCTConfig &config,
                         ALCTCandidate * &head);
 
+// Runs the ghost cancellation algorithm on the head of the linked list of the
+// ALCT key wire groups. Since we want the wires to be ghost-bustered in parallel, 
+// [ghostBuster] only flags for deletion and does not remove from the linked
+// list. Needs to be cleaned via the [clean] function after running [ghostBuster]
 void ghostBuster(ALCTCandidate* curr);
 
+// Cleans the head of the linked list. Removes ALCTCandidates that are flagged 
+// as [inValid]. Returns the new head of the linked list.
 void clean(ALCTCandidate* &curr); 
 
+// Current legacy algorithm for converting the number of layers hit into the 
+// quality metric. Returns the adjusted quality. 
 int getTempALCTQuality(int quality);
 
+// Takes the head of a linked list, [curr] as well as an empty vector [cand_vec],
+// converts the linked list into a vector and then feeds into [cand_vec].
 void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec);
+
+void wipe(std::vector<ALCTCandidate*> candvec);
+
+void wipe(std::vector<ALCT_ChamberHits*>cvec);
 
 void bestTrackSelector(); 
 

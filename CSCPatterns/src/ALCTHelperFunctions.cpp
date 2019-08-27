@@ -76,12 +76,12 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext)
   return tbit;
 }
 
-bool preTrigger(const int start_bx, 
-                std::vector<ALCT_ChamberHits*> &chamber_list, 
+bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate &cand)
 {
     int kwg = cand.get_kwg();
+    int start_bx = config.get_start_bx();
     int i_pattern = cand.get_pattern();
     int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN];
 
@@ -91,7 +91,10 @@ bool preTrigger(const int start_bx,
         {
             pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
             if (((chamber_list.at(0))->_ring== 1 || (chamber_list.at(0))->_ring == 4))
-                pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
+                if (config.narrow_mask_flag())
+                    pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
+                else 
+                    pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
         }   
     }
 
@@ -110,10 +113,10 @@ bool preTrigger(const int start_bx,
     };
 
     unsigned int stop_bx = config.get_fifo_tbins() - config.get_drift_delay();
-    for (int i = start_bx; i<=stop_bx; i++)
+    for (int i = start_bx; i<stop_bx; i++)
     {
         ALCT_ChamberHits* chamber = chamber_list.at(i);
-        if (chamber->isEmpty()) continue; 
+        if (chamber->get_nhits()<pretrig_thresh[i_pattern]) continue; 
         int MESelect = (chamber->_station <= 2) ? 0 : 1;
         for (int i_lay = 0; i_lay<NLAYERS; i_lay++)
             hit_layer[i_lay] = false;
@@ -140,8 +143,7 @@ bool preTrigger(const int start_bx,
     return false;
 }
 
-void preTrigger(const int start_bx, 
-                std::vector<ALCT_ChamberHits*> &chamber_list, 
+void preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate * &head)
 {   
@@ -149,9 +151,10 @@ void preTrigger(const int start_bx,
     ALCTCandidate * cand = head; 
     while (cand!= NULL)
     {
-        bool trigger = preTrigger(start_bx, chamber_list, config, *cand);
-        if (!trigger && cand == head) head = cand->next;
-        cand = cand->next;
+        ALCTCandidate * temp = cand->next; 
+        bool trigger = preTrigger(chamber_list, config, *cand);
+        if (!trigger && cand == head) head = temp;
+        cand = temp;
     }
     return; 
 }
@@ -163,13 +166,17 @@ bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list,
     int key_wire = cand.get_kwg();
     int i_pattern = cand.get_pattern(); 
     int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN];
+
     for (int i_patt = 0; i_patt < N_ALCT_PATTERNS; i_patt++) 
     {
         for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++) 
         {
             pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
             if (((chamber_list.at(0))->_ring== 1 || (chamber_list.at(0))->_ring == 4))
-                pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
+                if (config.narrow_mask_flag())
+                    pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
+                else 
+                    pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
         }   
     }
 
@@ -279,9 +286,10 @@ void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list,
     ALCTCandidate * cand = head; 
     while (cand!= NULL)
     {
+        ALCTCandidate * temp = cand->next; 
         bool trigger = patternDetection(chamber_list, config, *cand);
-        if (!trigger && cand == head) head = cand->next;
-        cand = cand->next;
+        if (!trigger && cand == head) head = temp;
+        cand = temp;
     }
     return; 
 }
@@ -346,6 +354,22 @@ void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec)
 int getTempALCTQuality(int temp_quality)
 {
     return (temp_quality > 3) ? temp_quality - 3 : 0; 
+}
+
+void wipe(std::vector<ALCTCandidate*> candvec)
+{
+    for (int i=0; i<candvec.size(); i++)
+    {
+        delete candvec.at(i);
+    }
+}
+
+void wipe(std::vector<ALCT_ChamberHits*>cvec)
+{
+    for (int i=0; i<cvec.size(); i++)
+    {
+        delete cvec.at(i);
+    }
 }
 
 void bestTrackSelector()

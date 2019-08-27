@@ -27,13 +27,14 @@
 #include "../include/CSCInfo.h"
 #include "../include/CSCHelper.h"
 
+#include "../include/ALCTEmulationTreeCreator.h"
 
 using namespace std; 
 
 int main(int argc, char* argv[])
 {
     ALCTEmulationTreeCreator p;
-    return p,main(argc, argv);
+    return p.main(argc, argv);
 }
 
 int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start, int end)
@@ -52,14 +53,14 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
     TTree* t = (TTree*) f->Get("CSCDigiTree");
     if(!t) throw "Can't find Tree";
 
-    TFile* outF = new TFile(outputfile.c_str(),"RECREATE");
+    /*TFile* outF = new TFile(outputfile.c_str(),"RECREATE");
 	if(!outF)
 	{
 		printf("Failed to open output file: %s\n", outputfile.c_str());
 		return -1;
 	}
 
-    TTree* alct_t_emu = new TTree("ALCTEmulationResults", "ALCTEmulationResults");
+    TTree* alct_t_emu = new TTree("ALCTEmulationResults", "ALCTEmulationResults");*/
 
     CSCInfo::ALCTs alcts(t);
     CSCInfo::Wires wires(t);
@@ -73,6 +74,8 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 	cout << endl;
 	
 	cout << "Starting Event: " << start << " Ending Event: " << end << endl << endl;
+
+	ALCTConfig config; 
 
 	for(int i = start; i < end; i++) 
 	{
@@ -93,20 +96,70 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 			unsigned int RI = c.ring;
 			unsigned int CH = c.chamber;
 
+			if (ST == 1 && RI == 1) continue;
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
-			ALCT_ChamberHits wireHits(ST, RI, EC, CH);
-			if (wireHits.fill(wires)) return -1;
+			//cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << endl << endl;
+
+			std::vector<ALCT_ChamberHits*> cvec;
+
+			for (int i=0; i<16; i++)
+			{
+				ALCT_ChamberHits * temp = new ALCT_ChamberHits(ST,RI,CH,EC);
+				if (i >= config.get_start_bx() && i< config.get_fifo_tbins() - config.get_drift_delay())
+					temp->fill(wires,i);
+				cvec.push_back(temp);
+			}
+
+			//cout << "safe here1" << endl; 
+
+			ALCTCandidate * head = new ALCTCandidate(0,1);
+
+			for (int i = 0; i<(cvec.at(0))->get_maxWi(); i++)
+			{
+				ALCTCandidate * cand; 
+				cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
+			}
+
+			//cout << "safe here2" << endl; 
+
+			std::vector<ALCTCandidate*> candvec; 
+			preTrigger(cvec,config,head);
+			patternDetection(cvec, config, head);
+			ghostBuster(head);
+			clean(head);
+			head_to_vec(head,candvec);
+
+			int num_alct=0; 
+			for (int i=0; i<alcts.size(); i++)
+			{
+				int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
+				int chSid2 = chSid1;
+				
+				bool me11a	= ST == 1 && RI == 4;
+				bool me11b	= ST == 1 && RI == 1;
+
+				if (me11a || me11b)
+				{
+					if (me11a) chSid2 = CSCHelper::serialize(ST, 1, CH, EC);
+					if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
+				}
+				if (chSid1!=alcts.ch_id->at(i) && chSid2!= alcts.ch_id->at(i)) continue;
+				num_alct++; 
+			}
+			if (num_alct!=candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl; 
+			wipe(candvec);
+			wipe(cvec);
 		}
-		alct_t_emu->Fill();
+		//alct_t_emu->Fill();
 	}
 
-	outF->cd();
-	alct_t_emu->Write();
+	//outF->cd();
+	//alct_t_emu->Write();
 
-	printf("Wrote to file: %s\n",outputfile.c_str());
+	//printf("Wrote to file: %s\n",outputfile.c_str());
 
-	auto t2 = std::chrono::high_resolution_clock::now();
-	cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
+	//auto t2 = std::chrono::high_resolution_clock::now();
+	//cout << "Time elapsed: " << chrono::duration_cast<chrono::seconds>(t2-t1).count() << " s" << endl;
 	return 0;
 }

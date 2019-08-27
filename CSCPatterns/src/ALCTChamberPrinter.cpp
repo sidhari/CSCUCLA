@@ -50,35 +50,38 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 
     CSCInfo::Wires wires(t);
 	CSCInfo::ALCTs alcts(t);
-	
-	for (int i = 0; i<eventnum; i++)
+
+	/*
+	std::vector<ALCTCandidate*> candvec;
+	ALCTCandidate * head = new ALCTCandidate(0,1);
+
+	for (int i = 0; i<4; i++)
 	{
-		t->GetEntry(i);
+		ALCTCandidate * cand; 
+		cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
+	}
+
+	(head->next)->nix();
+	head_to_vec(head,candvec);
+	for (int i=0; i<candvec.size(); i++)
+	{
+		cout<<candvec.at(i)<<endl<<endl;
+	}*/
+
+	
+	for (int e_num = 0; e_num<eventnum; e_num++)
+	{
+		t->GetEntry(e_num);
 
 		std::vector<ALCT_ChamberHits*> cvec;
 		for (int i=0; i<16; i++)
 		{
 			ALCT_ChamberHits * temp = new ALCT_ChamberHits(ST,RI,CH,EC);
 			temp->fill(wires,i);
-			//cout << *temp << endl; 
+			cout << *temp << endl; 
 			cvec.push_back(temp);
 		}
 		std::vector<ALCTCandidate*> candvec;
-
-		/*
-		ALCTCandidate(cand)
-		for (int i = 0; i<(cvec.at(0))->get_maxWi(); i++)
-		{
-			cand = (i==0) ? new ALCTCandidate(i,1) : new ALCTCandidate(i,1,cand);
-			if (preTrigger(0,cvec,config,*cand)) candvec.push_back(cand); 
-		}
-
-		for (int i=0; i< candvec.size(); i++)
-		{
-			std::cout << candvec.at(i) << endl; 
-		}
-
-		std::vector<ALCTCandidate*> candvec2;*/
 
 		ALCTCandidate * head = new ALCTCandidate(0,1);
 
@@ -88,7 +91,7 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 			cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
 		}
 
-		preTrigger(0,cvec,config,head);
+		preTrigger(cvec,config,head);
 		head_to_vec(head,candvec);
 
 		cout << "=== PreTriggerring Results ===" << endl << endl;
@@ -97,17 +100,6 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 		{
 			std::cout << candvec.at(i) << endl << endl; 
 		}
-
-		/*for (int i = 0; i<candvec.size(); i++)
-		{
-			ALCTCandidate* cand = candvec.at(i);
-			if (patternDetection(cvec,config,*cand)) candvec2.push_back(cand); 
-		}
-		
-		for (int i=0; i< candvec2.size(); i++)
-		{
-			std::cout << candvec2.at(i) << endl; 
-		}*/
 
 		patternDetection(cvec, config, head); 
 		candvec.clear();
@@ -119,14 +111,6 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 		{
 			std::cout << candvec.at(i) << endl << endl; 
 		}
-
-		/*if (candvec2.size()!= 0) ghostBuster(candvec2.at(0));
-
-		cout << "got here" << endl; 
-		for (int i=0; i<candvec2.size();i++)
-		{
-			if (candvec2.at(i)->isValid()) std::cout<< candvec2.at(i) << endl;
-		}*/
 
 		ghostBuster(head);
 		clean(head);
@@ -145,6 +129,7 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 		for (int i=0; i<alcts.size(); i++)
 		{
 			int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
+			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 			int chSid2 = chSid1;
 			
 			bool me11a	= ST == 1 && RI == 4;
@@ -156,15 +141,20 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 				if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
 			}
 			if (chSid1!=alcts.ch_id->at(i) && chSid2!= alcts.ch_id->at(i)) continue;
-			cout<< "key wire group = " << (int)(alcts.keyWG->at(i)) 
-				<< ", quality = " << " " << (int)(alcts.quality->at(i)) 
-				<< ", accelerator = " << " " << (int) alcts.accelerator->at(i)
-				<< ", BX = " << " " << (int) alcts.BX->at(i) << endl; 
+			CSCHelper::ChamberId c = CSCHelper::unserialize(alcts.ch_id->at(i));
+			cout<< "key wire group = " << (int)(alcts.keyWG->at(i))
+				<< ", quality = " << (int)(alcts.quality->at(i)) 
+				<< ", accelerator = " << (int) alcts.accelerator->at(i)
+				<< ", BX = " <<  (int) alcts.BX->at(i)
+				<< ", track number = " << (int) alcts.trkNumber->at(i)
+				<< ", Station = " << (int) c.station
+				<< ", Ring = " << (int) c.ring
+				<< endl; 
 		}
 
-		cout << "finished alct for event " << i << endl << endl;  
+		cout << "finished alct for event " << e_num << endl << endl;  
 
-		if (candvec.size()) return 0; 
+		//if (candvec.size()) return 0; 
 	}
     return 0;
 }
