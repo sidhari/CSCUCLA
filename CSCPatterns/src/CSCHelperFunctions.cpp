@@ -5,9 +5,12 @@
  *      Author: wnash
  */
 
-
 #include "../include/CSCHelperFunctions.h"
 #include "../include/CSCHelper.h"
+
+//#include <set>
+#include <algorithm>
+#include <vector>
 
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {
@@ -267,12 +270,57 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 				return -1;
 			}
 		}
+
+		/*
+		set<CLCTCandidate*, CLCTCandidate::QUALITY_SORT> matches =
+				set<CLCTCandidate*, CLCTCandidate::QUALITY_SORT>( CLCTCandidate::cfebQuality);
+		matches.insert(bestMatch);
+		matches.insert(thisMatch);
+
+		for(unsigned int im=0; im < matches.size(); im++){
+
+		}
+		bestMatch = matches.begin();
+		matches.erase(matches.end()-1);
+		*/
+
+
+
+
+		//make a vector of matches so we can sort them according to the cfeb quality
+		/*
+		if(CLCTCandidate::cfebQuality(bestMatch,thisMatch)){
+			delete thisMatch;
+		}else{
+			if(bestMatch)delete bestMatch;
+			bestMatch = thisMatch;
+		}
+		*/
+
+		vector<CLCTCandidate*> matches;
+		matches.push_back(bestMatch);
+		matches.push_back(thisMatch);
+
+		//vector<CLCTCandidate*, CLCTCandidate::QUALITY_SORT>::iterator begin() { return
+		//std::sort(matches.begin(), matches.end(), CLCTCandidate::QUALITY_SORT(CLCTCandidate::cfebQuality));
+		sort(matches.begin(), matches.end(), CLCTCandidate::cfebQuality);
+		//sort(matches.begin(), matches.end());
+
+
+		//remove the last element from the array, i.e. the worst of the two
+		matches.pop_back();
+
+		bestMatch = matches.front();
+
+
+		/*
 		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount()){
 			if(bestMatch) delete bestMatch;
 			bestMatch = thisMatch;
 		}else{
 			delete thisMatch;
 		}
+		*/
 	}
 
 	//we have a valid best match
@@ -421,17 +469,17 @@ vector<CSCPattern>* createNewPatterns(){
 
 	vector<CSCPattern>* thisVector = new vector<CSCPattern>();
 
-	CSCPattern id15("15",PATTERN_IDS[0],false,IDSV1_A);
-	CSCPattern id14("14",PATTERN_IDS[1],false,IDSV1_C);
-	CSCPattern id13 = id14.makeFlipped("13",PATTERN_IDS[2]);
-	CSCPattern id12("12",PATTERN_IDS[3], false, IDSV1_E);
-	CSCPattern id11 = id12.makeFlipped("11",PATTERN_IDS[4]);
+	CSCPattern id100("100",PATTERN_IDS[0],false,IDSV1_A);
+	CSCPattern id90("90",PATTERN_IDS[1],false,IDSV1_C);
+	CSCPattern id80 = id90.makeFlipped("80",PATTERN_IDS[2]);
+	CSCPattern id70("70",PATTERN_IDS[3], false, IDSV1_E);
+	CSCPattern id60 = id70.makeFlipped("60",PATTERN_IDS[4]);
 
-	thisVector->push_back(id15);
-	thisVector->push_back(id14);
-	thisVector->push_back(id13);
-	thisVector->push_back(id12);
-	thisVector->push_back(id11);
+	thisVector->push_back(id100);
+	thisVector->push_back(id90);
+	thisVector->push_back(id80);
+	thisVector->push_back(id70);
+	thisVector->push_back(id60);
 
 	return thisVector;
 }

@@ -45,8 +45,8 @@ int getErrors(const vector<int>& x,const vector<int>& y, float& sigmaM, float& s
 
 
 int LUTLinearFitWriter_Macro(){
-	gSystem->Load("../lib/PatternFinderClasses_cpp");
-	gSystem->Load("../lib/PatternFinderHelperFunctions_cpp");
+	gSystem->Load("../lib/CSCClasses_cpp");
+	gSystem->Load("../lib/CSCHelperFunctions_cpp");
 
 
 	//all the patterns we will fit

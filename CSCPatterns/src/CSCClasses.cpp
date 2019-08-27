@@ -236,6 +236,16 @@ CSCPattern::CSCPattern() :
 	_name = "";
 }
 
+
+// bend bit used for OTMB sorting of slopes
+// within the TMB, for the legacy patterns, 10 is
+// best, 9 and 8 are tied, ...
+unsigned int CSCPattern::bendBit() const {
+	unsigned int bendBit = _id/2;
+	if(!_isLegacy) bendBit /= 10;
+	return bendBit;
+}
+
 //Create a new pattern with based off the old pattern
 // by symmetrically flipping it identified by id "id"
 CSCPattern CSCPattern::makeFlipped(unsigned int id) const{
@@ -497,38 +507,6 @@ const LUTKey CLCTCandidate::key() const {
 	return LUTKey(patternId(),comparatorCodeId());
 }
 
-CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
-		[](CLCTCandidate* c1, CLCTCandidate* c2){
-
-	const LUTEntry* l1 = c1->_lutEntry;
-	const LUTEntry* l2 = c2->_lutEntry;
-
-	/*We want this function to sort the CLCT's
-	 * in a way that puts the best quality candidate
-	 * the lowest in the list, i.e. return true
-	 * if the parameters associated with c1 are
-	 * better than those of c2
-	 */
-
-	// we don't have an entry for c2,
-	// so take c1 as being better
-	if(!l2) return true;
-
-	// we know we have something for c2,
-	// which should be by default better than nothing
-	if(!l1) return false;
-
-
-	//priority (layers, chi2, slope)
-	if (l1->_layers > l2->_layers) return true;
-	else if(l1->_layers == l2->_layers){
-		if(l1->_chi2 < l2->_chi2) return true;
-		else if (l1->_chi2 == l2->_chi2){
-			if(abs(l1->slope()) < abs(l2->slope())) return true;
-		}
-	}
-	return false;
-};
 
 //
 // ChamberHits

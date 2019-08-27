@@ -189,20 +189,21 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 
 				std::cout << "khs, patt, ccode" << std::endl;
 				std::cout << internal << setfill('0');
-				for(unsigned int i=0; i < nCLCTs; i++){
+				for(unsigned int j=0; j < nCLCTs; j++){
 					for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
-						CLCTFiles[i] << "000000000000" << endl;
+						CLCTFiles[j] << "000000000000" << endl;
 					}
-					if(i < emulatedCLCTs.size()){
+					if(j < emulatedCLCTs.size()){//
 
-						auto& clct = emulatedCLCTs.at(i);
+						auto& clct = emulatedCLCTs.at(j);
 						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
 						std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
-						std::cout << setw(4) << clct->patternId() << endl;
+						std::cout << setw(4) << clct->patternId()/10 << endl; //divide by 10 to have the amount of bits firmware expects
 						std::cout << setw(4) << clct->comparatorCodeId() << endl;
-						CLCTFiles[i] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId() << setw(4) << clct->comparatorCodeId() << endl;
+						//divide by 10 to have the amount of bits firmware expects
+						CLCTFiles[j] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId()/10 << setw(4) << clct->comparatorCodeId() << endl;
 					}else {
-						CLCTFiles[i] << "000000000000" << endl;
+						CLCTFiles[j] << "000000000000" << endl;
 					}
 				}
 
