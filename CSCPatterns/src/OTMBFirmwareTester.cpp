@@ -171,8 +171,8 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				//only look at ME11B chambers for now
 				if(!me11b) continue;
 
-				if(CH != 7 || EC!=1)
-				continue;			
+				//if(CH != 7 || EC!=1)
+				//continue;			
 
 				ChamberHits compHits(ST,RI,EC,CH);
 				if(compHits.fill(comparators)) return -1;
@@ -199,7 +199,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 					if(j < emulatedCLCTs.size()){//
 
 						auto& clct = emulatedCLCTs.at(j);
-						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
+						std::cout << dec << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
 						std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
 						std::cout << setw(4) << clct->patternId()/10 << endl; //divide by 10 to have the amount of bits firmware expects
 						std::cout << setw(4) << clct->comparatorCodeId() << endl;

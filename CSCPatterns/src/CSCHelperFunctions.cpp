@@ -7,6 +7,7 @@
 
 #include "../include/CSCHelperFunctions.h"
 #include "../include/CSCHelper.h"
+#include "../include/CSCClasses.h"
 
 //#include <set>
 #include <algorithm>
@@ -246,8 +247,6 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 
 	if(c.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done
 	ChamberHits shrinkingChamber = c;
-	if(c.nhits() < 3)
-	return 0;
 
 	CLCTCandidate *bestMatch = 0;
 
@@ -277,19 +276,31 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 
 
 
-		vector<CLCTCandidate*> matches;
-		matches.push_back(bestMatch);
-		matches.push_back(thisMatch);
-
-		sort(matches.begin(), matches.end(), CLCTCandidate::cfebQuality);
-
-
-
-		//remove the last element from the array, i.e. the worst of the two
-		matches.pop_back();
-
-		//the best match is the one which is sorted to the front
-		bestMatch = matches.front();
+		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount())
+		{
+			if(bestMatch) delete bestMatch;
+			bestMatch = thisMatch;
+		}
+		else if(bestMatch->layerCount() == thisMatch->layerCount())
+		{	
+			if((int)(bestMatch->patternId()/20) < (int)(thisMatch->patternId()/20))
+			{
+				delete bestMatch;
+				bestMatch = thisMatch;
+			}
+			else if((int)(bestMatch->patternId()/20) == (int)(thisMatch->patternId()/20))
+			{
+				if(bestMatch->keyHalfStrip() < thisMatch->keyHalfStrip())
+				{
+					delete bestMatch;
+					bestMatch = thisMatch;					
+				}
+				else
+				{
+					delete thisMatch;
+				}
+			}			
+		}
 	}
 
 	//we have a valid best match

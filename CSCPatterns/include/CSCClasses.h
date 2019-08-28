@@ -134,6 +134,7 @@ private:
 
 };
 
+
 class CLCTCandidateCollection
 {
 	public:
@@ -251,67 +252,6 @@ class EmulatedCLCTs
 	std::vector<unsigned int>* ch_id;
 
 };
-
-CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
-		[](CLCTCandidate* c1, CLCTCandidate* c2){
-
-	const LUTEntry* l1 = c1->_lutEntry;
-	const LUTEntry* l2 = c2->_lutEntry;
-
-	//We want this function to sort the CLCT's
-	 // in a way that puts the best quality candidate
-	 // the lowest in the list, i.e. return true
-	 // if the parameters associated with c1 are
-	 // better than those of c2
-
-
-	// we don't have an entry for c2,
-	// so take c1 as being better
-	if(!l2) return true;
-
-	// we know we have something for c2,
-	// which should be by default better than nothing
-	if(!l1) return false;
-
-
-	//priority (layers, chi2, slope)
-	if (l1->_layers > l2->_layers) return true;
-	else if(l1->_layers == l2->_layers){
-		if(l1->_chi2 < l2->_chi2) return true;
-		else if (l1->_chi2 == l2->_chi2){
-			if(abs(l1->slope()) < abs(l2->slope())) return true;
-		}
-	}
-	return false;
-};
-
-CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebQuality =
-		[](CLCTCandidate* c1, CLCTCandidate* c2){
-	// we don't have c2,
-	// so take c1 as being better
-	if(!c2) return true;
-
-	//if we don't have c1,
-	// take c2 as better
-	if(!c1) return false;
-
-
-	//sort by layers, bend bit, key half strip
-	if(c1->layerCount() > c2-> layerCount()) return true;
-	else if(c1->layerCount() == c2->layerCount()){
-		if(c1->_pattern.bendBit() > c2->_pattern.bendBit()) return true;
-		else if (c1->_pattern.bendBit() == c2->_pattern.bendBit()) {
-			if(c1->keyHalfStrip() <= c2->keyHalfStrip()) return true;
-			else return false;
-		} else{
-			return false;
-		}
-	}else{
-		return false;
-	}
-
-};
-
 
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber
