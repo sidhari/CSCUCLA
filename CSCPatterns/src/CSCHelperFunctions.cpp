@@ -154,13 +154,15 @@ int legacyLayersMatched(const ChamberHits &c, const CSCPattern &p, const int hor
 int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi,const vector<CLCTCandidate*>&previousCandidates){
 
 	//overlap between tested super pattern and chamber hits
-	bool overlap [NLAYERS][3];
+	bool overlap [NLAYERS][3] = {false};
 	int bestHorizontalIndex = 0;
+	/*
 	for(unsigned int i=0; i < NLAYERS; i++){
 		for(unsigned int j =0; j < 3; j++){
 			overlap[i][j] = false; //initialize all as false
 		}
 	}
+	*/
 
 	unsigned int maxMatchedLayers = 0;
 	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
@@ -280,7 +282,6 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 		matches.push_back(thisMatch);
 
 		sort(matches.begin(), matches.end(), CLCTCandidate::cfebQuality);
-
 
 
 		//remove the last element from the array, i.e. the worst of the two
@@ -549,7 +550,11 @@ void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS])
 			int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4] = {0};
 			for(unsigned int  ilay=0; ilay < NLAYERS; ilay++){
 			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
-					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay]) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
+				// only use the (incorrect) but currently used comparators for form a CLCT
+				//TODO: need to change once we get timing issues fixed within software
+					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 5 &&
+							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 5 + (int)TIME_CAPTURE_WINDOW
+																) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
 				}
 			}
 
