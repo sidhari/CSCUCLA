@@ -118,7 +118,7 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 			break;
 			//1 -> 001
 		case 1:
-			hits[ilay][2] = 1;
+			hits[ilay][0] = 1;
 			break;
 			//2 -> 010
 		case 2:
@@ -126,7 +126,7 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 			break;
 			//3 -> 100
 		case 3:
-			hits[ilay][0] = 1;
+			hits[ilay][2] = 1;
 			break;
 		default:
 			cout << "Error: invalid  layer code" << endl;
@@ -144,7 +144,9 @@ void ComparatorCode::calculateId(){
 	for(unsigned int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
-		for(int row = 0; row < 3; row++){
+		//for(int row = 0; row < 3; row++){
+		//use Firmware definition for comparator code definition
+		for(int row = 2; row >=0; row--){
 			rowPat = rowPat << 1; //bitshift the last number to the left
 			rowPat += _hits[column][row];
 		}
@@ -234,6 +236,16 @@ CSCPattern::CSCPattern() :
 	_name = "";
 }
 
+
+// bend bit used for OTMB sorting of slopes
+// within the TMB, for the legacy patterns, 10 is
+// best, 9 and 8 are tied, ...
+unsigned int CSCPattern::bendBit() const {
+	unsigned int bendBit = _id/2;
+	if(!_isLegacy) bendBit /= 10;
+	return bendBit;
+}
+
 //Create a new pattern with based off the old pattern
 // by symmetrically flipping it identified by id "id"
 CSCPattern CSCPattern::makeFlipped(unsigned int id) const{
@@ -292,7 +304,9 @@ void CSCPattern::printCode(int code) const{
 				if(!_pat[i][j]){
 					printf("-");
 				}else{
-					if(trueCounter == layerPattern) printf("X");
+					//if(trueCounter == layerPattern) printf("X");
+					//use Firmware convention for comparator code definition
+					if(trueCounter == 4-layerPattern) printf("X");
 					else printf("_");
 					trueCounter--;
 				}
@@ -334,7 +348,9 @@ int CSCPattern::recoverPatternCCCombination(const int code, int code_hits[MAX_PA
 				if(!_pat[i][j]){
 					code_hits[i][j] = 0;
 				}else{
-					if(trueCounter == layerPattern) code_hits[i][j] = 1;
+					//if(trueCounter == layerPattern) code_hits[i][j] = 1;
+					//use Firmware convention for comparator code definition
+					if(trueCounter == 4-layerPattern) code_hits[i][j] = 1;
 					else code_hits[i][j] = 0;
 					trueCounter--;
 				}
@@ -492,38 +508,6 @@ const LUTKey CLCTCandidate::key() const {
 	return LUTKey(patternId(),comparatorCodeId());
 }
 
-CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
-		[](CLCTCandidate* c1, CLCTCandidate* c2){
-
-	const LUTEntry* l1 = c1->_lutEntry;
-	const LUTEntry* l2 = c2->_lutEntry;
-
-	/*We want this function to sort the CLCT's
-	 * in a way that puts the best quality candidate
-	 * the lowest in the list, i.e. return true
-	 * if the parameters associated with c1 are
-	 * better than those of c2
-	 */
-
-	// we don't have an entry for c2,
-	// so take c1 as being better
-	if(!l2) return true;
-
-	// we know we have something for c2,
-	// which should be by default better than nothing
-	if(!l1) return false;
-
-
-	//priority (layers, chi2, slope)
-	if (l1->_layers > l2->_layers) return true;
-	else if(l1->_layers == l2->_layers){
-		if(l1->_chi2 < l2->_chi2) return true;
-		else if (l1->_chi2 == l2->_chi2){
-			if(abs(l1->slope()) < abs(l2->slope())) return true;
-		}
-	}
-	return false;
-};
 
 CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
 		[](CLCTCandidate* c1, CLCTCandidate* c2){

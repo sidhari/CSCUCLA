@@ -5,9 +5,12 @@
  *      Author: wnash
  */
 
-
 #include "../include/CSCHelperFunctions.h"
 #include "../include/CSCHelper.h"
+
+//#include <set>
+#include <algorithm>
+#include <vector>
 
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {
@@ -240,6 +243,8 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 // note that this is currently NOT the key half strip, but some constant off of it ( MAX_PATTERN_WIDTH / 2? )
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow){
 
+
+	if(c.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done
 	ChamberHits shrinkingChamber = c;
 	if(c.nhits() < 3)
 	return 0;
@@ -269,12 +274,22 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 				return -1;
 			}
 		}
-		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount()){
-			if(bestMatch) delete bestMatch;
-			bestMatch = thisMatch;
-		}else{
-			delete thisMatch;
-		}
+
+
+
+		vector<CLCTCandidate*> matches;
+		matches.push_back(bestMatch);
+		matches.push_back(thisMatch);
+
+		sort(matches.begin(), matches.end(), CLCTCandidate::cfebQuality);
+
+
+
+		//remove the last element from the array, i.e. the worst of the two
+		matches.pop_back();
+
+		//the best match is the one which is sorted to the front
+		bestMatch = matches.front();
 	}
 
 	//we have a valid best match
@@ -423,17 +438,17 @@ vector<CSCPattern>* createNewPatterns(){
 
 	vector<CSCPattern>* thisVector = new vector<CSCPattern>();
 
-	CSCPattern id15("15",PATTERN_IDS[0],false,IDSV1_A);
-	CSCPattern id14("14",PATTERN_IDS[1],false,IDSV1_C);
-	CSCPattern id13 = id14.makeFlipped("13",PATTERN_IDS[2]);
-	CSCPattern id12("12",PATTERN_IDS[3], false, IDSV1_E);
-	CSCPattern id11 = id12.makeFlipped("11",PATTERN_IDS[4]);
+	CSCPattern id100("100",PATTERN_IDS[0],false,IDSV1_A);
+	CSCPattern id90("90",PATTERN_IDS[1],false,IDSV1_C);
+	CSCPattern id80 = id90.makeFlipped("80",PATTERN_IDS[2]);
+	CSCPattern id70("70",PATTERN_IDS[3], false, IDSV1_E);
+	CSCPattern id60 = id70.makeFlipped("60",PATTERN_IDS[4]);
 
-	thisVector->push_back(id15);
-	thisVector->push_back(id14);
-	thisVector->push_back(id13);
-	thisVector->push_back(id12);
-	thisVector->push_back(id11);
+	thisVector->push_back(id100);
+	thisVector->push_back(id90);
+	thisVector->push_back(id80);
+	thisVector->push_back(id70);
+	thisVector->push_back(id60);
 
 	return thisVector;
 }

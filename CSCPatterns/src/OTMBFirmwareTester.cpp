@@ -39,14 +39,14 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 	//initialize output files
 	std::ofstream CFEBFiles[MAX_CFEBS];
 	for(unsigned int i=0; i < MAX_CFEBS; i++){
+		//CFEBFiles[i].open("CFEB"+to_string(i)+"-fake.mem"); //TODO smart naming
 		CFEBFiles[i].open("cfeb"+to_string(i)+".mem");
 	}
 
 	const unsigned int nCLCTs = 2;
 	ofstream CLCTFiles[nCLCTs]; //2 clcts
-	for(unsigned int i=0; i < nCLCTs; i++){
-		CLCTFiles[i].open("expected"+to_string(i)+".mem");
-	}
+	CLCTFiles[0].open("expected_1st.mem");
+	CLCTFiles[1].open("expected_2nd.mem");
 
 	vector<CSCPattern>* newPatterns = createNewPatterns();
 
@@ -177,19 +177,16 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				ChamberHits compHits(ST,RI,EC,CH);
 				if(compHits.fill(comparators)) return -1;
 				if(!compHits.nhits()) continue; //skip if its empty
-				compHits.print();				
+				compHits.print();
 
 				vector<CLCTCandidate*> emulatedCLCTs;
 
 				if(searchForMatch(compHits,newPatterns, emulatedCLCTs,true)){
 					emulatedCLCTs.clear();
-
 					continue;
 				}
 
 				writeToMEMFiles(compHits, CFEBFiles);
-
-				cout << emulatedCLCTs.size() << endl << endl;
 
 				while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
@@ -199,16 +196,15 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 					for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
 						CLCTFiles[j] << "000000000000" << endl;
 					}
-					if(j < emulatedCLCTs.size()){
+					if(j < emulatedCLCTs.size()){//
 
 						auto& clct = emulatedCLCTs.at(j);
-						printPatternCC(clct->patternId(), clct->comparatorCodeId());
-						int PID = clct->patternId()/10;
-						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << PID << " cc: " << clct->comparatorCodeId() << std::endl;
+						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
 						std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
-						std::cout << setw(4) << PID << endl;
-						std::cout << setw(4) << clct->comparatorCodeId() << endl << endl;
-						CLCTFiles[j] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << PID << setw(4) << clct->comparatorCodeId() << endl;
+						std::cout << setw(4) << clct->patternId()/10 << endl; //divide by 10 to have the amount of bits firmware expects
+						std::cout << setw(4) << clct->comparatorCodeId() << endl;
+						//divide by 10 to have the amount of bits firmware expects
+						CLCTFiles[j] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId()/10 << setw(4) << clct->comparatorCodeId() << endl;
 					}else {
 						CLCTFiles[j] << "000000000000" << endl;
 					}
