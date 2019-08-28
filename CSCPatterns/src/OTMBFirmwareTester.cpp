@@ -32,7 +32,7 @@ int main(int argc, char* argv[]){
 int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int end) {
 
 	//are we running over real data or fake stuff for testing?
-	const bool fakeData = false;
+	const bool fakeData = true;
 
 
 
@@ -60,19 +60,46 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 		comps.bestTime = new std::vector<size8>();
 		comps.nTimeOn = new std::vector<size8>();
 		cout << "Not using file: " << inputfile << endl;
-		for(unsigned int ihs=0; ihs < 4*CFEB_HS; ihs++){
+
+		//
+		// Iterate over a set number of fake chambers to write to
+		//
+		unsigned int fakeChambers = 100;
+		for(unsigned int ie=0; ie < fakeChambers;ie++){
+
+			comps.ch_id->clear();
+			comps.lay->clear();
+			comps.strip->clear();
+			comps.halfStrip->clear();
+			comps.bestTime->clear();
+			comps.nTimeOn->clear();
 
 			ChamberHits compHits(1,1,1,1); //fake me11b chamber
+			unsigned int nChamberHalfStrips = compHits.maxHs() - compHits.minHs();
+
+			//
+			// Create some arrangement of the comarators for this fake chamber
+			//
 			for(unsigned int ilay=0; ilay < NLAYERS; ilay++){
 
-				comps.ch_id->push_back(CSCHelper::serialize(1,1,1,1));
-				comps.lay->push_back(ilay+1);
-				comps.strip->push_back((ihs+2)/2);
-				//comps.strip->push_back(ihs+1);
-				comps.halfStrip->push_back(ihs%2);
-				comps.bestTime->push_back(7);
-				comps.nTimeOn->push_back(1);
+				//have loop for each individual clct we are simulating
+				unsigned int nFakeClcts = 10;
+				for(unsigned int iclct=0; iclct < nFakeClcts; iclct++){
 
+					comps.ch_id->push_back(CSCHelper::serialize(1,1,1,1));
+					comps.lay->push_back(ilay+1);
+					comps.bestTime->push_back(7);
+					comps.nTimeOn->push_back(1);
+
+					unsigned int halfStrip = iclct %2 ?
+							(ie+ilay+iclct*nChamberHalfStrips/nFakeClcts)%nChamberHalfStrips
+							:(iclct*nChamberHalfStrips/nFakeClcts- ie-ilay)%nChamberHalfStrips;
+
+
+					comps.strip->push_back((halfStrip+2)/2);
+					comps.halfStrip->push_back(halfStrip%2);
+
+				}
 			}
 			compHits.fill(comps);
 			compHits.print();
@@ -84,7 +111,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 
 			if(searchForMatch(compHits,newPatterns, emulatedCLCTs,true)){
 				emulatedCLCTs.clear();
-				return -1;
+				continue;
 			}
 			//keep only first two
 			while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
@@ -109,12 +136,6 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 					CLCTFiles[i] << "000000000000" << endl;
 				}
 			}
-			comps.ch_id->clear();
-			comps.lay->clear();
-			comps.strip->clear();
-			comps.halfStrip->clear();
-			comps.bestTime->clear();
-			comps.nTimeOn->clear();
 		}
 
 
