@@ -66,7 +66,7 @@ public:
 	}
 
 	/*
-	 * Constructor used when wanting to read from branches of a TTree. Can be 
+	 * Constructor used when wanting to read from branches of a TTree. Can be
 	 * used independently of FillCSCInfo.h. Analogous for following classes
 	 */
 	Event(TTree* t): Event(){
@@ -598,3 +598,4 @@ public:
 }
 
 #endif /*CSCUCLA_CSCDIGITUPLES_CSCINFO_H*/
+

@@ -78,6 +78,7 @@ public:
 	const unsigned int _id;
 	const bool _isLegacy;
 	bool _pat[MAX_PATTERN_WIDTH][NLAYERS];
+	unsigned int bendBit() const;
 
 	CSCPattern makeFlipped(unsigned int id) const;
 	CSCPattern makeFlipped(string name, unsigned int id) const;
@@ -251,6 +252,67 @@ class EmulatedCLCTs
 
 };
 
+CLCTCandidate::QUALITY_SORT CLCTCandidate::quality =
+		[](CLCTCandidate* c1, CLCTCandidate* c2){
+
+	const LUTEntry* l1 = c1->_lutEntry;
+	const LUTEntry* l2 = c2->_lutEntry;
+
+	//We want this function to sort the CLCT's
+	 // in a way that puts the best quality candidate
+	 // the lowest in the list, i.e. return true
+	 // if the parameters associated with c1 are
+	 // better than those of c2
+
+
+	// we don't have an entry for c2,
+	// so take c1 as being better
+	if(!l2) return true;
+
+	// we know we have something for c2,
+	// which should be by default better than nothing
+	if(!l1) return false;
+
+
+	//priority (layers, chi2, slope)
+	if (l1->_layers > l2->_layers) return true;
+	else if(l1->_layers == l2->_layers){
+		if(l1->_chi2 < l2->_chi2) return true;
+		else if (l1->_chi2 == l2->_chi2){
+			if(abs(l1->slope()) < abs(l2->slope())) return true;
+		}
+	}
+	return false;
+};
+
+CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebQuality =
+		[](CLCTCandidate* c1, CLCTCandidate* c2){
+	// we don't have c2,
+	// so take c1 as being better
+	if(!c2) return true;
+
+	//if we don't have c1,
+	// take c2 as better
+	if(!c1) return false;
+
+
+	//sort by layers, bend bit, key half strip
+	if(c1->layerCount() > c2-> layerCount()) return true;
+	else if(c1->layerCount() == c2->layerCount()){
+		if(c1->_pattern.bendBit() > c2->_pattern.bendBit()) return true;
+		else if (c1->_pattern.bendBit() == c2->_pattern.bendBit()) {
+			if(c1->keyHalfStrip() <= c2->keyHalfStrip()) return true;
+			else return false;
+		} else{
+			return false;
+		}
+	}else{
+		return false;
+	}
+
+};
+
+
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber
  */
@@ -270,6 +332,7 @@ public:
 	unsigned int minHs() const {return _minHs;}
 	unsigned int maxHs() const {return _maxHs;}
 	unsigned int nhits() const {return _nhits;}
+	unsigned int nCFEBs() const {return _nCFEBs;}
 	float hitMeanHS();
 	float hitStdHS();
 	int _hits[N_MAX_HALF_STRIPS][NLAYERS];
@@ -281,6 +344,8 @@ public:
 	void print() const; //deprecated
 	
 	friend ostream& operator<<(ostream& os, const ChamberHits& c);
+	//void writeMEMs(const std::string& fileidentifier) const;
+
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
 	unsigned int _nhits;
@@ -289,46 +354,8 @@ private:
 
 	float _meanHS;
 	float _stdHS;
-};
+	unsigned int _nCFEBs;
 
-class ALCT_ChamberHits
-{
-	public:
-		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
-			unsigned int endcap=0, unsigned int chamber=0, bool isWire=true);
-		
-		ALCT_ChamberHits(const ALCT_ChamberHits &c);
-		
-		~ALCT_ChamberHits(){}
-
-		const bool _isWire;
-		const unsigned int _station;
-		const unsigned int _ring;
-		const unsigned int _endcap;
-		const unsigned int _chamber;
-
-		unsigned int get_minWi() const {return _minWi;}
-		unsigned int get_maxWi() const {return _maxWi;}
-		unsigned int get_nhits() const {return _nhits;}
-
-		float get_hitMeanWi();
-		float get_hitStdWi();
-
-		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
-
-		void fill(const CSCInfo::Wires& w);
-		//void print() const; //deprecated
-		
-		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
-		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
-
-	private:
-		unsigned int _minWi;
-		unsigned int _maxWi;
-		unsigned int _nhits;
-
-		float _meanWi;
-		float _stdWi;
 };
 
 

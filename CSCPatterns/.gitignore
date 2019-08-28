@@ -1,4 +1,5 @@
 .DS_Store
+*.mem
 *.lut
 *.root
 *.txt

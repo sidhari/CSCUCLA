@@ -5,9 +5,12 @@
  *      Author: wnash
  */
 
-
 #include "../include/CSCHelperFunctions.h"
 #include "../include/CSCHelper.h"
+
+//#include <set>
+#include <algorithm>
+#include <vector>
 
 
 bool validComparatorTime(const unsigned int time, const unsigned int startTimeWindow) {
@@ -168,8 +171,7 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 
 	/* Allow matches only in regions where the key half strip is within the chamber,
 	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
-	 * since the layers are offset for non-me11a/b chambers TODO
-	 * iterate
+	 * since the layers are offset for non-me11a/b chambers
 	 */
 	for(int x = (int)c.minHs() -(int)MAX_PATTERN_WIDTH/2+1; x < (int)c.maxHs() - (int)MAX_PATTERN_WIDTH/2+1; x++){
 		//check if region is in the busy window, if using old tmb logic
@@ -241,6 +243,8 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 // note that this is currently NOT the key half strip, but some constant off of it ( MAX_PATTERN_WIDTH / 2? )
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow){
 
+
+	if(c.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done
 	ChamberHits shrinkingChamber = c;
 	if(c.nhits() < 3)
 	return 0;
@@ -270,12 +274,22 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 				return -1;
 			}
 		}
-		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount()){
-			if(bestMatch) delete bestMatch;
-			bestMatch = thisMatch;
-		}else{
-			delete thisMatch;
-		}
+
+
+
+		vector<CLCTCandidate*> matches;
+		matches.push_back(bestMatch);
+		matches.push_back(thisMatch);
+
+		sort(matches.begin(), matches.end(), CLCTCandidate::cfebQuality);
+
+
+
+		//remove the last element from the array, i.e. the worst of the two
+		matches.pop_back();
+
+		//the best match is the one which is sorted to the front
+		bestMatch = matches.front();
 	}
 
 	//we have a valid best match
@@ -424,17 +438,17 @@ vector<CSCPattern>* createNewPatterns(){
 
 	vector<CSCPattern>* thisVector = new vector<CSCPattern>();
 
-	CSCPattern id1("100",PATTERN_IDS[0],false,IDSV1_A);
-	CSCPattern id4("90",PATTERN_IDS[1],false,IDSV1_C);
-	CSCPattern id5 = id4.makeFlipped("80",PATTERN_IDS[2]);
-	CSCPattern id8("70",PATTERN_IDS[3], false, IDSV1_E);
-	CSCPattern id9 = id8.makeFlipped("60",PATTERN_IDS[4]);
+	CSCPattern id100("100",PATTERN_IDS[0],false,IDSV1_A);
+	CSCPattern id90("90",PATTERN_IDS[1],false,IDSV1_C);
+	CSCPattern id80 = id90.makeFlipped("80",PATTERN_IDS[2]);
+	CSCPattern id70("70",PATTERN_IDS[3], false, IDSV1_E);
+	CSCPattern id60 = id70.makeFlipped("60",PATTERN_IDS[4]);
 
-	thisVector->push_back(id1);
-	thisVector->push_back(id4);
-	thisVector->push_back(id5);
-	thisVector->push_back(id8);
-	thisVector->push_back(id9);
+	thisVector->push_back(id100);
+	thisVector->push_back(id90);
+	thisVector->push_back(id80);
+	thisVector->push_back(id70);
+	thisVector->push_back(id60);
 
 	return thisVector;
 }
@@ -483,22 +497,71 @@ vector<CSCPattern>* createOldPatterns(){
 
 	return thisVector;
 }
-/* Deprecated
-int chamberSerial( int ec, int st, int ri, int ch ) {
 
-    int kSerial = ch;
-    if (st == 1 && ri == 1) kSerial = ch;
-    if (st == 1 && ri == 2) kSerial = ch + 36;
-    if (st == 1 && ri == 3) kSerial = ch + 72;
-    if (st == 1 && ri == 4) kSerial = ch;
-    if (st == 2 && ri == 1) kSerial = ch + 108;
-    if (st == 2 && ri == 2) kSerial = ch + 126;
-    if (st == 3 && ri == 1) kSerial = ch + 162;
-    if (st == 3 && ri == 2) kSerial = ch + 180;
-    if (st == 4 && ri == 1) kSerial = ch + 216;
-    if (st == 4 && ri == 2) kSerial = ch + 234;  // one day...
-    if (ec == 2) kSerial = kSerial + 300;
 
-    return kSerial;
+
+/*
+ *  Writes .mem files, read by A. Pecks firmware tester.
+ * Writes multiple files, each one containing all the comparator
+ * hits for a given CFEB. Each file is put in the format
+ *
+ * <fileidentifier><CFEB number>.mem
+ *
+ *
+ *TODO: make it so ME11A gets put in CFEBs 5-7
+ */
+void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS]){
+	bool me11a = c._station == 1 && c._ring == 4;
+	bool me11b = c._station == 1 && c._ring == 1;
+	//test using only one CFEB
+	bool oneCFEB = c._station == 0 && c._ring == 0;
+
+	//for now, only works with ME11 chambers and fake demo chamber (oneCFEB)
+	if(!(me11a || me11b || oneCFEB)) return;
+
+
+	for(unsigned int iCFEB=0; iCFEB < MAX_CFEBS; iCFEB++){
+
+		/*
+		A single line would be, for example,
+
+		000000001111111122222222333333334444444455555555
+
+		Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
+
+		So for example:
+
+			000000010000000100000001000000010000000100000001
+
+		corresponds to a 6 layer straight pattern on hs0.
+
+		This array stores the correct number for each layer
+		 */
+
+		//pad with 7 empty time bins
+		for(unsigned int i=0; i < 7; i++){
+			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+		}
+
+		if(iCFEB >=  c.nCFEBs()) { //if we are writing to more CFEB files than the chamber actually has
+			//fill them with zeros
+			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+		} else{
+			//otherwise, do some math to convert to properly formatted line
+			int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4] = {0};
+			for(unsigned int  ilay=0; ilay < NLAYERS; ilay++){
+			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
+					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay]) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
+				}
+			}
+
+			for(unsigned int i=0; i < NLAYERS;i++){
+				for(unsigned int j=0; j < CFEB_HS/4; j++){
+					CFEBStreams[iCFEB] <<dec << comparatorLocationNumberEncoding[i][j];
+				}
+			}
+			CFEBStreams[iCFEB] << endl;
+		}
+
+	}
 }
-*/

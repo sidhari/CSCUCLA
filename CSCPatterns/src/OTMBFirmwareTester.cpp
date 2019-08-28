@@ -31,127 +31,189 @@ int main(int argc, char* argv[]){
 
 int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int end) {
 
-	cout << "Not using file: " << inputfile << endl;
+	//are we running over real data or fake stuff for testing?
+	const bool fakeData = false;
+
+
+
+	//initialize output files
+	std::ofstream CFEBFiles[MAX_CFEBS];
+	for(unsigned int i=0; i < MAX_CFEBS; i++){
+		//CFEBFiles[i].open("CFEB"+to_string(i)+"-fake.mem"); //TODO smart naming
+		CFEBFiles[i].open("cfeb"+to_string(i)+".mem");
+	}
+
+	const unsigned int nCLCTs = 2;
+	ofstream CLCTFiles[nCLCTs]; //2 clcts
+	CLCTFiles[0].open("expected_1st.mem");
+	CLCTFiles[1].open("expected_2nd.mem");
 
 	vector<CSCPattern>* newPatterns = createNewPatterns();
 
-	ChamberHits compHits;
+	//TODO: break up into seperate functions
+	if(fakeData){
+		CSCInfo::Comparators comps;
+		comps.ch_id = new std::vector<int>();
+		comps.lay = new std::vector<size8>();
+		comps.strip = new std::vector<size8>();
+		comps.halfStrip = new std::vector<size8>();
+		comps.bestTime = new std::vector<size8>();
+		comps.nTimeOn = new std::vector<size8>();
+		cout << "Not using file: " << inputfile << endl;
+		for(unsigned int ihs=0; ihs < 4*CFEB_HS; ihs++){
+
+			ChamberHits compHits(1,1,1,1); //fake me11b chamber
+			for(unsigned int ilay=0; ilay < NLAYERS; ilay++){
+
+				comps.ch_id->push_back(CSCHelper::serialize(1,1,1,1));
+				comps.lay->push_back(ilay+1);
+				comps.strip->push_back((ihs+2)/2);
+				//comps.strip->push_back(ihs+1);
+				comps.halfStrip->push_back(ihs%2);
+				comps.bestTime->push_back(7);
+				comps.nTimeOn->push_back(1);
+
+			}
+			compHits.fill(comps);
+			compHits.print();
+
+			writeToMEMFiles(compHits,CFEBFiles);
 
 
-	CSCInfo::Comparators comps;
-	comps.ch_id = new std::vector<int>();
-	comps.lay = new std::vector<size8>();
-	comps.strip = new std::vector<size8>();
-	comps.halfStrip = new std::vector<size8>();
-	comps.bestTime = new std::vector<size8>();
-	comps.nTimeOn = new std::vector<size8>();
+			vector<CLCTCandidate*> emulatedCLCTs;
 
-	//comparator output file
-	std::ofstream compFile;
-	compFile.open("comparators.txt");
-	//clct output file
-	std::ofstream clctFile;
-	clctFile.open("clcts.txt");
-	/*
-A single line would be, for example,
+			if(searchForMatch(compHits,newPatterns, emulatedCLCTs,true)){
+				emulatedCLCTs.clear();
+				return -1;
+			}
+			//keep only first two
+			while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
-000000001111111122222222333333334444444455555555
 
-Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
 
-So for example:
+			std::cout << "khs, patt, ccode" << std::endl;
+			std::cout << internal << setfill('0');
+			for(unsigned int i=0; i < nCLCTs; i++){
+				for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
+					CLCTFiles[i] << "000000000000" << endl;
+				}
+				if(i < emulatedCLCTs.size()){
 
-    000000010000000100000001000000010000000100000001
+					auto& clct = emulatedCLCTs.at(i);
+					std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
+					std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
+					std::cout << setw(4) << clct->patternId() << endl;
+					std::cout << setw(4) << clct->comparatorCodeId() << endl;
+					CLCTFiles[i] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId() << setw(4) << clct->comparatorCodeId() << endl;
+				}else {
+					CLCTFiles[i] << "000000000000" << endl;
+				}
+			}
+			comps.ch_id->clear();
+			comps.lay->clear();
+			comps.strip->clear();
+			comps.halfStrip->clear();
+			comps.bestTime->clear();
+			comps.nTimeOn->clear();
+		}
 
-corresponds to a 6 layer straight pattern on hs0.
 
-This array stores the correct number for each layer
-	 */
-	int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4];
+		delete comps.ch_id;
+		delete comps.lay;
+		delete comps.strip;
+		delete comps.halfStrip;
+		delete comps.bestTime;
+		delete comps.nTimeOn;
+	}else{
+		cout << "Running over file: " << inputfile << endl;
 
-	for(unsigned int ihs=0; ihs < CFEB_HS; ihs++){
-		//clear it
-		for(unsigned int i=0; i < NLAYERS;i++){
-			for(unsigned int j=0; j < CFEB_HS/4; j++){
-				comparatorLocationNumberEncoding[i][j] = 0;
+
+		TFile* f = TFile::Open(inputfile.c_str());
+		if(!f) throw "Can't open file";
+
+		TTree* t =  (TTree*)f->Get("CSCDigiTree");
+		if(!t) throw "Can't find tree";
+
+		//
+		// SET INPUT BRANCHES
+		//
+
+		CSCInfo::Event evt(t);
+		//CSCInfo::Muons muons(t);
+		//CSCInfo::Segments segments(t);
+		//CSCInfo::RecHits recHits(t);
+		//CSCInfo::LCTs lcts(t);
+		//CSCInfo::CLCTs clcts(t);
+		CSCInfo::Comparators comparators(t);
+		if(end > t->GetEntries() || end < 0) end = t->GetEntries();
+
+
+		cout << "Starting Event: " << start << " Ending Event: " << end << endl;
+
+
+		for(int i = start; i < end; i++) {
+			if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+
+			t->GetEntry(i);
+			cout << evt.EventNumber << endl;
+
+			for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
+				CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
+
+				unsigned int EC = c.endcap;
+				unsigned int ST = c.station;
+				unsigned int RI = c.ring;
+				unsigned int CH = c.chamber;
+
+				if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+				//bool me11a = (ST == 1 && RI == 4);
+				bool me11b = (ST == 1 && RI == 1);
+				//only look at ME11B chambers for now
+				if(!me11b) continue;
+
+				ChamberHits compHits(ST,RI,EC,CH);
+				if(compHits.fill(comparators)) return -1;
+				if(!compHits.nhits()) continue; //skip if its empty
+				compHits.print();
+
+				vector<CLCTCandidate*> emulatedCLCTs;
+
+				if(searchForMatch(compHits,newPatterns, emulatedCLCTs,true)){
+					emulatedCLCTs.clear();
+					continue;
+				}
+
+				writeToMEMFiles(compHits, CFEBFiles);
+
+				while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
+
+				std::cout << "khs, patt, ccode" << std::endl;
+				std::cout << internal << setfill('0');
+				for(unsigned int j=0; j < nCLCTs; j++){
+					for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
+						CLCTFiles[j] << "000000000000" << endl;
+					}
+					if(j < emulatedCLCTs.size()){//
+
+						auto& clct = emulatedCLCTs.at(j);
+						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
+						std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
+						std::cout << setw(4) << clct->patternId()/10 << endl; //divide by 10 to have the amount of bits firmware expects
+						std::cout << setw(4) << clct->comparatorCodeId() << endl;
+						//divide by 10 to have the amount of bits firmware expects
+						CLCTFiles[j] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId()/10 << setw(4) << clct->comparatorCodeId() << endl;
+					}else {
+						CLCTFiles[j] << "000000000000" << endl;
+					}
+				}
+
 			}
 		}
-		ChamberHits compHits;
-		for(unsigned int ilay=0; ilay < NLAYERS; ilay++){
 
-			comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] = pow(2,ihs%4);
-
-			comps.ch_id->push_back(CSCHelper::serialize(0,0,0,0));
-			comps.lay->push_back(ilay+1);
-			comps.strip->push_back((ihs+2)/2);
-			//comps.strip->push_back(ihs+1);
-			comps.halfStrip->push_back(ihs%2);
-			comps.bestTime->push_back(7);
-			comps.nTimeOn->push_back(1);
-
-		}
-		compHits.fill(comps);
-		compHits.print();
-
-		vector<CLCTCandidate*> emulatedCLCTs;
-
-		if(searchForMatch(compHits,newPatterns, emulatedCLCTs,true)){
-			emulatedCLCTs.clear();
-			//cout << "Something broke" << endl;
-			//return;
-
-			return -1;
-		}
-
-		std::cout << "comparators:" << endl;
-
-		std::cout << noshowbase;
-		//std::cout << showbase << internal << setfill('0');
-		for(unsigned int i=0; i < NLAYERS;i++){
-			for(unsigned int j=0; j < CFEB_HS/4; j++){
-				std::cout << dec <<comparatorLocationNumberEncoding[i][j];
-				compFile <<dec << comparatorLocationNumberEncoding[i][j];
-			}
-		}
-		std::cout <<std::endl;
-		compFile <<std::endl;
-
-
-		std::cout << "khs, patt, ccode" << std::endl;
-		std::cout << internal << setfill('0');
-		for(auto& clct: emulatedCLCTs){
-			std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
-			std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
-			std::cout << setw(4) << clct->patternId() << endl;
-			std::cout << setw(4) << clct->comparatorCodeId() << endl;
-			clctFile << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId() << setw(4) << clct->comparatorCodeId() << endl;
-			//clct->print3x6Pattern();
-			//printf("hs: %hhx, patt: %hhx, cc: %hhx\n",clct->keyHalfStrip(), clct->patternId(), clct->comparatorCodeId());
-		}
-
-
-
-		comps.ch_id->clear();
-		comps.lay->clear();
-		comps.strip->clear();
-		comps.halfStrip->clear();
-		comps.bestTime->clear();
-		comps.nTimeOn->clear();
 	}
 
-
-
-
-
-
-
-	delete comps.ch_id;
-	delete comps.lay;
-	delete comps.strip;
-	delete comps.halfStrip;
-	delete comps.bestTime;
-	delete comps.nTimeOn;
-
+	for(auto& cfebFile : CFEBFiles) cfebFile.close();
+	for(auto& clctFile : CLCTFiles) clctFile.close();
 
 	return 0;
 }

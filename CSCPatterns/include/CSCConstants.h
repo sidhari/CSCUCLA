@@ -26,13 +26,14 @@ const unsigned int N_KEY_WIRE_GROUPS = 112;
 const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 const unsigned int CFEB_HS = 32;
+const unsigned int MAX_CFEBS = 7; //in ME11
 
 const std::string LINEFIT_LUT_PATH = "/uscms/home/wnash/CSCUCLA/CSCPatterns/dat/linearFits.lut";
 //const std::string LINEFIT_LUT_PATH = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/linearFits.lut";
 
 //labels of all envelopes
 const unsigned int NPATTERNS = 5;
-const unsigned int PATTERN_IDS[NPATTERNS] = {100,90,80, 70, 60};
+const unsigned int PATTERN_IDS[NPATTERNS] = {100,90,80,70,60};
 const unsigned int NCOMPARATOR_CODES = 4096; //codes per pattern 2^12, without accounting for degeneracy, etc
 
 const unsigned int NLEGACYPATTERNS = 9;
