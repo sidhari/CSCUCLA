@@ -157,20 +157,11 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3] = {false};
 	int bestHorizontalIndex = 0;
-	/*
-	for(unsigned int i=0; i < NLAYERS; i++){
-		for(unsigned int j =0; j < 3; j++){
-			overlap[i][j] = false; //initialize all as false
-		}
-	}
-	*/
 
 	unsigned int maxMatchedLayers = 0;
 	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
 
-	//iterate through the entire body of the chamber, we look for overlapping patterns
-	//everywhere starting at the left most edge to the rightmost edge
-	//for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
+
 
 	/* Allow matches only in regions where the key half strip is within the chamber,
 	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
