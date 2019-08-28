@@ -9,6 +9,10 @@
 #include "../include/CSCHelper.h"
 #include <iostream>
 
+/*@todo
+ * Make a useful and thorough unit tester of each class we have made
+ *
+ */
 
 
 int main(int argc, char* argv[])
