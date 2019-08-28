@@ -316,6 +316,8 @@ int TMBEmulationTester::run(string inputfile, string outputfile, int start, int 
 		}
 
 		t->GetEntry(i);
+
+		if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
 		
 		//cout << "CLCTs in event: " << i << " = " << clcts.size() << endl;
 
@@ -562,6 +564,8 @@ int TMBEmulationTester::run(string inputfile, string outputfile, int start, int 
 					cout << "Using emulated CLCT: " << closestEmu+1 << " / " << emulatedCLCTs.size() << endl << endl;
 
 				}
+
+				//cout << "valid chamber" << endl << endl;
 
 				}
 

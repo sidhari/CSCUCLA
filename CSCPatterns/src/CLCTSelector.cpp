@@ -56,14 +56,14 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
 
-    TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_EverythingEndingIn1.root");
+    TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_EverythingEndingIn1_1.root");
 
     TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
 	//load LUT
 
 	LUT lut(string("lut"));
-	lut.loadText_bayes(string("dat/luts/lbxk.lut")); 
+	lut.loadText_bayes(string("dat/luts/lbxk_test.lut")); 
 	if(lut.makeFinal())
 	{
 		return -1;

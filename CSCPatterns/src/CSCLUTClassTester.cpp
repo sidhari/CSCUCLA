@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
 	candidates.push_back(&cf);
 	candidates.push_back(&cg);
 
-	sort(candidates.begin(),candidates.end(), CLCTCandidate::cfebQuality);
+	sort(candidates.begin(),candidates.end(), CLCTCandidate::cfebquality);
 
 	for(auto& cand: candidates){
 		cout << "\t clct: patternId: "<< cand->patternId()

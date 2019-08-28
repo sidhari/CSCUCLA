@@ -215,7 +215,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				cout <<dec << "writtenToFileCounter = " << writtenChamberCounter
 						<<" -> line number: " << 8*writtenChamberCounter << endl;
 
-				if(8*writtenChamberCounter == 216)return 0;
+				if(8*writtenChamberCounter >= 40000)return 0;
 			}
 		}
 

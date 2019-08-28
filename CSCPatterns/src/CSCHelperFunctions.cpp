@@ -281,18 +281,18 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount())
 		{
 			if(bestMatch) delete bestMatch;
-			bestMatch = thisMatch;
+			bestMatch = thisMatch;			
 		}
 		else if(bestMatch->layerCount() == thisMatch->layerCount())
 		{	
-			if((int)(bestMatch->patternId()/20) < (int)(thisMatch->patternId()/20))
+			if(bestMatch->_pattern.bendBit() < thisMatch->_pattern.bendBit())
 			{
 				delete bestMatch;
 				bestMatch = thisMatch;
 			}
-			else if((int)(bestMatch->patternId()/20) == (int)(thisMatch->patternId()/20))
+			else if(bestMatch->_pattern.bendBit() == thisMatch->_pattern.bendBit())
 			{
-				if(bestMatch->keyHalfStrip() < thisMatch->keyHalfStrip())
+				if(bestMatch->keyHalfStrip() > thisMatch->keyHalfStrip())
 				{
 					delete bestMatch;
 					bestMatch = thisMatch;					
@@ -301,8 +301,17 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 				{
 					delete thisMatch;
 				}
+			}
+			else
+			{
+				delete thisMatch;
 			}			
 		}
+		else
+		{
+			delete thisMatch;
+		}
+
 	}
 
 	//we have a valid best match

@@ -116,7 +116,7 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 		//0 -> 000
 		case 0: //already set to zero
 			break;
-			//1 -> 001
+			//1 -> 100
 		case 1:
 			hits[ilay][0] = 1;
 			break;
@@ -124,7 +124,7 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 		case 2:
 			hits[ilay][1] = 1;
 			break;
-			//3 -> 100
+			//3 -> 001
 		case 3:
 			hits[ilay][2] = 1;
 			break;
