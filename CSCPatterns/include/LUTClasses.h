@@ -142,8 +142,9 @@ public:
 	void print(unsigned int minClcts=0,unsigned int minSegments=0, unsigned int minLayers=0);
 	void printPython(unsigned int minClcts=0,unsigned int minSegments=0,unsigned int minLayers=0) {print(minClcts,minSegments,minLayers);} //because python keywords...
 
-	int loadROOT(const string& rootfile);
+	int loadROOT(const string& rootfile);	
 	int loadText(const string& textfile);
+	int loadText_bayes(const string& textfile);
 	int writeToText(const string& filename);
 	int writeToROOT(const string& filename);
 	int writeToPSLs(const string& fileprefix);

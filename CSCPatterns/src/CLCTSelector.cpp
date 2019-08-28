@@ -63,8 +63,15 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	//load LUT
 
 	LUT lut(string("lut"));
-	lut.loadText(string("dat/luts/lbxk.lut")); 
+	lut.loadText_bayes(string("dat/luts/lbxk.lut")); 
 	if(lut.makeFinal())
+	{
+		return -1;
+	}
+
+	LUT linearfits(string("linfits"));
+	linearfits.loadText(string("dat/luts/linearFits.lut"));
+	if(linearfits.makeFinal())
 	{
 		return -1;
 	}
@@ -102,19 +109,23 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 	TH1F* matchespt = new TH1F ("matched_muon_segments_pt", "Matched Muon Segments: pt;Pt[GeV];Count", 70, 0, 100);
 	TH1F* firstclctmatchespt = new TH1F ("muon_segments_matched_to_first_CLCT_pt", "Muon Segments matched to first CLCT: pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_oldalgo = new TH1F ("muon_segments_matched_to_first_CLCT_oldalgo", "Muon Segments matched to first CLCT (Old Algo): pt", 70, 0, 100);
 	TH1F* firstclctmatchespt_layers = new TH1F ("muon_segments_matched_to_first_CLCT_pt_layers", "Muon Segments matched to first CLCT (Layers): pt", 70, 0, 100);
 	TH1F* firstclctmatchespt_PID = new TH1F ("muon_segments_matched_to_first_CLCT_pt_PID", "Muon Segments matched to first CLCT (PID): pt", 70, 0, 100);
 	TH1F* firstclctmatchespt_bayes = new TH1F ("muon_segments_matched_to_first_CLCT_pt_bayes", "Muon Segments matched to first CLCT (Bayes): pt", 70, 0, 100);
 	TH1F* firstclctmatchespt_chi2 = new TH1F ("muon_segments_matched_to_first_CLCT_pt_chi2", "Muon Segments matched to first CLCT (Chi2): pt", 70, 0, 100);
 	TH1F* firstclctmatchespt_KHS = new TH1F ("muon_segments_matched_to_first_CLCT_pt_KHS", "Muon Segments matched to first CLCT (KHS): pt", 70, 0, 100);
+	TH1F* firstclctmatchespt_slope = new TH1F("muon_segments_matched_to_first_CLCT_pt_slope", "Muon Segments matched to first CLCT (slope): pt", 70, 0, 100);
 	TH1F* secondclctmatchespt = new TH1F ("muon_segments_matched_to_second_CLCT_pt", "Muon Segments matched to second CLCT: pt", 70, 0, 100);
 	TH1F* otherindexclctmatchespt = new TH1F ("muon_segments_matched_to_other_CLCTs_pt", "Muon Segments matched to other CLCTs: pt", 70, 0, 100);
 	TH1F* effeciency1 = new TH1F ("first_index_efficiency", "First CLCT Matches;Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_oldalgo = new TH1F ("first_index_efficiency_oldalgo", "First CLCT Matches (Old Algo);Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency1_layers = new TH1F ("first_index_efficiency_layers", "First CLCT Matches (Layers);Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency1_PID = new TH1F ("first_index_efficiency_PID", "First CLCT Matches (PID);Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency1_bayes = new TH1F ("first_index_efficiency_bayes", "First CLCT Matches (Bayes);Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency1_chi2 = new TH1F ("first_index_efficiency_chi2", "First CLCT Matches (Chi2);Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency1_KHS = new TH1F ("first_index_efficiency_KHS", "First CLCT Matches (KHS);Pt[GeV];Efficiency", 70, 0, 100);
+	TH1F* effeciency1_slope = new TH1F ("first_index_efficiency_slope", "First CLCT Matches (slope);Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency2 = new TH1F ("second_index_efficiency", "Second CLCT Matches;Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* effeciency3 = new TH1F ("other_indices_efficiency", "Other CLCT Matches;Pt[GeV];Efficiency", 70, 0, 100);
 	TH1F* matchedclctindex = new TH1F ("matched_clct_index", "Matched CLCT Indices", 10, 0, 10);
@@ -227,6 +238,8 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 			}
 
+			vector<CLCTCandidate*> initialclctcandidates_temp = initialclctcandidates;
+
 			unsigned int segcount = 0;
 
 			for(unsigned int iseg = 0; iseg < segments.size(); iseg++)
@@ -262,39 +275,61 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 			//split CLCTs by CFEB
 
 			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_oldalgo;
 			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_layers;
 			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_PID;
 			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_bayes;
 			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_chi2;
 			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_KHS;
+			map<unsigned int,vector<CLCTCandidate*>> CFEBsplit_slope;
 
-			vector<int> CFEBpossibilities; //keeps track of which CFEBs have CLCTs
+			vector<unsigned int> CFEBpossibilities; //keeps track of which CFEBs have CLCTs
 
 			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
 			{
 				float keystrip = initialclctcandidates.at(iclct)->keyStrip();
-				int whichCFEB = (keystrip-1)/16;
+				unsigned int whichCFEB = (keystrip-1)/16;
 				CFEBsplit[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_oldalgo[whichCFEB].push_back(initialclctcandidates.at(iclct));
 				CFEBsplit_layers[whichCFEB].push_back(initialclctcandidates.at(iclct));
 				CFEBsplit_PID[whichCFEB].push_back(initialclctcandidates.at(iclct));
 				CFEBsplit_bayes[whichCFEB].push_back(initialclctcandidates.at(iclct));
 				CFEBsplit_chi2[whichCFEB].push_back(initialclctcandidates.at(iclct));
 				CFEBsplit_KHS[whichCFEB].push_back(initialclctcandidates.at(iclct));
+				CFEBsplit_slope[whichCFEB].push_back(initialclctcandidates_temp.at(iclct));
 				if(std::find(CFEBpossibilities.begin(),CFEBpossibilities.end(),whichCFEB) == CFEBpossibilities.end())
 				CFEBpossibilities.push_back(whichCFEB);
 			}	
+
+			if(CFEBpossibilities.size() < 2)
+			continue;
 
 			//sort within each CFEB		
 
 			for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
 			{ 
 				sort(CFEBsplit[*it].begin(),CFEBsplit[*it].end(),CLCTCandidate::cfebquality);
+				sort(CFEBsplit_oldalgo[*it].begin(), CFEBsplit_oldalgo[*it].end(), CLCTCandidate::cfebquality);
 				sort(CFEBsplit_layers[*it].begin(),CFEBsplit_layers[*it].end(),CLCTCandidate::cfebquality);
 				sort(CFEBsplit_PID[*it].begin(),CFEBsplit_PID[*it].end(),CLCTCandidate::cfebquality);
 				sort(CFEBsplit_bayes[*it].begin(),CFEBsplit_bayes[*it].end(),CLCTCandidate::cfebquality);
 				sort(CFEBsplit_chi2[*it].begin(),CFEBsplit_chi2[*it].end(),CLCTCandidate::cfebquality);
-				sort(CFEBsplit_KHS[*it].begin(),CFEBsplit_KHS[*it].end(),CLCTCandidate::cfebquality);
-			}			
+				sort(CFEBsplit_KHS[*it].begin(),CFEBsplit_KHS[*it].end(),CLCTCandidate::cfebquality);	
+				for(unsigned int iclct = 0; iclct < CFEBsplit_slope[*it].size(); iclct++)
+				{
+					const LUTEntry *e;
+					int PID = CFEBsplit_slope[*it].at(iclct)->patternId();
+					int CCID = CFEBsplit_slope[*it].at(iclct)->comparatorCodeId();
+					LUTKey k(PID,CCID);
+					if(linearfits.getEntry(k,e))
+					{
+						cout << PID << " " << CCID << endl << endl;
+						continue;
+					}
+					CFEBsplit_slope[*it].at(iclct)->_lutEntry = e;
+				}				
+				sort(CFEBsplit_slope[*it].begin(),CFEBsplit_slope[*it].end(),CLCTCandidate::cfebquality);
+			}
 
 			//pick first from each CFEB, use LUT to find best
 
@@ -319,12 +354,38 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					CFEBsplit[*it].erase(CFEBsplit[*it].begin());
 				}
 			}
-			
+
+			//Old Algo
+
+			vector<CLCTCandidate*> finalclctcandidates_oldalgo;
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_oldalgo[*it].size() == 0)
+					continue;
+					finalclctcandidates_oldalgo.push_back(CFEBsplit_oldalgo[*it].at(0));
+				}
+
+				sort(finalclctcandidates_oldalgo.begin()+iclct,finalclctcandidates_oldalgo.end(),CLCTCandidate::cfebquality);
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_oldalgo[*it].size() == 0)
+					continue;
+					CFEBsplit_oldalgo[*it].erase(CFEBsplit_oldalgo[*it].begin());
+				}
+			}
+
+
 			vector<CLCTCandidate*> finalclctcandidates_layers;
 			vector<CLCTCandidate*> finalclctcandidates_PID;
 			vector<CLCTCandidate*> finalclctcandidates_bayes;
 			vector<CLCTCandidate*> finalclctcandidates_chi2;
 			vector<CLCTCandidate*> finalclctcandidates_KHS;
+			vector<CLCTCandidate*> finalclctcandidates_slope;
 
 			//just layers
 
@@ -382,7 +443,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					if(!l2) return true;
 					if(!l1) return false;
 
-					if(c1->patternId() >= c2->patternId(  ))
+					if(c1->patternId() >= c2->patternId())
 					return true;
 					else
 					return false;
@@ -501,13 +562,50 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				}
 			}
 
+			//just slope
+
+			for(unsigned int iclct = 0; iclct < initialclctcandidates.size(); iclct++)
+			{
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{
+					if(CFEBsplit_slope[*it].size() == 0)
+					continue;
+					finalclctcandidates_slope.push_back(CFEBsplit_slope[*it].at(0));
+				}
+
+				sort(finalclctcandidates_slope.begin()+iclct,finalclctcandidates_slope.end(),
+				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				{	
+					const LUTEntry *l1 = c1->_lutEntry;
+					const LUTEntry *l2 = c2->_lutEntry;
+
+					if(!l2) return true;
+					if(!l1) return false;
+
+					if(c1->slope() <= c2->slope())
+					return true;
+					else
+					return false;
+				});
+
+				for(auto it = CFEBpossibilities.begin(); it < CFEBpossibilities.end(); it++)
+				{	
+					if(CFEBsplit_slope[*it].size() == 0)
+					continue;
+					CFEBsplit_slope[*it].erase(CFEBsplit_slope[*it].begin());
+				}
+			}
+
 
 			vector<int> matchedclctindices;
+			vector<int> matchedclctindices_oldalgo;
 			vector<int> matchedclctindices_layers;
 			vector<int> matchedclctindices_PID;
 			vector<int> matchedclctindices_bayes;
 			vector<int> matchedclctindices_chi2;
 			vector<int> matchedclctindices_KHS;
+			vector<int> matchedclctindices_slope;
 
 			//iterate through all segments in chamber
 
@@ -539,7 +637,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 				//iterate through all CLCTs in chamber, find best match
 
-				//LUTqaulity
+				//LUTquality
 
 				int closestclcttosegmentindex = -1;
 				float closestclcttosegmentdistance = 1e5;
@@ -582,6 +680,33 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 				}
 
+				//Old Algo
+
+				int closestclcttosegmentindex_oldalgo = -1;
+				float closestclcttosegmentdistance_oldalgo = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_oldalgo.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_oldalgo.begin(), matchedclctindices_oldalgo.end(), iclct) != matchedclctindices_oldalgo.end())
+					continue;
+
+					float clctx = finalclctcandidates_oldalgo.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_oldalgo)
+					{
+						closestclcttosegmentdistance_oldalgo = abs(clctx - segmentx);
+						closestclcttosegmentindex_oldalgo = iclct;
+					}					
+				}
+
+				if(closestclcttosegmentindex_oldalgo != -1)
+				{
+					matchedclctindices_layers.push_back(closestclcttosegmentindex_oldalgo);
+
+					if(closestclcttosegmentindex_oldalgo == 0)
+						firstclctmatchespt_oldalgo->Fill(pt);					
+				}
+
 				//layers
 
 				int closestclcttosegmentindex_layers = -1;
@@ -606,7 +731,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					matchedclctindices_layers.push_back(closestclcttosegmentindex_layers);
 
 					if(closestclcttosegmentindex_layers == 0)
-						firstclctmatchespt_layers->Fill(pt);
+						firstclctmatchespt_layers->Fill(pt);					
 				}
 
 				//PID
@@ -633,7 +758,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					matchedclctindices_PID.push_back(closestclcttosegmentindex_PID);
 
 					if(closestclcttosegmentindex_PID == 0)
-						firstclctmatchespt_layers->Fill(pt);
+						firstclctmatchespt_PID->Fill(pt);
 				}
 
 				//bayes
@@ -715,20 +840,37 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 					if(closestclcttosegmentindex_KHS == 0)
 						firstclctmatchespt_KHS->Fill(pt);
+				
+					
+						
+				}	
+
+				//slope
+
+				int closestclcttosegmentindex_slope = -1;
+				float closestclcttosegmentdistance_slope = 1e5;
+
+				for(int iclct = 0; iclct < (int)finalclctcandidates_slope.size(); iclct++)
+				{
+					if(std::find(matchedclctindices_slope.begin(), matchedclctindices_slope.end(), iclct) != matchedclctindices_slope.end())
+					continue;
+
+					float clctx = finalclctcandidates_slope.at(iclct)->keyStrip();
+
+					if(abs(clctx - segmentx) < closestclcttosegmentdistance_slope)
+					{
+						closestclcttosegmentdistance_slope = abs(clctx - segmentx);
+						closestclcttosegmentindex_slope = iclct;
+					}					
 				}
 
-				/*if(finalclctcandidates.at(0)->keyHalfStrip() != finalclctcandidates_KHS.at(0)->keyHalfStrip()) 
+				if(closestclcttosegmentindex_slope != -1)
 				{
-					compHits.print();
-					cout << endl;
-					cout << "Segment: " << (int)segments.nHits->at(iseg) << " " << segments.dxdz->at(iseg) << " " << segments.pos_x->at(iseg) << endl;
-					cout << "LUTQuality picked: " << finalclctcandidates.at(0)->layerCount() << " " << finalclctcandidates.at(0)->patternId() << " " << finalclctcandidates.at(0)->keyStrip() << endl;
-					cout << "Layers picked: " << finalclctcandidates_layers.at(0)->layerCount() << " " << finalclctcandidates_layers.at(0)->patternId() << " " << finalclctcandidates_layers.at(0)->keyStrip() << endl;
-					cout << "PID picked: " << finalclctcandidates_PID.at(0)->layerCount() << " " << finalclctcandidates_PID.at(0)->patternId() << " " << finalclctcandidates_PID.at(0)->keyStrip() << endl;
-					cout << "Bayes picked: " << finalclctcandidates_bayes.at(0)->layerCount() << " " << finalclctcandidates_bayes.at(0)->patternId() << " " << finalclctcandidates_bayes.at(0)->keyStrip() << endl;
-					cout << "Chi2 picked: " << finalclctcandidates_chi2.at(0)->layerCount() << " " << finalclctcandidates_chi2.at(0)->patternId() << " " << finalclctcandidates_chi2.at(0)->keyStrip() << endl;
-					cout << "KHS picked: " << finalclctcandidates_KHS.at(0)->layerCount() << " " << finalclctcandidates_KHS.at(0)->patternId() << " " << finalclctcandidates_KHS.at(0)->keyStrip() << endl << endl; 
-				}*/				
+					matchedclctindices_slope.push_back(closestclcttosegmentindex_slope);
+
+					if(closestclcttosegmentindex_slope == 0)
+						firstclctmatchespt_slope->Fill(pt);
+				}			
 
 			}			       						
 
@@ -744,11 +886,13 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	}
 
 	effeciency1->Divide(firstclctmatchespt,matchespt);
+	effeciency1_oldalgo->Divide(firstclctmatchespt_oldalgo,matchespt);
 	effeciency1_layers->Divide(firstclctmatchespt_layers,matchespt);
 	effeciency1_PID->Divide(firstclctmatchespt_PID,matchespt);
 	effeciency1_bayes->Divide(firstclctmatchespt_bayes,matchespt);
 	effeciency1_chi2->Divide(firstclctmatchespt_chi2,matchespt);
 	effeciency1_KHS->Divide(firstclctmatchespt_KHS,matchespt);
+	effeciency1_slope->Divide(firstclctmatchespt_slope,matchespt);
 	effeciency2->Divide(secondclctmatchespt,matchespt);
 	effeciency3->Divide(otherindexclctmatchespt,matchespt);
 
@@ -758,11 +902,13 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	secondclctmatchespt->Write();
 	otherindexclctmatchespt->Write();
 	effeciency1->Write();
+	effeciency1_oldalgo->Write();
 	effeciency1_layers->Write();
 	effeciency1_PID->Write();
 	effeciency1_bayes->Write();
 	effeciency1_chi2->Write();
 	effeciency1_KHS->Write();
+	effeciency1_slope->Write();
 	effeciency2->Write();
 	effeciency3->Write();
 	matchedclctindex->Write();

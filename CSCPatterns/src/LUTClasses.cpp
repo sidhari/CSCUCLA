@@ -554,6 +554,85 @@ int LUT::loadText(const string& textfile){
 			elements.push_back(line.substr(previous,current-previous));
 
 			//how many elements we expect to get from an LUT using the new scheme
+			const unsigned int sizeOfNewLUT = 9;
+			const unsigned int sizeOfLegacyLUT = sizeOfNewLUT-1;
+
+
+			if(!elements.size()) cout << "Error, something went wrong reading the LUT" << endl;
+
+			unsigned int counter = 0;
+			int pattern            = stoi(elements[counter++]);
+
+			LUTKey key = LUTKey(pattern);
+			if(elements.size() == sizeOfNewLUT && !_isLegacy) {
+				int code = stoi(elements[counter++]);
+				key = LUTKey(pattern,code);
+			} else if (elements.size() != sizeOfLegacyLUT || !_isLegacy) {
+				cout << "Error: loading file not consistent size with declared LUT: isLegacy = " << _isLegacy << endl;
+				cout << "Error reading .lut file, entry has "<< elements.size() <<
+						" elements" << endl;
+				return -1;
+			}
+
+			counter++; //skip delimeter word
+			float position          = stof(elements[counter++]);
+			float slope             = stof(elements[counter++]);
+			unsigned long nsegments = stoul(elements[counter++]);
+			float pt				= 0; //TODO
+			unsigned long nclcts	= 0;
+			float multiplicity		= 0;
+			float quality           = stof(elements[counter++]);
+			unsigned int layers     = stoul(elements[counter++]);
+			float chi2              = stof(elements[counter++]);
+
+			if(DEBUG >2){
+				cout << line << endl;
+				cout << "patt: " << key._pattern<<
+						" cc: " << key._code <<
+						" pos: " << position << //strips
+						" slope: " << slope << //strip /layer
+						" nseg: " << nsegments <<
+						" pt " << pt << //GeV
+						" nclcts: " << nclcts <<
+						" mult: " << multiplicity <<
+						" quality: " << quality <<
+						" layers: " << layers <<
+						" chi2: " << chi2 << endl;
+			}
+
+			LUTEntry entry = LUTEntry(position, slope, nsegments, pt, nclcts, multiplicity,
+					quality, layers, chi2);
+			if(setEntry(key,entry))return -1;
+		}
+		myfile.close();
+		//cout << "Completed loading of line fit table" << endl;
+	} else {
+		cout << "Error: unable to open file:" << textfile << endl;
+		return -1;
+	}
+	if(DEBUG > 1) cout << "lut.size():" << _lut.size() << endl;
+	return 0;
+}
+
+int LUT::loadText_bayes(const string& textfile){
+	if(DEBUG > 0) cout << "Loading lut from textfile: " << textfile << endl;
+	if(_isFinal) return -1;
+	string line;
+	ifstream myfile(textfile.c_str());
+	if(myfile.is_open()){
+		while(getline(myfile, line)){
+			vector<string> elements;
+			char delim = ' ';
+			size_t current, previous = 0;
+			current = line.find(delim);
+			while(current != string::npos){
+				elements.push_back(line.substr(previous, current-previous));
+				previous = current+1;
+				current = line.find(delim,previous);
+			}
+			elements.push_back(line.substr(previous,current-previous));
+
+			//how many elements we expect to get from an LUT using the new scheme
 			const unsigned int sizeOfNewLUT = 10;
 			const unsigned int sizeOfLegacyLUT = sizeOfNewLUT-1;
 

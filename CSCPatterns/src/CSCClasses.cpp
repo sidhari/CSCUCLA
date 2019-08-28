@@ -144,7 +144,7 @@ void ComparatorCode::calculateId(){
 	for(unsigned int column = 0; column < NLAYERS; column++){
 		int rowPat = 0; //physical arrangement of the three bits
 		int rowCode = 0; //code used to identify the arrangement
-		for(int row = 2; row >= 0; row--){
+		for(int row = 0; row < 3; row++){
 			rowPat = rowPat << 1; //bitshift the last number to the left
 			rowPat += _hits[column][row];
 		}
@@ -539,8 +539,8 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
 	if (c1->layerCount() > c2->layerCount()) return true;
 	else if(c1->layerCount() == c2->layerCount())
 	{
-		if(c1->patternId() > c2->patternId()) return true;
-		else if (c1->patternId() == c2->patternId())
+		if(c1->patternId() > c2->patternId() && (c1->patternId() == 100 || c1->patternId() == c2->patternId() + 20)) return true;
+		else if (c1->patternId() == c2->patternId() || c1->patternId() == c2->patternId() + 10 || c2->patternId() == c1->patternId() + 10)
 		{
 			if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;
 		}
@@ -768,10 +768,7 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 		if(timeOn >= 16) {
 			printf("Error timeOn is an invalid number: %i\n", timeOn);
 			return -1;
-		} else if (timeOn < 6 || timeOn > 9)
-		{
-			continue;
-		}		
+		} 	
 		else {			
 			if(!_hits[halfStripVal][lay]){
 
@@ -1033,7 +1030,7 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 			}
 		}
 	}
-	_nhits -= mi.layerCount();	
+	//_nhits -= mi.layerCount();	
 	return *this;
 }
 

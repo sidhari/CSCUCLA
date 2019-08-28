@@ -39,7 +39,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 	//initialize output files
 	std::ofstream CFEBFiles[MAX_CFEBS];
 	for(unsigned int i=0; i < MAX_CFEBS; i++){
-		CFEBFiles[i].open("CFEB"+to_string(i)+".mem");
+		CFEBFiles[i].open("cfeb"+to_string(i)+".mem");
 	}
 
 	const unsigned int nCLCTs = 2;
@@ -99,7 +99,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				}
 				if(i < emulatedCLCTs.size()){
 
-					auto& clct = emulatedCLCTs.at(i);
+					auto& clct = emulatedCLCTs.at(i);					
 					std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
 					std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
 					std::cout << setw(4) << clct->patternId() << endl;
@@ -150,12 +150,12 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 
 		cout << "Starting Event: " << start << " Ending Event: " << end << endl;
 
-
 		for(int i = start; i < end; i++) {
-			if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+			printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
+			cout << endl;
 
 			t->GetEntry(i);
-			cout << evt.EventNumber << endl;
+			//cout << evt.EventNumber << endl;
 
 			for(int chamberHash = 0; chamberHash < (int)CSCHelper::MAX_CHAMBER_HASH; chamberHash++){
 				CSCHelper::ChamberId c = CSCHelper::unserialize(chamberHash);
@@ -171,12 +171,13 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				//only look at ME11B chambers for now
 				if(!me11b) continue;
 
+				if(CH != 7 || EC!=1)
+				continue;			
+
 				ChamberHits compHits(ST,RI,EC,CH);
 				if(compHits.fill(comparators)) return -1;
 				if(!compHits.nhits()) continue; //skip if its empty
-				compHits.print();
-
-				writeToMEMFiles(compHits, CFEBFiles);
+				compHits.print();				
 
 				vector<CLCTCandidate*> emulatedCLCTs;
 
@@ -185,27 +186,33 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 
 					continue;
 				}
+
+				writeToMEMFiles(compHits, CFEBFiles);
+
+				cout << emulatedCLCTs.size() << endl << endl;
+
 				while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
 				std::cout << "khs, patt, ccode" << std::endl;
 				std::cout << internal << setfill('0');
-				for(unsigned int i=0; i < nCLCTs; i++){
+				for(unsigned int j=0; j < nCLCTs; j++){
 					for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
-						CLCTFiles[i] << "000000000000" << endl;
+						CLCTFiles[j] << "000000000000" << endl;
 					}
-					if(i < emulatedCLCTs.size()){
+					if(j < emulatedCLCTs.size()){
 
-						auto& clct = emulatedCLCTs.at(i);
-						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
+						auto& clct = emulatedCLCTs.at(j);
+						printPatternCC(clct->patternId(), clct->comparatorCodeId());
+						int PID = clct->patternId()/10;
+						std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << PID << " cc: " << clct->comparatorCodeId() << std::endl;
 						std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
-						std::cout << setw(4) << clct->patternId() << endl;
-						std::cout << setw(4) << clct->comparatorCodeId() << endl;
-						CLCTFiles[i] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId() << setw(4) << clct->comparatorCodeId() << endl;
+						std::cout << setw(4) << PID << endl;
+						std::cout << setw(4) << clct->comparatorCodeId() << endl << endl;
+						CLCTFiles[j] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << PID << setw(4) << clct->comparatorCodeId() << endl;
 					}else {
-						CLCTFiles[i] << "000000000000" << endl;
+						CLCTFiles[j] << "000000000000" << endl;
 					}
 				}
-
 			}
 		}
 
