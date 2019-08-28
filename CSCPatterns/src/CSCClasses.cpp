@@ -299,16 +299,14 @@ void CSCPattern::printCode(int code) const{
 				printf("Error: invalid code\n");
 				return;
 			}
-			int trueCounter = 3;//for each layer, should only have 3
+			int trueCounter = 0;//for each layer, should only have 3
 			for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
 				if(!_pat[i][j]){
 					printf("-");
 				}else{
-					//if(trueCounter == layerPattern) printf("X");
-					//use Firmware convention for comparator code definition
-					if(trueCounter == 4-layerPattern) printf("X");
+					trueCounter++;
+					if(trueCounter == layerPattern) printf("X");
 					else printf("_");
-					trueCounter--;
 				}
 			}
 			it = it << 2; //bitshift the iterator to look at the next part of the code
@@ -343,16 +341,14 @@ int CSCPattern::recoverPatternCCCombination(const int code, int code_hits[MAX_PA
 				printf("Error: invalid code\n");
 				return -1;
 			}
-			int trueCounter = 3;//for each layer, should only have 3
+			int trueCounter = 0;//for each layer, should only have 3
 			for(unsigned int i =0; i < MAX_PATTERN_WIDTH; i++){
 				if(!_pat[i][j]){
 					code_hits[i][j] = 0;
 				}else{
-					//if(trueCounter == layerPattern) code_hits[i][j] = 1;
-					//use Firmware convention for comparator code definition
-					if(trueCounter == 4-layerPattern) code_hits[i][j] = 1;
+					trueCounter++;
+					if(trueCounter == layerPattern) code_hits[i][j] = 1;
 					else code_hits[i][j] = 0;
-					trueCounter--;
 				}
 			}
 			it = it << 2; //bitshift the iterator to look at the next part of the code

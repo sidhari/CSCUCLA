@@ -150,6 +150,8 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 
 		cout << "Starting Event: " << start << " Ending Event: " << end << endl;
 
+		unsigned int writtenChamberCounter = 0;
+
 		for(int i = start; i < end; i++) {
 			printf("%3.2f%% Done --- Processed %u Events\n", 100.*(i-start)/(end-start), i-start);
 			cout << endl;
@@ -209,6 +211,11 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 						CLCTFiles[j] << "000000000000" << endl;
 					}
 				}
+				writtenChamberCounter++;
+				cout <<dec << "writtenToFileCounter = " << writtenChamberCounter
+						<<" -> line number: " << 8*writtenChamberCounter << endl;
+
+				if(8*writtenChamberCounter == 216)return 0;
 			}
 		}
 
