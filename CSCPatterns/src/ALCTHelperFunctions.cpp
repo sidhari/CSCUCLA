@@ -76,12 +76,12 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext)
   return tbit;
 }
 
-bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
+bool preTrigger(int trig_time,
+                std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate &cand)
 {
     int kwg = cand.get_kwg();
-    int start_bx = config.get_start_bx();
     int i_pattern = cand.get_pattern();
     int pattern_mask[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN];
 
@@ -95,7 +95,7 @@ bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list,
                     pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
                 else 
                     pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
-        }   
+        }
     }
 
     int layers_hit;
@@ -113,10 +113,10 @@ bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list,
     };
 
     unsigned int stop_bx = config.get_fifo_tbins() - config.get_drift_delay();
-    for (int i = start_bx; i<stop_bx; i++)
+    int i = trig_time; 
+    ALCT_ChamberHits* chamber = chamber_list.at(i);
+    if (!(chamber->get_nhits()<pretrig_thresh[i_pattern]))
     {
-        ALCT_ChamberHits* chamber = chamber_list.at(i);
-        if (chamber->get_nhits()<pretrig_thresh[i_pattern]) continue; 
         int MESelect = (chamber->_station <= 2) ? 0 : 1;
         for (int i_lay = 0; i_lay<NLAYERS; i_lay++)
             hit_layer[i_lay] = false;
@@ -139,10 +139,11 @@ bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list,
             }
         }
     }
-    cand.nix();
+    cand.flag();
     return false;
 }
 
+/*
 void preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate * &head)
@@ -158,6 +159,7 @@ void preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list,
     }
     return; 
 }
+*/
 
 bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list, 
                         const ALCTConfig &config,
@@ -245,7 +247,7 @@ bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list,
         }
     }
     const int sz = mset_for_median.size();
-    if (sz > 0) 
+    if (sz > 0)
     {
         std::multiset<int>::iterator im = mset_for_median.begin();
         if (sz > 1) std::advance(im, sz / 2 - 1);
@@ -274,11 +276,111 @@ bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list,
             }
         }
     }
-    else cand.nix();
+    else cand.flag();
     return trigger;
 }
 
-void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list, 
+void trig_and_find( std::vector<ALCT_ChamberHits*> &chamber_list, 
+                    ALCTConfig &config,
+                    std::vector<std::vector<ALCTCandidate*>> &end_vec)
+{   
+    bool armed = true; 
+    for (int j=0; j<chamber_list.at(0)->get_maxWi(); j++)
+    {
+        for (int i=0; i<config.get_fifo_tbins()-config.get_drift_delay(); i++)
+        {
+            ALCTCandidate * curr = (end_vec.at(i)).at(j);
+            bool ptrigger = preTrigger(i,chamber_list,config,*curr);
+            if (armed && !ptrigger) continue; 
+            else if (armed && ptrigger)
+            {
+                armed = false;
+                for (int k=1; k<config.get_drift_delay(); k++)
+                {
+                    (end_vec.at(i+k)).at(j)->flag();
+                }
+                i+=(config.get_drift_delay());
+                bool detect = patternDetection(chamber_list, config, *curr);
+                if (!detect) i--;
+            }
+            else if (!armed && !ptrigger)
+            { 
+                armed = true; 
+            }
+        }
+    }
+}
+
+void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &config)
+{
+    for (int i = 0; i<end_vec.size(); i++)
+    {
+        std::vector<ALCTCandidate*> wire_vec = end_vec.at(i);
+        for (int j = 0; j<wire_vec.size(); j++)
+        {
+            ALCTCandidate* this_wire = wire_vec.at(j);
+            if (j!= wire_vec.size()-1)
+            {
+                if (!this_wire->get_quality()) 
+                {
+                    this_wire->flag();
+                    continue; 
+                }
+                ALCTCandidate* next_wire = wire_vec.at(j+1);
+                if (next_wire->get_quality()>this_wire->get_quality())
+                {
+                    this_wire->flag();
+                }
+                else next_wire->flag();
+            }
+            for (int k = 1; k <= config.get_ghost_cancel(); k++)
+            {
+                if (i-k<0) continue;
+                std::vector<ALCTCandidate*> last_time_vec = end_vec.at(i-k);
+                if (j-1 >= 0)
+                {
+                    ALCTCandidate* last_time = last_time_vec.at(j-1);
+                    bool was_better = last_time->get_quality() > this_wire->get_quality(); 
+                    if (last_time->get_quality() && (!config.ghost_flag() || was_better))
+                    {
+                        this_wire->flag();
+                    }
+                }
+                if (j+1 < wire_vec.size())
+                {
+                    ALCTCandidate* last_time = last_time_vec.at(j+1);
+                    bool was_better = last_time->get_quality() > this_wire->get_quality(); 
+                    if (last_time->get_quality() && (!config.ghost_flag() || was_better))
+                    {
+                        this_wire->flag();
+                    }
+                }
+            }
+        }
+    }
+}
+
+void extract(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCTCandidate*> &out_vec)
+{
+    for (int i = 0; i<end_vec.size(); i++)
+    {
+        std::vector<ALCTCandidate*> wire_vec = end_vec.at(i);
+        for (int j = 0; j<wire_vec.size(); j++)
+        {
+            ALCTCandidate * curr = (end_vec.at(i)).at(j);
+            if (curr->isValid()) 
+            {
+                out_vec.push_back(curr);
+            }
+            else 
+            {
+                curr->nix();
+            }
+        }
+    }
+}
+
+/*void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list, 
                         ALCTConfig &config,
                         ALCTCandidate * &head)
 {
@@ -292,9 +394,9 @@ void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list,
         cand = temp;
     }
     return; 
-}
+}*/
 
-void ghostBuster(ALCTCandidate* curr)
+/*void ghostBuster(ALCTCandidate* curr)
 {
     if (curr == NULL) return;
     ALCTCandidate* temp = curr->next; 
@@ -317,9 +419,9 @@ void ghostBuster(ALCTCandidate* curr)
     }
     else curr->flag(); 
     ghostBuster(temp); 
-}
+}*/
 
-void clean(ALCTCandidate* &curr)
+/*void clean(ALCTCandidate* &curr)
 {
     if (curr == NULL) return; 
     if (curr->prev == NULL) // if this is the current head of list
@@ -342,14 +444,14 @@ void clean(ALCTCandidate* &curr)
         if (!curr->isValid()) curr->nix();
         clean(temp);
     }
-}
+}*/
 
-void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec)
+/*void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec)
 {
     if (curr == NULL) return; 
     cand_vec.push_back(curr);
     head_to_vec(curr->next, cand_vec);
-}
+}*/
 
 int getTempALCTQuality(int temp_quality)
 {

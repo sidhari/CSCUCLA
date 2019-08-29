@@ -47,27 +47,9 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 	if(!t) throw "Can't find tree";
 
 	ALCTConfig config;
-
+ 
     CSCInfo::Wires wires(t);
 	CSCInfo::ALCTs alcts(t);
-
-	/*
-	std::vector<ALCTCandidate*> candvec;
-	ALCTCandidate * head = new ALCTCandidate(0,1);
-
-	for (int i = 0; i<4; i++)
-	{
-		ALCTCandidate * cand; 
-		cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
-	}
-
-	(head->next)->nix();
-	head_to_vec(head,candvec);
-	for (int i=0; i<candvec.size(); i++)
-	{
-		cout<<candvec.at(i)<<endl<<endl;
-	}*/
-
 	
 	for (int e_num = 0; e_num<eventnum; e_num++)
 	{
@@ -81,50 +63,30 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 			cout << *temp << endl; 
 			cvec.push_back(temp);
 		}
-		std::vector<ALCTCandidate*> candvec;
+		
+		std::vector<std::vector<ALCTCandidate*>> end_vec; 
 
-		ALCTCandidate * head = new ALCTCandidate(0,1);
+		std::vector<ALCTCandidate*> out_vec;
 
-		for (int i = 0; i<(cvec.at(0))->get_maxWi(); i++)
+		for (int i=0; i<config.get_fifo_tbins()-config.get_drift_delay(); i++)
 		{
-			ALCTCandidate * cand; 
-			cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
+			std::vector <ALCTCandidate*> temp_vec; 
+			for (int j = 0; j<cvec.at(0)->get_maxWi(); j++)
+			{
+				ALCTCandidate * cand = new ALCTCandidate(j,1);
+				temp_vec.push_back(cand);
+			}
+			end_vec.push_back(temp_vec); 
 		}
 
-		preTrigger(cvec,config,head);
-		head_to_vec(head,candvec);
+		trig_and_find(cvec, config, end_vec);
+		ghostBuster(end_vec,config);
+		extract(end_vec,out_vec);
 
-		cout << "=== PreTriggerring Results ===" << endl << endl;
-
-		for (int i=0; i<candvec.size(); i++)
+		for (int i = 0; i<out_vec.size(); i++)
 		{
-			std::cout << candvec.at(i) << endl << endl; 
+			std::cout << out_vec.at(i) << endl << endl;
 		}
-
-		patternDetection(cvec, config, head); 
-		candvec.clear();
-		head_to_vec(head,candvec);
-
-		cout << "=== PatternDetection Results ===" << endl << endl; 
-
-		for (int i=0; i<candvec.size(); i++)
-		{
-			std::cout << candvec.at(i) << endl << endl; 
-		}
-
-		ghostBuster(head);
-		clean(head);
-		candvec.clear();
-		head_to_vec(head,candvec);
-
-		cout << "=== GhostBuster Results ===" << endl << endl; 
-
-		for (int i=0; i<candvec.size(); i++)
-		{
-			std::cout << candvec.at(i) << endl << endl; 
-		}
-
-		cout << " finished emulation results" << endl << endl;
 
 		for (int i=0; i<alcts.size(); i++)
 		{
@@ -153,6 +115,9 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 		}
 
 		cout << "finished alct for event " << e_num << endl << endl;  
+
+		wipe(out_vec);
+		wipe(cvec); 
 
 		//if (candvec.size()) return 0; 
 	}

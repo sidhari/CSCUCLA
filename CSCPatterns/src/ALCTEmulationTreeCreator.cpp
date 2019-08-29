@@ -106,8 +106,8 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 			for (int i=0; i<16; i++)
 			{
 				ALCT_ChamberHits * temp = new ALCT_ChamberHits(ST,RI,CH,EC);
-				if (i >= config.get_start_bx() && i< config.get_fifo_tbins() - config.get_drift_delay())
-					temp->fill(wires,i);
+				if (i >= config.get_start_bx())
+					temp->fill(wires,i,config.get_start_bx());
 				cvec.push_back(temp);
 			}
 
@@ -145,9 +145,10 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 					if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
 				}
 				if (chSid1!=alcts.ch_id->at(i) && chSid2!= alcts.ch_id->at(i)) continue;
-				num_alct++; 
+				num_alct++;
 			}
-			if (num_alct!=candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl; 
+			//if (num_alct>candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl;
+			if (num_alct==0 && candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl;
 			wipe(candvec);
 			wipe(cvec);
 		}

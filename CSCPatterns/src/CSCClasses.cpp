@@ -922,7 +922,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w)
 	}
 }
 
-void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int tbin, int p_ext)
+void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int tbin)
 {
 	int chSid1 = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
 	int chSid2 = chSid1;
@@ -949,7 +949,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int tbin, int p_ext)
 		if (chSid1!=w.ch_id->at(i) && chSid2!= w.ch_id->at(i)) continue; 
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i)-1;
-		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
+		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i));
 		if (!extended_pulse) continue; 
 		std::vector<int> timevec = pulse_to_vec(extended_pulse);
 		for (int j = 0; j<timevec.size(); j++)
@@ -962,7 +962,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int tbin, int p_ext)
 	if (_nhits > 0) regHit();
 }
 
-void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end, int p_ext)
+/*void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end)
 {
 	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
 	for (unsigned int i=0; i < w.size(); i++)
@@ -970,7 +970,7 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end, int p_e
 		if (chSid!=w.ch_id->at(i)) continue;
 		unsigned int lay = w.lay->at(i) - 1;
 		unsigned int group = w.group->at(i);
-		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i),p_ext);
+		unsigned int extended_pulse = extend_time(w.timeBinWord->at(i));
 		if (!extended_pulse) continue; 
 		std::vector<int> timevec = pulse_to_vec(extended_pulse);
 		for (int j = 0; j<timevec.size(); j++)
@@ -982,4 +982,4 @@ void ALCT_ChamberHits::fill(const CSCInfo::Wires &w, int start, int end, int p_e
 			_hits[group][lay] = timevec.at(j)+1;
 		}
 	}
-}
+}*/

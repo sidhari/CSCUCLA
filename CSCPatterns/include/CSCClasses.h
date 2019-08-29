@@ -240,8 +240,8 @@ class ALCT_ChamberHits
 		ALCT_ChamberHits* next = 0; 
 
 		void fill(const CSCInfo::Wires &w);
-		void fill(const CSCInfo::Wires &w, int time, int p_ext=6);
-		void fill(const CSCInfo::Wires &w, int start, int end, int p_ext=6);
+		void fill(const CSCInfo::Wires &w, int time);
+		//void fill(const CSCInfo::Wires &w, int start, int end, int p_ext=6);
 		
 		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
 		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);

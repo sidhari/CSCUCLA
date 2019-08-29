@@ -21,8 +21,6 @@
 
 const int hit_persist = 6; 
 
-const int ghost_cancel = 4; 
-
 const int pattern_envelope[N_ALCT_PATTERNS][MAX_WIRES_IN_PATTERN] = 
 {
     // Each digit indicates layer
@@ -74,11 +72,12 @@ class ALCTConfig
             _nplanes_accel_pattern = 4;
             _trig_mode = 2;
             _accel_mode = 0;
-            _window_width = 7; 
             _hit_persist = 6;
-            _start_bx = 5; 
+            _l1a_window = 7;
+            _ghost_cancel = 4; 
 
             _narrow_mask_flag = false; 
+            _ghost_flag = false; 
         }
         
         int get_fifo_tbins() const {return _fifo_tbins;}
@@ -90,11 +89,12 @@ class ALCTConfig
         int get_nplanes_accel_pattern() const {return _nplanes_accel_pattern;}
         int get_trig_mode() const {return _trig_mode;}
         int get_accel_mode() const {return _accel_mode;}
-        int get_window_width() const {return _window_width;}
         int get_hit_persist() const {return _hit_persist;}
-        int get_start_bx() const {return _start_bx;}
+        int get_l1a_window() const {return _l1a_window;}
+        int get_ghost_cancel() const {return _ghost_cancel;}
 
         bool narrow_mask_flag() const {return _narrow_mask_flag;}
+        bool ghost_flag() const {return _ghost_flag;}
     
     private:
         int _fifo_tbins;
@@ -107,11 +107,12 @@ class ALCTConfig
         int _nplanes_accel;
         int _trig_mode;
         int _accel_mode;
-        int _window_width;
         int _hit_persist;
-        int _start_bx; 
+        int _l1a_window;
+        int _ghost_cancel; 
 
-        bool _narrow_mask_flag; 
+        bool _narrow_mask_flag;
+        bool _ghost_flag;
 };
 
 // Converts a one-shot pulse to a vector of integers, where the elements of 
@@ -122,7 +123,7 @@ std::vector<int> pulse_to_vec(unsigned int pulse);
 void print_pulse(unsigned int pulse);
 
 // stretches a one-shot pulse to a length of p_ext time bins
-// set to a constant of 6, as in data
+// set to a constant of the [hit_persist] of the pulse, as in data
 unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 
 // Checks whether a threshold for a wire (layers hit) has been passed. If so returns the 
@@ -131,15 +132,11 @@ unsigned int extend_time(const unsigned int pulse, const int p_ext=hit_persist);
 // as a vector of ALCT_ChamberHits pointers, the bunch crossing we want to start on
 // and the config class. Returns -1 if the pretrigger was not satisfied, returns the 
 // bunch crossing at which it is satisfied otherwise
-bool preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
+bool preTrigger(int start_bx, 
+                std::vector<ALCT_ChamberHits*> &chamber_list, 
                 ALCTConfig &config,
                 ALCTCandidate &cand);
 
-// Overloads the [preTrigger] function. Called on the head of a linked list of wires
-// and [preTrigger]s all the wires. Returns the new head.
-void preTrigger(std::vector<ALCT_ChamberHits*> &chamber_list, 
-                ALCTConfig &config,
-                ALCTCandidate* &head);
 
 // Sees whether the wire has a pattern for it. Returns a boolean for whether or not
 // a pattern was found. Works analogously to the preTrigger Algorithm 
@@ -147,30 +144,21 @@ bool patternDection(const std::vector<ALCT_ChamberHits*> &chamber_list,
                     const ALCTConfig &config,
                     ALCTCandidate &cand);
 
-// Overloads the [patternDetection] function. Called on the head of a linked list of
-// wires and runs the [patternDetection] algorithm on all the wires. Returns the
-// new head
-void patternDetection(  std::vector<ALCT_ChamberHits*> &chamber_list, 
-                        ALCTConfig &config,
-                        ALCTCandidate * &head);
+void trig_and_find( std::vector<ALCT_ChamberHits*> &chamber_list, 
+                    ALCTConfig &config,
+                    std::vector<std::vector<ALCTCandidate*>> &end_vec);
 
 // Runs the ghost cancellation algorithm on the head of the linked list of the
 // ALCT key wire groups. Since we want the wires to be ghost-bustered in parallel, 
 // [ghostBuster] only flags for deletion and does not remove from the linked
 // list. Needs to be cleaned via the [clean] function after running [ghostBuster]
-void ghostBuster(ALCTCandidate* curr);
+void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &config);
 
-// Cleans the head of the linked list. Removes ALCTCandidates that are flagged 
-// as [inValid]. Returns the new head of the linked list.
-void clean(ALCTCandidate* &curr); 
+void extract(std::vector<std::vector<ALCTCandidate*>> &endvec, std::vector<ALCTCandidate*> &out_vec);
 
 // Current legacy algorithm for converting the number of layers hit into the 
 // quality metric. Returns the adjusted quality. 
 int getTempALCTQuality(int quality);
-
-// Takes the head of a linked list, [curr] as well as an empty vector [cand_vec],
-// converts the linked list into a vector and then feeds into [cand_vec].
-void head_to_vec(ALCTCandidate* curr, std::vector<ALCTCandidate*> &cand_vec);
 
 void wipe(std::vector<ALCTCandidate*> candvec);
 
