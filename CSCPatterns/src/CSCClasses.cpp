@@ -116,15 +116,15 @@ bool ComparatorCode::getHits(const unsigned int comparatorCode, bool hits[NLAYER
 		//0 -> 000
 		case 0: //already set to zero
 			break;
-			//1 -> 001
+			//1 -> X00
 		case 1:
 			hits[ilay][0] = 1;
 			break;
-			//2 -> 010
+			//2 -> 0X0
 		case 2:
 			hits[ilay][1] = 1;
 			break;
-			//3 -> 100
+			//3 -> 00X
 		case 3:
 			hits[ilay][2] = 1;
 			break;
@@ -154,13 +154,13 @@ void ComparatorCode::calculateId(){
 		case 0 : //000
 			rowCode = 0;
 			break;
-		case 1 : //001
+		case 1 : //00X
 			rowCode = 1;
 			break;
-		case 2 : //010
+		case 2 : //0X0
 			rowCode = 2;
 			break;
-		case 4 : //100
+		case 4 : //00X
 			rowCode = 3;
 			break;
 		default:

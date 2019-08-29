@@ -543,8 +543,8 @@ void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS])
 			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
 				// only use the (incorrect) but currently used comparators for form a CLCT
 				//TODO: need to change once we get timing issues fixed within software
-					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 5 &&
-							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 5 + (int)TIME_CAPTURE_WINDOW
+					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 6 &&
+							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 6 + (int)TIME_CAPTURE_WINDOW
 																) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
 				}
 			}
