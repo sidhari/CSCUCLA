@@ -23,6 +23,84 @@ using namespace std;
 
 #include "../include/OTMBFirmwareTester.h"
 
+//TODO: add to LUTEntry class? also need to implement for slope, etc
+// compresses a signed offset to nthStrips
+unsigned int compressToNStripBits(float offsetStrips, unsigned int nBits=5){
+	bool debug = false;
+	/* From linear fits estimation of span of offsets with layers >= 3
+	 *
+	 * Units in strips
+		minOffset = -2.41667
+		Pattern: 90
+		Code: 3392
+		--___------
+		---___-----
+		----___----
+		----X__----
+		-----X__---
+		------__X--
+		0123456789a
+
+		maxOffset = 0.916667
+		Pattern: 80
+		Code: 1984
+		------___--
+		-----___---
+		----___----
+		----__X----
+		---__X-----
+		--X__------
+		0123456789a
+
+		TODO:verify
+
+	 *
+	 * minOffset = -2.41667
+     * maxOffset = 0.916667
+	 * -> 2.41 + 0.91 = 3.32 strips span
+	 *
+	 * call this 4 strips
+	 *
+	 * for 8th strip resolution offsets over 4 strips, we need
+	 *  4*8 = 32 possibilities = 2^5 -> 5 bits
+	 */
+
+	if(offsetStrips >=2) offsetStrips = 1.999;
+	if(offsetStrips < -2) offsetStrips = -2;
+
+	if(debug) cout << "offsetStrips: " << offsetStrips << endl;
+
+	//have range of 4, and have n total bits, so have
+	// 2^n/2^2 = 2^(n-2) sections per strip
+	unsigned int nStripSections = (unsigned int)pow(2,nBits-2);
+
+	//put in 8th strips, and center
+	unsigned int offsetNthStrips = round(nStripSections*(offsetStrips+2));
+	if(debug) cout << "offsetNthStrips: " << offsetNthStrips << endl;
+
+	return offsetNthStrips;
+}
+
+unsigned int compressToNSlopeBits(float slope, unsigned int nBits=5){
+	bool debug = true;
+
+
+	//max slope taken as +/- 1 strip per layer (see EMTF Meeting slides Dec, 13, 2018)
+	if(slope >= 1) slope = 0.999;
+	if(slope < -1) slope = -1;
+
+	//have range of 2 strips/layer, have n total bits, so have
+	// 2^n/2 = 2^(n-1) sections per strips/layer
+	unsigned int nStripsPerLayerSections = (unsigned int)pow(2,nBits-1);
+
+	if(debug) cout << "slopeOffset: " << slope << endl;
+	unsigned int slopeNthStripsPerLayer = round(nStripsPerLayerSections*(slope+1));
+	if(debug) cout << "slopeNthStripsPerLayer: " << slopeNthStripsPerLayer<<endl;
+
+	return slopeNthStripsPerLayer;
+}
+
+
 int main(int argc, char* argv[]){
 	OTMBFirmwareTester p;
 	return p.main(argc,argv);
@@ -33,6 +111,11 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 
 	//are we running over real data or fake stuff for testing?
 	const bool fakeData = true;
+
+
+	//load demo lookup table
+	LUT lut("linearFits","dat/linearFits.lut");
+	lut.makeFinal();
 
 
 
@@ -122,18 +205,34 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 			std::cout << internal << setfill('0');
 			for(unsigned int i=0; i < nCLCTs; i++){
 				for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
-					CLCTFiles[i] << "000000000000" << endl;
+					CLCTFiles[i] << "0000000000000000" << endl;
 				}
 				if(i < emulatedCLCTs.size()){
 
 					auto& clct = emulatedCLCTs.at(i);
+
+					//get LUT value
+					const LUTEntry* entry =0;
+					if(lut.getEntry(clct->key(),entry)){
+						cout << "Error: No LUT Entry"<< endl;
+						return -1;
+					}
+
+
 					std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
 					std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
 					std::cout << setw(4) << clct->patternId() << endl;
 					std::cout << setw(4) << clct->comparatorCodeId() << endl;
-					CLCTFiles[i] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId() << setw(4) << clct->comparatorCodeId() << endl;
+					std::cout << "pos offset: " << entry->position() << " in binary: " << std::bitset<5>(compressToNStripBits(entry->position())) <<  endl;
+					std::cout << "slope offset: " << entry->slope() << "in binary: " << std::bitset<5>(compressToNSlopeBits(entry->slope())) <<  endl;
+					CLCTFiles[i] << internal << setfill('0')  <<hex <<
+							setw(4) << clct->keyHalfStrip() <<
+							setw(4) << clct->patternId() <<
+							setw(4) << clct->comparatorCodeId() <<
+							setw(2) << compressToNStripBits(entry->position()) <<
+							setw(2) << compressToNSlopeBits(entry->slope()) << endl;
 				}else {
-					CLCTFiles[i] << "000000000000" << endl;
+					CLCTFiles[i] << "0000000000000000" << endl;
 				}
 			}
 		}

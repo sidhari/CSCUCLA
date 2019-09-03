@@ -64,6 +64,13 @@ int LUTLinearFitWriter_Macro(){
 	}
 	//output << "Pattern\tCC\tOffset\tSlope\tChi2\tNDF\tSlopeErr\tOffErr\n";
 
+	//Used to calculate span of position offsets
+	float maxOffset = -1;
+	float maxPatt = -1;
+	float maxCode = -1;
+	float minOffset = 1;
+	float minPatt = 1;
+	float minCode = 1;
 
 	// for each pattern
 	for(auto patt = newPatterns->begin(); patt != newPatterns->end(); ++patt){
@@ -142,10 +149,35 @@ int LUTLinearFitWriter_Macro(){
 					layers << " " << chi2 << "\n";
 					//sigmaB << "\t" << sigmaM <<"\n";
 
+			if(layers >= N_LAYER_REQUIREMENT){
+				if(offset < minOffset) {
+					minOffset = offset;
+					minPatt = patt->_id;
+					minCode = code;
+				}
+				if(offset > maxOffset) {
+					maxOffset = offset;
+					maxPatt = patt->_id;
+					maxCode = code;
+				}
+			}
+
 			delete gr;
 		}
 	}
 
+	cout << "minOffset = " << minOffset << endl;
+	for(auto patt = newPatterns->begin(); patt != newPatterns->end(); ++patt){
+		if(patt->_id == minPatt){
+			patt->printCode(minCode);
+		}
+	}
+	cout << "maxOffset = " << maxOffset << endl;
+	for(auto patt = newPatterns->begin(); patt != newPatterns->end(); ++patt){
+		if(patt->_id == maxPatt){
+			patt->printCode(maxCode);
+		}
+	}
 	cout << "Wrote to: " << outName<< endl;
 	output.close();
 	return 0;
