@@ -22,7 +22,6 @@ const unsigned int MAX_PATTERN_WIDTH = 11;
  */
 const unsigned int BUSY_WINDOW = 10;
 const unsigned int N_MAX_HALF_STRIPS = 2*80 + 1; //+1 from staggering of chambers
-const unsigned int N_KEY_WIRE_GROUPS = 112;
 const unsigned int N_LAYER_REQUIREMENT = 3;
 const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins when looking at comparator hits
 const unsigned int CFEB_HS = 32;
@@ -39,7 +38,12 @@ const unsigned int NCOMPARATOR_CODES = 4096; //codes per pattern 2^12, without a
 const unsigned int NLEGACYPATTERNS = 9;
 const unsigned int LEGACY_PATTERN_IDS[NLEGACYPATTERNS] = {10,9,8,7,6,5,4,3,2};
 
-
+//*****************************
+// ALCT CONSTANTS
+//*****************************
+const unsigned int N_KEY_WIRE_GROUPS = 112;
+const unsigned int N_ALCT_PATTERNS = 3;
+const unsigned int MAX_WIRES_IN_PATTERN = 14;
 
 const unsigned int NCHAMBERS = 10;
 const std::string CHAMBER_NAMES[NCHAMBERS] = {

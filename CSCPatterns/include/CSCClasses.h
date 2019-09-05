@@ -251,6 +251,42 @@ class EmulatedCLCTs
 	std::vector<int>* patternId;	
 	std::vector<unsigned int>* ch_id;
 
+class ALCTCandidate
+{
+	public:
+		ALCTCandidate(unsigned int kwg, int pattern);
+		ALCTCandidate(unsigned int kwg, int pattern, ALCTCandidate * pred);
+
+		//~ALCTCandidate();
+
+		ALCTCandidate* next;
+		ALCTCandidate* prev;
+
+		int get_pattern() const {return _pattern;}
+		bool isValid() const {return _isValid;}
+		unsigned int get_kwg() const {return _kwg;}
+		unsigned int get_first_bx() const {return _first_bx;}
+		int get_quality() const {return _quality;}
+
+		void set_kwg(unsigned int kwg) {_kwg = kwg;}
+		void set_first_bx(unsigned int first_bx) {_first_bx = first_bx;}
+		void set_first_bx_corr (unsigned int first_bx_corr) {_first_bx_corr = first_bx_corr;}
+		void set_quality(unsigned int quality){_quality = quality;}
+		void set_pattern(int pattern) {_pattern = pattern;} 
+		
+		void flag() {_isValid = false;}
+		void nix();
+
+		friend ostream& operator<<(ostream& os, const ALCTCandidate &c);
+		friend ostream& operator<<(ostream& os, const ALCTCandidate * const c);
+
+	private:
+		int _pattern; 
+		unsigned int _kwg; 
+		unsigned int _first_bx;
+		unsigned int _quality;
+		bool _isValid;
+		unsigned int _first_bx_corr;
 };
 
 /* @brief Encapsulates hit information for recorded event
@@ -295,8 +331,59 @@ private:
 
 	float _meanHS;
 	float _stdHS;
+<<<<<<< HEAD
 	unsigned int _nCFEBs;
 
+=======
+};
+
+class ALCT_ChamberHits
+{
+	public:
+		ALCT_ChamberHits(unsigned int station=0, unsigned int ring=0,
+			unsigned int endcap=0, unsigned int chamber=0, bool isWire=true, bool empty = true);
+		
+		ALCT_ChamberHits(const ALCT_ChamberHits &c);
+		
+		~ALCT_ChamberHits(){}
+
+		const bool _isWire;
+		const unsigned int _station;
+		const unsigned int _ring;
+		const unsigned int _endcap;
+		const unsigned int _chamber;
+
+		unsigned int get_minWi() const {return _minWi;}
+		unsigned int get_maxWi() const {return _maxWi;}
+		unsigned int get_nhits() const {return _nhits;}
+		bool isEmpty() const {return _empty;}
+		void regHit() {_empty = false;}
+
+		float get_hitMeanWi();
+		float get_hitStdWi();
+		
+		int _hits[N_KEY_WIRE_GROUPS][NLAYERS];
+
+		ALCT_ChamberHits* prev = 0;
+		ALCT_ChamberHits* next = 0; 
+
+		void fill(const CSCInfo::Wires &w);
+		void fill(const CSCInfo::Wires &w, int time);
+		//void fill(const CSCInfo::Wires &w, int start, int end, int p_ext=6);
+		
+		friend ostream& operator<<(ostream& os, const ALCT_ChamberHits& c);
+		//ALCT_ChamberHits& operator-=(const ALCTCandidate &mi);
+
+	private:
+		unsigned int _minWi;
+		unsigned int _maxWi;
+		unsigned int _nhits;
+
+		bool _empty;
+
+		float _meanWi;
+		float _stdWi;
+>>>>>>> c73e66d4f2acb5f8a197103cb83690a2e739fb39
 };
 
 

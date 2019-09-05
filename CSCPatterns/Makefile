@@ -5,11 +5,11 @@ ROOTFLAGS=`root-config --cflags --libs` -L$(ROOTSYS)/lib
 LIBDIR=lib
 SRCDIR=src
 INCDIR=include
-PROJLIBS=$(LIBDIR)/CSCClasses_cpp.so $(LIBDIR)/CSCHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/Processor_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
+PROJLIBS=$(LIBDIR)/CSCClasses_cpp.so $(LIBDIR)/CSCHelperFunctions_cpp.so $(LIBDIR)/ALCTHelperFunctions_cpp.so $(LIBDIR)/LUTClasses_cpp.so $(LIBDIR)/Processor_cpp.so $(LIBDIR)/StlCollectionProxy_cpp.so
 
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
-all: $(PROJLIBS) $(SRCDIR)/LUTBuilder $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Tester.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Analyzer.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*TEMPLATE.cpp)) $(SRCDIR)/PatternPrinter $(SRCDIR)/EmulationTreeCreator $(SRCDIR)/CLCTSelector
+all: $(PROJLIBS) $(SRCDIR)/LUTBuilder $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Tester.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Analyzer.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*TEMPLATE.cpp)) $(SRCDIR)/PatternPrinter $(SRCDIR)/EmulationTreeCreator $(SRCDIR)/CLCTSelector $(SRCDIR)/ALCTChamberPrinter $(SRCDIR)/ALCTEmulationTreeCreator
 
 
 
