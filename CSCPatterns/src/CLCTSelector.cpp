@@ -56,7 +56,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
 
-    TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_EverythingEndingIn1_1.root");
+    TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_EverythingEndingIn1.root");
 
     TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
@@ -102,6 +102,8 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	unsigned long long int firstclctmatches = 0;
 	unsigned long long int secondclctmatches = 0;
 	unsigned long long int otherindexclctmatches = 0;
+
+	unsigned long long int check = 0;
 
 	//
 	//HISTOGRAMS
@@ -175,8 +177,10 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
             ChamberHits compHits(ST, RI, EC, CH);
 
 			if(compHits.fill(comparators)) return -1;
+			if(compHits.clearcomparators()) return -1;
 
 			vector<CLCTCandidate*> initialclctcandidates;
+			vector<CLCTCandidate*> initialclctcandidates_temp;
 
 			//iterate through all emulated CLCTs in chamber, fill vector 
 
@@ -238,7 +242,66 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 			}
 
-			vector<CLCTCandidate*> initialclctcandidates_temp = initialclctcandidates;
+			if(initialclctcandidates.size() < 2)
+			continue;
+
+			for(unsigned int iclct = 0; iclct < (unsigned int)emulatedclcts.size(); iclct++)
+			{	
+				if(emulatedclcts.ch_id->at(iclct) != chamberHash) 
+				continue;
+
+				if(emulatedclcts.layerCount->at(iclct) < 3)
+				continue;
+
+				int PID = emulatedclcts.patternId->at(iclct);				
+				ComparatorCode c((unsigned int)emulatedclcts.comparatorCodeId->at(iclct));
+
+				switch (PID)
+				{	
+					case 100:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(0),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates_temp.push_back(clct);
+						break;
+					}
+
+					case 90:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(1),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates_temp.push_back(clct);
+						break;	
+					}
+
+					case 80:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(2),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates_temp.push_back(clct);	
+						break;
+					}
+
+					case 70:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(3),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates_temp.push_back(clct);	
+						break;
+					}
+
+					case 60:
+					{
+						CLCTCandidate *clct = new CLCTCandidate(newEnvelopes->at(4),c,(int)emulatedclcts._horizontalIndex->at(iclct),(int)emulatedclcts._startTime->at(iclct));
+						initialclctcandidates_temp.push_back(clct);
+						break;
+					}
+
+					default:
+					{
+						cout << "Invalid PID" << endl << endl;
+						break;
+					} 
+
+				}
+
+			}			
 
 			unsigned int segcount = 0;
 
@@ -254,9 +317,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 			}
 
 			if(segcount != 1)
-			continue;
-			if(initialclctcandidates.size() < 2)
-			continue;
+			continue;			
 
 			for(unsigned int temp = 0; temp < initialclctcandidates.size(); temp++)
 			{
@@ -270,6 +331,19 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					continue;
 				}
 				initialclctcandidates.at(temp)->_lutEntry = e;
+			}
+			for(unsigned int temp = 0; temp < initialclctcandidates_temp.size(); temp++)
+			{
+				const LUTEntry *e;
+				int PID = initialclctcandidates_temp.at(temp)->patternId();
+				int CCID = initialclctcandidates_temp.at(temp)->comparatorCodeId();
+				LUTKey k(PID,CCID);
+				if(linearfits.getEntry(k,e))
+				{
+					cout << PID << " " << CCID << endl << endl;
+					continue;
+				}
+				initialclctcandidates_temp.at(temp)->_lutEntry = e;
 			}
 
 			//split CLCTs by CFEB
@@ -299,10 +373,12 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				CFEBsplit_slope[whichCFEB].push_back(initialclctcandidates_temp.at(iclct));
 				if(std::find(CFEBpossibilities.begin(),CFEBpossibilities.end(),whichCFEB) == CFEBpossibilities.end())
 				CFEBpossibilities.push_back(whichCFEB);
-			}	
+			}
 
 			if(CFEBpossibilities.size() < 2)
 			continue;
+
+			check++;
 
 			//sort within each CFEB		
 
@@ -314,20 +390,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 				sort(CFEBsplit_PID[*it].begin(),CFEBsplit_PID[*it].end(),CLCTCandidate::cfebquality);
 				sort(CFEBsplit_bayes[*it].begin(),CFEBsplit_bayes[*it].end(),CLCTCandidate::cfebquality);
 				sort(CFEBsplit_chi2[*it].begin(),CFEBsplit_chi2[*it].end(),CLCTCandidate::cfebquality);
-				sort(CFEBsplit_KHS[*it].begin(),CFEBsplit_KHS[*it].end(),CLCTCandidate::cfebquality);	
-				for(unsigned int iclct = 0; iclct < CFEBsplit_slope[*it].size(); iclct++)
-				{
-					const LUTEntry *e;
-					int PID = CFEBsplit_slope[*it].at(iclct)->patternId();
-					int CCID = CFEBsplit_slope[*it].at(iclct)->comparatorCodeId();
-					LUTKey k(PID,CCID);
-					if(linearfits.getEntry(k,e))
-					{
-						cout << PID << " " << CCID << endl << endl;
-						continue;
-					}
-					CFEBsplit_slope[*it].at(iclct)->_lutEntry = e;
-				}				
+				sort(CFEBsplit_KHS[*it].begin(),CFEBsplit_KHS[*it].end(),CLCTCandidate::cfebquality);				
 				sort(CFEBsplit_slope[*it].begin(),CFEBsplit_slope[*it].end(),CLCTCandidate::cfebquality);
 			}
 
@@ -399,9 +462,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					finalclctcandidates_layers.push_back(CFEBsplit_layers[*it].at(0));
 				}
 
-				sort(finalclctcandidates_layers.begin()+iclct,finalclctcandidates_layers.end(),
-				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				sort(finalclctcandidates_layers.begin()+iclct,finalclctcandidates_layers.end(),[](CLCTCandidate* c1, CLCTCandidate* c2)
 				{	
+					if(!c2) return true;
+					if(!c1) return false;
+
 					const LUTEntry *l1 = c1->_lutEntry;
 					const LUTEntry *l2 = c2->_lutEntry;
 
@@ -434,16 +499,18 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					finalclctcandidates_PID.push_back(CFEBsplit_PID[*it].at(0));
 				}
 
-				sort(finalclctcandidates_PID.begin()+iclct,finalclctcandidates_PID.end(),
-				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				sort(finalclctcandidates_PID.begin()+iclct,finalclctcandidates_PID.end(),[](CLCTCandidate* c1, CLCTCandidate* c2)
 				{	
+					if(!c2) return true;
+					if(!c1) return false;
+
 					const LUTEntry *l1 = c1->_lutEntry;
 					const LUTEntry *l2 = c2->_lutEntry;
 
 					if(!l2) return true;
 					if(!l1) return false;
 
-					if(c1->patternId() >= c2->patternId())
+					if(c1->_pattern.bendBit() >= c2->_pattern.bendBit())
 					return true;
 					else
 					return false;
@@ -469,9 +536,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					finalclctcandidates_bayes.push_back(CFEBsplit_bayes[*it].at(0));
 				}
 
-				sort(finalclctcandidates_bayes.begin()+iclct,finalclctcandidates_bayes.end(),
-				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				sort(finalclctcandidates_bayes.begin()+iclct,finalclctcandidates_bayes.end(),[](CLCTCandidate* c1, CLCTCandidate* c2)
 				{	
+					if(!c2) return true;
+					if(!c1) return false;
+
 					const LUTEntry *l1 = c1->_lutEntry;
 					const LUTEntry *l2 = c2->_lutEntry;
 
@@ -504,9 +573,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					finalclctcandidates_chi2.push_back(CFEBsplit_chi2[*it].at(0));
 				}
 
-				sort(finalclctcandidates_chi2.begin()+iclct,finalclctcandidates_chi2.end(),
-				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				sort(finalclctcandidates_chi2.begin()+iclct,finalclctcandidates_chi2.end(),[](CLCTCandidate* c1, CLCTCandidate* c2)
 				{	
+					if(!c2) return true;
+					if(!c1) return false;
+
 					const LUTEntry *l1 = c1->_lutEntry;
 					const LUTEntry *l2 = c2->_lutEntry;
 
@@ -539,9 +610,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					finalclctcandidates_KHS.push_back(CFEBsplit_KHS[*it].at(0));
 				}
 
-				sort(finalclctcandidates_KHS.begin()+iclct,finalclctcandidates_KHS.end(),
-				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				sort(finalclctcandidates_KHS.begin()+iclct,finalclctcandidates_KHS.end(),[](CLCTCandidate* c1, CLCTCandidate* c2)
 				{	
+					if(!c2) return true;
+					if(!c1) return false;
+
 					const LUTEntry *l1 = c1->_lutEntry;
 					const LUTEntry *l2 = c2->_lutEntry;
 
@@ -574,9 +647,11 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					finalclctcandidates_slope.push_back(CFEBsplit_slope[*it].at(0));
 				}
 
-				sort(finalclctcandidates_slope.begin()+iclct,finalclctcandidates_slope.end(),
-				[](CLCTCandidate* c1, CLCTCandidate* c2)
+				sort(finalclctcandidates_slope.begin()+iclct,finalclctcandidates_slope.end(),[](CLCTCandidate* c1, CLCTCandidate* c2)
 				{	
+					if(!c2) return true;
+					if(!c1) return false;
+
 					const LUTEntry *l1 = c1->_lutEntry;
 					const LUTEntry *l2 = c2->_lutEntry;
 
@@ -701,7 +776,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 
 				if(closestclcttosegmentindex_oldalgo != -1)
 				{
-					matchedclctindices_layers.push_back(closestclcttosegmentindex_oldalgo);
+					matchedclctindices_oldalgo.push_back(closestclcttosegmentindex_oldalgo);
 
 					if(closestclcttosegmentindex_oldalgo == 0)
 						firstclctmatchespt_oldalgo->Fill(pt);					
@@ -731,7 +806,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 					matchedclctindices_layers.push_back(closestclcttosegmentindex_layers);
 
 					if(closestclcttosegmentindex_layers == 0)
-						firstclctmatchespt_layers->Fill(pt);					
+						firstclctmatchespt_layers->Fill(pt);			
 				}
 
 				//PID
@@ -913,7 +988,7 @@ int CLCTSelector::run(string inputfile, string outputfile, int start, int end)
 	effeciency3->Write();
 	matchedclctindex->Write();
 
-	cout << totalmatches << " " << firstclctmatches << " " << secondclctmatches << " " << otherindexclctmatches << endl << endl;
+	cout << check << " " << totalmatches << " " << firstclctmatches << " " << secondclctmatches << " " << otherindexclctmatches << endl << endl;
 
 
 	cout << "Wrote to file: " << outputfile << endl;

@@ -94,14 +94,6 @@ int EmulationTreeCreator::run(string inputfile, string outputfile, int start, in
 
 		t->GetEntry(i);
 
-		/* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
-		 * installed on September 12
-		 */
-		//if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
-		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
-		 */
-		//if(evt.RunNumber <= 323362) continue;
-
 		OldPatternsEmulatedCLCTs.Erase();
 		NewPatternsEmulatedCLCTs.Erase();
 
@@ -116,14 +108,17 @@ int EmulationTreeCreator::run(string inputfile, string outputfile, int start, in
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
-			ChamberHits compHits(ST, RI, EC, CH);
-			if(compHits.fill(comparators)) return -1;
+			ChamberHits compHits_old(ST, RI, EC, CH);
+			ChamberHits compHits_new(ST, RI, EC, CH);
+			if(compHits_old.fill(comparators)) return -1;
+			if(compHits_new.fill(comparators)) return -1;
+			if(compHits_new.clearcomparators()) return -1; //clear multiple comparators in 3 hs window only if using new algorithm
 
 			//Old Patterns
 
 			vector<CLCTCandidate*> OPemulatedCLCTs;
 
-			if(searchForMatch(compHits, oldPatterns, OPemulatedCLCTs, true))
+			if(searchForMatch(compHits_old, oldPatterns, OPemulatedCLCTs, true))
 			{
 				OPemulatedCLCTs.clear();
 				//cout << "Something broke" << endl;
@@ -138,7 +133,7 @@ int EmulationTreeCreator::run(string inputfile, string outputfile, int start, in
 
 			vector<CLCTCandidate*> NPemulatedCLCTs;
 
-			if(searchForMatch(compHits, newPatterns, NPemulatedCLCTs, true))
+			if(searchForMatch(compHits_new, newPatterns, NPemulatedCLCTs, true))
 			{
 				NPemulatedCLCTs.clear();
 				//cout << "Something broke" << endl;

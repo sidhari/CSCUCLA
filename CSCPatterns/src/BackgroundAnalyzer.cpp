@@ -205,10 +205,6 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
 			bool me13 = (ST == 1 && RI == 3);
-            //bool me22 = (ST == 2 && RI == 2);
-
-            /*if(!(me22)) //ME22 analysis
-            continue;*/
 
             unsigned int segmentsinchamber = 0; //number of segments in current chamber
             unsigned int muonsegmentsinchamber = 0; //number of muon segments in current chamber

@@ -547,12 +547,16 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
 	 * better than those of c2
 	 */
 
+	 if(!c2) return true;
+
+	 if(!c1) return false;
+
 	//priority (layers, PID, KeyHalfStrip)
 	if (c1->layerCount() > c2->layerCount()) return true;
 	else if(c1->layerCount() == c2->layerCount())
 	{
-		if((int)(c1->patternId()/20) > (int)(c2->patternId())) return true;
-		else if ((int)(c1->patternId()) == (int)(c2->patternId()))
+		if(c1->_pattern.bendBit() > c2->_pattern.bendBit()) return true;
+		else if (c1->_pattern.bendBit() == c2->_pattern.bendBit())
 		{
 			if(c1->keyHalfStrip() < c2->keyHalfStrip()) return true;
 		}
@@ -562,6 +566,11 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::cfebquality =
 
 CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 		[](CLCTCandidate* c1, CLCTCandidate* c2){
+	
+
+	if(!c2) return true;
+
+	if(!c1) return false;
 
 	const LUTEntry *l1 = c1->_lutEntry;
 	const LUTEntry *l2 = c2->_lutEntry;
@@ -596,9 +605,9 @@ CLCTCandidate::QUALITY_SORT CLCTCandidate::LUTquality =
 		return true;
 	else if(c1->layerCount() == c2->layerCount())
 	{
-		if(c1->patternId() > c2->patternId())
+		if(c1->_pattern.bendBit() > c2->_pattern.bendBit())
 			return true;
-		else if(c1->patternId() == c2->patternId())
+		else if(c1->_pattern.bendBit() == c2->_pattern.bendBit())
 		{
 			if(l1->bayesprobability() > l2->bayesprobability())
 				return true;
@@ -791,8 +800,13 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 				//print();					
 				
 			}
-		}
+		}		
 
+	return 0;
+}
+
+int ChamberHits::clearcomparators()
+{
 		/*int _print = 0;
 
 		if(_nhits > 0)
@@ -867,7 +881,7 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 			cout << endl << endl;
 		}*/
 
-	return 0;
+		return 0;
 }
 
 
@@ -1042,7 +1056,7 @@ ChamberHits& ChamberHits::operator -=(const CLCTCandidate& mi) {
 			}
 		}
 	}
-	//_nhits -= mi.layerCount();	
+	
 	return *this;
 }
 

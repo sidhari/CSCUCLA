@@ -149,6 +149,148 @@ int legacyLayersMatched(const ChamberHits &c, const CSCPattern &p, const int hor
 	return matchedLayerCount;
 }
 
+int preTriggerTime(const ChamberHits &c) //check each key strip, if 3 or more hits in window then pretrigger
+{
+	for(unsigned int t = 6; t <= 14; t++)
+	{	
+		for(unsigned int ihs = 0; ihs < N_MAX_HALF_STRIPS-1; ihs++) 
+		{
+			unsigned int pretrigchecker = 0;
+
+			for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+			{
+				if((unsigned int)c._hits[ihs][ilay] < t - 3 || (unsigned int)c._hits[ihs][ilay] > t)
+				continue;
+
+				pretrigchecker++;
+
+				if((unsigned int)c._hits[ihs+1][ilay] < t - 3 || (unsigned int)c._hits[ihs+1][ilay] > t)
+				continue;
+
+				pretrigchecker++;
+				
+			}
+
+			if(pretrigchecker >= N_LAYER_REQUIREMENT)
+			{	
+					//c.print();
+					cout << endl << "pretrigger time bin: "<< t-1 << endl;
+					return t;
+			}
+		}
+	}
+
+	return -1; //didn't pretrigger 
+}
+
+int triggerTime(const ChamberHits &c, unsigned int t) //if TMB pretriggered, look 2 time bins later and check if any keystrip had 4 or more hits
+{
+
+	unsigned int triggertime = t + 2;
+	unsigned int hits = 0;
+
+	for(unsigned int ihs = 0; ihs < N_MAX_HALF_STRIPS; ihs++)
+	{
+		for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+		{
+			if((unsigned int)c._hits[ihs][ilay] < triggertime - 3 || (unsigned int)c._hits[ihs][ilay] > triggertime)
+			continue;
+
+			hits++;
+		}
+	}
+
+	if(hits > N_LAYER_REQUIREMENT)
+	{	
+		//c.print();
+		cout << endl << "trigger time bin: " << triggertime-1 << endl << endl;
+		return triggertime;
+	}
+	else
+		return -1; //didn't trigger
+}
+
+//looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
+// run successfully, match info is stored in variable mi
+// previousCandidates are a list of clcts you found earlier, which tell you which regions in the chamber not to look
+int containsPattern_time(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t, const vector<CLCTCandidate*>&previousCandidates){
+
+	//overlap between tested super pattern and chamber hits
+	bool overlap [NLAYERS][3] = {false};
+	int bestHorizontalIndex = 0;
+
+	unsigned int maxMatchedLayers = 0;
+	unsigned int time=t;
+
+
+
+	/* Allow matches only in regions where the key half strip is within the chamber,
+	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
+	 * since the layers are offset for non-me11a/b chambers
+	 */
+	for(int x = (int)c.minHs() -(int)MAX_PATTERN_WIDTH/2+1; x < (int)c.maxHs() - (int)MAX_PATTERN_WIDTH/2+1; x++){
+		//check if region is in the busy window, if using old tmb logic
+		bool isInBusyWindow = false;
+		for(auto cand : previousCandidates){
+			if(x <= cand->_horizontalIndex + (int)BUSY_WINDOW &&
+					x >= cand->_horizontalIndex - (int)BUSY_WINDOW){
+				isInBusyWindow = true;
+				break;
+			}
+		}
+		if(isInBusyWindow) continue;
+
+		// Cycle through each time window, if comphits, look in all possible windows (1-4 to 13-16).
+		// also ignore bins 1 & 2 if using comp hits, talk with Cameron.
+		//Nov 5. - Only time bins that are used are 6,7,8,9 from zero or 7,8,9,10 here
+		int matchedLayerCount = 0;
+		if(p._isLegacy){
+			matchedLayerCount = legacyLayersMatched(c,p,x,time);
+		} else {
+			matchedLayerCount = getOverlap(c,p,x,time, overlap);
+			if(matchedLayerCount < 0) {
+				if(DEBUG >= 0) printf("Error: cannot get overlap for pattern\n");
+				return -1;
+			}
+
+		}
+		//if we have a better match than we have had before
+		if(matchedLayerCount == NLAYERS){ //optimization
+			if(p._isLegacy){
+				mi = new CLCTCandidate(p,x, time,matchedLayerCount);
+			}else{
+				mi = new CLCTCandidate(p,x, time,overlap);
+				if(mi->comparatorCodeId() < 0) return -1;
+			}
+			return matchedLayerCount;
+		}
+		if(matchedLayerCount > (int)maxMatchedLayers) {
+			maxMatchedLayers = (unsigned int)matchedLayerCount;
+			bestHorizontalIndex = x;
+		}
+	}
+
+	if(!p._isLegacy && getOverlap(c,p,bestHorizontalIndex,time, overlap) < 0){
+		printf("Error: cannot get overlap for pattern\n");
+		return -1;
+	}
+
+	if(p._isLegacy){
+		mi = new CLCTCandidate(p, bestHorizontalIndex, time, maxMatchedLayers);
+	}else {
+		mi = new CLCTCandidate(p, bestHorizontalIndex, time, overlap);
+		if(mi->comparatorCodeId() < 0) return -1;
+	}
+	if(DEBUG > 1){
+		c.print();
+		//printChamber(c);
+		printPattern(p);
+		mi->print3x6Pattern();
+	}
+	return maxMatchedLayers;
+}
+
+
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
 // previousCandidates are a list of clcts you found earlier, which tell you which regions in the chamber not to look
@@ -157,11 +299,20 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3] = {false};
 	int bestHorizontalIndex = 0;
+	/*
+	for(unsigned int i=0; i < NLAYERS; i++){
+		for(unsigned int j =0; j < 3; j++){
+			overlap[i][j] = false; //initialize all as false
+		}
+	}
+	*/
 
 	unsigned int maxMatchedLayers = 0;
 	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
 
-
+	//iterate through the entire body of the chamber, we look for overlapping patterns
+	//everywhere starting at the left most edge to the rightmost edge
+	//for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
 
 	/* Allow matches only in regions where the key half strip is within the chamber,
 	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
@@ -267,41 +418,47 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 			}
 		}
 
+		vector<CLCTCandidate*> matches;
+		matches.push_back(bestMatch);
+		matches.push_back(thisMatch);
 
-
-		if(!bestMatch || bestMatch->layerCount() < thisMatch->layerCount())
+		sort(matches.begin(), matches.end(), [](CLCTCandidate* c1, CLCTCandidate* c2)
 		{
-			if(bestMatch) delete bestMatch;
-			bestMatch = thisMatch;			
-		}
-		else if(bestMatch->layerCount() == thisMatch->layerCount())
-		{	
-			if(bestMatch->_pattern.bendBit() < thisMatch->_pattern.bendBit())
+				
+			// we don't have c2,
+			// so take c1 as being better
+			if(!c2) return true;
+
+			//if we don't have c1,
+			// take c2 as better
+			if(!c1) return false;
+
+
+			//sort by layers, bend bit, key half strip
+			if(c1->layerCount() > c2-> layerCount()) return true;
+			else if(c1->layerCount() == c2->layerCount())
 			{
-				delete bestMatch;
-				bestMatch = thisMatch;
-			}
-			else if(bestMatch->_pattern.bendBit() == thisMatch->_pattern.bendBit())
-			{
-				if(bestMatch->keyHalfStrip() > thisMatch->keyHalfStrip())
+				if(c1->_pattern.bendBit() > c2->_pattern.bendBit()) return true;
+				else if (c1->_pattern.bendBit() == c2->_pattern.bendBit()) 
 				{
-					delete bestMatch;
-					bestMatch = thisMatch;					
-				}
+					if(c1->keyHalfStrip() <= c2->keyHalfStrip()) return true;
+					else return false;
+				} 
 				else
 				{
-					delete thisMatch;
+					return false;
 				}
 			}
 			else
 			{
-				delete thisMatch;
-			}			
-		}
-		else
-		{
-			delete thisMatch;
-		}
+				return false;				
+			}
+
+		});
+
+		matches.pop_back();
+
+		bestMatch = matches.front();
 
 	}
 
@@ -319,6 +476,126 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 		return searchForMatch(shrinkingChamber, ps, m,useBusyWindow); //find the next one
 	}else return 0; //add nothing if we don't find anything
 }
+
+
+//look for the best matched pattern, when we have a set of them, and fill the set match info,useBusyWindow
+// makes a window  of [low, high] comparator
+// values of where NOT to search, following the current implementation of the TMB described here:
+// https://github.com/csc-fw/otmb_fw_docs/blob/master/tmb2013-2005_spec.pdf
+// note that this is currently NOT the key half strip, but some constant off of it ( MAX_PATTERN_WIDTH / 2? )
+int searchForMatch_time(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow)
+{
+	if(c.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done
+
+	int pretriggertime = preTriggerTime(c);
+
+	if(pretriggertime == -1)
+		return -1; // didn't pretrigger
+
+	int triggertime = triggerTime(c,(unsigned int)pretriggertime);
+
+	if(triggertime == -1)
+		return -1; //didn't trigger;
+
+	if(findCLCTs(c, ps, m, (unsigned int)triggertime, useBusyWindow))
+		return -1;
+
+	return 0;	
+
+}
+
+int findCLCTs(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, unsigned int t, bool useBusyWindow)
+{
+	ChamberHits shrinkingChamber = c;
+
+	CLCTCandidate *bestMatch = 0;
+
+	unsigned int triggertime = t - 3;
+
+	//loop through all the patterns we have
+	for(unsigned int ip = 0; ip < ps->size(); ip++) {
+		CLCTCandidate *thisMatch = 0;
+		if(useBusyWindow){
+			//need to pass the previous candidates if using busy window, to block out region of where to look
+			if(containsPattern_time(c,ps->at(ip),thisMatch,triggertime,m) < 0) {
+				if(DEBUG >= 0){
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					c.print();
+					//printChamber(c);
+				}
+				return -1;
+			}
+		}else{
+			if(containsPattern_time(c,ps->at(ip),thisMatch,triggertime) < 0) {
+				if(DEBUG >= 0){
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					c.print();
+					//printChamber(c);
+				}
+				return -1;
+			}
+		}
+
+		vector<CLCTCandidate*> matches;
+		matches.push_back(bestMatch);
+		matches.push_back(thisMatch);
+
+		sort(matches.begin(), matches.end(), [](CLCTCandidate* c1, CLCTCandidate* c2)
+		{
+				
+			// we don't have c2,
+			// so take c1 as being better
+			if(!c2) return true;
+
+			//if we don't have c1,
+			// take c2 as better
+			if(!c1) return false;
+
+
+			//sort by layers, bend bit, key half strip
+			if(c1->layerCount() > c2-> layerCount()) return true;
+			else if(c1->layerCount() == c2->layerCount())
+			{
+				if(c1->_pattern.bendBit() > c2->_pattern.bendBit()) return true;
+				else if (c1->_pattern.bendBit() == c2->_pattern.bendBit()) 
+				{
+					if(c1->keyHalfStrip() <= c2->keyHalfStrip()) return true;
+					else return false;
+				} 
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;				
+			}
+
+		});
+
+		matches.pop_back();
+
+		bestMatch = matches.front();
+
+	}
+
+	//we have a valid best match
+	if(bestMatch && bestMatch->layerCount() >=(int) N_LAYER_REQUIREMENT){
+		if(DEBUG > 0){
+			c.print();
+			//printChamber(c);
+			printPattern(bestMatch->_pattern);
+		}
+		m.push_back(bestMatch);
+		//WARNING: using a busy window smaller than the max pattern size may cause this emulation to perform
+		// differently than expected, since we are removing hits here
+		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber
+		return findCLCTs(shrinkingChamber, ps, m,t,useBusyWindow); //find the next one
+	}else return 0; //add nothing if we don't find anything
+}
+
+
 
 
 int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
@@ -566,8 +843,8 @@ void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS])
 			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
 				// only use the (incorrect) but currently used comparators for form a CLCT
 				//TODO: need to change once we get timing issues fixed within software
-					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 5 &&
-							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 5 + (int)TIME_CAPTURE_WINDOW
+					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 6 &&
+							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 6 + (int)TIME_CAPTURE_WINDOW
 																) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
 				}
 			}

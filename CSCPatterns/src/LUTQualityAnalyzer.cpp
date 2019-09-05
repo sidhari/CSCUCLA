@@ -143,7 +143,8 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
             ChamberHits compHits(ST, RI, EC, CH);
 
-			if(compHits.fill(comparators)) return -1;			             
+			if(compHits.fill(comparators)) return -1;			    
+            if(compHits.clearcomparators()) return -1;         
 
             vector<unsigned int> matchedclctsindex; //stores indices of matched CLCTs
             vector<SegmentMatch> matchedsegmentinfo; //stores info of matched segments
@@ -277,8 +278,6 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
                   
     }
 
-    map<LUTKey,LUTEntry> _lut = bayesLUT.lut();    
-
     for(int PID = 100; PID > 59; PID-=10)
     {
         for(int CCID = 0; CCID < 4096; CCID++)
@@ -298,22 +297,11 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
         }
     }
 
-    /*for(auto&x : _lut)
-    {
-        LUTEntry* e = &x.second;
-        auto k = x.first;
-        e->calculatebayesprobability(muonsegmentmatchesperkey[k], notmuonsegmentmatchesperkey[k], muonsegmentmatchcounter, notmuonsegmentmatchcounter);        
-    }*/
-
-    //bayesLUT.sort("b");
-
     bayesLUT.makeFinal();
 
     bayesLUT.sort("lbxk");
 
     bayesLUT.setqual();
-
-    //bayesLUT.writeToROOT(outputfile);
 
     bayesLUT.writeToText(outputfile);
 

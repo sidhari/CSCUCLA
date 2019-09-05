@@ -33,12 +33,24 @@ int getOverlap(const ChamberHits &c, const CSCPattern &p, const int horPos, cons
 //the number of matched layers
 int legacyLayersMatched(const ChamberHits &c, const CSCPattern &p, const int horPos, const int startTimeWindow);
 
+//returns pretrigger time bin
+int preTriggerTime(const ChamberHits &c);
+
+//returns trigger time bin
+int triggerTime(const ChamberHits &c, unsigned int t);
+
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
-int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
+int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi,const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
+
+int containsPattern_time(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t, const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
+
+int findCLCTs(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, unsigned int t, bool useBusyWindow=false);
 
 //look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow=false);
+
+int searchForMatch_time(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow=false);
 
 //makes a LUT out of a properly formatted TTree
 int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs);

@@ -280,6 +280,7 @@ public:
 	bool shift(unsigned int lay) const;
 
 	int fill(const CSCInfo::Comparators& c);
+	int clearcomparators();
 	int fill(const CSCInfo::RecHits& r);
 	void print() const; //deprecated
 	
