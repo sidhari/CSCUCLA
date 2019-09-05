@@ -330,7 +330,7 @@ void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC,
 	mu_id	->push_back(mu_index);
 	ch_id	->push_back(CSCHelper::serialize(id.station(), id.ring(), id.chamber(), id.endcap()));
 	pos_x	->push_back(segLay3Geo->strip(tP));
-	pos_y	->push_back(segment.localPosition().y());
+	pos_y	->push_back(segLay3Geo->wireGroup(segLay3Geo->nearestWire(tP)));
 	dxdz	->push_back(segment.localDirection().x() / cm2strip / ( segment.localDirection().z() / cm2lay));
 	dydz	->push_back(segment.localDirection().y() / segment.localDirection().z());
 	chisq	->push_back(segment.chi2());

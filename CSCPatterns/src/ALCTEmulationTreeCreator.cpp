@@ -65,6 +65,7 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
     CSCInfo::ALCTs alcts(t);
 	CSCInfo::LCTs lcts(t);
     CSCInfo::Wires wires(t);
+	CSCInfo::Segments segments(t); 
 
     /**********************
 	 * EVENT LOOP

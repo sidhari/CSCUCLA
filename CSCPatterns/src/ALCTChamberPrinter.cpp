@@ -52,6 +52,7 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
     CSCInfo::Wires wires(t);
 	CSCInfo::ALCTs alcts(t);
 	CSCInfo::LCTs lcts(t); 
+	CSCInfo::Segments segments(t);
 	
 	for (int e_num = 0; e_num<eventnum; e_num++)
 	{
@@ -140,6 +141,26 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 				<< ", key half strip = " <<(int)(lcts.keyHalfStrip->at(i))
 				<< endl;
 		}
+		int num_seg = 0; 
+		for (int i=0; i<segments.size(); i++)
+		{
+			int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
+			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+			int chSid2 = chSid1;
+			
+			bool me11a	= ST == 1 && RI == 4;
+			bool me11b	= ST == 1 && RI == 1;
+
+			if (me11a || me11b)
+			{
+				if (me11a) chSid2 = CSCHelper::serialize(ST, 1, CH, EC);
+				if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
+			}
+			if (chSid1!=segments.ch_id->at(i) && chSid2!= segments.ch_id->at(i)) continue;
+			num_seg++;
+		}
+
+		cout << "Segment: " << num_seg << endl <<endl;
 
 		cout << "finished alct for event " << e_num << endl << endl;  
 
