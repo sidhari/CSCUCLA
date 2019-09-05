@@ -47,9 +47,11 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 	if(!t) throw "Can't find tree";
 
 	ALCTConfig config;
+	//config.set_narrow_mask_flag(true);
  
     CSCInfo::Wires wires(t);
 	CSCInfo::ALCTs alcts(t);
+	CSCInfo::LCTs lcts(t); 
 	
 	for (int e_num = 0; e_num<eventnum; e_num++)
 	{
@@ -80,12 +82,16 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 		}
 
 		trig_and_find(cvec, config, end_vec);
+		cout << "got past trig_and_find" << endl << endl; 
 		ghostBuster(end_vec,config);
-		extract(end_vec,out_vec);
+		extract_sort_cut(end_vec,out_vec);
+		//extract(end_vec,out_vec);
 
 		for (int i = 0; i<out_vec.size(); i++)
 		{
-			std::cout << out_vec.at(i) << endl << endl;
+			//int myBX = (out_vec.at(i))->get_first_bx(); 
+			//if (myBX>=5 && myBX<=11)
+				std::cout << out_vec.at(i) << endl << endl;
 		}
 
 		for (int i=0; i<alcts.size(); i++)
@@ -111,7 +117,28 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 				<< ", track number = " << (int) alcts.trkNumber->at(i)
 				<< ", Station = " << (int) c.station
 				<< ", Ring = " << (int) c.ring
-				<< endl; 
+				<< endl;
+		}
+
+		for (int i=0; i<lcts.size(); i++)
+		{
+			int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
+			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
+			int chSid2 = chSid1;
+			
+			bool me11a	= ST == 1 && RI == 4;
+			bool me11b	= ST == 1 && RI == 1;
+
+			if (me11a || me11b)
+			{
+				if (me11a) chSid2 = CSCHelper::serialize(ST, 1, CH, EC);
+				if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
+			}
+			if (chSid1!=lcts.ch_id->at(i) && chSid2!= lcts.ch_id->at(i)) continue;
+			CSCHelper::ChamberId c = CSCHelper::unserialize(lcts.ch_id->at(i));
+			cout<< "key wire group = " << (int)(lcts.keyWireGroup->at(i)) 
+				<< ", key half strip = " <<(int)(lcts.keyHalfStrip->at(i))
+				<< endl;
 		}
 
 		cout << "finished alct for event " << e_num << endl << endl;  

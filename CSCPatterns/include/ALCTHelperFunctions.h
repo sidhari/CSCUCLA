@@ -93,8 +93,24 @@ class ALCTConfig
         int get_l1a_window() const {return _l1a_window;}
         int get_ghost_cancel() const {return _ghost_cancel;}
 
+        inline void set_fifo_tbins(int fifo_tbins) {_fifo_tbins = fifo_tbins;}
+        inline void set_fifo_pretrig(int fifo_pretrig) { _fifo_pretrig = fifo_pretrig;}
+        inline void set_drift_delay(int drift_delay) { _drift_delay = drift_delay;}
+        inline void set_nplanes_hit_pretrig(int nplanes_hit_pretrig) {_nplanes_hit_pretrig=nplanes_hit_pretrig;}
+        inline void set_nplanes_hit_pattern(int nplanes_hit_pattern) {_nplanes_hit_pattern=nplanes_hit_pattern;}
+        inline void set_nplanes_accel_pretrig(int nplanes_accel_pretrig) {_nplanes_accel_pretrig=nplanes_accel_pretrig;}
+        inline void set_nplanes_accel_pattern(int nplanes_accel_pattern) {_nplanes_accel_pattern=nplanes_accel_pattern;}
+        inline void set_trig_mode(int trig_mode) {_trig_mode=trig_mode;}
+        inline void set_accel_mode(int accel_mode) {_accel_mode=accel_mode;}
+        inline void set_hit_persist(int hit_persist) {_hit_persist=hit_persist;}
+        inline void set_l1a_window(int l1a_window) {_l1a_window=l1a_window;}
+        inline void set_ghost_cancel(int ghost_cancel) {_ghost_cancel=ghost_cancel;}
+        inline void set_narrow_mask_flag(bool narrow_mask_flag){_narrow_mask_flag = narrow_mask_flag;}
+
         bool narrow_mask_flag() const {return _narrow_mask_flag;}
         bool ghost_flag() const {return _ghost_flag;}
+
+
     
     private:
         int _fifo_tbins;
@@ -155,6 +171,10 @@ void trig_and_find( std::vector<ALCT_ChamberHits*> &chamber_list,
 void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &config);
 
 void extract(std::vector<std::vector<ALCTCandidate*>> &endvec, std::vector<ALCTCandidate*> &out_vec);
+
+void extract_sort(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCTCandidate*> &out_vec);
+
+void extract_sort_cut(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCTCandidate*> &out_vec);
 
 // Current legacy algorithm for converting the number of layers hit into the 
 // quality metric. Returns the adjusted quality. 

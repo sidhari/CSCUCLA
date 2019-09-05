@@ -49,7 +49,7 @@ void print_pulse(unsigned int pulse)
     std::vector<int> vec_pulse = pulse_to_vec(pulse);
     for (int i=0; i<vec_pulse.size(); i++)
     {
-        std::cout << vec_pulse.at(i) << " ";
+        std::cout << vec_pulse[i] << " ";
     }
     std::cout << std::endl;
     std::cout << std::endl;
@@ -90,7 +90,7 @@ bool preTrigger(int trig_time,
         for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++) 
         {
             pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
-            if (((chamber_list.at(0))->_ring== 1 || (chamber_list.at(0))->_ring == 4))
+            if ((chamber_list[0]->_ring== 1 || chamber_list[0]->_ring == 4))
                 if (config.narrow_mask_flag())
                     pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
                 else 
@@ -114,7 +114,7 @@ bool preTrigger(int trig_time,
 
     unsigned int stop_bx = config.get_fifo_tbins() - config.get_drift_delay();
     int i = trig_time; 
-    ALCT_ChamberHits* chamber = chamber_list.at(i);
+    ALCT_ChamberHits* chamber = chamber_list[i];
     if (!(chamber->get_nhits()<pretrig_thresh[i_pattern]))
     {
         int MESelect = (chamber->_station <= 2) ? 0 : 1;
@@ -174,12 +174,12 @@ bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list,
         for (int i_wire = 0; i_wire < MAX_WIRES_IN_PATTERN; i_wire++) 
         {
             pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
-            if (((chamber_list.at(0))->_ring== 1 || (chamber_list.at(0))->_ring == 4))
+            if ((chamber_list[0]->_ring== 1 || chamber_list[0]->_ring == 4))
                 if (config.narrow_mask_flag())
                     pattern_mask[i_patt][i_wire] = pattern_mask_r1[i_patt][i_wire];
                 else 
                     pattern_mask[i_patt][i_wire] = pattern_mask_open[i_patt][i_wire];
-        }   
+        }
     }
 
     bool trigger = false;
@@ -200,7 +200,7 @@ bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list,
         config.get_nplanes_hit_pattern()
     };
 
-    ALCT_ChamberHits* chamber = chamber_list.at(0);
+    ALCT_ChamberHits* chamber = chamber_list[0];
     int MESelect = (chamber->_station <= 2) ? 0 : 1;
     temp_quality = 0;
     for (int i_layer = 0; i_layer < NLAYERS; i_layer++)
@@ -255,6 +255,7 @@ bool patternDetection(  const std::vector<ALCT_ChamberHits*> &chamber_list,
         else if ((sz % 2) == 1) cand.set_first_bx_corr(*(++im));
         else cand.set_first_bx_corr(((*im) + (*(++im))) / 2);
     }
+
     if (temp_quality >= pattern_thresh[i_pattern]) 
     {
         trigger = true;
@@ -285,11 +286,11 @@ void trig_and_find( std::vector<ALCT_ChamberHits*> &chamber_list,
                     std::vector<std::vector<ALCTCandidate*>> &end_vec)
 {   
     bool armed = true; 
-    for (int j=0; j<chamber_list.at(0)->get_maxWi(); j++)
+    for (int j=0; j<chamber_list[0]->get_maxWi(); j++)
     {
         for (int i=0; i<config.get_fifo_tbins()-config.get_drift_delay(); i++)
         {
-            ALCTCandidate * curr = (end_vec.at(i)).at(j);
+            ALCTCandidate * curr = end_vec[i][j];
             bool ptrigger = preTrigger(i,chamber_list,config,*curr);
             if (armed && !ptrigger) continue; 
             else if (armed && ptrigger)
@@ -297,11 +298,12 @@ void trig_and_find( std::vector<ALCT_ChamberHits*> &chamber_list,
                 armed = false;
                 for (int k=1; k<config.get_drift_delay(); k++)
                 {
-                    (end_vec.at(i+k)).at(j)->flag();
+                    if (i+k<end_vec.size()) end_vec[i+k][j]->flag();
                 }
                 i+=(config.get_drift_delay());
                 bool detect = patternDetection(chamber_list, config, *curr);
                 if (!detect) i--;
+                //else cout << "detect temp: " << curr << endl << endl;  
             }
             else if (!armed && !ptrigger)
             { 
@@ -315,18 +317,18 @@ void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &
 {
     for (int i = 0; i<end_vec.size(); i++)
     {
-        std::vector<ALCTCandidate*> wire_vec = end_vec.at(i);
+        std::vector<ALCTCandidate*> wire_vec = end_vec[i];
         for (int j = 0; j<wire_vec.size(); j++)
         {
-            ALCTCandidate* this_wire = wire_vec.at(j);
+            ALCTCandidate* this_wire = wire_vec[j];
+            if (!this_wire->get_quality()) 
+            {
+                this_wire->flag();
+                continue; 
+            }
             if (j!= wire_vec.size()-1)
             {
-                if (!this_wire->get_quality()) 
-                {
-                    this_wire->flag();
-                    continue; 
-                }
-                ALCTCandidate* next_wire = wire_vec.at(j+1);
+                ALCTCandidate* next_wire = wire_vec[j+1];
                 if (next_wire->get_quality()>this_wire->get_quality())
                 {
                     this_wire->flag();
@@ -336,10 +338,10 @@ void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &
             for (int k = 1; k <= config.get_ghost_cancel(); k++)
             {
                 if (i-k<0) continue;
-                std::vector<ALCTCandidate*> last_time_vec = end_vec.at(i-k);
+                std::vector<ALCTCandidate*> last_time_vec = end_vec[i-k];
                 if (j-1 >= 0)
                 {
-                    ALCTCandidate* last_time = last_time_vec.at(j-1);
+                    ALCTCandidate* last_time = last_time_vec[j-1];
                     bool was_better = last_time->get_quality() > this_wire->get_quality(); 
                     if (last_time->get_quality() && (!config.ghost_flag() || was_better))
                     {
@@ -348,7 +350,7 @@ void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &
                 }
                 if (j+1 < wire_vec.size())
                 {
-                    ALCTCandidate* last_time = last_time_vec.at(j+1);
+                    ALCTCandidate* last_time = last_time_vec[j+1];
                     bool was_better = last_time->get_quality() > this_wire->get_quality(); 
                     if (last_time->get_quality() && (!config.ghost_flag() || was_better))
                     {
@@ -360,14 +362,33 @@ void ghostBuster(std::vector<std::vector<ALCTCandidate*>> &end_vec, ALCTConfig &
     }
 }
 
+auto sortRule = [] (ALCTCandidate * cand1, ALCTCandidate * cand2) -> bool
+{
+    if (cand1->get_quality() == cand2->get_quality()) return (cand1->get_kwg()>cand2->get_kwg());
+    else return (cand1->get_quality()>cand2->get_quality()); 
+};
+
+auto sortRule1 = [] (ALCTCandidate * cand1, ALCTCandidate * cand2) -> bool
+{
+    if (cand1->get_quality() == cand2->get_quality()) return (cand1->get_kwg()>cand2->get_kwg());
+    else return (cand1->get_quality()>cand2->get_quality()); 
+};
+
+auto sortRule2 = [] (ALCTCandidate * cand1, ALCTCandidate * cand2) -> bool
+{
+    if (cand1->get_quality() == cand2->get_quality()) return (cand1->get_kwg()<cand2->get_kwg());
+    else return (cand1->get_quality()>cand2->get_quality()); 
+};
+
+
 void extract(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCTCandidate*> &out_vec)
 {
     for (int i = 0; i<end_vec.size(); i++)
     {
-        std::vector<ALCTCandidate*> wire_vec = end_vec.at(i);
+        std::vector<ALCTCandidate*> wire_vec = end_vec[i];
         for (int j = 0; j<wire_vec.size(); j++)
         {
-            ALCTCandidate * curr = (end_vec.at(i)).at(j);
+            ALCTCandidate * curr = end_vec[i][j];
             if (curr->isValid()) 
             {
                 out_vec.push_back(curr);
@@ -377,6 +398,71 @@ void extract(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCT
                 curr->nix();
             }
         }
+    }
+}
+
+void extract_sort(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCTCandidate*> &out_vec)
+{
+    for (int i = 0; i<end_vec.size(); i++)
+    {
+        std::vector<ALCTCandidate*> wire_vec = end_vec[i];
+        std::vector<ALCTCandidate*> temp_vec; 
+        for (int j = 0; j<wire_vec.size(); j++)
+        {
+            ALCTCandidate * curr = end_vec[i][j];
+            if (curr->isValid()) 
+            {
+                temp_vec.push_back(curr);
+            }
+            else 
+            {
+                curr->nix();
+            }
+        }
+        if (temp_vec.size())
+        {
+            std::sort(temp_vec.begin(),temp_vec.end(),sortRule);
+            for (int k = 0; k<temp_vec.size(); k++)
+            {
+                if (k==0 || k== 1) out_vec.push_back(temp_vec[k]);
+            }
+        }
+    }
+}
+
+void extract_sort_cut(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::vector<ALCTCandidate*> &out_vec)
+{
+    for (int i = 0; i<end_vec.size(); i++)
+    {
+        std::vector<ALCTCandidate*> wire_vec = end_vec[i];
+        std::vector<ALCTCandidate*> temp_vec; 
+        for (int j = 0; j<wire_vec.size(); j++)
+        {
+            ALCTCandidate * curr = end_vec[i][j];
+            if (curr->isValid() && curr->get_first_bx()>=5 && curr->get_first_bx()<=11) 
+            {
+                temp_vec.push_back(curr);
+            }
+            else 
+            {
+                curr->nix();
+            }
+        }
+        if (temp_vec.size())
+        {
+            int comp_q = -1;
+            std::sort(temp_vec.begin(),temp_vec.end(),sortRule1);
+            comp_q = temp_vec[0]->get_quality();
+            out_vec.push_back(temp_vec[0]);
+            temp_vec.erase(temp_vec.begin());
+            if (temp_vec.size())
+            {
+                if (comp_q == temp_vec[0]->get_quality())
+                    std::sort(temp_vec.begin(),temp_vec.end(),sortRule2);
+                out_vec.push_back(temp_vec[0]);
+            }
+        }
+        //wipe(temp_vec);
     }
 }
 
@@ -462,7 +548,7 @@ void wipe(std::vector<ALCTCandidate*> candvec)
 {
     for (int i=0; i<candvec.size(); i++)
     {
-        delete candvec.at(i);
+        delete candvec[i];
     }
 }
 
@@ -470,14 +556,7 @@ void wipe(std::vector<ALCT_ChamberHits*>cvec)
 {
     for (int i=0; i<cvec.size(); i++)
     {
-        delete cvec.at(i);
+        delete cvec[i];
     }
 }
-
-void bestTrackSelector()
-{
-
-}
-
-
 

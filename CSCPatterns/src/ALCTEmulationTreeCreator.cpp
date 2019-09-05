@@ -63,6 +63,7 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
     TTree* alct_t_emu = new TTree("ALCTEmulationResults", "ALCTEmulationResults");*/
 
     CSCInfo::ALCTs alcts(t);
+	CSCInfo::LCTs lcts(t);
     CSCInfo::Wires wires(t);
 
     /**********************
@@ -75,7 +76,10 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 	
 	cout << "Starting Event: " << start << " Ending Event: " << end << endl << endl;
 
-	ALCTConfig config; 
+	ALCTConfig config;
+	int num_off = 0; 
+	int num_tot = 0; 
+	//config.set_narrow_mask_flag(true);
 
 	for(int i = start; i < end; i++) 
 	{
@@ -106,31 +110,36 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 			for (int i=0; i<16; i++)
 			{
 				ALCT_ChamberHits * temp = new ALCT_ChamberHits(ST,RI,CH,EC);
-				if (i >= config.get_start_bx())
-					temp->fill(wires,i,config.get_start_bx());
+				temp->fill(wires,i);
 				cvec.push_back(temp);
 			}
 
-			//cout << "safe here1" << endl; 
+			std::vector<std::vector<ALCTCandidate*>> end_vec; 
+			std::vector<ALCTCandidate*> out_vec;
 
-			ALCTCandidate * head = new ALCTCandidate(0,1);
-
-			for (int i = 0; i<(cvec.at(0))->get_maxWi(); i++)
+			for (int i=0; i<config.get_fifo_tbins()-config.get_drift_delay(); i++)
 			{
-				ALCTCandidate * cand; 
-				cand = (i==0) ? head : new ALCTCandidate(i,1,cand);
+				std::vector <ALCTCandidate*> temp_vec; 
+				for (int j = 0; j<cvec.at(0)->get_maxWi(); j++)
+				{
+					ALCTCandidate * cand = new ALCTCandidate(j,1);
+					temp_vec.push_back(cand);
+				}
+				end_vec.push_back(temp_vec); 
 			}
 
-			//cout << "safe here2" << endl; 
+			trig_and_find(cvec, config, end_vec);
+			ghostBuster(end_vec,config);
+			extract_sort_cut(end_vec,out_vec);
 
-			std::vector<ALCTCandidate*> candvec; 
-			preTrigger(cvec,config,head);
-			patternDetection(cvec, config, head);
-			ghostBuster(head);
-			clean(head);
-			head_to_vec(head,candvec);
+			int bx_temp = -1;
 
-			int num_alct=0; 
+			//cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC
+
+			int num_alct=0;
+			int num_lct=0; 
+
+			num_tot+=out_vec.size();
 			for (int i=0; i<alcts.size(); i++)
 			{
 				int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
@@ -145,15 +154,59 @@ int ALCTEmulationTreeCreator::run(string inputfile, string outputfile, int start
 					if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
 				}
 				if (chSid1!=alcts.ch_id->at(i) && chSid2!= alcts.ch_id->at(i)) continue;
+				for (int j = 0; j<out_vec.size(); j++)
+				{
+					ALCTCandidate* compare = out_vec[j];
+					if (compare->get_first_bx() == alcts.BX->at(i)+5 && 
+						compare->get_quality() >= alcts.quality->at(i) &&
+						compare->get_kwg() == alcts.keyWG->at(i)
+						)
+					{
+						out_vec.at(j)->nix();
+						out_vec.erase(out_vec.begin()+j);
+					}
+				}
 				num_alct++;
 			}
-			//if (num_alct>candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl;
-			if (num_alct==0 && candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl;
-			wipe(candvec);
+
+			for (int i=0; i<lcts.size(); i++)
+			{
+				int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
+				int chSid2 = chSid1;
+				
+				bool me11a	= ST == 1 && RI == 4;
+				bool me11b	= ST == 1 && RI == 1;
+
+				if (me11a || me11b)
+				{
+					if (me11a) chSid2 = CSCHelper::serialize(ST, 1, CH, EC);
+					if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
+				}
+				if (chSid1!=lcts.ch_id->at(i) && chSid2!= lcts.ch_id->at(i)) continue;
+				num_lct++;
+			}
+
+
+			//if (num_alct!=out_vec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << out_vec.size() << endl << endl;
+			//if (num_alct==0 && candvec.size()) cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << candvec.size() << endl << endl;
+			/*if (num_alct > 0 && num_lct == 0)
+			{
+				//if (out_vec.at(0)->get_first_bx()!=out_vec.at(1)->get_first_bx() && num_lct>=2)
+				cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", num_alct = " << num_alct << ", size = " << out_vec.size() << endl << endl;
+			}*/
+			
+			if (out_vec.size())
+			{
+				num_off+=out_vec.size(); 
+				cout << "Event = " << i << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << endl << endl;
+			}
+			wipe(out_vec);
 			wipe(cvec);
 		}
 		//alct_t_emu->Fill();
 	}
+
+	cout << num_tot << " " << num_off << endl << endl;
 
 	//outF->cd();
 	//alct_t_emu->Write();
