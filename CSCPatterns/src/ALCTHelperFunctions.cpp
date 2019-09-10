@@ -453,16 +453,19 @@ void extract_sort_cut(std::vector<std::vector<ALCTCandidate*>> &end_vec, std::ve
             int comp_q = -1;
             std::sort(temp_vec.begin(),temp_vec.end(),sortRule1);
             comp_q = temp_vec[0]->get_quality();
+            temp_vec[0]->set_tracknumber(1);
             out_vec.push_back(temp_vec[0]);
             temp_vec.erase(temp_vec.begin());
             if (temp_vec.size())
             {
                 if (comp_q == temp_vec[0]->get_quality())
                     std::sort(temp_vec.begin(),temp_vec.end(),sortRule2);
+                temp_vec[0]->set_tracknumber(2);
                 out_vec.push_back(temp_vec[0]);
+                temp_vec.erase(temp_vec.begin());
             }
         }
-        //wipe(temp_vec);
+        wipe(temp_vec);
     }
 }
 

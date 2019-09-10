@@ -157,10 +157,54 @@ int ALCTChamberPrinter::run(string inputfile, unsigned int ST, unsigned int RI, 
 				if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
 			}
 			if (chSid1!=segments.ch_id->at(i) && chSid2!= segments.ch_id->at(i)) continue;
+			if (segments.mu_id->at(i)==-1) continue; 
 			num_seg++;
+			cout<< "Segment: " << num_seg 
+			<< ", strip = " << segments.pos_x->at(i)
+			<< ", KWG = " << segments.pos_y->at(i)-1
+			<< endl <<endl;
 		}
 
-		cout << "Segment: " << num_seg << endl <<endl;
+		for (int iter=0; iter<segments.size(); iter++)
+		{
+			int min_dist = 1000;
+			int marker = - 1; 
+
+			int chSid1 = CSCHelper::serialize(ST, RI, CH, EC);
+			int chSid2 = chSid1;
+			
+			bool me11a	= ST == 1 && RI == 4;
+			bool me11b	= ST == 1 && RI == 1;
+
+			if (me11a || me11b)
+			{
+				if (me11a) chSid2 = CSCHelper::serialize(ST, 1, CH, EC);
+				if (me11b) chSid2 = CSCHelper::serialize(ST, 4, CH, EC);
+			}
+			if (segments.mu_id->at(iter)==-1) continue; 
+			if (chSid1!=segments.ch_id->at(iter) && chSid2!= segments.ch_id->at(iter)) continue;
+			int pos_seg = segments.pos_y->at(iter)-1;
+			if (pos_seg<0) continue; 
+			for (int j = 0; j<out_vec.size(); j++)
+			{
+				unsigned int temp_val = abs((int)((out_vec.at(j)->get_kwg())) - (int)pos_seg); 
+				cout << "temp_val"<< temp_val << endl << endl;
+				if (temp_val<min_dist)
+				{
+					min_dist = temp_val;
+					cout << "min_dist" << min_dist << endl << endl;
+					marker = j; 
+				}
+			}
+			if (marker>-1)
+			{
+				double val = (double)((out_vec.at(marker)->get_kwg()) - pos_seg);
+				if (min_dist>=2.0) cout << "Event = " << e_num << ", ST = " << ST << ", RI = " << RI << ", CH = " << CH << ", EC = " << EC << ", min_dist = " << min_dist << endl << endl;
+				out_vec.at(marker)->nix();
+				out_vec.erase(out_vec.begin()+marker);
+				continue; 
+			}
+		}
 
 		cout << "finished alct for event " << e_num << endl << endl;  
 

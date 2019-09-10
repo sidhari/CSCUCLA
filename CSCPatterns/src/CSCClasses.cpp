@@ -528,6 +528,7 @@ ALCTCandidate::ALCTCandidate(unsigned int kwg, int pattern) :
 	_first_bx = 0;
 	_first_bx_corr = 0;
 	_quality = 0; 
+	_tracknumber = 0; 
 
 	next = 0;
 	prev = 0;

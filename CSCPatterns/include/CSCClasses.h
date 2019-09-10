@@ -147,12 +147,14 @@ class ALCTCandidate
 		unsigned int get_kwg() const {return _kwg;}
 		unsigned int get_first_bx() const {return _first_bx;}
 		int get_quality() const {return _quality;}
+		int get_tracknumber() const {return _tracknumber;}
 
 		void set_kwg(unsigned int kwg) {_kwg = kwg;}
 		void set_first_bx(unsigned int first_bx) {_first_bx = first_bx;}
 		void set_first_bx_corr (unsigned int first_bx_corr) {_first_bx_corr = first_bx_corr;}
 		void set_quality(unsigned int quality){_quality = quality;}
-		void set_pattern(int pattern) {_pattern = pattern;} 
+		void set_pattern(int pattern) {_pattern = pattern;}
+		void set_tracknumber(int tracknumber){_tracknumber = tracknumber;}
 		
 		void flag() {_isValid = false;}
 		void nix();
@@ -162,6 +164,7 @@ class ALCTCandidate
 
 	private:
 		int _pattern; 
+		int _tracknumber; 
 		unsigned int _kwg; 
 		unsigned int _first_bx;
 		unsigned int _quality;
