@@ -39,7 +39,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(20) )
 #
 # CHARMONIUM TEST
 #
-dataset = '/store/data/Run2018C/Charmonium/RAW/v1/000/319/337/00000/1C4B30FD-6282-E811-96B1-02163E015211.root' #20182nd
+dataset = '/store/data/Run2018B/Charmonium/RAW/v1/000/317/182/00000/58BC80F1-5264-E811-9D0C-FA163EB6BC20.root'
+#dataset = '/store/data/Run2018C/Charmonium/RAW/v1/000/319/337/00000/1C4B30FD-6282-E811-96B1-02163E015211.root' #20182nd
 #dataset = ' /store/data/Run2017F/Charmonium/RAW/v1/000/305/045/00000/F4100DFC-ACB0-E711-9C0C-02163E01A714.root' #tested against camerons oct 11
 
 

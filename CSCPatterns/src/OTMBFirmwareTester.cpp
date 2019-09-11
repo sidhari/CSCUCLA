@@ -116,6 +116,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 	//load demo lookup table
 	LUT lut("linearFits","dat/linearFits.lut");
 	lut.makeFinal();
+	lut.writeToPSLs("linearFit");
 
 
 
