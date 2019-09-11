@@ -66,7 +66,7 @@ public:
 	}
 
 	/*
-	 * Constructor used when wanting to read from branches of a TTree. Can be
+	 * Constructor used when wanting to read from branches of a TTree. Can be 
 	 * used independently of FillCSCInfo.h. Analogous for following classes
 	 */
 	Event(TTree* t): Event(){
@@ -86,6 +86,14 @@ public:
 	int BXCrossing;
 	int NSegmentsInEvent;
 };
+
+/*
+class TMB : public Object{
+
+
+	std::vector<int>* ch_id;
+};
+*/
 
 class GenParticles : public Object{
 public:
@@ -301,7 +309,7 @@ public:
 	std::vector<int>* mu_id; //id associated with the muon
 	std::vector<int>* ch_id; //id associated with chamber
 	std::vector<float>* pos_x; // [strips]
-	std::vector<float>* pos_y;
+	std::vector<int>* pos_y; // [wire group]
 	std::vector<float>* dxdz; // [strips / layer]
 	std::vector<float>* dydz;
 	std::vector<float>* chisq;
@@ -473,7 +481,7 @@ class ALCTs : public Object
 
 		std::vector<size16>* ch_id;
 		std::vector<size8>* isValid;
-		std::vector<size8>* quality;
+		std::vector<size8>* quality; 
 		std::vector<size8>* accelerator;
 		std::vector<size8>* collisionB;
 		std::vector<size8>* keyWG;
@@ -493,7 +501,6 @@ class Wires : public Object
 			timeBin = 0;
 			BX = 0;
 			timeBinWord = 0;
-			//timeBinsOn = 0;
 		}
 
 		Wires(TTree* t) : Wires()
@@ -504,7 +511,6 @@ class Wires : public Object
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBin)).c_str(), &timeBin);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(BX)).c_str(), &BX);
 			t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinWord)).c_str(), &timeBinWord);
-			//t->SetBranchAddress(branchify(GET_VARIABLE_NAME(timeBinsOn)).c_str(), &timeBinsOn);
 		}
 
 		unsigned int size() const 
@@ -518,7 +524,6 @@ class Wires : public Object
 		std::vector<int>* timeBin;
 		std::vector<int>* BX;
 		std::vector<uint32_t>* timeBinWord;
-		//std::vector<std::vector<int>>* timeBinsOn;
 };
 
 class Strips : public Object
@@ -556,6 +561,7 @@ class Strips : public Object
 		std::vector<size16>* ch_id;
 		std::vector<size8>* lay;
 		std::vector<int>* num;
+		//TODO
 		//std::vector<std::vector<int>>* ADC;
 		//std::vector<std::vector<int>>* L1APhase;
 		//std::vector<std::vector<uint16_t>>* ADCOverflow;

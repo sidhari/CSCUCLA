@@ -57,7 +57,6 @@
  *
  */
 
-
 //for histogram bins, starting at 1
 enum EVENT_CUTS {
 	allEvents,
@@ -710,12 +709,14 @@ class FillWireInfo : public CSCInfo::Wires, public FillInfo
 			lay = new std::vector<size8>();
 			timeBin = new std::vector<int>();
 			BX = new std::vector<int>();
+			timeBinWord = new std::vector<uint32_t>();
 			//time_bins_on = new std::vector<std::vector<int>>();
 
 			book(GET_VARIABLE_NAME(ch_id),*ch_id);
 			book(GET_VARIABLE_NAME(group),*group);
 			book(GET_VARIABLE_NAME(lay),*lay);
 			book(GET_VARIABLE_NAME(timeBin),*timeBin);
+			book(GET_VARIABLE_NAME(timeBinWord),*timeBinWord);
 			book(GET_VARIABLE_NAME(BX),*BX);
 			//book(GET_VARIABLE_NAME(time_bins_on),*time_bins_on);
 		}
@@ -726,6 +727,7 @@ class FillWireInfo : public CSCInfo::Wires, public FillInfo
 			delete group;
 			delete lay;
 			delete timeBin;
+			delete timeBinWord;
 			delete BX;
 			//delete time_bins_on;
 		}
@@ -736,6 +738,7 @@ class FillWireInfo : public CSCInfo::Wires, public FillInfo
 			group->clear();
 			lay->clear();
 			timeBin->clear();
+			timeBinWord->clear();
 			BX->clear();
 			//time_bins_on->clear();
 		}
