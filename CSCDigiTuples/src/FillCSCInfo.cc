@@ -305,7 +305,6 @@ void FillSegmentInfo::fill(const CSCSegment& segment, const CSCGeometry* theCSC,
 	CSCDetId id(detId.rawId());
 
 	const auto& segmentHits = segment.specificRecHits();
-	//const auto& segmentHits = dSiter->specificRecHits();
 	//inherited from C. Bravo - translates [cm] -> [strips]
 	const CSCChamber *segChamber = theCSC->chamber(id);
 	const CSCLayer *segLay3 = segChamber->layer(3);

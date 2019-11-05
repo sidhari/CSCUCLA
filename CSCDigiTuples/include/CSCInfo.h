@@ -309,7 +309,7 @@ public:
 	std::vector<int>* mu_id; //id associated with the muon
 	std::vector<int>* ch_id; //id associated with chamber
 	std::vector<float>* pos_x; // [strips]
-	std::vector<int>* pos_y; // [wire group]
+	std::vector<float>* pos_y; // [wire group]
 	std::vector<float>* dxdz; // [strips / layer]
 	std::vector<float>* dydz;
 	std::vector<float>* chisq;
