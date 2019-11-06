@@ -24,8 +24,8 @@ This directory contains the scripts used to generate the tuples.
 
   * **CSCPatternsExtractor.cc**: This is the main plugin, generating all the trigger information we currently use to study
   * **CSCCMSSWTester.cc**: Intended to test edits to CMSSW within the framework
-  * **CSCPatterns.cc**: A deprecated plugin kept for reference
-  * **GetGEMGeo.cc**: Unused, written by N. McColl
+  * **CSCPatterns.cc**: Deprecated, kept for reference
+  * **GetGEMGeo.cc**: Deprecated, written by N. McColl
 
 ### Source
 
@@ -43,4 +43,4 @@ Include files associated with source and plugin files kept here.
 
 ### Macros
 
-Currently deprecated code written by C. Bravo
+Deprecated code written by C. Bravo

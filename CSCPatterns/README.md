@@ -13,7 +13,7 @@ Workflow goes as:
 ```bash
 ./src/<analyzer> <input tuple> <outputfile> [<nevents.] 
 ```
-This will create an output file associated with whichever anaylzer you ran. The number of events can be specified, and is by default the entire file.
+This will create an output file associated with whichever analyzer you ran. The number of events can be specified, and is by default the entire file.
 Quick python scripts which use the same classes described in the `include/` directory, as well as plotting scripts, are in the `python/` directory
 
 
