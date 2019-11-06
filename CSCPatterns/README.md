@@ -1,8 +1,24 @@
-# CSCPatterns
+## CSCPatterns
 
-Framework for analyzing CSC Patterns use in the level one trigger for the CMS Detector. C++ code in ``/src`` requires a CSCDigiTree root file create using the framework a directory above this one. Given you have a CSCDigiTree, the pattern tree can be create with
+Framework used to manipulate and study tuples produced by `CSCDigiTuples` using C++ analyzer scripts. From within the directory, run
 
+```bash
+make
 ```
-$ make //makes shared libraries and executables
-$./src/PatternFinder <inputfile> <outputfile> [<nevents>]
+
+Which will compile a set of libraries which use ROOT objects which can be used by both C++ or Python code. 
+Workflow goes as:
+  * Make a `CSCDigiTree.root` via the `CSCDigiTree/` directory for whatever sample you are considering
+  * After running make here, select an analyzer and run
+```bash
+./src/<analyzer> <input tuple> <outputfile> [<nevents.] 
 ```
+This will create an output file associated with whichever anaylzer you ran. The number of events can be specified, and is by default the entire file.
+Quick python scripts which use the same classes described in the `include/` directory, as well as plotting scripts, are in the `python/` directory
+
+
+ 
+
+
+
+

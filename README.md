@@ -1,8 +1,24 @@
 # CSCUCLA
 
-Last updated: **5 November 2019** 
+Last updated: **6 November 2019** 
+
 
 ## Installation Instructions
+  * On either LPC or LXPLUS run
+  
+  ```bash
+  source /cvmfs/cms.cern.ch/cmsset_default.sh 
+  cmsrel CMSSW_10_3_0_pre5 
+  cd CMSSW_10_3_0_pre5/src/
+  cmsenv
+  git cms-init
+  git clone https://github.com/williamnash/CSCUCLA.git
+  . setup.sh
+  cd CSCDigiTuples
+  scram b -j8 
+  cd ..
+  ```
+
 
 First run 
 

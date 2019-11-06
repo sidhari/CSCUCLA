@@ -1,4 +1,0 @@
-[submodule "gem-light-dqm"]
-	path = gem-light-dqm
-	url = https://github.com/nickmccoll/gem-light-dqm/
-	branch = update_makefile_formacosx
