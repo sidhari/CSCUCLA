@@ -44,14 +44,6 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 int containsPattern_v1(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t, const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
 
 //Look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
-int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow=false);
-
-//Look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
-//Designed to look through windows of 4 time bins each (pretrigger and trigger mechanism implemented)
-//User generated comparators
-int searchForMatch_v1(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, bool useBusyWindow=false);
-
-//Look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
 //Designed to look through windows of 4 time bins each (pretrigger and trigger mechanism implemented)
 //Comparators read from tree
 int searchForMatch_v1(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, bool useBusyWindow=false);
