@@ -107,6 +107,7 @@ public:
 	const int _startTime;
 	//pointer to whatever LUT Entry is associated with this candidate
 	const LUTEntry* _lutEntry;
+	unsigned int triggertimebin;
 
 	int getHits(int code_hits[MAX_PATTERN_WIDTH][NLAYERS]) const;
 	float keyStrip() const;
@@ -250,6 +251,7 @@ class EmulatedCLCTs
 	std::vector<int>* layerCount;
 	std::vector<int>* patternId;	
 	std::vector<unsigned int>* ch_id;
+};
 
 class ALCTCandidate
 {
@@ -289,6 +291,28 @@ class ALCTCandidate
 		unsigned int _first_bx_corr;
 };
 
+/*
+	contains comparator info when not read from tree,
+	intended for testing timing component of emulator against firmware
+*/
+
+class Comparators_gen
+{
+	public:		
+
+		vector<int> ch_id;
+		vector<int> lay;
+		vector<int> strip;
+		vector<int> halfStrip;
+		vector<int> bestTime;
+
+		unsigned int size() const
+		{
+			return ch_id.size();
+		}
+
+};
+
 /* @brief Encapsulates hit information for recorded event
  * in a chamber, identified by its station, ring, endcap and chamber
  */
@@ -304,10 +328,11 @@ public:
 	const unsigned int _station;
 	const unsigned int _ring;
 	const unsigned int _endcap;
-	const unsigned int _chamber;
+	const unsigned int _chamber;	
 	unsigned int minHs() const {return _minHs;}
 	unsigned int maxHs() const {return _maxHs;}
 	unsigned int nhits() const {return _nhits;}
+	void updatenhits(unsigned int n) {_nhits += n;}
 	unsigned int nCFEBs() const {return _nCFEBs;}
 	float hitMeanHS();
 	float hitStdHS();
@@ -316,6 +341,9 @@ public:
 	bool shift(unsigned int lay) const;
 
 	int fill(const CSCInfo::Comparators& c);
+	int fill(const Comparators_gen& c);
+	int fill_time(Comparators_gen& c,unsigned int triggertime, bool mem = false);
+	int fill_time(CSCInfo::Comparators& c,unsigned int triggertime);
 	int clearcomparators();
 	int fill(const CSCInfo::RecHits& r);
 	void print() const; //deprecated
@@ -325,16 +353,14 @@ public:
 
 	ChamberHits& operator-=(const CLCTCandidate& mi);
 private:
-	unsigned int _nhits;
+	
 	unsigned int _minHs; //Halfstrip
 	unsigned int _maxHs;
-
+	unsigned int _nhits;
 	float _meanHS;
 	float _stdHS;
-<<<<<<< HEAD
 	unsigned int _nCFEBs;
 
-=======
 };
 
 class ALCT_ChamberHits
@@ -383,8 +409,6 @@ class ALCT_ChamberHits
 
 		float _meanWi;
 		float _stdWi;
->>>>>>> c73e66d4f2acb5f8a197103cb83690a2e739fb39
 };
-
 
 #endif /* PATTERNFITTER_H_ */

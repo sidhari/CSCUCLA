@@ -851,7 +851,7 @@ int LUT::sort(const string& sortOrder){
 	}
 	//_orderedLUT = newOrderedLUT;
 
-	cout << _orderedLUT.size() << endl << endl;
+	//cout << _orderedLUT.size() << endl << endl;
 
 	return 0;
 }

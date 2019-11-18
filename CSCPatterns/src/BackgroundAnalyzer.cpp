@@ -51,7 +51,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
 
-	TFile* f_emu = TFile::Open("dat/Trees/EmulationResults.root");
+	TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_test.root");
 
 	TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
@@ -174,7 +174,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     for(int i = start; i < end; i++) 
     {
-		if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
+		if(!(i%10000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
 		t->GetEntry(i);		
 		t_emu->GetEntry(i);		
@@ -205,7 +205,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
 			bool me13 = (ST == 1 && RI == 3);
-
+           
             unsigned int segmentsinchamber = 0; //number of segments in current chamber
             unsigned int muonsegmentsinchamber = 0; //number of muon segments in current chamber
 
@@ -216,6 +216,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 segmentsinchamber++;
 
+                if(segments.mu_id->at(iseg) != -1)
                 muonsegmentsinchamber++;
                 
             }
@@ -507,6 +508,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                     {
                         NPmuonbackgroundcounter++;
                         NPmuonbackgroundchambertype->Fill(ST,RI);
+                        
                     }
                     else // matched to a muon's segment
                     {
@@ -667,31 +669,22 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));
                 NPunmatchedclctschambertype->Fill(ST,RI);
 
-                //see if the chamber had rechits
+                //see if the chamber had rechits         
 
-                ChamberHits rechits(ST,RI,EC,CH);
-                rechits.fill(recHits);
-                int temp = 0;
-                for(unsigned int irec1 = 0; irec1 < N_MAX_HALF_STRIPS; irec1++)
+                
+                ChamberHits rec(ST,RI,EC,CH);
+                if(rec.fill(recHits))
                 {
-                    for(unsigned int irec2 = 0; irec2 < NLAYERS; irec2++)
-                    {
-                        if(rechits._hits[irec1][irec2])
-                        temp++;
-                    }
+                    return -1;
                 }
-                
-                if(temp == 0) //no rechits in chamber
-                {
+                if(rec.nhits() == 0 && evt.RunNumber != 321710 && evt.RunNumber != 321813 && evt.RunNumber != 321755)
+                {   
+                    cout << evt.RunNumber << endl << endl << evt.EventNumber << endl << endl;
+                    rec.print();
+                    cout << endl << endl;
                     norechitsinchamber++;
-                }                
-                /*else
-                {
-                    NPunmatchedclctslayercount->Fill(NPemulatedclcts.layerCount->at(iclct));                
-                    NPunmatchedclctspatternid->Fill((int)(NPemulatedclcts.patternId->at(iclct)/10));
-                    NPunmatchedclctschambertype->Fill(ST,RI); 
-                }*/
-                
+                    
+                }
                 
             }
 

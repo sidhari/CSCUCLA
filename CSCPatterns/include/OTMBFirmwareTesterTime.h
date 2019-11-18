@@ -5,12 +5,12 @@
  *      Author: Siddharth Hariprakash
  */
 
-#ifndef CSCPATTERNS_INCLUDE_OTMBFIRMWARETESTER_H_
-#define CSCPATTERNS_INCLUDE_OTMBFIRMWARETESTER_H_
+#ifndef CSCPATTERNS_INCLUDE_OTMBFIRMWARETESTERTIME_H_
+#define CSCPATTERNS_INCLUDE_OTMBFIRMWARETESTERTIME_H_
 
 #include "../include/Processor.h"
 
-class OTMBFirmwareTester: public  Processor {
+class OTMBFirmwareTesterTime: public  Processor {
 	int run(std::string inputfile, std::string outputfile, int start=0, int end=-1);
 };
 

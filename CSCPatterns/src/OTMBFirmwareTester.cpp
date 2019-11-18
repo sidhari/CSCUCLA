@@ -32,7 +32,7 @@ int main(int argc, char* argv[]){
 int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int end) {
 
 	//are we running over real data or fake stuff for testing?
-	const bool fakeData = false;
+	const bool fakeData = true;
 
 
 
@@ -59,7 +59,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 		comps.halfStrip = new std::vector<size8>();
 		comps.bestTime = new std::vector<size8>();
 		comps.nTimeOn = new std::vector<size8>();
-		cout << "Not using file: " << inputfile << endl;
+		cout << endl << "Not using file: " << inputfile << endl << endl;
 
 		//
 		// Iterate over a set number of fake chambers to write to
@@ -102,9 +102,8 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 				}
 			}
 			compHits.fill(comps);
-			compHits.print();
-
-			writeToMEMFiles(compHits,CFEBFiles);
+			compHits.clearcomparators();
+			compHits.print();		
 
 
 			vector<CLCTCandidate*> emulatedCLCTs;
@@ -116,24 +115,24 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 			//keep only first two
 			while(emulatedCLCTs.size() > 2) emulatedCLCTs.pop_back();
 
-
+			writeToMEMFiles(compHits,CFEBFiles);
 
 			std::cout << "khs, patt, ccode" << std::endl;
 			std::cout << internal << setfill('0');
-			for(unsigned int i=0; i < nCLCTs; i++){
+			for(unsigned int j=0; j < nCLCTs; j++){
 				for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
-					CLCTFiles[i] << "000000000000" << endl;
+					CLCTFiles[j] << "000000000000" << endl;
 				}
-				if(i < emulatedCLCTs.size()){
+				if(j < emulatedCLCTs.size()){
 
-					auto& clct = emulatedCLCTs.at(i);					
-					std::cout << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;
+					auto& clct = emulatedCLCTs.at(j);					
+					std::cout << dec << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId()/10 << " cc: " << clct->comparatorCodeId() << std::endl;
 					std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
-					std::cout << setw(4) << clct->patternId() << endl;
+					std::cout << setw(4) << clct->patternId()/10 << endl;
 					std::cout << setw(4) << clct->comparatorCodeId() << endl;
-					CLCTFiles[i] << internal << setfill('0')  <<hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId() << setw(4) << clct->comparatorCodeId() << endl;
+					CLCTFiles[j] << internal << setfill('0')  << hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId()/10 << setw(4) << clct->comparatorCodeId() << endl;
 				}else {
-					CLCTFiles[i] << "000000000000" << endl;
+					CLCTFiles[j] << "000000000000" << endl;
 				}
 			}
 		}
@@ -219,7 +218,7 @@ int OTMBFirmwareTester::run(string inputfile, string outputfile, int start, int 
 					for(unsigned int ib=0; ib < 7; ib++){ //put in blank lines
 						CLCTFiles[j] << "000000000000" << endl;
 					}
-					if(j < emulatedCLCTs.size()){//
+					if(j < emulatedCLCTs.size()){
 
 						auto& clct = emulatedCLCTs.at(j);
 						std::cout << dec << "hs: " << clct->keyHalfStrip() <<" patt: " << clct->patternId() << " cc: " << clct->comparatorCodeId() << std::endl;

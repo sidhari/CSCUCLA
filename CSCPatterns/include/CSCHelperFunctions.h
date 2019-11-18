@@ -33,24 +33,44 @@ int getOverlap(const ChamberHits &c, const CSCPattern &p, const int horPos, cons
 //the number of matched layers
 int legacyLayersMatched(const ChamberHits &c, const CSCPattern &p, const int horPos, const int startTimeWindow);
 
-//returns pretrigger time bin
-int preTriggerTime(const ChamberHits &c);
-
-//returns trigger time bin
-int triggerTime(const ChamberHits &c, unsigned int t);
-
-//looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
-// run successfully, match info is stored in variable mi
+//looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers
+//If run successfully, match info is stored in variable mi
+//only looks in time bins 6-9 since comparator data read from tree is centered here
 int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi,const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
 
-int containsPattern_time(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t, const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
+//Looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers
+//If run successfully, match info is stored in variable mi
+//Can look in any time window (used for pretrigger and trigger)
+int containsPattern_v1(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t, const vector<CLCTCandidate*>& previousCandidates=vector<CLCTCandidate*>());
 
-int findCLCTs(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, unsigned int t, bool useBusyWindow=false);
-
-//look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
+//Look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
 int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow=false);
 
-int searchForMatch_time(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow=false);
+//Look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
+//Designed to look through windows of 4 time bins each (pretrigger and trigger mechanism implemented)
+//User generated comparators
+int searchForMatch_v1(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, bool useBusyWindow=false);
+
+//Look for the best matched pattern, when we have a set of them, and return a vector possible of candidates
+//Designed to look through windows of 4 time bins each (pretrigger and trigger mechanism implemented)
+//Comparators read from tree
+int searchForMatch_v1(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, bool useBusyWindow=false);
+
+//Cycles through time windows of 4 time bins each, pretriggers if atleast 1 CLCT with min req are met
+//User generated comparators
+int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, bool useBusyWindow=false);
+
+//Cycles through time windows of 4 time bins each, pretriggers if atleast 1 CLCT with min req are met
+//Comparators read from tree
+int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, bool useBusyWindow=false);
+
+//If pretrigger, then look 2 bx later for CLCTs, returns a vector of CLCT candidates
+//User generated comparators
+int searchForMatch_trigger(const ChamberHits &chamber_time, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, unsigned int triggertime, bool useBusyWindow=false);
+
+//If pretrigger, then look 2 bx later for CLCTs, returns a vector of CLCT candidates
+//Comparators read from tree
+int searchForMatch_trigger(const ChamberHits &chamber_time, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, unsigned int triggertime, bool useBusyWindow=false);
 
 //makes a LUT out of a properly formatted TTree
 int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs);
@@ -65,6 +85,14 @@ vector<CSCPattern>* createNewPatterns();
 vector<CSCPattern>* createOldPatterns();
 
 void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS]);
+
+//time window cycling
+//comparators user generated
+void writeToMEMFiles_v1(const ChamberHits& c, Comparators_gen comparators, std::ofstream CFEBStreams[MAX_CFEBS]);
+
+//time window cycling
+//comparators read from tree
+void writeToMEMFiles_v1(const ChamberHits& c, CSCInfo::Comparators comparators, std::ofstream CFEBStreams[MAX_CFEBS]);
 
 
 #endif /* PATTERNFINDERHELPERFUNCTIONS_H_ */

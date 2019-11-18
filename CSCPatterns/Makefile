@@ -9,7 +9,7 @@ PROJLIBS=$(LIBDIR)/CSCClasses_cpp.so $(LIBDIR)/CSCHelperFunctions_cpp.so $(LIBDI
 
 
 # Assume it contains a main() function from https://gist.github.com/ghl3/3975167
-all: $(PROJLIBS) $(SRCDIR)/LUTBuilder $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Tester.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Analyzer.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*TEMPLATE.cpp)) $(SRCDIR)/PatternPrinter $(SRCDIR)/EmulationTreeCreator $(SRCDIR)/CLCTSelector $(SRCDIR)/ALCTChamberPrinter $(SRCDIR)/ALCTEmulationTreeCreator
+all: $(PROJLIBS) $(SRCDIR)/LUTBuilder $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Tester.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*Analyzer.cpp)) $(patsubst %.cpp,%,$(wildcard $(SRCDIR)/*TEMPLATE.cpp)) $(SRCDIR)/PatternPrinter $(SRCDIR)/EmulationTreeCreator $(SRCDIR)/CLCTSelector $(SRCDIR)/ALCTChamberPrinter $(SRCDIR)/ALCTEmulationTreeCreator $(SRCDIR)/OTMBFirmwareTesterTime
 
 
 

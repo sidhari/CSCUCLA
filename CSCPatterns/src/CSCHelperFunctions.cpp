@@ -5,6 +5,7 @@
  *      Author: wnash
  */
 
+#include "../include/CSCInfo.h"
 #include "../include/CSCHelperFunctions.h"
 #include "../include/CSCHelper.h"
 #include "../include/CSCClasses.h"
@@ -149,80 +150,28 @@ int legacyLayersMatched(const ChamberHits &c, const CSCPattern &p, const int hor
 	return matchedLayerCount;
 }
 
-int preTriggerTime(const ChamberHits &c) //check each key strip, if 3 or more hits in window then pretrigger
-{
-	for(unsigned int t = 6; t <= 14; t++)
-	{	
-		for(unsigned int ihs = 0; ihs < N_MAX_HALF_STRIPS-1; ihs++) 
-		{
-			unsigned int pretrigchecker = 0;
-
-			for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
-			{
-				if((unsigned int)c._hits[ihs][ilay] < t - 3 || (unsigned int)c._hits[ihs][ilay] > t)
-				continue;
-
-				pretrigchecker++;
-
-				if((unsigned int)c._hits[ihs+1][ilay] < t - 3 || (unsigned int)c._hits[ihs+1][ilay] > t)
-				continue;
-
-				pretrigchecker++;
-				
-			}
-
-			if(pretrigchecker >= N_LAYER_REQUIREMENT)
-			{	
-					//c.print();
-					cout << endl << "pretrigger time bin: "<< t-1 << endl;
-					return t;
-			}
-		}
-	}
-
-	return -1; //didn't pretrigger 
-}
-
-int triggerTime(const ChamberHits &c, unsigned int t) //if TMB pretriggered, look 2 time bins later and check if any keystrip had 4 or more hits
-{
-
-	unsigned int triggertime = t + 2;
-	unsigned int hits = 0;
-
-	for(unsigned int ihs = 0; ihs < N_MAX_HALF_STRIPS; ihs++)
-	{
-		for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
-		{
-			if((unsigned int)c._hits[ihs][ilay] < triggertime - 3 || (unsigned int)c._hits[ihs][ilay] > triggertime)
-			continue;
-
-			hits++;
-		}
-	}
-
-	if(hits > N_LAYER_REQUIREMENT)
-	{	
-		//c.print();
-		cout << endl << "trigger time bin: " << triggertime-1 << endl << endl;
-		return triggertime;
-	}
-	else
-		return -1; //didn't trigger
-}
-
 //looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
 // run successfully, match info is stored in variable mi
 // previousCandidates are a list of clcts you found earlier, which tell you which regions in the chamber not to look
-int containsPattern_time(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t, const vector<CLCTCandidate*>&previousCandidates){
+int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi,const vector<CLCTCandidate*>&previousCandidates){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3] = {false};
 	int bestHorizontalIndex = 0;
+	/*
+	for(unsigned int i=0; i < NLAYERS; i++){
+		for(unsigned int j =0; j < 3; j++){
+			overlap[i][j] = false; //initialize all as false
+		}
+	}
+	*/
 
 	unsigned int maxMatchedLayers = 0;
-	unsigned int time=t;
+	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
 
-
+	//iterate through the entire body of the chamber, we look for overlapping patterns
+	//everywhere starting at the left most edge to the rightmost edge
+	//for(int x = -MAX_PATTERN_WIDTH+1; x < (int)N_MAX_HALF_STRIPS; x++){
 
 	/* Allow matches only in regions where the key half strip is within the chamber,
 	 * +1 to MAX_PATTERN_WIDTH puts the key half strip at effectively 0 in the chamber
@@ -290,11 +239,7 @@ int containsPattern_time(const ChamberHits &c, const CSCPattern &p,  CLCTCandida
 	return maxMatchedLayers;
 }
 
-
-//looks if a chamber "c" contains a pattern "p". returns -1 if error, and the number of matched layers if ,
-// run successfully, match info is stored in variable mi
-// previousCandidates are a list of clcts you found earlier, which tell you which regions in the chamber not to look
-int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi,const vector<CLCTCandidate*>&previousCandidates){
+int containsPattern_v1(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&mi, unsigned int t,  const vector<CLCTCandidate*>&previousCandidates){
 
 	//overlap between tested super pattern and chamber hits
 	bool overlap [NLAYERS][3] = {false};
@@ -308,7 +253,7 @@ int containsPattern(const ChamberHits &c, const CSCPattern &p,  CLCTCandidate *&
 	*/
 
 	unsigned int maxMatchedLayers = 0;
-	unsigned int time=7;//valid time starts at 7 (given first bin is 1)
+	unsigned int time=t;//valid time starts at 7 (given first bin is 1)
 
 	//iterate through the entire body of the chamber, we look for overlapping patterns
 	//everywhere starting at the left most edge to the rightmost edge
@@ -457,7 +402,6 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 		});
 
 		matches.pop_back();
-
 		bestMatch = matches.front();
 
 	}
@@ -477,60 +421,188 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 	}else return 0; //add nothing if we don't find anything
 }
 
-
-//look for the best matched pattern, when we have a set of them, and fill the set match info,useBusyWindow
-// makes a window  of [low, high] comparator
-// values of where NOT to search, following the current implementation of the TMB described here:
-// https://github.com/csc-fw/otmb_fw_docs/blob/master/tmb2013-2005_spec.pdf
-// note that this is currently NOT the key half strip, but some constant off of it ( MAX_PATTERN_WIDTH / 2? )
-int searchForMatch_time(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow)
+int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*> &m, Comparators_gen comparators, bool useBusyWindow)
 {
-	if(c.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done
+	unsigned int ST = c._station;
+	unsigned int RI = c._ring;
+	unsigned int EC = c._endcap;
+	unsigned int CH = c._chamber;	
 
-	int pretriggertime = preTriggerTime(c);
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
 
-	if(pretriggertime == -1)
-		return -1; // didn't pretrigger
+	bool flush = false;
+	bool idle = false;
 
-	int triggertime = triggerTime(c,(unsigned int)pretriggertime);
+	unsigned int chamberhash = CSCHelper::serialize(ST,RI,CH,EC);
 
-	if(triggertime == -1)
-		return -1; //didn't trigger;
+	for(unsigned int t = start_time_bin; t <= end_time_bin; t++) //cycle through time windows
+	{	
+		if(idle)
+		{
+			flush = false;
+			idle = false;
+			continue;
+		}
 
-	if(findCLCTs(c, ps, m, (unsigned int)triggertime, useBusyWindow))
-		return -1;
+		ChamberHits chamber_time(ST,RI,EC,CH);
 
-	return 0;	
+		if(chamber_time.fill_time(comparators, t))
+		{
+			return -1;
+		}
+
+		if(chamber_time.clearcomparators())
+			return -1;
+
+		if(chamber_time.nhits() < 3)
+			continue;	
+
+		for(unsigned int ip = 0; ip < ps->size(); ip++)
+		{
+			CLCTCandidate* preclct = 0;
+
+			if(containsPattern_v1(chamber_time,ps->at(ip),preclct,(t-hitpersist)) < 0) 
+			{
+				if(DEBUG >= 0)
+				{
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					chamber_time.print();
+				}
+				return -1;
+			}				
+
+			if(preclct && preclct->layerCount() >= (int)N_LAYER_REQUIREMENT && flush == false && idle == false) //if pretrigger
+			{	
+				flush = true;
+
+				ChamberHits triggertimechamber(ST,RI,EC,CH);
+				if(triggertimechamber.fill_time(comparators,t+2))
+					return -1;
+				if(triggertimechamber.clearcomparators())
+					return -1;
+
+				if(searchForMatch_trigger(triggertimechamber,ps,m,comparators,t+2,useBusyWindow))
+				{
+					return -1;
+				}
+
+			}
+			else if(((preclct && preclct->layerCount() < (int)N_LAYER_REQUIREMENT) || chamber_time.nhits() == 0) && flush == true)
+			{
+				flush = false;
+				idle = true;
+			}	
+		}
+	}
+
+	return 0; //if code gets here, then TMB did not pretrigger
 
 }
 
-int findCLCTs(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, unsigned int t, bool useBusyWindow)
+int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, bool useBusyWindow)
 {
-	ChamberHits shrinkingChamber = c;
+	unsigned int ST = c._station;
+	unsigned int RI = c._ring;
+	unsigned int EC = c._endcap;
+	unsigned int CH = c._chamber;	
 
+	bool me11a = (ST == 1 && RI == 4);
+	bool me11b = (ST == 1 && RI == 1);
+
+	bool flush = false;
+	bool idle = false;
+
+	unsigned int chamberhash = CSCHelper::serialize(ST,RI,CH,EC);
+
+	for(unsigned int t = 3; t < 15; t++) //cycle through time windows
+	{
+		ChamberHits chamber_time(ST,RI,EC,CH);
+
+		if(chamber_time.fill_time(comparators,t))
+		{
+			return -1;
+		}			
+
+		if(chamber_time.clearcomparators())
+			return -1;
+
+		if(chamber_time.nhits() < 3)
+			continue;	
+
+		for(unsigned int ip = 0; ip < ps->size(); ip++)
+		{
+			CLCTCandidate* preclct = 0;
+
+			if(containsPattern_v1(chamber_time,ps->at(ip),preclct,(t-hitpersist)) < 0) 
+			{
+				if(DEBUG >= 0)
+				{
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					chamber_time.print();
+				}
+				return -1;
+			}				
+
+			if(preclct && preclct->layerCount() >= (int)N_LAYER_REQUIREMENT && !flush && !idle) //if pretrigger
+			{	
+				flush = true;
+
+				if(searchForMatch_trigger(chamber_time,ps,m,comparators,t+2,useBusyWindow))
+				{
+					return -1;
+				}
+
+			}
+			else if(((preclct && preclct->layerCount() < (int)N_LAYER_REQUIREMENT) || chamber_time.nhits() == 0) && flush)
+			{
+				flush = false;
+				idle = true;
+			}	
+		}
+	}
+
+	return 0; //if code gets here, then TMB did not pretrigger
+
+}
+
+int searchForMatch_trigger(const ChamberHits &chamber_time, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, unsigned int triggertime, bool useBusyWindow)
+{
+	if(chamber_time.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done	
+
+	unsigned int ST = chamber_time._station;
+	unsigned int RI = chamber_time._ring;
+	unsigned int EC = chamber_time._endcap;
+	unsigned int CH = chamber_time._chamber;	
+
+	ChamberHits shrinkingChamber = chamber_time;
 	CLCTCandidate *bestMatch = 0;
 
-	unsigned int triggertime = t - 3;
-
 	//loop through all the patterns we have
-	for(unsigned int ip = 0; ip < ps->size(); ip++) {
+	for(unsigned int ip = 0; ip < ps->size(); ip++) 
+	{
 		CLCTCandidate *thisMatch = 0;
-		if(useBusyWindow){
+		if(useBusyWindow)
+		{
 			//need to pass the previous candidates if using busy window, to block out region of where to look
-			if(containsPattern_time(c,ps->at(ip),thisMatch,triggertime,m) < 0) {
-				if(DEBUG >= 0){
+			if(containsPattern_v1(chamber_time,ps->at(ip),thisMatch,(triggertime-3),m) < 0) 
+			{
+				if(DEBUG >= 0)
+				{
 					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
-					c.print();
-					//printChamber(c);
+					chamber_time.print();
 				}
 				return -1;
 			}
-		}else{
-			if(containsPattern_time(c,ps->at(ip),thisMatch,triggertime) < 0) {
-				if(DEBUG >= 0){
+		}
+		else
+		{
+			if(containsPattern_v1(chamber_time,ps->at(ip),thisMatch,(triggertime-3)) < 0) 
+			{
+				if(DEBUG >= 0)
+				{
 					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
-					c.print();
-					//printChamber(c);
+					chamber_time.print();
 				}
 				return -1;
 			}
@@ -575,27 +647,332 @@ int findCLCTs(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCan
 		});
 
 		matches.pop_back();
-
 		bestMatch = matches.front();
 
 	}
 
 	//we have a valid best match
-	if(bestMatch && bestMatch->layerCount() >=(int) N_LAYER_REQUIREMENT){
-		if(DEBUG > 0){
-			c.print();
-			//printChamber(c);
+	if(bestMatch && bestMatch->layerCount() >=(int) N_LAYER_REQUIREMENT)
+	{			
+		//cout << "trigger time bin: " << triggertime-1 << endl << endl;
+		//chamber_time.print();
+		//cout << endl << endl << bestMatch->keyHalfStrip() << endl << endl;						
+
+		if(DEBUG > 0)
+		{
+			chamber_time.print();
 			printPattern(bestMatch->_pattern);
 		}
+		bestMatch->triggertimebin = triggertime;
 		m.push_back(bestMatch);
 		//WARNING: using a busy window smaller than the max pattern size may cause this emulation to perform
 		// differently than expected, since we are removing hits here
 		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber
-		return findCLCTs(shrinkingChamber, ps, m,t,useBusyWindow); //find the next one
-	}else return 0; //add nothing if we don't find anything
+		return searchForMatch_trigger(shrinkingChamber, ps, m, comparators, triggertime, useBusyWindow); //find the next one
+	}
+	else 
+		return 0; //add nothing if we don't find anything
 }
 
+int searchForMatch_trigger(const ChamberHits &chamber_time, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, unsigned int triggertime, bool useBusyWindow)
+{
+	if(chamber_time.nhits() < N_LAYER_REQUIREMENT) return 0; //we're done	
 
+	unsigned int ST = chamber_time._station;
+	unsigned int RI = chamber_time._ring;
+	unsigned int EC = chamber_time._endcap;
+	unsigned int CH = chamber_time._chamber;	
+
+	ChamberHits shrinkingChamber = chamber_time;
+	CLCTCandidate *bestMatch = 0;
+
+	//loop through all the patterns we have
+	for(unsigned int ip = 0; ip < ps->size(); ip++) 
+	{
+		CLCTCandidate *thisMatch = 0;
+		if(useBusyWindow)
+		{
+			//need to pass the previous candidates if using busy window, to block out region of where to look
+			if(containsPattern_v1(chamber_time,ps->at(ip),thisMatch,(triggertime-3),m) < 0) 
+			{
+				if(DEBUG >= 0)
+				{
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					chamber_time.print();
+				}
+				return -1;
+			}
+		}
+		else
+		{
+			if(containsPattern_v1(chamber_time,ps->at(ip),thisMatch,(triggertime-3)) < 0) 
+			{
+				if(DEBUG >= 0)
+				{
+					printf("Error: pattern algorithm failed - isLegacy = %i\n", ps->at(ip)._isLegacy);
+					chamber_time.print();
+				}
+				return -1;
+			}
+		}
+
+		vector<CLCTCandidate*> matches;
+		matches.push_back(bestMatch);
+		matches.push_back(thisMatch);
+
+		sort(matches.begin(), matches.end(), [](CLCTCandidate* c1, CLCTCandidate* c2)
+		{
+				
+			// we don't have c2,
+			// so take c1 as being better
+			if(!c2) return true;
+
+			//if we don't have c1,
+			// take c2 as better
+			if(!c1) return false;
+
+
+			//sort by layers, bend bit, key half strip
+			if(c1->layerCount() > c2-> layerCount()) return true;
+			else if(c1->layerCount() == c2->layerCount())
+			{
+				if(c1->_pattern.bendBit() > c2->_pattern.bendBit()) return true;
+				else if (c1->_pattern.bendBit() == c2->_pattern.bendBit()) 
+				{
+					if(c1->keyHalfStrip() <= c2->keyHalfStrip()) return true;
+					else return false;
+				} 
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;				
+			}
+
+		});
+
+		matches.pop_back();
+		bestMatch = matches.front();
+
+	}
+
+	//we have a valid best match
+	if(bestMatch && bestMatch->layerCount() >=(int) N_LAYER_REQUIREMENT)
+	{			
+		//cout << "trigger time bin: " << triggertime-1 << endl << endl;
+		//chamber_time.print();
+		//cout << endl << endl << bestMatch->keyHalfStrip() << endl << endl;						
+
+		if(DEBUG > 0)
+		{
+			chamber_time.print();
+			printPattern(bestMatch->_pattern);
+		}
+		bestMatch->triggertimebin = triggertime;
+		m.push_back(bestMatch);
+		//WARNING: using a busy window smaller than the max pattern size may cause this emulation to perform
+		// differently than expected, since we are removing hits here
+		shrinkingChamber-=*bestMatch; //subtract all the hits associated with the match from the chamber
+		return searchForMatch_trigger(shrinkingChamber, ps, m, comparators, triggertime, useBusyWindow); //find the next one
+	}
+	else 
+		return 0; //add nothing if we don't find anything
+}
+
+/*
+ *  Writes .mem files, read by A. Pecks firmware tester.
+ * Writes multiple files, each one containing all the comparator
+ * hits for a given CFEB. Each file is put in the format
+ *
+ * <fileidentifier><CFEB number>.mem
+ *
+ *
+ *TODO: make it so ME11A gets put in CFEBs 5-7
+ */
+void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS])
+{
+	bool me11a = c._station == 1 && c._ring == 4;
+	bool me11b = c._station == 1 && c._ring == 1;
+	//test using only one CFEB
+	bool oneCFEB = c._station == 0 && c._ring == 0;
+
+	//for now, only works with ME11 chambers and fake demo chamber (oneCFEB)
+	if(!(me11a || me11b || oneCFEB)) return;
+
+
+	for(unsigned int iCFEB=0; iCFEB < MAX_CFEBS; iCFEB++){
+
+		/*
+		A single line would be, for example,
+
+		000000001111111122222222333333334444444455555555
+
+		Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
+
+		So for example:
+
+			000000010000000100000001000000010000000100000001
+
+		corresponds to a 6 layer straight pattern on hs0.
+
+		This array stores the correct number for each layer
+		 */
+
+		//pad with 7 empty time bins
+		for(unsigned int i=0; i < 7; i++){
+			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+		}
+
+		if(iCFEB >=  c.nCFEBs()) { //if we are writing to more CFEB files than the chamber actually has
+			//fill them with zeros
+			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
+		} else{
+			//otherwise, do some math to convert to properly formatted line
+			int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4] = {0};
+			for(unsigned int  ilay=0; ilay < NLAYERS; ilay++){
+			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
+				// only use the (incorrect) but currently used comparators for form a CLCT
+				//TODO: need to change once we get timing issues fixed within software
+					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 6 &&
+							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 6 + (int)TIME_CAPTURE_WINDOW
+																) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
+				}
+			}
+
+			for(unsigned int i=0; i < NLAYERS;i++){
+				for(unsigned int j=0; j < CFEB_HS/4; j++){
+					CFEBStreams[iCFEB] <<dec << comparatorLocationNumberEncoding[i][j];
+				}
+			}
+			CFEBStreams[iCFEB] << endl;
+		}
+
+	}
+}
+
+void writeToMEMFiles_v1(const ChamberHits& c, Comparators_gen comparators, std::ofstream CFEBStreams[MAX_CFEBS])
+{
+	unsigned int ST = c._station;
+	unsigned int RI = c._ring;
+	unsigned int EC = c._endcap;
+	unsigned int CH = c._chamber;
+
+	ChamberHits chamber_time(ST,RI,EC,CH);
+
+	for(unsigned int itime = 1; itime <= 16; itime++)
+	{
+		chamber_time.fill_time(comparators,itime,true);	
+
+		int check = chamber_time.clearcomparators();
+
+		for(unsigned int iCFEB = 0; iCFEB < MAX_CFEBS; iCFEB++)
+		{	
+			if(iCFEB > chamber_time.nCFEBs()-1)
+			{
+				CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') << 0 << endl;
+				if(itime == 16)
+				{
+					//pad with 3+1 extra lines of zeroes
+					for(unsigned int ipad = 0; ipad < 4; ipad++)
+					{
+						CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') << 0 << endl;
+					}	
+				}
+ 			}
+			else
+			{
+				int comparatorlocationinCFEB[NLAYERS][CFEB_HS/4] = {0};
+				for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+				{
+					for(unsigned int ihs = 0; ihs < CFEB_HS; ihs++)
+					{	
+						if(chamber_time._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay])
+						comparatorlocationinCFEB[ilay][(CFEB_HS - (ihs+1))/4] += pow(2,ihs%4);
+					}
+				}
+
+				for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+				{
+					for(unsigned int ihs = 0; ihs < CFEB_HS/4; ihs++)
+					{
+						CFEBStreams[iCFEB] << dec << comparatorlocationinCFEB[ilay][ihs];
+					}
+				}
+
+				CFEBStreams[iCFEB] << endl;
+
+				if(itime == 16)
+				{
+					//pad with 3+1 extra lines of zeroes
+					for(unsigned int ipad = 0; ipad < 4; ipad++)
+					{
+						CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') << 0 << endl;
+					}	
+				}
+			}
+		}
+	}
+	
+}
+
+void writeToMEMFiles_v1(const ChamberHits& c, CSCInfo::Comparators comparators, std::ofstream CFEBStreams[MAX_CFEBS])
+{
+	unsigned int ST = c._station;
+	unsigned int RI = c._ring;
+	unsigned int EC = c._endcap;
+	unsigned int CH = c._chamber;
+
+	ChamberHits chamber_time(ST,RI,EC,CH);
+
+	for(unsigned int itime = 1; itime <= 16; itime++)
+	{
+		chamber_time.fill_time(comparators,itime);
+
+		int check = chamber_time.clearcomparators();
+
+		for(unsigned int iCFEB = 0; iCFEB < MAX_CFEBS; iCFEB++)
+		{	
+			if(iCFEB > chamber_time.nCFEBs())
+			{
+				CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') << 0 << endl;
+ 			}
+			else
+			{
+				int comparatorlocationinCFEB[NLAYERS][CFEB_HS/4] = {0};
+				for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+				{
+					for(unsigned int ihs = 0; ihs < CFEB_HS; ihs++)
+					{	
+						if(chamber_time._hits[ihs+chamber_time.shift(ilay)+iCFEB*CFEB_HS][ilay])
+						comparatorlocationinCFEB[ilay][(CFEB_HS - (ihs+1))/4] += pow(2,ihs%4);
+					}
+				}
+
+				for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+				{
+					for(unsigned int ihs = 0; ihs < CFEB_HS/4; ihs++)
+					{
+						CFEBStreams[iCFEB] << dec << comparatorlocationinCFEB[ilay][ihs];
+					}
+				}
+
+				CFEBStreams[iCFEB] << endl;
+			}
+
+			//pad with 3 extra lines of zeroes
+
+			for(unsigned int ipad = 0; ipad < 3; ipad++)
+			{
+				CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') << 0 << endl;
+			}			
+		}	
+
+	}
+	
+}
 
 
 int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs){
@@ -789,73 +1166,3 @@ vector<CSCPattern>* createOldPatterns(){
 }
 
 
-
-/*
- *  Writes .mem files, read by A. Pecks firmware tester.
- * Writes multiple files, each one containing all the comparator
- * hits for a given CFEB. Each file is put in the format
- *
- * <fileidentifier><CFEB number>.mem
- *
- *
- *TODO: make it so ME11A gets put in CFEBs 5-7
- */
-void writeToMEMFiles(const ChamberHits& c, std::ofstream CFEBStreams[MAX_CFEBS]){
-	bool me11a = c._station == 1 && c._ring == 4;
-	bool me11b = c._station == 1 && c._ring == 1;
-	//test using only one CFEB
-	bool oneCFEB = c._station == 0 && c._ring == 0;
-
-	//for now, only works with ME11 chambers and fake demo chamber (oneCFEB)
-	if(!(me11a || me11b || oneCFEB)) return;
-
-
-	for(unsigned int iCFEB=0; iCFEB < MAX_CFEBS; iCFEB++){
-
-		/*
-		A single line would be, for example,
-
-		000000001111111122222222333333334444444455555555
-
-		Where 00000000 are the 32 halfstrips in ly0, 11111111 are the 32 halfstrips in ly1, etc...
-
-		So for example:
-
-			000000010000000100000001000000010000000100000001
-
-		corresponds to a 6 layer straight pattern on hs0.
-
-		This array stores the correct number for each layer
-		 */
-
-		//pad with 7 empty time bins
-		for(unsigned int i=0; i < 7; i++){
-			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
-		}
-
-		if(iCFEB >=  c.nCFEBs()) { //if we are writing to more CFEB files than the chamber actually has
-			//fill them with zeros
-			CFEBStreams[iCFEB] << setw(CFEB_HS/4*NLAYERS) << setfill('0') <<0<< endl;
-		} else{
-			//otherwise, do some math to convert to properly formatted line
-			int comparatorLocationNumberEncoding[NLAYERS][CFEB_HS/4] = {0};
-			for(unsigned int  ilay=0; ilay < NLAYERS; ilay++){
-			for(unsigned int ihs=0;ihs < CFEB_HS;ihs++){ //iterate through hs within cfeb
-				// only use the (incorrect) but currently used comparators for form a CLCT
-				//TODO: need to change once we get timing issues fixed within software
-					if(c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] > 6 &&
-							c._hits[ihs+c.shift(ilay)+iCFEB*CFEB_HS][ilay] <= 6 + (int)TIME_CAPTURE_WINDOW
-																) comparatorLocationNumberEncoding[ilay][(CFEB_HS-(ihs+1))/4] += pow(2, ihs%4);
-				}
-			}
-
-			for(unsigned int i=0; i < NLAYERS;i++){
-				for(unsigned int j=0; j < CFEB_HS/4; j++){
-					CFEBStreams[iCFEB] <<dec << comparatorLocationNumberEncoding[i][j];
-				}
-			}
-			CFEBStreams[iCFEB] << endl;
-		}
-
-	}
-}

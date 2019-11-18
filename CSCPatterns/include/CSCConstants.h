@@ -27,6 +27,12 @@ const unsigned int TIME_CAPTURE_WINDOW = 4; //allow for 4 consecutive time bins 
 const unsigned int CFEB_HS = 32;
 const unsigned int MAX_CFEBS = 7; //in ME11
 
+const unsigned int start_time_bin = 3;
+const unsigned int end_time_bin = 14;
+const unsigned int hitpersist = 3;
+
+const unsigned int deadzonewidth = 0;
+
 const std::string LINEFIT_LUT_PATH = "/uscms/home/wnash/CSCUCLA/CSCPatterns/dat/linearFits.lut";
 //const std::string LINEFIT_LUT_PATH = "/home/wnash/workspace/CSCUCLA/CSCPatterns/dat/linearFits.lut";
 

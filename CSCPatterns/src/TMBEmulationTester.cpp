@@ -346,7 +346,7 @@ int TMBEmulationTester::run(string inputfile, string outputfile, int start, int 
 
 			vector<CLCTCandidate*> emulatedCLCTs;	
 
-			if(searchForMatch(compHits,oldPatterns, emulatedCLCTs,true)){
+			if(searchForMatch(compHits, oldPatterns, emulatedCLCTs, true)){
 				emulatedCLCTs.clear();
 				//cout << "Something broke" << endl;
 				//return;

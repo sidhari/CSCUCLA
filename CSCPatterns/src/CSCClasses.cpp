@@ -385,6 +385,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime, bool hits[
 	_code = new ComparatorCode(hits);
 	_layerMatchCount = _code->getLayersMatched();
 	_lutEntry = 0;
+	triggertimebin = 0;
 }
 
 CLCTCandidate::CLCTCandidate(CSCPattern p,ComparatorCode c, int horInd, int startTime):
@@ -394,6 +395,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p,ComparatorCode c, int horInd, int star
 	_code = new ComparatorCode(c);
 	_layerMatchCount = _code->getLayersMatched();
 	_lutEntry = 0;
+	triggertimebin = 0;
 }
 
 CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
@@ -404,6 +406,7 @@ CLCTCandidate::CLCTCandidate(CSCPattern p, int horInd, int startTime,
 	_code = 0;
 	_layerMatchCount = layMatCount;
 	_lutEntry = 0;
+	triggertimebin = 0;
 }
 
 
@@ -858,7 +861,215 @@ int ChamberHits::fill(const CSCInfo::Comparators& c){
 	return 0;
 }
 
-int ChamberHits::clearcomparators()
+int ChamberHits::fill(const Comparators_gen& c){
+
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	bool me11a = (_station == 1 && _ring == 4);
+	bool me11b = (_station == 1 && _ring == 1);
+	bool me13 = (_station == 1 && _ring == 3);
+	for(unsigned int i = 0; i < c.size(); i++){
+		if(chSid != c.ch_id.at(i)) continue; //only look at where we are now
+		unsigned int lay = c.lay.at(i)-1;
+		unsigned int str = c.strip.at(i);
+		if(str < 1) {
+			printf("compStrip = %i, how did that happen?\n", str);
+			return -1;
+		}
+		unsigned int hs = c.halfStrip.at(i);
+		unsigned int timeOn = c.bestTime.at(i);
+		if((me11a || me11b) && str > 64) str -= 64;
+
+		int halfStripVal;
+
+		halfStripVal = 2*(str-1)+hs;
+		if(halfStripVal >= (int)maxHs() || halfStripVal < (int)minHs()){
+			cout << "Error: hs" << halfStripVal << " outside of [" << minHs() << ", "<< maxHs() << "]" << endl;
+			return -1;
+		}
+
+		halfStripVal+=shift(lay);
+		if(halfStripVal < 0 || halfStripVal >= (int)N_MAX_HALF_STRIPS){
+			cout << "Error: not enough allocated memory for halfstrip placement, something is wrong" << endl;
+			return -1;
+		}
+
+		if(timeOn >= 16) {
+			printf("Error timeOn is an invalid number: %i\n", timeOn);
+			return -1;
+		} 	
+		else {			
+			if(!_hits[halfStripVal][lay]){
+
+					_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+					_nhits++;
+				}	
+
+				//print();					
+				
+			}
+		}		
+
+	return 0;
+}
+
+/*
+	Used to fill chamber with hits from a single time bin window (timebin-1.timebin-2.timebin-3.timebin-4)
+	User generated comparators
+*/
+
+int ChamberHits::fill_time(Comparators_gen& c, unsigned int triggertime, bool mem)
+{	
+	for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+	{
+		for(unsigned int ihs = 0; ihs < N_MAX_HALF_STRIPS; ihs++)
+		{
+			_hits[ihs][ilay] = 0;
+		}
+	}
+
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	bool me11a = (_station == 1 && _ring == 4);
+	bool me11b = (_station == 1 && _ring == 1);
+	for(unsigned int i = 0; i < c.size(); i++)
+	{
+		if(chSid != c.ch_id.at(i)) continue; //only look at where we are now
+		unsigned int lay = c.lay.at(i)-1;
+		unsigned int str = c.strip.at(i);
+		if(str < 1) {
+			printf("compStrip = %i, how did that happen?\n", str);
+			return -1;
+		}
+		unsigned int hs = c.halfStrip.at(i);
+		int timeOn = c.bestTime.at(i);
+		if((me11a || me11b) && str > 64) str -= 64;
+
+		int halfStripVal;
+
+		halfStripVal = 2*(str-1)+hs;
+		if(halfStripVal >= (int)maxHs() || halfStripVal < (int)minHs()){
+			cout << "Error: hs" << halfStripVal << " outside of [" << minHs() << ", "<< maxHs() << "]" << endl;
+			return -1;
+		}
+
+		halfStripVal+=shift(lay);
+		if(halfStripVal < 0 || halfStripVal >= (int)N_MAX_HALF_STRIPS){
+			cout << "Error: not enough allocated memory for halfstrip placement, something is wrong" << endl;
+			return -1;
+		}
+		if(timeOn >= 16) {	
+			printf("Error timeOn is an invalid number: %i\n", timeOn);
+			return -1;
+		} 	
+		else 
+		{	
+			if(mem == false)
+			{
+				if(timeOn > (signed)(triggertime - 1) || timeOn < (signed)(triggertime - 4))
+				{	
+					continue;
+				}
+			}
+			else if(timeOn != signed(triggertime - 1))
+			{
+				continue;
+			}
+			
+			if(!_hits[halfStripVal][lay])
+			{
+
+				_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+				_nhits++;
+			}		
+		}					
+		
+
+		//print();					
+				
+			
+		}
+
+	if(clearcomparators())
+		return -1;	
+
+	return 0;
+
+}
+
+/*
+	Used to fill chamber with hits from a single time bin window (timebin-1.timebin-2.timebin-3.timebin-4)
+	Comparators read from tree
+*/
+
+int ChamberHits::fill_time(CSCInfo::Comparators& c, unsigned int triggertime)
+{	
+	for(unsigned int ilay = 0; ilay < NLAYERS; ilay++)
+	{
+		for(unsigned int ihs = 0; ihs < N_MAX_HALF_STRIPS; ihs++)
+		{
+			_hits[ihs][ilay] = 0;
+		}
+	}
+
+	int chSid = CSCHelper::serialize(_station, _ring, _chamber, _endcap);
+	bool me11a = (_station == 1 && _ring == 4);
+	bool me11b = (_station == 1 && _ring == 1);
+	for(unsigned int i = 0; i < c.size(); i++){
+		if(chSid != c.ch_id->at(i)) continue; //only look at where we are now
+		int lay = (int)c.lay->at(i)-1;
+		int str = (int)c.strip->at(i);
+		if(str < 1) {
+			printf("compStrip = %i, how did that happen?\n", str);
+			return -1;
+		}
+		int hs = (int)c.halfStrip->at(i);
+		int timeOn = (int)c.bestTime->at(i);
+		if((me11a || me11b) && str > 64) str -= 64;
+
+		int halfStripVal;
+
+		halfStripVal = 2*(str-1)+hs;
+		if(halfStripVal >= (int)maxHs() || halfStripVal < (int)minHs()){
+			cout << "Error: hs" << halfStripVal << " outside of [" << minHs() << ", "<< maxHs() << "]" << endl;
+			return -1;
+		}
+
+		halfStripVal+=shift(lay);
+		if(halfStripVal < 0 || halfStripVal >= (int)N_MAX_HALF_STRIPS){
+			cout << "Error: not enough allocated memory for halfstrip placement, something is wrong" << endl;
+			return -1;
+		}
+		if(timeOn >= 16) {
+			printf("Error timeOn is an invalid number: %i\n", timeOn);
+			return -1;
+		} 	
+		else if(timeOn > (signed)(triggertime - 1) || timeOn < (signed)(triggertime - 4))
+		{	
+			continue;
+		}
+		else {			
+			if(!_hits[halfStripVal][lay]){
+
+					_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
+					_nhits++;
+				}	
+
+				//print();					
+				
+			}
+		}
+
+	if(clearcomparators())
+		return -1;	
+
+	return 0;
+
+}
+
+/*
+	deletes multiple comparators within 3 hs window since new algo fails in these cases
+*/
+
+int ChamberHits::clearcomparators() 
 {
 		/*int _print = 0;
 
@@ -867,8 +1078,7 @@ int ChamberHits::clearcomparators()
 			print();
 			cout << endl;
 			_print++;
-		}*/
-		
+		}*/		
 
 		for(int ilayer = 0; ilayer < (int)NLAYERS; ilayer++)
 		{

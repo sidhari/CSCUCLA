@@ -62,7 +62,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
 
-   	TFile* f_emu = TFile::Open("dat/Trees/EmulationResults.root");
+   	TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_charm_3layerfirmware.root");
 
 	TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
@@ -113,7 +113,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
 
     for(int i = start; i < end; i++)
     {
-        if(!(i%1000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
+        if(!(i%50000)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
         t->GetEntry(i);               
 
@@ -122,7 +122,7 @@ int LUTQualityAnalyzer::run(string inputfile, string outputfile, int start, int 
         /* First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
 		* installed on September 12
 		*/
-		if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
+		//if(evt. RunNumber < 321710 || evt.RunNumber > 323362) continue; //correct
 		/* Era after min-separation change (10 -> 5), also includes 3 layer firmware change
 		*/
 
