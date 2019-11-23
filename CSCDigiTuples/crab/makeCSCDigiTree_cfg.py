@@ -44,8 +44,14 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
 #
 # SINGLE MUON TEST
 #
-dataset = '/store/data/Run2018D/SingleMuon/RAW-RECO/ZMu-PromptReco-v2/000/324/970/00000/FFCA0A00-2503-4242-8CAE-E1AC6E574063.root'
+#dataset = '/store/data/Run2018D/SingleMuon/RAW-RECO/ZMu-PromptReco-v2/000/324/970/00000/FFCA0A00-2503-4242-8CAE-E1AC6E574063.root'
 #dataset = '/store/data/Run2018D/SingleMuon/RAW-RECO/ZMu-PromptReco-v2/000/320/887/00000/3CF862D6-259B-E811-BB11-FA163EDC94A1.root'
+
+# THIS FILE CONTAINS MISSING COMPARATORS / CLCTS IN EVENT
+# Run number: 321710 Event number: 79140577 ST: 1 RI: 1 CH: 35 EC: 2
+# Run number: 321710 Event number: 79437780 ST: 2 RI: 1 CH: 17 EC: 2
+dataset = '/store/data/Run2018D/SingleMuon/RAW-RECO/ZMu-PromptReco-v2/000/321/710/00000/F8DC8804-88A8-E811-B0B7-FA163EA55753.root'
+
 
 #
 # MUON GUN TEST

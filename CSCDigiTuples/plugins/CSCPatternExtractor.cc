@@ -156,6 +156,8 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 
 	const int DEBUG = 0; //TODO: make this better
 
+
+
 	Handle<reco::MuonCollection> muons;
 	iEvent.getByToken(mc_token, muons);
 	tree.h.h_eventCuts->Fill(EVENT_CUTS::allEvents);
@@ -169,6 +171,10 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 		cout << "Event: " << iEvent.id().event() <<  endl;
 		cout << "Run: " << iEvent.id().run() << "\n\n\n" << endl;
 
+	}
+
+	if(iEvent.id().event() == 79140577 || iEvent.id().event() == 79437780){
+		cout << "Found Event: " <<iEvent.id().event() << endl;
 	}
 
 	for(const auto& mu: *muons) {
@@ -379,6 +385,18 @@ void CSCPatternExtractor::analyze(const edm::Event&iEvent, const edm::EventSetup
 	wireInfo.fill(*wireDigi);
 	stripInfo.fill(*stripDigi);
     compInfo.fill(*compDigi);
+
+
+	if(iEvent.id().event() == 79140577 || iEvent.id().event() == 79437780){
+		cout << "Found Event: " <<iEvent.id().event() << endl;
+		cout << "total segments: " << allSegmentsCSC->size() << endl;
+		unsigned int clctCount = 0;
+		for (CSCCLCTDigiCollection::DigiRangeIterator chamber = (*cscCLCTDigi).begin();
+				chamber != (*cscCLCTDigi).end(); chamber++) {
+			clctCount++;
+		}
+		cout << "total clcts: " << clctCount << endl;
+	}
 
 	tree.fill();
 }
