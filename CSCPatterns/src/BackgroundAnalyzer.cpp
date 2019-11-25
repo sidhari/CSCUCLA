@@ -51,7 +51,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 	TTree* t =  (TTree*)f->Get("CSCDigiTree");
 	if(!t) throw "Can't find tree";
 
-	TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_test.root");
+	TFile* f_emu = TFile::Open("dat/Trees/EmulationResults_EverythingEndingIn1.root");
 
 	TTree* t_emu = (TTree*)f_emu->Get("EmulationResults");
 
@@ -201,6 +201,8 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
 			ChamberHits compHits(ST, RI, EC, CH);
 			if(compHits.fill(comparators)) return -1;
+
+            if(compHits.clearcomparators()) return -1;
 
 			bool me11a = (ST == 1 && RI == 4);
 			bool me11b = (ST == 1 && RI == 1);
@@ -677,11 +679,11 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 {
                     return -1;
                 }
-                if(rec.nhits() == 0 && evt.RunNumber != 321710 && evt.RunNumber != 321813 && evt.RunNumber != 321755)
+                if(rec.nhits() == 0)
                 {   
-                    cout << evt.RunNumber << endl << endl << evt.EventNumber << endl << endl;
-                    rec.print();
-                    cout << endl << endl;
+                    //cout << evt.RunNumber << endl << endl << evt.EventNumber << endl << endl;
+                    //rec.print();
+                    //cout << endl << endl;
                     norechitsinchamber++;
                     
                 }
@@ -903,7 +905,7 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
 
                 //if code gets here, then the muon segment went unmatched
 
-                OPtotalunmatchedmuonsegments++;
+                OPtotalunmatchedmuonsegments++;                              
 
             }
 
@@ -943,6 +945,24 @@ int BackgroundAnalyzer::run(string inputfile, string outputfile, int start, int 
                 //if code gets here, then the muon segment went unmatched
 
                 NPtotalunmatchedmuonsegments++;
+
+                if(compHits.nhits() > 0)
+                {                    
+                    vector<CSCPattern>* newpatterns = createNewPatterns();
+                    vector<CLCTCandidate*> re_emulatedclcts;
+                    if(searchForMatch(compHits,newpatterns,re_emulatedclcts,true))
+                    {
+                        return -1;
+                    }
+                    compHits.print();
+                    cout << endl << re_emulatedclcts.size() << " " << NPemulatedclcts.size(chamberHash) << endl << endl;
+
+                    ChamberHits rec(ST,RI,EC,CH);
+                    rec.fill(recHits);
+                    rec.print();
+                    cout << endl << muonsegmentsinchamber << endl << endl;
+                    
+                } 
                 
             }
 

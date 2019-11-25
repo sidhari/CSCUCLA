@@ -665,6 +665,7 @@ void CLCTCandidateCollection::Erase()
 	ch_id.clear();
 }
 
+
 ALCTCandidate::ALCTCandidate(unsigned int kwg, int pattern) : 
 	_kwg(kwg),
 	_pattern(pattern)
@@ -901,10 +902,10 @@ int ChamberHits::fill(const Comparators_gen& c){
 			if(!_hits[halfStripVal][lay]){
 
 					_hits[halfStripVal][lay] = timeOn+1; //store +1, so we dont run into trouble with hexadecimal
-					_nhits++;
+					_nhits++;					
 				}	
 
-				//print();					
+				//print();							
 				
 			}
 		}		
@@ -968,6 +969,10 @@ int ChamberHits::fill_time(Comparators_gen& c, unsigned int triggertime, bool me
 				{	
 					continue;
 				}
+				if(timeOn == end_time_bin || timeOn == end_time_bin + 1 || timeOn == start_time_bin - 3 || timeOn == start_time_bin - 2)
+				{
+					continue;
+				}
 			}
 			else if(timeOn != signed(triggertime - 1))
 			{
@@ -984,8 +989,7 @@ int ChamberHits::fill_time(Comparators_gen& c, unsigned int triggertime, bool me
 		
 
 		//print();					
-				
-			
+		
 		}
 
 	if(clearcomparators())

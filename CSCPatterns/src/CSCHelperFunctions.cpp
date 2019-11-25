@@ -421,7 +421,7 @@ int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CL
 	}else return 0; //add nothing if we don't find anything
 }
 
-int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*> &m, Comparators_gen comparators, bool useBusyWindow)
+int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*> &m, Comparators_gen comparators, TMBState* state, bool useBusyWindow)
 {
 	unsigned int ST = c._station;
 	unsigned int RI = c._ring;
@@ -432,22 +432,52 @@ int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps
 	bool me11b = (ST == 1 && RI == 1);
 
 	bool flush = false;
-	bool idle = false;
+	bool idle = true;
+	bool pretrig = false;
 
 	unsigned int chamberhash = CSCHelper::serialize(ST,RI,CH,EC);
 
 	for(unsigned int t = start_time_bin; t <= end_time_bin; t++) //cycle through time windows
-	{	
-		if(idle)
+	{ 	
+		if(flush == true)
+			state->flush[t] = true;
+		else
+			state->flush[t] = false;
+
+		if(idle == true)
 		{
-			flush = false;
+			state->idle[t] = true;
+		}			
+		else
+			state->idle[t] = false;
+
+		if(pretrig == true)
+		{	
+			state->pretrig[t] = true;
+
+			ChamberHits triggertimechamber(ST,RI,EC,CH);
+			if(triggertimechamber.fill_time(comparators,t+1))
+				return -1;
+			if(triggertimechamber.clearcomparators())
+				return -1;
+
+			if(searchForMatch_trigger(triggertimechamber,ps,m,comparators,t+1,useBusyWindow))
+			{
+				return -1;
+			}
+
+			flush = true;
 			idle = false;
-			continue;
-		}
+			pretrig = false;
+
+			continue;			
+		}			
+		else
+			state->pretrig[t] = false;
 
 		ChamberHits chamber_time(ST,RI,EC,CH);
 
-		if(chamber_time.fill_time(comparators, t))
+		if(chamber_time.fill_time(comparators,t))
 		{
 			return -1;
 		}
@@ -470,29 +500,30 @@ int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps
 					chamber_time.print();
 				}
 				return -1;
-			}				
+			}	
 
-			if(preclct && preclct->layerCount() >= (int)N_LAYER_REQUIREMENT && flush == false && idle == false) //if pretrigger
+			if(preclct && preclct->layerCount() >= (int)N_LAYER_REQUIREMENT) //then pretrigger
 			{	
-				flush = true;
+				if(flush == true)
+					break;	
 
-				ChamberHits triggertimechamber(ST,RI,EC,CH);
-				if(triggertimechamber.fill_time(comparators,t+2))
-					return -1;
-				if(triggertimechamber.clearcomparators())
-					return -1;
+				pretrig = true;
+				idle = false;	
+				flush = false;
 
-				if(searchForMatch_trigger(triggertimechamber,ps,m,comparators,t+2,useBusyWindow))
-				{
-					return -1;
-				}
+				break;							
 
 			}
-			else if(((preclct && preclct->layerCount() < (int)N_LAYER_REQUIREMENT) || chamber_time.nhits() == 0) && flush == true)
+			else
 			{
-				flush = false;
-				idle = true;
-			}	
+				if(ip == ps->size()-1)
+				{		
+					flush = false;
+					idle = true;	
+					pretrig = false;
+				}
+			}
+				
 		}
 	}
 
@@ -548,13 +579,13 @@ int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps
 			{	
 				flush = true;
 
-				if(searchForMatch_trigger(chamber_time,ps,m,comparators,t+2,useBusyWindow))
+				if(searchForMatch_trigger(chamber_time,ps,m,comparators,t+1,useBusyWindow))
 				{
 					return -1;
 				}
 
 			}
-			else if(((preclct && preclct->layerCount() < (int)N_LAYER_REQUIREMENT) || chamber_time.nhits() == 0) && flush)
+			else if(ip == ps->size() - 1)
 			{
 				flush = false;
 				idle = true;
@@ -864,9 +895,9 @@ void writeToMEMFiles_v1(const ChamberHits& c, Comparators_gen comparators, std::
 
 	for(unsigned int itime = 1; itime <= 16; itime++)
 	{
-		chamber_time.fill_time(comparators,itime,true);	
-
-		int check = chamber_time.clearcomparators();
+		int check = chamber_time.fill_time(comparators,itime,true);
+		
+		check = chamber_time.clearcomparators();			
 
 		for(unsigned int iCFEB = 0; iCFEB < MAX_CFEBS; iCFEB++)
 		{	

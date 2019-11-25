@@ -50,7 +50,7 @@ int searchForMatch_v1(const ChamberHits &c, const vector<CSCPattern>* ps, vector
 
 //Cycles through time windows of 4 time bins each, pretriggers if atleast 1 CLCT with min req are met
 //User generated comparators
-int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, bool useBusyWindow=false);
+int searchForMatch_pretrigger(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, Comparators_gen comparators, TMBState* state, bool useBusyWindow=false);
 
 //Cycles through time windows of 4 time bins each, pretriggers if atleast 1 CLCT with min req are met
 //Comparators read from tree
@@ -63,6 +63,8 @@ int searchForMatch_trigger(const ChamberHits &chamber_time, const vector<CSCPatt
 //If pretrigger, then look 2 bx later for CLCTs, returns a vector of CLCT candidates
 //Comparators read from tree
 int searchForMatch_trigger(const ChamberHits &chamber_time, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, CSCInfo::Comparators comparators, unsigned int triggertime, bool useBusyWindow=false);
+
+int searchForMatch(const ChamberHits &c, const vector<CSCPattern>* ps, vector<CLCTCandidate*>& m, bool useBusyWindow = false);
 
 //makes a LUT out of a properly formatted TTree
 int makeLUT(TTree* t, DetectorLUTs& newLUTs, DetectorLUTs& legacyLUTs);

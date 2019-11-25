@@ -87,14 +87,16 @@ int OTMBFirmwareTesterTime::run(string inputfile, string outputfile, int start, 
     //EVENT LOOP
     //	
 
-	srand (time(NULL));
+	srand (3);
+
+	unsigned int lineswrittento = 0;
 
 	for(int i = start; i < end; i++)
     {
         if(!(i%100)) printf("%3.2f%% Done --- Processed %u Events\n\n", 100.*(i-start)/(end-start), i-start);
 
-		t->GetEntry(i);		
-		t_emu->GetEntry(i);	
+		//t->GetEntry(i);		
+		//t_emu->GetEntry(i);	
 
         /*First 3-layer firmware installation era on ME+1/1/11. Does not include min-CLCT-separation change (10 -> 5)
 		 *installed on September 12
@@ -117,9 +119,16 @@ int OTMBFirmwareTesterTime::run(string inputfile, string outputfile, int start, 
 
 			if(!CSCHelper::isValidChamber(ST,RI,CH,EC)) continue;
 
+			bool me11a = (ST==1 && RI==4);
+			bool me11b = (ST== 1 && RI ==1); 
+			if(!me11a && !me11b)//firmware only handles me11 chambers now (11-19-2019)
+			continue;
+
 			ChamberHits comphits(ST,RI,EC,CH);
 
 			vector<CLCTCandidate*> emulatedclcts;	
+
+			TMBState* state = new TMBState;			
 
 			if(fakedata)
 			{	
@@ -147,7 +156,7 @@ int OTMBFirmwareTesterTime::run(string inputfile, string outputfile, int start, 
 				if(comparators_gen.size() == 0)
 				continue;
 
-				if(searchForMatch_pretrigger(comphits,newPatterns,emulatedclcts,comparators_gen,true))
+				if(searchForMatch_pretrigger(comphits,newPatterns,emulatedclcts,comparators_gen,state,true))
 				{
 					emulatedclcts.clear();
 					continue;
@@ -156,14 +165,16 @@ int OTMBFirmwareTesterTime::run(string inputfile, string outputfile, int start, 
 				while(emulatedclcts.size() > 2)
 				{
 					emulatedclcts.pop_back();
-				}				
+				}		
+
+				sort(emulatedclcts.begin(), emulatedclcts.end(), CLCTCandidate::cfebquality);		
 
 				writeToMEMFiles_v1(comphits,comparators_gen,CFEBFiles);
 
 				//cout << "khs, patt, ccode" << endl << endl;
 				cout << internal << setfill('0');
 				
-				for(unsigned int itime = 1; itime <= end_time_bin+6; itime++)
+				for(unsigned int itime = 1; itime <= end_time_bin+5; itime++)
 				{	
 					ChamberHits compHits_1(ST,RI,EC,CH);
 					if(compHits_1.fill_time(comparators_gen,itime))
@@ -183,7 +194,24 @@ int OTMBFirmwareTesterTime::run(string inputfile, string outputfile, int start, 
 					}
 
 					for(unsigned int iclct = 0; iclct < nCLCTs; iclct++)
-					{
+					{	
+						if(state->flush[itime] == true)
+						{
+							CLCTFiles[iclct] << internal << setfill('0')  << hex << setw(1) << 2;
+						}
+						else if (state->idle[itime] == true)
+						{
+							CLCTFiles[iclct] << internal << setfill('0')  << hex << setw(1) << hex << 1;
+						}
+						else if (state->pretrig[itime] == true)
+						{
+							CLCTFiles[iclct] << internal << setfill('0')  << hex << setw(1) << hex << 3;
+						}
+						else
+						{
+							CLCTFiles[iclct] << internal << setfill('0')  << hex << setw(1) << hex << 0;
+						}
+
 						if(iclct < clctsintimebin.size())
 						{
 							auto& clct = clctsintimebin.at(iclct);					
@@ -191,18 +219,34 @@ int OTMBFirmwareTesterTime::run(string inputfile, string outputfile, int start, 
 							std::cout << hex << setw(4) << clct->keyHalfStrip() << endl;
 							std::cout << setw(4) << clct->patternId()/10 << endl;
 							std::cout << setw(4) << clct->comparatorCodeId() << endl;
-							CLCTFiles[iclct] << internal << setfill('0')  << hex << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId()/10 << setw(4) << clct->comparatorCodeId() << endl;
-							
+							CLCTFiles[iclct] << setw(4) << clct->keyHalfStrip() << setw(4) << clct->patternId()/10 << setw(4) << clct->comparatorCodeId() << endl;
+							//if(clct->keyHalfStrip() == 42)
+							//return 0;
 						}
 						else
 						{
 							CLCTFiles[iclct] << "000000000000" << endl;
 						}
-						
-					}									
+												
+					}	
+
+					lineswrittento++;		
+					cout << dec << lineswrittento << endl << endl;
+					if (lineswrittento == 37)
+					return 0;						
 				}
 
+				CLCTFiles[0] << "1000000000000" << endl;
+				CLCTFiles[1] << "1000000000000" << endl;
+				lineswrittento++;
+				cout << dec << lineswrittento << endl << endl;
+				if (lineswrittento == 37)
+				return 0;
+				
+
 			}
+
+			delete state;
 		}
 	}
     

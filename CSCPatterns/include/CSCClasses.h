@@ -121,7 +121,7 @@ public:
 	const ComparatorCode getComparatorCode() const;
 	int patternId() const;
 	const LUTKey key() const;
-
+	
 	//declare a function pointer used to sort the CLCT Candidates
 	typedef function<bool(CLCTCandidate*, CLCTCandidate*)> QUALITY_SORT;	
 	static QUALITY_SORT quality;
@@ -133,6 +133,26 @@ private:
 	int _layerMatchCount;
 	//float _quality;
 
+};
+
+class TMBState
+{
+	public:
+
+		TMBState()
+		{		
+			for(unsigned int itime = 0; itime <= 19; itime++)
+			{
+				flush[itime] = false;
+				pretrig[itime] = false;
+				idle[itime] = true;
+			}		
+		}
+
+		map<unsigned int,bool> flush;
+		map<unsigned int,bool> idle;
+		map<unsigned int,bool> pretrig;
+	
 };
 
 

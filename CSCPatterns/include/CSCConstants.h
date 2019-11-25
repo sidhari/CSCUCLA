@@ -30,6 +30,7 @@ const unsigned int MAX_CFEBS = 7; //in ME11
 const unsigned int start_time_bin = 3;
 const unsigned int end_time_bin = 14;
 const unsigned int hitpersist = 3;
+unsigned int min_idle_time = 2;
 
 const unsigned int deadzonewidth = 0;
 
